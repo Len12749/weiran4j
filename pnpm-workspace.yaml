@@ -1,4 +1,10 @@
 packages:
   - 'web'
+  - 'uniapp'
   # 后端是 Gradle 项目,登记进工作区只为让 turbo 能编排它的 dev 任务(见 weiran4j/package.json)
   - 'weiran4j'
+allowBuilds:
+  '@parcel/watcher': true
+  core-js: true
+  core-js-pure: true
+  esbuild: true

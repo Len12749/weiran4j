@@ -1,6 +1,8 @@
 {
+  "name": "@weiran/uniapp",
+  "private": true,
   "scripts": {
-    "dev": "UNI_INPUT_DIR=. uni",
+    "dev": "UNI_INPUT_DIR=. uni -p h5",
     "dev:h5": "UNI_INPUT_DIR=. uni -p h5",
     "build:h5": "UNI_INPUT_DIR=. uni build -p h5",
     "postbuild:h5": "mkdir -p dist/build/h5/static dist/build/h5/admin && cp -R static/. dist/build/h5/static/ && cp -R static/admin/. dist/build/h5/admin/"

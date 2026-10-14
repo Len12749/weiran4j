@@ -48,7 +48,7 @@
 | `web/src/biz/icons*.ts` | 追加菜单图标 |
 | `openspec/rules/advisory/components.biz.md` | 下游公共组件清单 |
 | `openspec/state/bizs/README.biz.md` · `openspec/state/bizs/cqt_*.md` | 业务表现状文档与索引 |
-| `uniapp/` | 前台 uniapp（独立安装，不在 pnpm 工作区） |
+| `uniapp/` | 前台 uniapp（pnpm 工作区包，由 Turbo 编排 H5 dev） |
 | `scripts/biz/` · `.githooks-biz/` | 下游脚本与提交钩子 |
 
 已知缺口：往 `openspec/state/bizs/artifact.md` / `cross-biz.md` 登记条目仍要改上游文件（上游 artifact.md#20），
@@ -61,8 +61,10 @@
 git fetch upstream && git merge upstream/main
 # 启用下游提交钩子（先跑上游 .githooks/pre-commit，再查上游文件边界）
 git config core.hooksPath .githooks-biz
-# 前台
-cd uniapp && pnpm install && pnpm dev:h5
+# 前后端与前台 H5 一起启动
+pnpm dev
+# 单独启动 uniapp H5
+pnpm dev:uniapp
 ```
 
 其余构建、检查命令与上游 `AGENTS.md` 相同（JDK 21、先 `spotlessApply` 再 `check`）。
