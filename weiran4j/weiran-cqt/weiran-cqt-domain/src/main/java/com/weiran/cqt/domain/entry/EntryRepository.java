@@ -17,6 +17,12 @@ public interface EntryRepository {
     /** 写入作品，返回 ID。 */
     long insertEntry(NewEntry entry);
 
+    /** 写入由学校批量导入产生的作品，并以稳定指纹防止任务重试重复建作品。 */
+    long insertImportedEntry(NewEntry entry, String importFingerprint);
+
+    /** 查找已由相同导入指纹创建的作品，用于任务崩溃后的恢复。 */
+    Optional<Long> findImportedEntry(String importFingerprint);
+
     /**
      * 写入人员与参赛人，返回参赛人 ID。
      *
@@ -66,4 +72,7 @@ public interface EntryRepository {
 
     /** 作品成员，按顺序。 */
     List<TeamMemberRow> findTeam(long entryId);
+
+    /** 当前学校通过导入创建的作品；赛事为空时查询该校全部作品。 */
+    List<MyEntryRow> findBySchoolImport(long accountId, @Nullable Long competitionId);
 }

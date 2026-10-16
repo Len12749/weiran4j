@@ -13,6 +13,7 @@ import com.weiran.cqt.infrastructure.persistence.MybatisAccountRepository;
 import com.weiran.cqt.infrastructure.persistence.MybatisCompetitionRepository;
 import com.weiran.cqt.infrastructure.persistence.MybatisEntryRepository;
 import com.weiran.cqt.infrastructure.persistence.MybatisRegionRepository;
+import com.weiran.cqt.infrastructure.persistence.MybatisSchoolImportTaskRepository;
 import com.weiran.cqt.infrastructure.persistence.MybatisSequenceGenerator;
 import com.weiran.cqt.infrastructure.persistence.MybatisSettingRepository;
 import com.weiran.cqt.infrastructure.security.BCryptPasswordHasher;
@@ -45,7 +46,8 @@ import org.springframework.context.annotation.Import;
     MybatisRegionRepository.class,
     MybatisCompetitionRepository.class,
     MybatisEntryRepository.class,
-    MybatisSequenceGenerator.class
+    MybatisSequenceGenerator.class,
+    MybatisSchoolImportTaskRepository.class
 })
 public class CqtInfrastructureAutoConfiguration {
 

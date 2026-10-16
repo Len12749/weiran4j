@@ -7,6 +7,8 @@ import com.weiran.cqt.adapter.portal.LocalFilesController;
 import com.weiran.cqt.adapter.portal.PortalAuthInterceptor;
 import com.weiran.cqt.adapter.portal.PortalExceptionAdvice;
 import com.weiran.cqt.adapter.portal.ProductController;
+import com.weiran.cqt.adapter.portal.SchoolImportController;
+import com.weiran.cqt.adapter.web.SiteConfigAdminController;
 import com.weiran.cqt.api.portal.PortalAuthService;
 import java.nio.file.Path;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,16 +21,18 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/** weiran-cqt 适配层自动配置：登记前台 Controller、异常出口与 {@code /api-web/**} 认证拦截器。 */
+/** weiran-cqt 适配层自动配置：登记 CQT 管理与前台 Controller、异常出口及前台认证拦截器。 */
 @AutoConfiguration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @Import({
     PortalExceptionAdvice.class,
     ProductController.class,
+    SiteConfigAdminController.class,
     AuthController.class,
     CompetCategoryController.class,
     LocalFilesController.class,
-    CompetitionController.class
+    CompetitionController.class,
+    SchoolImportController.class
 })
 public class CqtAdapterAutoConfiguration {
 

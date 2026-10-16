@@ -45,14 +45,17 @@ class SiteConfigTest {
     }
 
     @Test
-    @DisplayName("字符串去 HTML 标签与首尾空白；同一编号映射到两个键")
-    void stripsHtmlAndSharesIdent() {
+    @DisplayName("富文本保留 HTML，普通字符串清洗；关于我们与用户协议独立映射")
+    void preservesRichTextAndSeparatesAboutFromAgreement() {
         final Map<String, @Nullable Object> config =
-                SiteConfig.build(Map.of(7, "<p>北京市 <b>东城区</b></p> ", 2, "<div>关于我们</div>"));
+                SiteConfig.build(Map.of(7, "<p>北京市 <b>东城区</b></p> ", 2, "<div>关于我们</div>", 71, "<p>用户协议</p>"));
 
         assertThat(config.get("dizhi")).isEqualTo("北京市 东城区");
-        assertThat(config.get("guanyuwomen")).isEqualTo("关于我们");
-        assertThat(config.get("user_agreement")).isEqualTo("关于我们");
+        assertThat(config.get("guanyuwomen")).isEqualTo("<div>关于我们</div>");
+        assertThat(config.get("user_agreement")).isEqualTo("<p>用户协议</p>");
+        assertThat(SiteConfig.identForKey("guanyuwomen")).isEqualTo(2);
+        assertThat(SiteConfig.identForKey("user_agreement")).isEqualTo(71);
+        assertThat(SiteConfig.definitions()).hasSize(22);
     }
 
     @Test

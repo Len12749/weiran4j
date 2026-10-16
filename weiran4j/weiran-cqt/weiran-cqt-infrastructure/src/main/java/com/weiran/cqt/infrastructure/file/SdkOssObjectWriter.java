@@ -2,6 +2,7 @@ package com.weiran.cqt.infrastructure.file;
 
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.ObjectMetadata;
 import com.weiran.cqt.infrastructure.autoconfigure.CqtProperties;
 import java.io.InputStream;
@@ -30,6 +31,12 @@ final class SdkOssObjectWriter implements OssObjectWriter {
             metadata.setContentType(contentType);
         }
         this.client.putObject(bucket, objectName, content, metadata);
+    }
+
+    @Override
+    public InputStream get(final String bucket, final String objectName) {
+        final OSSObject object = this.client.getObject(bucket, objectName);
+        return object.getObjectContent();
     }
 
     @Override

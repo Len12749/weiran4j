@@ -13,6 +13,9 @@ interface OssObjectWriter extends AutoCloseable {
      */
     void put(String bucket, String objectName, InputStream content, long size, @Nullable String contentType);
 
+    /** 读取一个对象；调用方负责关闭流。 */
+    InputStream get(String bucket, String objectName);
+
     @Override
     void close();
 }

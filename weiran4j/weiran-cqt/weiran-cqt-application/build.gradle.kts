@@ -16,4 +16,8 @@ dependencies {
     implementation(project(":weiran-system-api"))
     // @Transactional 与 DataAccessException；framework 不再传递框架库（D-016）。
     implementation("org.springframework:spring-tx")
+    // 任务行结果以 JSON 持久化；framework 的 Jackson 依赖是 implementation，不向业务传递。
+    implementation("com.fasterxml.jackson.core:jackson-databind")
+    // Excel 模板解析；POI 类型只出现在 application 内部，不进入领域或接口契约。
+    implementation("org.apache.poi:poi-ooxml")
 }

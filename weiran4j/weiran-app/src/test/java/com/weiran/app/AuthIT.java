@@ -66,7 +66,7 @@ class AuthIT extends IntegrationTestSupport {
 
         IntegrationTestSupport.assertOk(response);
         final JsonNode roots = IntegrationTestSupport.data(response);
-        assertThat(AuthIT.ids(roots)).containsExactly(1L, 2L, 9L);
+        assertThat(AuthIT.ids(roots)).containsExactly(1L, 2L, 9L, 1000L);
         final JsonNode system = roots.get(1);
         assertThat(system.path("type").asText()).isEqualTo("directory");
         assertThat(AuthIT.ids(system.path("children"))).containsExactly(3L, 4L, 5L, 6L, 7L, 8L);
@@ -78,6 +78,10 @@ class AuthIT extends IntegrationTestSupport {
         assertThat(users.path("keepAlive").isBoolean()).isTrue();
         assertThat(users.path("isExternal").isBoolean()).isTrue();
         assertThat(users.path("status").asText()).isEqualTo("enabled");
+        final JsonNode siteConfig = roots.get(3);
+        assertThat(siteConfig.path("title").asText()).isEqualTo("站点配置");
+        assertThat(siteConfig.path("component").asText()).isEqualTo("cqt/site-config");
+        assertThat(siteConfig.path("permission").asText()).isEqualTo("cqt:site-config:list");
     }
 
     @Test

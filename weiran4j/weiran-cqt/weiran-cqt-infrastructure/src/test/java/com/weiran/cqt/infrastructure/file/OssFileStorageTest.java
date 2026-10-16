@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.weiran.cqt.domain.file.FileStorageException;
 import com.weiran.cqt.infrastructure.autoconfigure.CqtProperties;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,15 @@ class OssFileStorageTest {
                 throw new IllegalStateException("network down");
             }
             this.calls.add(bucket + "|" + objectName + "|" + size + "|" + contentType);
+        }
+
+        @Override
+        public InputStream get(final String bucket, final String objectName) {
+            if (this.fail) {
+                throw new IllegalStateException("network down");
+            }
+            this.calls.add(bucket + "|GET|" + objectName);
+            return new ByteArrayInputStream("zip".getBytes(java.nio.charset.StandardCharsets.UTF_8));
         }
 
         @Override
@@ -114,5 +124,21 @@ class OssFileStorageTest {
         assertThat(storage.isStoredUrl("https://cdn.example.com.evil.com/a.zip"))
                 .isFalse();
         assertThat(storage.isStoredUrl("https://other.com/a.zip")).isFalse();
+    }
+
+    @Test
+    @DisplayName("仅按 URL 前缀和账号对象路径读取 OSS 文件")
+    void opensOwnedObject() throws IOException {
+        final FakeWriter writer = new FakeWriter(false);
+        final OssFileStorage storage = new OssFileStorage(OssFileStorageTest.config("cqt-bucket"), writer);
+
+        try (InputStream input =
+                storage.openOwnedObject("https://cdn.example.com/cqt/user_files/42/202610/a.zip", 42)) {
+            assertThat(new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8))
+                    .isEqualTo("zip");
+        }
+        assertThat(writer.calls).containsExactly("cqt-bucket|GET|cqt/user_files/42/202610/a.zip");
+        assertThatThrownBy(() -> storage.openOwnedObject("https://cdn.example.com/cqt/user_files/42/a.zip", 9))
+                .isInstanceOf(FileStorageException.class);
     }
 }

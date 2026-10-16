@@ -52,4 +52,18 @@ public final class LocalFileStorage implements FileStorage {
     public boolean isStoredUrl(final String url) {
         return url.startsWith(this.urlPrefix + "/");
     }
+
+    @Override
+    public InputStream openOwnedObject(final String url, final long accountId) {
+        final String objectName = StoredObjectName.requireOwned(this.urlPrefix, url, accountId);
+        final Path target = this.root.resolve(objectName).normalize();
+        if (!target.startsWith(this.root) || target.equals(this.root)) {
+            throw new FileStorageException("对象路径非法", new IllegalArgumentException("stored object path"));
+        }
+        try {
+            return Files.newInputStream(target);
+        } catch (final IOException ex) {
+            throw new FileStorageException("本地读取失败: " + ex.getClass().getSimpleName(), ex);
+        }
+    }
 }

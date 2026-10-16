@@ -8,6 +8,7 @@ import com.weiran.cqt.infrastructure.persistence.row.TeamMemberRowDO;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.jspecify.annotations.Nullable;
 
 /** {@link CqtEntryDO} 的 Mapper（含前台列表与详情的联表查询）。 */
 public interface CqtEntryMapper extends BaseMapper<CqtEntryDO> {
@@ -26,6 +27,27 @@ public interface CqtEntryMapper extends BaseMapper<CqtEntryDO> {
                     + " WHERE p.source_database = #{source} AND p.legacy_user_id = #{legacyUserId} AND e.status <> 'DELETED'"
                     + " ORDER BY e.id DESC")
     List<MyEntryRowDO> findByAccount(@Param("source") String sourceDatabase, @Param("legacyUserId") long legacyUserId);
+
+    /** 以成功导入行关联的学校账号筛选作品。 */
+    @Select("SELECT e.id entry_id, e.competition_id, c.name competition_name, e.title, e.status, e.legacy_status,"
+            + " e.first_category_legacy_id, e.second_category_legacy_id, e.region_legacy_id, e.attachment_url,"
+            + " e.teacher_names, e.created_at, e.source_database, e.entry_type,"
+            + " (SELECT p.name_value FROM cqt_entry_participants ep JOIN cqt_people p ON p.id = ep.person_id"
+            + " WHERE ep.entry_id = e.id ORDER BY ep.is_leader DESC, ep.sort_order, ep.id LIMIT 1) leader_name,"
+            + " (SELECT p.phone_value FROM cqt_entry_participants ep JOIN cqt_people p ON p.id = ep.person_id"
+            + " WHERE ep.entry_id = e.id ORDER BY ep.is_leader DESC, ep.sort_order, ep.id LIMIT 1) leader_phone"
+            + " FROM cqt_entries e JOIN cqt_school_import_rows ir ON ir.entry_id = e.id"
+            + " JOIN cqt_school_import_tasks it ON it.id = ir.task_id"
+            + " JOIN cqt_competitions c ON c.id = e.competition_id"
+            + " WHERE it.account_id = #{accountId} AND ir.status = 'SUCCESS' AND e.status <> 'DELETED'"
+            + " AND (#{competitionId} IS NULL OR e.competition_id = #{competitionId}) ORDER BY e.id DESC")
+    List<MyEntryRowDO> findBySchoolImport(
+            @Param("accountId") long accountId, @Param("competitionId") @Nullable Long competitionId);
+
+    /** 通过导入指纹查找已提交作品。 */
+    @Select("SELECT id FROM cqt_entries WHERE import_fingerprint = #{fingerprint} LIMIT 1")
+    @Nullable
+    Long findByImportFingerprint(@Param("fingerprint") String fingerprint);
 
     /** 账号是否为作品的参赛人。 */
     @Select(

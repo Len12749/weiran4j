@@ -1,0 +1,121 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.6.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :build-logic:compileKotlin UP-TO-DATE
+> Task :build-logic:compileJava NO-SOURCE
+> Task :build-logic:pluginDescriptors UP-TO-DATE
+> Task :build-logic:processResources UP-TO-DATE
+> Task :build-logic:classes UP-TO-DATE
+> Task :build-logic:jar UP-TO-DATE
+> Task :weiran-cqt-adapter:processResources UP-TO-DATE
+> Task :weiran-cqt-application:processResources UP-TO-DATE
+> Task :weiran-system-application:processResources UP-TO-DATE
+> Task :weiran-app:processResources UP-TO-DATE
+> Task :weiran-system-api:processResources NO-SOURCE
+> Task :weiran-cqt-api:processResources NO-SOURCE
+> Task :weiran-cqt-domain:processResources NO-SOURCE
+> Task :weiran-cqt-adapter:processTestResources NO-SOURCE
+> Task :weiran-system-domain:processResources NO-SOURCE
+> Task :weiran-system-adapter:processResources UP-TO-DATE
+> Task :weiran-cqt-domain:processTestResources NO-SOURCE
+> Task :weiran-system-api:processTestResources NO-SOURCE
+> Task :weiran-cqt-api:processTestResources NO-SOURCE
+> Task :weiran-cqt-application:processTestResources UP-TO-DATE
+> Task :weiran-system-adapter:processTestResources NO-SOURCE
+> Task :weiran-system-application:processTestResources NO-SOURCE
+> Task :weiran-cqt-infrastructure:processResources UP-TO-DATE
+> Task :weiran-system-domain:processTestResources NO-SOURCE
+> Task :weiran-app:processTestResources UP-TO-DATE
+> Task :weiran-system-infrastructure:processResources UP-TO-DATE
+> Task :weiran-cqt-infrastructure:processTestResources NO-SOURCE
+> Task :weiran-system-infrastructure:processTestResources NO-SOURCE
+> Task :weiran-framework:compileJava UP-TO-DATE
+> Task :weiran-framework:processResources UP-TO-DATE
+> Task :weiran-framework:classes UP-TO-DATE
+> Task :weiran-framework:jar UP-TO-DATE
+> Task :weiran-cqt-api:compileJava UP-TO-DATE
+> Task :weiran-cqt-api:classes UP-TO-DATE
+> Task :weiran-cqt-api:jar UP-TO-DATE
+> Task :weiran-system-api:compileJava UP-TO-DATE
+> Task :weiran-system-api:classes UP-TO-DATE
+> Task :weiran-cqt-domain:compileJava UP-TO-DATE
+> Task :weiran-system-domain:compileJava UP-TO-DATE
+> Task :weiran-system-domain:classes UP-TO-DATE
+> Task :weiran-cqt-domain:classes UP-TO-DATE
+> Task :weiran-cqt-api:compileTestJava NO-SOURCE
+> Task :weiran-system-api:jar UP-TO-DATE
+> Task :weiran-cqt-api:testClasses UP-TO-DATE
+> Task :weiran-system-domain:jar UP-TO-DATE
+> Task :weiran-system-api:compileTestJava NO-SOURCE
+> Task :weiran-system-api:testClasses UP-TO-DATE
+> Task :weiran-cqt-api:test NO-SOURCE
+> Task :weiran-cqt-domain:jar UP-TO-DATE
+> Task :weiran-system-api:test NO-SOURCE
+> Task :weiran-framework:compileTestJava UP-TO-DATE
+> Task :weiran-framework:processTestResources NO-SOURCE
+> Task :weiran-framework:testClasses UP-TO-DATE
+> Task :weiran-system-domain:compileTestJava UP-TO-DATE
+> Task :weiran-system-domain:testClasses UP-TO-DATE
+> Task :weiran-cqt-domain:compileTestJava UP-TO-DATE
+> Task :weiran-cqt-domain:testClasses UP-TO-DATE
+> Task :weiran-system-application:compileJava UP-TO-DATE
+> Task :weiran-system-application:classes UP-TO-DATE
+> Task :weiran-system-application:jar UP-TO-DATE
+> Task :weiran-cqt-application:compileJava UP-TO-DATE
+> Task :weiran-cqt-application:classes UP-TO-DATE
+> Task :weiran-system-infrastructure:compileJava UP-TO-DATE
+> Task :weiran-system-infrastructure:classes UP-TO-DATE
+> Task :weiran-cqt-application:jar UP-TO-DATE
+> Task :weiran-system-infrastructure:jar UP-TO-DATE
+> Task :weiran-system-application:compileTestJava UP-TO-DATE
+> Task :weiran-system-application:testClasses UP-TO-DATE
+> Task :weiran-cqt-domain:test UP-TO-DATE
+> Task :weiran-system-domain:test UP-TO-DATE
+> Task :weiran-framework:test UP-TO-DATE
+> Task :weiran-system-adapter:compileJava UP-TO-DATE
+> Task :weiran-system-adapter:classes UP-TO-DATE
+> Task :weiran-system-adapter:jar UP-TO-DATE
+> Task :weiran-system-application:test UP-TO-DATE
+> Task :weiran-system-adapter:compileTestJava NO-SOURCE
+> Task :weiran-system-adapter:testClasses UP-TO-DATE
+> Task :weiran-cqt-adapter:compileJava UP-TO-DATE
+> Task :weiran-cqt-adapter:classes UP-TO-DATE
+> Task :weiran-system-adapter:test NO-SOURCE
+> Task :weiran-system-infrastructure:compileTestJava UP-TO-DATE
+> Task :weiran-cqt-application:compileTestJava UP-TO-DATE
+> Task :weiran-system-infrastructure:testClasses UP-TO-DATE
+> Task :weiran-cqt-application:testClasses UP-TO-DATE
+> Task :weiran-cqt-adapter:jar UP-TO-DATE
+> Task :weiran-cqt-infrastructure:compileJava UP-TO-DATE
+> Task :weiran-cqt-infrastructure:classes UP-TO-DATE
+> Task :weiran-cqt-infrastructure:jar UP-TO-DATE
+> Task :weiran-cqt-application:test UP-TO-DATE
+> Task :weiran-cqt-adapter:compileTestJava UP-TO-DATE
+> Task :weiran-cqt-adapter:testClasses UP-TO-DATE
+> Task :weiran-system-infrastructure:test UP-TO-DATE
+> Task :weiran-cqt-adapter:test UP-TO-DATE
+> Task :weiran-cqt-infrastructure:compileTestJava UP-TO-DATE
+> Task :weiran-cqt-infrastructure:testClasses UP-TO-DATE
+> Task :weiran-app:compileJava UP-TO-DATE
+> Task :weiran-app:classes UP-TO-DATE
+> Task :weiran-cqt-infrastructure:test UP-TO-DATE
+> Task :weiran-app:compileTestJava UP-TO-DATE
+> Task :weiran-app:testClasses UP-TO-DATE
+> Task :weiran-app:test UP-TO-DATE
+
+BUILD SUCCESSFUL in 6s
+55 actionable tasks: 55 up-to-date
+$ vitest run
+
+ RUN  v5.0.2 /Users/duoli/Projects/qidian-zhongxi/mono4j/web
+
+
+ Test Files  33 passed (33)
+      Tests  277 passed (277)
+   Start at  17:29:28
+   Duration  15.74s (import 29%, transform 29%, tests 21%, environment 17%, setup 4%)
+
+     Import  938 modules were evaluated 17261 times · 37.99s total, 29% of tracked time
+             ~2.31s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
+             learn more: https://vitest.dev/guide/improving-performance#test-isolation
+

@@ -42,6 +42,9 @@ class SignupRulesTest {
         assertThat(Attachment.parse("链接", "https://a.com/v", "作品", false, url -> false)
                         .type())
                 .isEqualTo(AttachmentType.LINK);
+        assertThat(Attachment.parse("FILE", "https://cdn.x/a.mp4", "a.mp4", true, url -> true)
+                        .type())
+                .isEqualTo(AttachmentType.FILE);
         assertThat(Attachment.parse("ZIP", "", null, false, url -> true).url()).isNull();
 
         assertThatThrownBy(() -> Attachment.parse("pdf", "x", null, false, url -> true))

@@ -24,4 +24,13 @@ public interface FileStorage {
      * @param url 地址
      */
     boolean isStoredUrl(String url);
+
+    /**
+     * 打开当前账号上传的对象。实现必须校验 URL 属于本存储且对象路径归属该账号，不得访问外部 URL。
+     *
+     * @param url 已存储对象 URL
+     * @param accountId 当前账号
+     * @return 对象输入流，由调用方关闭
+     */
+    InputStream openOwnedObject(String url, long accountId);
 }

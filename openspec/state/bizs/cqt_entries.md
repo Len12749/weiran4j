@@ -10,6 +10,7 @@
 > [`domain/entry/`](../../../weiran4j/weiran-cqt/weiran-cqt-domain/src/main/java/com/weiran/cqt/domain/entry)、
 > [`MybatisEntryRepository.java`](../../../weiran4j/weiran-cqt/weiran-cqt-infrastructure/src/main/java/com/weiran/cqt/infrastructure/persistence/MybatisEntryRepository.java)、
 > [`V202610051001__cqt_entries.sql`](../../../weiran4j/weiran-cqt/weiran-cqt-infrastructure/src/main/resources/db/migration/cqt/V202610051001__cqt_entries.sql)、
+> [`V202610161200__cqt_entry_attachment_file.sql`](../../../weiran4j/weiran-cqt/weiran-cqt-infrastructure/src/main/resources/db/migration/cqt/V202610161200__cqt_entry_attachment_file.sql)、
 > [`scripts/biz/import/cqt_entries.sql`](../../../scripts/biz/import/cqt_entries.sql)。
 >
 > 盘点基线：change `cqt-signup`（2026-10-05）。
@@ -33,7 +34,7 @@
 | --- | --- | --- |
 | `title` / `competitionid` | `title` / `competition_id` | 必填 |
 | `firstcatid` / `secaodcatid` | `first/second_category_legacy_id` | 一级启用；二级属于一级且启用 |
-| `attachment_type` / `purl` / `purlname` | `attachment_*` | ZIP 须本系统地址且 `.zip`；链接 http(s) 无汉字；赛项要求附件时必填 |
+| `attachment_type` / `purl` / `purlname` | `attachment_*` | ZIP 须本系统地址且 `.zip`；FILE 为本系统存储的单个附件；链接 http(s) 无汉字；赛项要求附件时必填。数据库 enum 为 ZIP/LINK/FILE |
 | `zubie` / 成员 `group` | `group_name` / `group_snapshot` | 须在该赛事、该赛项适用的启用组别内 |
 | `istuandui` / `team_members` | `entry_type` / 参赛人 | 团体 ≥ 2 人、证件不重复、学校必填、手机号格式 |
 | — | `entry_no` | `WEB-<赛事ID>-<10 位序号>`，序列 `fastapi_signup_entry` |
@@ -61,14 +62,15 @@
   原系统的 `updatesignup`、`withdraw` 未实现（uniapp 未调用）。症状：用户填错只能找后台处理（后台作品管理另开 change）。
 - **#02 🚧 P2 报名详情的省奖 / 国奖为空**
   `shengAward` / `guoAward` 恒为 null，`step` 不会到 3，奖项在评审与奖项切片补上。
-- **#03 🚧 P1 国赛作品提交入口未做**
-  SEPARATE 赛事的国赛作品只能经学校批量导入（下一切片）提交；国赛重新组队的「省赛一等奖」校验也随导入实现。
 - **#04 ⚠️ P3 2026 历史数据中同一证件可能重复参赛**
   导入回填参赛唯一键用 `INSERT IGNORE`，重复的只保留先写入的一条；不影响新届报名。
 
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-16**
+- **#03 ✅ P1 change `cqt-school-batch-import` 实现学校作品批量导入**：学校可下载模板、上传并确认 Excel/ZIP、查看任务与逐行结果；省赛/国赛奖项列在导入和模板中忽略，评价流程留待作品提交后单独处理。国赛作品入口与评价流程如需建设，另行立项。
 
 **2026-10-05**
 - **#05 ✅ P? change `cqt-signup` 建立本组表与本文件**

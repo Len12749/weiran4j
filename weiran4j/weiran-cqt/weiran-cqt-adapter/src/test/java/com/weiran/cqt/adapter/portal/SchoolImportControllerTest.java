@@ -1,0 +1,112 @@
+package com.weiran.cqt.adapter.portal;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.weiran.cqt.api.entry.SchoolImportService;
+import com.weiran.cqt.api.entry.SchoolImportTaskView;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import org.jspecify.annotations.Nullable;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+class SchoolImportControllerTest {
+
+    @AfterEach
+    void clearCurrentAccount() {
+        PortalAccount.clear();
+    }
+
+    @Test
+    @DisplayName("任务列表保持 uniapp 消费的双层 data 包装与字段")
+    void taskListMatchesUniappShape() {
+        final SchoolImportService service = mock(SchoolImportService.class);
+        final SchoolImportTaskView task = SchoolImportControllerTest.task("QUEUED");
+        when(service.tasks(77L, 2027L)).thenReturn(List.of(task));
+        PortalAccount.set(77L);
+
+        final PortalResult<Map<String, Object>> result =
+                new SchoolImportController(service).tasks(Map.of("competitionid", "2027"));
+
+        assertThat(result.code()).isEqualTo(PortalResult.SUCCESS_CODE);
+        final Map<String, Object> data = Objects.requireNonNull(result.data());
+        assertThat(data).containsKey("data");
+        final List<?> values = (List<?>) data.get("data");
+        assertThat(values)
+                .singleElement()
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.MAP)
+                .containsEntry("id", "task-1")
+                .containsEntry("competitionid", 2027L)
+                .containsEntry("status", 0)
+                .containsEntry("failed_count", 1);
+    }
+
+    @Test
+    @DisplayName("任务详情返回逐行结果数组")
+    void taskDetailIncludesResults() {
+        final SchoolImportService service = mock(SchoolImportService.class);
+        final List<Map<String, @Nullable Object>> rows =
+                List.of(Map.of("row_number", 3, "status", 2, "error_msg", "赛项无效"));
+        when(service.detail(77L, 2027L, "task-1")).thenReturn(SchoolImportControllerTest.task("PARTIAL", rows));
+        PortalAccount.set(77L);
+
+        final PortalResult<Map<String, @Nullable Object>> result =
+                new SchoolImportController(service).detail("2027", "task-1");
+
+        final Map<String, @Nullable Object> data = Objects.requireNonNull(result.data());
+        assertThat(data).containsEntry("id", "task-1");
+        assertThat(data.get("results")).isEqualTo(rows);
+        verify(service).detail(77L, 2027L, "task-1");
+    }
+
+    @Test
+    @DisplayName("确认导入忽略旧客户端 userid 并使用当前 portal 账号")
+    void confirmationIgnoresRequestUserId() {
+        final SchoolImportService service = mock(SchoolImportService.class);
+        when(service.confirm(77L, 2027L, "session-1", "session-1", "school", "作品.zip", "报名.xlsx"))
+                .thenReturn("task-1");
+        PortalAccount.set(77L);
+
+        final PortalResult<Map<String, Object>> result = new SchoolImportController(service)
+                .confirm(Map.of(
+                        "competitionid", "2027",
+                        "session_id", "session-1",
+                        "excel_id", "session-1",
+                        "type", "school",
+                        "zip_name", "作品.zip",
+                        "excel_name", "报名.xlsx",
+                        "userid", 999L));
+
+        final Map<String, Object> data = Objects.requireNonNull(result.data());
+        assertThat(data).containsEntry("task_id", "task-1").containsEntry("competitionid", 2027L);
+        assertThat(data).containsEntry("message", "已提交导入任务");
+        verify(service).confirm(77L, 2027L, "session-1", "session-1", "school", "作品.zip", "报名.xlsx");
+    }
+
+    private static SchoolImportTaskView task(final String status) {
+        return SchoolImportControllerTest.task(status, List.of());
+    }
+
+    private static SchoolImportTaskView task(final String status, final List<Map<String, @Nullable Object>> rows) {
+        return new SchoolImportTaskView(
+                "task-1",
+                2027L,
+                status,
+                "/files/works.zip",
+                "works.zip",
+                "/files/entry.xlsx",
+                "entry.xlsx",
+                3,
+                2,
+                1,
+                1,
+                LocalDateTime.of(2026, 10, 16, 12, 0),
+                rows);
+    }
+}

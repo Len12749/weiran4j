@@ -359,6 +359,30 @@ export interface ConfigSaveRequest {
     description?: string | null;
 }
 
+/* ---------- CQT 站点配置 ---------- */
+
+export interface SiteConfigAdminItem {
+    key: string;
+    label: string;
+    ident: number;
+    contents: string | null;
+}
+
+export interface SiteConfigAdminResponse {
+    items: SiteConfigAdminItem[];
+}
+
+export interface SiteConfigSaveRequest {
+    items: Array<Pick<SiteConfigAdminItem, 'key' | 'contents'>>;
+}
+
+export interface SiteConfigImageUpload {
+    url: string;
+    name: string;
+    path: string;
+    size: number;
+}
+
 /* ---------- 日志 ---------- */
 
 export interface LoginLogView {

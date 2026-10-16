@@ -35,4 +35,25 @@ public class MybatisSettingRepository implements SettingRepository {
         }
         return result;
     }
+
+    @Override
+    public void saveContents(final int ident, final @Nullable String contents) {
+        final List<CqtSettingDO> rows = this.settingMapper.selectList(Wrappers.lambdaQuery(CqtSettingDO.class)
+                .select(CqtSettingDO::getId)
+                .eq(CqtSettingDO::getIdent, ident)
+                .orderByDesc(CqtSettingDO::getId)
+                .last("LIMIT 1"));
+        if (rows.isEmpty()) {
+            final CqtSettingDO row = new CqtSettingDO();
+            row.setIdent(ident);
+            row.setContents(contents);
+            this.settingMapper.insert(row);
+            return;
+        }
+        this.settingMapper.update(
+                null,
+                Wrappers.lambdaUpdate(CqtSettingDO.class)
+                        .eq(CqtSettingDO::getId, rows.getFirst().getId())
+                        .set(CqtSettingDO::getContents, contents));
+    }
 }

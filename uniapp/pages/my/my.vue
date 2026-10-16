@@ -98,7 +98,7 @@
 								{{item.row_data[3]}}
 							</view>
 							<view style='width:15%;text-align:center;' class='textsl1'>
-								{{item.row_data[6]}}
+								{{item.row_data[7]}}
 							</view>
 							<view style='width:10%;text-align:center;' class='textsl1'>
 								{{item.row_data[1]}}
@@ -1829,13 +1829,13 @@
 						this.hideLoadingModal();
 						uni.showModal({
 							title: '提示',
-							content: res.data.message,
+							content: res.data.data?.message || res.data.message,
 							success: (modal) => {
 								if (modal.confirm) {
 									console.log('用户点击确定');
 									this.leftName = '参赛记录'
 									this.rightName = '导入记录'
-									this.goDrJl(null, res.data.competitionid)
+									this.goDrJl(null, res.data.data.competitionid)
 								} else if (modal.cancel) {
 									console.log('用户点击取消');
 								}

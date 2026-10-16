@@ -14,4 +14,7 @@ public interface SettingRepository {
      * @return 编号 → 内容；内容为 NULL 的行也在结果里（值为 null），没有行的编号不在结果里
      */
     Map<Integer, @Nullable String> findContentsByIdentRange(int from, int to);
+
+    /** 保存指定编号的原始内容；实现端更新该编号最大 id 行，仅在缺行时插入。 */
+    void saveContents(int ident, @Nullable String contents);
 }

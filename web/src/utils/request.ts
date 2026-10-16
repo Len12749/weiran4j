@@ -71,7 +71,8 @@ function fail(err: ApiError, silent: boolean | undefined): never {
 export async function request<T>(url: string, options: RequestOptions = {}): Promise<T> {
     const { method = 'GET', body, silent, signal } = options;
     const headers: Record<string, string> = { Accept: 'application/json' };
-    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+    if (body !== undefined && !isFormData) headers['Content-Type'] = 'application/json';
     // 请求发出时的会话；失效分支据此判断要不要清（登录页上本就没有会话）
     const session = getSession();
     if (method !== 'GET' && session) headers[CSRF_HEADER] = session;
@@ -82,7 +83,7 @@ export async function request<T>(url: string, options: RequestOptions = {}): Pro
             method,
             headers,
             credentials: 'same-origin',
-            ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+            ...(body === undefined ? {} : { body: isFormData ? body : JSON.stringify(body) }),
             ...(signal ? { signal } : {}),
         });
     } catch (e) {

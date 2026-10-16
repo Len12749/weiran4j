@@ -6,6 +6,9 @@ public enum AttachmentType {
     /** 本系统上传的 ZIP 压缩包。 */
     ZIP,
 
+    /** 本系统上传的单个作品附件文件。 */
+    FILE,
+
     /** 外部链接。 */
     LINK
 }

@@ -14,3 +14,17 @@ ON DUPLICATE KEY UPDATE
   `updated_at` = VALUES(`updated_at`),
   `deleted_at` = VALUES(`deleted_at`),
   `key` = VALUES(`key`);
+
+-- 首次导入时为 user_agreement 复制当前 ident=2 的最新值；已存在 ident=71 时不覆盖，
+-- 以免重复导入旧库时覆盖后台已经独立编辑的协议内容。
+INSERT INTO cqt_setting (`ident`, `name`, `contents`, `created_at`, `updated_at`, `deleted_at`, `key`)
+SELECT 71, source_row.`name`, source_row.`contents`, source_row.`created_at`, source_row.`updated_at`,
+       source_row.`deleted_at`, 'user_agreement'
+FROM (
+    SELECT `name`, `contents`, `created_at`, `updated_at`, `deleted_at`
+    FROM cqt_setting
+    WHERE `ident` = 2
+    ORDER BY `id` DESC
+    LIMIT 1
+) AS source_row
+WHERE NOT EXISTS (SELECT 1 FROM cqt_setting WHERE `ident` = 71);

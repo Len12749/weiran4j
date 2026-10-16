@@ -20,6 +20,8 @@ public class CqtEntryDO {
 
     private String entryNo;
 
+    private String importFingerprint;
+
     private Integer sourceChannelId;
 
     private String sourceDatabase;

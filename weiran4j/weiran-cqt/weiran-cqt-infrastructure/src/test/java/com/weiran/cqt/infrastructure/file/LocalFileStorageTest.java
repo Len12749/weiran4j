@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.weiran.cqt.domain.file.FileStorageException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,5 +54,22 @@ class LocalFileStorageTest {
                 .isTrue();
         assertThat(storage.isStoredUrl("/uploads-evil/a.zip")).isFalse();
         assertThat(storage.isStoredUrl("https://other.com/uploads/a.zip")).isFalse();
+    }
+
+    @Test
+    @DisplayName("只允许当前账号读取其 user_files 对象")
+    void opensOwnedObject() throws IOException {
+        final LocalFileStorage storage = new LocalFileStorage(this.root, "/uploads");
+        final Path file = this.root.resolve("cqt/user_files/42/202610/a.xlsx");
+        Files.createDirectories(file.getParent());
+        Files.writeString(file, "xlsx");
+
+        try (InputStream input = storage.openOwnedObject("/uploads/cqt/user_files/42/202610/a.xlsx", 42)) {
+            assertThat(new String(input.readAllBytes(), StandardCharsets.UTF_8)).isEqualTo("xlsx");
+        }
+        assertThatThrownBy(() -> storage.openOwnedObject("/uploads/cqt/user_files/42/202610/a.xlsx", 24))
+                .isInstanceOf(FileStorageException.class);
+        assertThatThrownBy(() -> storage.openOwnedObject("https://example.test/a.xlsx", 42))
+                .isInstanceOf(FileStorageException.class);
     }
 }

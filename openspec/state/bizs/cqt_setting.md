@@ -18,15 +18,15 @@
 | 项 | 值 |
 | --- | --- |
 | 表 | `cqt_setting`（原统一库 `cqtxj2026.sc_setting`，只改表名，列不变） |
-| 菜单 / 页面 | 无（后台管理页面未做） |
-| 后端模块 | `weiran-cqt`；`ProductController` → `SiteConfigApplicationService` → `MybatisSettingRepository` |
-| 接口 | `GET /api-web/product/getconfig`（前台、`@PortalPublic` 免登录） |
-| 权限码 | 无 |
-| 数据来源 | Flyway 只建表；数据由 `scripts/biz/import/cqt_setting.sql` 从 `cqtxj2026.sc_setting` 导入（按 `id` 覆盖，可重复执行） |
+| 菜单 / 页面 | 站点配置（`cqt/site-config`，独立后台表单） |
+| 后端模块 | `weiran-cqt`；前台 `ProductController`、后台 `SiteConfigAdminController` 共用站点配置仓储 |
+| 接口 | 前台 `GET /api-web/product/getconfig`；后台 `GET/PUT /api/cqt/site-config`、`POST /api/cqt/site-config/images` |
+| 权限码 | `cqt:site-config:list`、`cqt:site-config:update` |
+| 数据来源 | 原始数据由 `scripts/biz/import/cqt_setting.sql` 导入；Flyway 只追加 ident 71 的一次性拆分行及菜单权限种子 |
 
 ## 1. 列表
 
-无后台列表。前台一次取全部配置。
+无后台列表。前台一次取全部配置；后台提供独立站点配置表单，不使用通用参数 CRUD。
 
 ## 2. 字段与表单
 
@@ -43,14 +43,16 @@
 
 | 动作 | 接口 | 规则 |
 | --- | --- | --- |
-| 前台读取 | `GET /api-web/product/getconfig` | 读 `ident` 1–100；返回 22 个键：`guanyuwomen`/`user_agreement`→2、`yinsixieyi`→3、`about_us`→4、`dizhi`→7、`shouji`→8、`weixin`→9、`youxiang`→10、`gongsijieshao`→15、`hezuohuoban`→16、`dasaijieshao`→17、`mianzexieyi`→18、`shouhoufuwu`→19、`shangwuhezuo`→20、`gongzuoshijian`→21、`dasaizhangcheng`→22、`gongzhonghao`→23、`shouyeimage`→66、`certificate_visibility`→67、`sheng_certificate_visibility`→68、`teacher_org_certificate_competition_id`→69、`guo_certificate_visibility`→70。字符串去 HTML 标签与首尾空白；`contents` 为 NULL 或缺行 → `null`；`gongzhonghao` 为数组（有值单元素原值、否则空数组）。同一 `ident` 多行时取 `id` 最大的一行 |
+| 前台读取 | `GET /api-web/product/getconfig` | 读 `ident` 1–100；返回 22 个键：`guanyuwomen`→2、`user_agreement`→71、`yinsixieyi`→3、`about_us`→4、`dizhi`→7、`shouji`→8、`weixin`→9、`youxiang`→10、`gongsijieshao`→15、`hezuohuoban`→16、`dasaijieshao`→17、`mianzexieyi`→18、`shouhoufuwu`→19、`shangwuhezuo`→20、`gongzuoshijian`→21、`dasaizhangcheng`→22、`gongzhonghao`→23、`shouyeimage`→66、`certificate_visibility`→67、`sheng_certificate_visibility`→68、`teacher_org_certificate_competition_id`→69、`guo_certificate_visibility`→70。富文本键 `guanyuwomen`、`user_agreement`、`yinsixieyi`、`about_us`、`gongsijieshao`、`hezuohuoban`、`dasaijieshao`、`mianzexieyi`、`shouhoufuwu`、`shangwuhezuo`、`dasaizhangcheng` 返回原始 HTML；其它字符串去 HTML 标签与首尾空白；`contents` 为 NULL 或缺行 → `null`；`gongzhonghao` 为数组（有值单元素原值、否则空数组）。同一 `ident` 多行时取 `id` 最大的一行 |
+| 后台管理 | `GET/PUT /api/cqt/site-config`、`POST /api/cqt/site-config/images` | 页面按四类 Tab 编辑；富文本支持 HTML 编辑和图片上传。GET 返回固定 22 项及原始 `contents`；PUT 全量提交键与内容，图片上传只接受 jpg/jpeg/png/gif；均需 `cqt:site-config:update`（GET 需 `cqt:site-config:list`）；保存操作记日志，图片二进制不记入请求体 |
+| 初始拆分 | Flyway / `scripts/biz/import/cqt_setting.sql` | `user_agreement` 使用 ident 71；从 ident 2 最大 id 行复制初值。重复导入时若 ident 71 已有值则不覆盖，避免抹掉独立编辑 |
 
 uniapp 实际读取的键：`dasaijieshao`、`dasaizhangcheng`、`dizhi`、`gongzhonghao`、`guo_certificate_visibility`、
 `sheng_certificate_visibility`、`shouhoufuwu`、`shouji`、`shouyeimage`、`weixin`、`youxiang`、`user_agreement`（10 个页面调用）。
 
 ## 4. 用到的公共组件
 
-无（无后台页面）。
+Semi UI `Form`、`Form.TextArea`、`Tabs`、`PageContainer`、`Permission`；站点介绍与协议字段使用 Tiptap 富文本编辑器。
 
 ## 5. 说明与建议
 
@@ -69,6 +71,12 @@ uniapp 实际读取的键：`dasaijieshao`、`dasaizhangcheng`、`dizhi`、`gong
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-15**
+- **#04 ✅ P? change `cqt-site-config-admin` 将配置表单改为分类 Tab，增加 Tiptap 富文本和图片上传**
+  后台图片上传复用 CQT 文件存储并校验 jpg/jpeg/png/gif；介绍/协议类字段公开返回原始 HTML，供 uniapp 富文本组件呈现。
+- **#03 ✅ P? change `cqt-site-config-admin` 增加独立后台表单并拆分用户协议配置**
+  `guanyuwomen` 继续读取 ident 2，`user_agreement` 改读 ident 71；后台保存 raw contents，公开接口仍执行既有清洗。
 
 **2026-10-02**
 - **#02 ✅ P? change `cqt-web-foundation` 建立本表与本文件**

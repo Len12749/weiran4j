@@ -1,5 +1,6 @@
 package com.weiran.cqt.domain.entry;
 
+import com.weiran.cqt.domain.file.UploadedFiles;
 import com.weiran.framework.error.BizException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -51,6 +52,12 @@ public record Attachment(
             if (Attachment.HAN.matcher(url).find()) {
                 throw BizException.badRequest("链接附件不能包含汉字");
             }
+        } else if (type == AttachmentType.FILE) {
+            final String fileName = name.isEmpty() ? url : name;
+            if (!isStoredUrl.test(url) || UploadedFiles.extensionOf(fileName).isEmpty()) {
+                throw BizException.badRequest("作品附件必须是本系统中的有效文件");
+            }
+            return new Attachment(type, url, fileName);
         } else {
             if (!isStoredUrl.test(url)
                     || !Attachment.path(url).toLowerCase(Locale.ROOT).endsWith(".zip")) {
@@ -66,7 +73,9 @@ public record Attachment(
     private static AttachmentType type(final @Nullable String rawType) {
         final String value = rawType == null ? "" : rawType.strip().toUpperCase(Locale.ROOT);
         return switch (value) {
-            case "ZIP", "文件", "压缩包" -> AttachmentType.ZIP;
+            case "ZIP", "压缩包" -> AttachmentType.ZIP;
+            case "FILE" -> AttachmentType.FILE;
+            case "文件" -> AttachmentType.ZIP;
             case "LINK", "链接" -> AttachmentType.LINK;
             default -> throw BizException.badRequest("请选择附件类型：ZIP或链接");
         };

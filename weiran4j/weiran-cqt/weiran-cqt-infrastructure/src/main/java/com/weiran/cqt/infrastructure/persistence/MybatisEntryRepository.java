@@ -84,8 +84,23 @@ public class MybatisEntryRepository implements EntryRepository {
 
     @Override
     public long insertEntry(final NewEntry entry) {
+        return this.insertEntry(entry, null);
+    }
+
+    @Override
+    public long insertImportedEntry(final NewEntry entry, final String importFingerprint) {
+        return this.insertEntry(entry, importFingerprint);
+    }
+
+    @Override
+    public Optional<Long> findImportedEntry(final String importFingerprint) {
+        return Optional.ofNullable(this.entryMapper.findByImportFingerprint(importFingerprint));
+    }
+
+    private long insertEntry(final NewEntry entry, final @Nullable String importFingerprint) {
         final CqtEntryDO row = new CqtEntryDO();
         row.setEntryNo(entry.entryNo());
+        row.setImportFingerprint(importFingerprint);
         row.setSourceChannelId(entry.sourceChannelId());
         row.setSourceDatabase(MybatisEntryRepository.SOURCE_DATABASE);
         row.setSourceTable(MybatisEntryRepository.SOURCE_TABLE);
@@ -199,23 +214,14 @@ public class MybatisEntryRepository implements EntryRepository {
     @Override
     public List<MyEntryRow> findByAccount(final String sourceDatabase, final long legacyUserId) {
         return this.entryMapper.findByAccount(sourceDatabase, legacyUserId).stream()
-                .map(row -> new MyEntryRow(
-                        Objects.requireNonNullElse(row.getEntryId(), 0L),
-                        Objects.requireNonNullElse(row.getCompetitionId(), 0L),
-                        row.getCompetitionName(),
-                        row.getTitle(),
-                        Objects.requireNonNullElse(row.getStatus(), ""),
-                        row.getLegacyStatus(),
-                        row.getFirstCategoryLegacyId(),
-                        row.getSecondCategoryLegacyId(),
-                        row.getRegionLegacyId(),
-                        row.getAttachmentUrl(),
-                        row.getTeacherNames(),
-                        row.getCreatedAt(),
-                        Objects.requireNonNullElse(row.getSourceDatabase(), ""),
-                        "TEAM".equals(row.getEntryType()),
-                        row.getLeaderName(),
-                        row.getLeaderPhone()))
+                .map(MybatisEntryRepository::myEntry)
+                .toList();
+    }
+
+    @Override
+    public List<MyEntryRow> findBySchoolImport(final long accountId, final @Nullable Long competitionId) {
+        return this.entryMapper.findBySchoolImport(accountId, competitionId).stream()
+                .map(MybatisEntryRepository::myEntry)
                 .toList();
     }
 
@@ -271,5 +277,25 @@ public class MybatisEntryRepository implements EntryRepository {
                         row.getGroupName(),
                         Boolean.TRUE.equals(row.getLeader())))
                 .toList();
+    }
+
+    private static MyEntryRow myEntry(final com.weiran.cqt.infrastructure.persistence.row.MyEntryRowDO row) {
+        return new MyEntryRow(
+                Objects.requireNonNullElse(row.getEntryId(), 0L),
+                Objects.requireNonNullElse(row.getCompetitionId(), 0L),
+                row.getCompetitionName(),
+                row.getTitle(),
+                Objects.requireNonNullElse(row.getStatus(), ""),
+                row.getLegacyStatus(),
+                row.getFirstCategoryLegacyId(),
+                row.getSecondCategoryLegacyId(),
+                row.getRegionLegacyId(),
+                row.getAttachmentUrl(),
+                row.getTeacherNames(),
+                row.getCreatedAt(),
+                Objects.requireNonNullElse(row.getSourceDatabase(), ""),
+                "TEAM".equals(row.getEntryType()),
+                row.getLeaderName(),
+                row.getLeaderPhone());
     }
 }

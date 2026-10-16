@@ -75,6 +75,16 @@ public final class OssFileStorage implements FileStorage, DisposableBean {
     }
 
     @Override
+    public InputStream openOwnedObject(final String url, final long accountId) {
+        final String objectName = StoredObjectName.requireOwned(this.baseUrl, url, accountId);
+        try {
+            return this.writer.get(this.config.bucket(), objectName);
+        } catch (final RuntimeException ex) {
+            throw new FileStorageException("OSS 读取失败: " + ex.getClass().getSimpleName(), ex);
+        }
+    }
+
+    @Override
     public void destroy() {
         this.writer.close();
     }

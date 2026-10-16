@@ -64,6 +64,19 @@ describe('request', () => {
         expect(init?.body).toBe(JSON.stringify({ menuIds: [1, 2] }));
     });
 
+    it('multipart 写请求带 CSRF 且让浏览器生成 boundary Content-Type', async () => {
+        const session = signIn(7, 'abc');
+        respond({ code: 0, message: 'ok', data: { url: '/uploads/image.png' } });
+        const body = new FormData();
+        body.append('file', new File(['image'], 'image.png', { type: 'image/png' }));
+        await http.post('/api/cqt/site-config/images', body);
+        const [url, init] = vi.mocked(fetch).mock.calls[0]!;
+        expect(url).toBe('/api/cqt/site-config/images');
+        expect((init?.headers as Record<string, string>)['X-CSRF-Token']).toBe(session);
+        expect((init?.headers as Record<string, string>)['Content-Type']).toBeUndefined();
+        expect(init?.body).toBe(body);
+    });
+
     it.each(['POST', 'DELETE'] as const)('%s 同样带 X-CSRF-Token', async (method) => {
         const session = signIn();
         respond({ code: 0, message: 'ok', data: null });

@@ -62,6 +62,11 @@ class FileUploadApplicationServiceTest {
         public boolean isStoredUrl(final String url) {
             return url.startsWith("https://cdn.example.com/");
         }
+
+        @Override
+        public InputStream openOwnedObject(final String url, final long accountId) {
+            return new ByteArrayInputStream(FileUploadApplicationServiceTest.CONTENT);
+        }
     }
 
     private static FileUploadApplicationService service(final FileStorage... storages) {
