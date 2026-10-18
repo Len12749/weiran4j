@@ -16,7 +16,7 @@ updated_at: "2026-10-02"
 - 在 weiran4j 上游开 8 个「下游扩展点」(U1–U8)……目标:上游开好这些扩展点后,下游不需要修改任何框架文件,同步时就不会冲突。
 
 背景:下游 `/Users/duoli/Projects/qidian-zhongxi/mono4j` 以 git fork 跟随 weiran4j(weiran4j 作 upstream remote,
-以后 `git merge` 同步);业务只新增一个模块 `weiran-cqt`(包 `com.weiran.cqt`),给前台 uniapp 的接口前缀 `/api-web/**`。
+以后 `git merge` 同步);业务只新增一个模块 `weiran-demo`(包 `com.weiran.demo`),给前台 移动端 的接口前缀 `/external-api/**`。
 
 ## 澄清记录
 
@@ -28,7 +28,7 @@ updated_at: "2026-10-02"
 | 4 | U7 用 glob 合并还是一次性补足图标? | 用户确认:glob 合并 | 补足永远不完整,全量 lucide 约 600KB;glob 可摇树 |
 | 5 | U8 的 sourcePaths 通配 check.mjs 支不支持? | 实测:check.mjs 把路径原样交给 `git log` / `git status` 的 pathspec,`weiran4j/weiran-*` 与原四条结果一致 | 只改 `project.json`,不改 `check.mjs` |
 | 6 | 清单外的冲突点(components 登记、bizs 文件索引)本次处理吗? | 用户确认:一并处理 | components-registry 额外读可选的 `components.biz.md`;bizs 索引允许下游放可选的 `README.biz.md` |
-| 7 | uniapp H5 跨域需要框架支持吗? | 不需要,下游在 cqt 模块自写 `WebMvcConfigurer` | 不在本 change 范围 |
+| 7 | 移动端 H5 跨域需要框架支持吗? | 不需要,下游在 demo 模块自写 `WebMvcConfigurer` | 不在本 change 范围 |
 | 8 | state-waitlist 守卫需要为 `README.biz.md` 改吗? | 读代码:它扫 `state/bizs/*.md` 全部文件,新文件只是多一份没有条目的 md | 守卫不改,只在 `bizs/README.md` 说明 |
 
 ## 边界
@@ -51,11 +51,11 @@ updated_at: "2026-10-02"
 ### 明确不做
 
 - 不改 `AuthInterceptor` / `GlobalExceptionHandler` / `page-registry.ts`
-- 不为 `/api-web` 提供任何框架级认证、CORS、响应包络——包络由下游 Controller 自己返回
+- 不为 `/external-api` 提供任何框架级认证、CORS、响应包络——包络由下游 Controller 自己返回
 - 不改 `check.mjs` 本体
 - 不改 `state-waitlist.mjs`
 - 不改任何已合入的 Flyway 脚本,不新增 Flyway 脚本
-- 不新建 `weiran-cqt` 或任何示例业务模块(验证用的临时目录验完即删,不入库)
+- 不新建 `weiran-demo` 或任何示例业务模块(验证用的临时目录验完即删,不入库)
 - 不支持多份 `application-biz.yml`(classpath import 不支持通配)
 - 不处理下游往 `artifact.md` / `cross-biz.md` 追加条目时的冲突
 

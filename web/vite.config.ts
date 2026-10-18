@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
         );
     }
     // 只用于 dev server 代理目标，不会打进客户端产物
-    const apiTarget = env.VITE_API_PROXY_TARGET || 'http://localhost:3300';
+    const apiTarget = env.VITE_API_PROXY_TARGET || 'http://localhost:3310';
 
     // index.html 的 %VITE_APP_TITLE% 在变量缺失时会原样保留；production 没有 .env 文件时兜底默认标题。
     // Vite 解析用户配置之后才加载 env，并且会把带 VITE_ 前缀的 process.env 一并注入。

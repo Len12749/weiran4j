@@ -1,7 +1,7 @@
 # downstream-extension-points · 验收摘要
 
-**做了什么**:让以 git fork 跟随 weiran4j 的下游(首个是 mono4j 的 `weiran-cqt`)不改任何上游文件就能接入业务模块、配置、迁移、
-`/api-web` 自定包络、菜单图标、组件清单与 AI 协作规范。下游可用的全部入口见契约 `weiran4j/docs/01-架构与接口契约.md` §2.2,
+**做了什么**:让以 git fork 跟随 weiran4j 的下游(首个是 mono4j 的 `weiran-demo`)不改任何上游文件就能接入业务模块、配置、迁移、
+`/external-api` 自定包络、菜单图标、组件清单与 AI 协作规范。下游可用的全部入口见契约 `weiran4j/docs/01-架构与接口契约.md` §2.2,
 原则见决策 D-012。L7 证据、逐条核对与结论详见 `exec/verify.md`。
 
 **运行时 / 手工验证**(verify.md 只记了结论,这里记操作):

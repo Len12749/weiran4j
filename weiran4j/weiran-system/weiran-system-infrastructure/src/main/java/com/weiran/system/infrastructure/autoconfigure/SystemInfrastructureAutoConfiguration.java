@@ -6,14 +6,17 @@ import com.weiran.system.domain.auth.TokenIssuerReader;
 import com.weiran.system.domain.auth.TokenVerifier;
 import com.weiran.system.domain.identity.ExternalIdentityProviders;
 import com.weiran.system.domain.identity.SsoStateSigner;
+import com.weiran.system.domain.storage.FileStorage;
 import com.weiran.system.domain.user.PasswordHasher;
 import com.weiran.system.infrastructure.identity.AuthProvidersProperties;
 import com.weiran.system.infrastructure.identity.ConfiguredExternalIdentityProviders;
 import com.weiran.system.infrastructure.identity.HmacSsoStateSigner;
 import com.weiran.system.infrastructure.persistence.MybatisDepartmentRepository;
 import com.weiran.system.infrastructure.persistence.MybatisLoginLogRepository;
+import com.weiran.system.infrastructure.persistence.MybatisMediaRepository;
 import com.weiran.system.infrastructure.persistence.MybatisMenuRepository;
 import com.weiran.system.infrastructure.persistence.MybatisRoleRepository;
+import com.weiran.system.infrastructure.persistence.MybatisSiteConfigRepository;
 import com.weiran.system.infrastructure.persistence.MybatisUserIdentityRepository;
 import com.weiran.system.infrastructure.persistence.MybatisUserRepository;
 import com.weiran.system.infrastructure.security.AuthJwtProperties;
@@ -21,10 +24,15 @@ import com.weiran.system.infrastructure.security.BCryptPasswordHasher;
 import com.weiran.system.infrastructure.security.JwtIssuerReader;
 import com.weiran.system.infrastructure.security.JwtTokenCodec;
 import com.weiran.system.infrastructure.security.SystemSecurityProperties;
+import com.weiran.system.infrastructure.storage.DisabledFileStorage;
+import com.weiran.system.infrastructure.storage.LocalFileStorage;
+import com.weiran.system.infrastructure.storage.OssFileStorage;
+import com.weiran.system.infrastructure.storage.SystemStorageProperties;
 import java.time.Clock;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -37,16 +45,62 @@ import org.springframework.context.annotation.Import;
  */
 @AutoConfiguration
 @MapperScan("com.weiran.system.infrastructure.persistence.mapper")
-@EnableConfigurationProperties({SystemSecurityProperties.class, AuthJwtProperties.class, AuthProvidersProperties.class})
+@EnableConfigurationProperties({
+    SystemSecurityProperties.class,
+    AuthJwtProperties.class,
+    AuthProvidersProperties.class,
+    SystemStorageProperties.class
+})
 @Import({
     MybatisUserRepository.class,
     MybatisRoleRepository.class,
     MybatisMenuRepository.class,
     MybatisDepartmentRepository.class,
     MybatisLoginLogRepository.class,
-    MybatisUserIdentityRepository.class
+    MybatisUserIdentityRepository.class,
+    MybatisMediaRepository.class,
+    MybatisSiteConfigRepository.class
 })
 public class SystemInfrastructureAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(FileStorage.class)
+    @ConditionalOnProperty(
+            prefix = "weiran.system.storage",
+            name = "mode",
+            havingValue = "disabled",
+            matchIfMissing = true)
+    public FileStorage systemDisabledFileStorage() {
+        return new DisabledFileStorage();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(FileStorage.class)
+    @ConditionalOnProperty(prefix = "weiran.system.storage", name = "mode", havingValue = "local")
+    public LocalFileStorage systemLocalFileStorage(final SystemStorageProperties properties) {
+        return new LocalFileStorage(properties.localRoot(), properties.localUrlPrefix());
+    }
+
+    @Bean(destroyMethod = "close")
+    @ConditionalOnMissingBean(FileStorage.class)
+    @ConditionalOnProperty(prefix = "weiran.system.storage", name = "mode", havingValue = "oss")
+    public OssFileStorage systemOssFileStorage(final SystemStorageProperties properties) {
+        final SystemStorageProperties.Oss oss = properties.oss();
+        if (oss == null
+                || oss.endpoint() == null
+                || oss.bucket() == null
+                || oss.accessKeyId() == null
+                || oss.accessKeySecret() == null
+                || oss.publicBaseUrl() == null
+                || oss.endpoint().isBlank()
+                || oss.bucket().isBlank()
+                || oss.accessKeyId().isBlank()
+                || oss.accessKeySecret().isBlank()
+                || oss.publicBaseUrl().isBlank()) {
+            throw new IllegalStateException("OSS 存储配置不完整，请检查 WEIRAN_STORAGE_OSS_* 环境变量");
+        }
+        return new OssFileStorage(oss);
+    }
 
     /**
      * 本地 JWT：同一个 Bean 既是签发端口 {@link TokenCodec}，也是本地签发方的 {@link TokenVerifier}

@@ -359,28 +359,40 @@ export interface ConfigSaveRequest {
     description?: string | null;
 }
 
-/* ---------- CQT 站点配置 ---------- */
+/* ---------- 系统站点配置与媒体库 ---------- */
 
-export interface SiteConfigAdminItem {
+export interface SystemSiteConfigItem {
     key: string;
     label: string;
     ident: number;
     contents: string | null;
 }
 
-export interface SiteConfigAdminResponse {
-    items: SiteConfigAdminItem[];
+export interface SystemSiteConfigResponse {
+    items: SystemSiteConfigItem[];
 }
 
-export interface SiteConfigSaveRequest {
-    items: Array<Pick<SiteConfigAdminItem, 'key' | 'contents'>>;
+export interface SystemSiteConfigSaveRequest {
+    items: Array<Pick<SystemSiteConfigItem, 'key' | 'contents'>>;
 }
 
-export interface SiteConfigImageUpload {
+export interface SystemMediaImageUpload {
     url: string;
     name: string;
     path: string;
     size: number;
+}
+
+export interface SystemMediaImageView {
+    id: number;
+    originalName: string;
+    url: string;
+    size: number;
+    createdAt: string;
+}
+
+export interface SystemMediaImageQuery extends PageQuery {
+    keyword?: string;
 }
 
 /* ---------- 日志 ---------- */

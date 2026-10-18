@@ -28,8 +28,8 @@
 
 ```bash
 # ── 一条命令起前后端（仓库根，turbo 编排）──
-pnpm dev                          # = turbo run dev：后端 bootRun(3300) + 后台 vite(5373) + uniapp H5（端口由 Vite 输出）
-pnpm dev:server / pnpm dev:web / pnpm dev:uniapp  # 单独启动后端、后台前端或 uniapp H5
+pnpm dev                          # = turbo run dev：后端 bootRun(3310) + 后台 vite(5373)
+pnpm dev:server / pnpm dev:web    # 单独启动后端或后台前端
 # 后端的 dev 是 weiran4j/scripts/dev.mjs：自动找 JDK 21、缺本地配置时先提示，Ctrl-C 会一并停掉应用 JVM。
 # 给后端传环境变量（如 SERVER_PORT、WEIRAN_*）必须先在 turbo.json 的 passThroughEnv 里放行，否则被静默丢弃。
 
@@ -65,7 +65,7 @@ duoli-weiran4j/                  # git 仓库根 = pnpm 工作区根 = openspec 
 ├── AGENTS.md                    # 本文件：仓库级 AI 协作规范（2026-09-27 起唯一一份，CLAUDE.md 已删除，见 D-010）
 ├── .claude/                     # Claude Code 配置与 skill（见下「AI 工作流文件放在哪」）
 ├── .githooks/pre-commit         # 提交前跑 openspec check
-├── turbo.json                   # turbo 任务编排（pnpm dev 同时起后端、后台前端与 uniapp H5）
+├── turbo.json                   # turbo 任务编排（pnpm dev 同时起后端与后台前端）
 ├── openspec/                    # 规格治理流水线（L0–L10 闸门）
 ├── web/                         # 前端：Vite + React 19 + Semi UI + TanStack Query，路由由菜单驱动
 └── weiran4j/                    # 后端：Gradle 多模块（package.json 只为接入 turbo，名 @weiran/server）

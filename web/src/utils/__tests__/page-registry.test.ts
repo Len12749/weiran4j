@@ -12,7 +12,8 @@ const SEED_COMPONENTS = [
     'system/configs/ConfigsPage',
     'logs/LoginLogsPage',
     'logs/OperationLogsPage',
-    'cqt/site-config',
+    'system/site-config',
+    'system/media-library',
 ];
 
 describe('page-registry', () => {

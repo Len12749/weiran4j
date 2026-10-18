@@ -21,19 +21,33 @@ spring:
     # 校验提示语（如「不能为空」）按固定中文输出，不随客户端 Accept-Language 漂移。
     locale: zh_CN
     locale-resolver: fixed
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
 
   lifecycle:
     # 每个停机阶段最多等多久（进行中的请求、操作日志线程池）；容器编排的强杀时限要比它长（见 docs/02-部署.md）。
     timeout-per-shutdown-phase: ${WEIRAN_SHUTDOWN_TIMEOUT:30s}
 
 server:
-  port: ${WEIRAN_PORT:3300}
+  port: ${WEIRAN_PORT:3310}
   # Spring Boot 3.4 起默认就是 graceful；显式写出，不随框架默认值漂移。
   shutdown: graceful
 
 weiran:
   system:
     bcrypt-strength: 10
+    storage:
+      mode: ${WEIRAN_STORAGE_MODE:disabled}
+      local-root: ${WEIRAN_STORAGE_LOCAL_ROOT:uploads}
+      local-url-prefix: ${WEIRAN_STORAGE_LOCAL_URL_PREFIX:/system-uploads}
+      oss:
+        endpoint: ${WEIRAN_STORAGE_OSS_ENDPOINT:}
+        bucket: ${WEIRAN_STORAGE_OSS_BUCKET:}
+        access-key-id: ${WEIRAN_STORAGE_OSS_ACCESS_KEY_ID:}
+        access-key-secret: ${WEIRAN_STORAGE_OSS_ACCESS_KEY_SECRET:}
+        public-base-url: ${WEIRAN_STORAGE_OSS_PUBLIC_BASE_URL:}
   auth:
     jwt:
       # 生产环境必须由环境变量注入，至少 32 字节；缺失或过短时应用启动失败。仓库里不放真实密钥。

@@ -45,7 +45,10 @@ public enum CommonErrors implements ErrorCode {
     CONFLICT(40901, 409, "当前状态不允许该操作"),
 
     /** 服务器内部错误。 */
-    INTERNAL_ERROR(50000, 500, "服务器内部错误");
+    INTERNAL_ERROR(50000, 500, "服务器内部错误"),
+
+    /** 服务暂不可用（如外部存储未配置）。 */
+    SERVICE_UNAVAILABLE(50300, 503, "服务暂不可用");
 
     private final int code;
 

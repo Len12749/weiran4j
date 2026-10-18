@@ -10,8 +10,11 @@ import com.weiran.system.application.auth.LocalIdentityResolver;
 import com.weiran.system.application.auth.LocalRbacPermissionSource;
 import com.weiran.system.application.department.DepartmentApplicationService;
 import com.weiran.system.application.loginlog.LoginLogApplicationService;
+import com.weiran.system.application.media.MediaApplicationService;
+import com.weiran.system.application.media.MediaAssetDeletionService;
 import com.weiran.system.application.menu.MenuApplicationService;
 import com.weiran.system.application.role.RoleApplicationService;
+import com.weiran.system.application.siteconfig.SiteConfigApplicationService;
 import com.weiran.system.application.user.UserApplicationService;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Import;
@@ -36,6 +39,9 @@ import org.springframework.context.annotation.Import;
     RoleApplicationService.class,
     MenuApplicationService.class,
     DepartmentApplicationService.class,
-    LoginLogApplicationService.class
+    LoginLogApplicationService.class,
+    MediaApplicationService.class,
+    MediaAssetDeletionService.class,
+    SiteConfigApplicationService.class
 })
 public class SystemApplicationAutoConfiguration {}

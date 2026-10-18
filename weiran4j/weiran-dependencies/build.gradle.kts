@@ -41,6 +41,9 @@ dependencies {
         // OpenAPI 文档：2.8.x 对应 Spring Boot 3.5。
         api("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17")
 
+        // OSS 存储适配器由通用 system 文件存储提供。
+        api("com.aliyun.oss:aliyun-sdk-oss:3.18.5")
+
         // Forbidden APIs 的 @SuppressForbidden 注解。仅编译期可见，用于在无法回避的
         // 第三方 API 边界（JJWT 只接受 java.util.Date）做精确豁免，版本与 build-logic 里的插件一致。
         api("de.thetaphi:forbiddenapis:3.10")

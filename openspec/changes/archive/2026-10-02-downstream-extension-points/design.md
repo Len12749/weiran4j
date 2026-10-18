@@ -56,13 +56,13 @@ flowchart TB
     AG["AGENTS.md → AGENTS.biz.md"]
   end
   subgraph downstream["下游独占(上游永不创建)"]
-    CQT["weiran-cqt/ 五层"]
+    demo["weiran-demo/ 五层"]
     BIZYML["application-biz.yml"]
-    WEB["/api-web Controller + @SkipApiResponse"]
+    WEB["/external-api Controller + @SkipApiResponse"]
     BIZICO["web/src/biz/icons*.ts"]
     BIZMD["AGENTS.biz.md · components.biz.md · README.biz.md · business-modules.md 新行"]
   end
-  CQT -.被发现.-> S
+  demo -.被发现.-> S
   BIZYML -.被导入.-> YML
   WEB -.被跳过.-> ADV
   BIZICO -.被合并.-> ICO
@@ -92,7 +92,7 @@ flowchart TB
 |---|---|---|---|
 | — | `weiran-common/**` | 不改 | — |
 | `gradle.extra["weiran.businessModules"]: List<String>` | `settings.gradle.kts` | 新增(构建期契约,先冻结) | `weiran-dependencies`、`weiran-app` 构建脚本 |
-| `@SkipApiResponse` | `weiran-framework/.../web/` | 新增 | 下游 `/api-web` Controller |
+| `@SkipApiResponse` | `weiran-framework/.../web/` | 新增 | 下游 `/external-api` Controller |
 | `web/src/biz/icons*.ts` 导出形状 `export const icons: Record<string, LucideIcon>` | `web/src/utils/icons.tsx` | 新增(前端扩展契约) | 下游前端 |
 
 ## API Design(DS-2)
@@ -176,7 +176,7 @@ flowchart TB
 ## Rollout Plan
 
 1. 无数据库变更
-2. 合入 main;下游 `git merge upstream/main` 后再建 `weiran-cqt` 等目录
+2. 合入 main;下游 `git merge upstream/main` 后再建 `weiran-demo` 等目录
 3. 通知下游:旁路文件清单见契约「下游扩展入口」
 
 ## Rollback Plan

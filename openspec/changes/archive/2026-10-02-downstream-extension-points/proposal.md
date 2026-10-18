@@ -10,10 +10,10 @@ updated_at: "2026-10-02"
 
 ## Why
 
-- 背景:下游 mono4j 以 git fork 跟随 weiran4j(upstream remote + `git merge`),只新增业务模块 `weiran-cqt` 与前台接口 `/api-web/**`。
+- 背景:下游 mono4j 以 git fork 跟随 weiran4j(upstream remote + `git merge`),只新增业务模块 `weiran-demo` 与前台接口 `/external-api/**`。
 - 业务目标:下游**不改任何框架文件**就能接入业务模块、配置、迁移、前台包络、菜单图标、流水线登记,上游同步时零冲突。
 - 当前问题:业务模块清单在 settings / BOM / app 三处写死;登记表、图标白名单、组件清单都是上游文件;
-  `ApiResponseBodyAdvice` 对 `com.weiran.**` 一律包 `{code:0}`,下游 uniapp 需要 `{code:200}`;
+  `ApiResponseBodyAdvice` 对 `com.weiran.**` 一律包 `{code:0}`,下游 移动端 需要 `{code:200}`;
   Flyway 默认拒绝版本号早于已执行脚本的新脚本,上下游时间戳交错时应用起不来。
 - 需求来源:见 `interview.md`
 
@@ -45,11 +45,11 @@ updated_at: "2026-10-02"
 > 与 `interview.md` 的「明确不做」保持一致。
 
 - 不改 `AuthInterceptor` / `GlobalExceptionHandler` / `page-registry.ts`
-- 不为 `/api-web` 提供任何框架级认证、CORS、响应包络——包络由下游 Controller 自己返回
+- 不为 `/external-api` 提供任何框架级认证、CORS、响应包络——包络由下游 Controller 自己返回
 - 不改 `check.mjs` 本体
 - 不改 `state-waitlist.mjs`
 - 不改任何已合入的 Flyway 脚本,不新增 Flyway 脚本
-- 不新建 `weiran-cqt` 或任何示例业务模块(验证用的临时目录验完即删,不入库)
+- 不新建 `weiran-demo` 或任何示例业务模块(验证用的临时目录验完即删,不入库)
 - 不支持多份 `application-biz.yml`(classpath import 不支持通配)
 - 不处理下游往 `artifact.md` / `cross-biz.md` 追加条目时的冲突
 

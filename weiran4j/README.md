@@ -24,7 +24,7 @@ mysql -uroot -e "CREATE DATABASE weiran4j DEFAULT CHARACTER SET utf8mb4"
 cp config/application-local.yml.example config/application-local.yml   # 填库密码与 JWT 密钥（openssl rand -base64 48）
 
 # 3. 一条命令起前后端（仓库根目录，turbo 编排）
-cd .. && pnpm install && pnpm dev      # 后端 bootRun(3300) + 前端 vite(5373)，/api 代理到 3300
+cd .. && pnpm install && pnpm dev      # 后端 bootRun(3310) + 前端 vite(5373)，/api 代理到 3310
                                        # 只起后端：pnpm dev:server，或在 weiran4j/ 下 ./gradlew :weiran-app:bootRun
 ```
 

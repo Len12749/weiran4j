@@ -112,10 +112,10 @@ class WebLayerTest {
 
     record Payload(@NotBlank(message = "不能为空") String name) {}
 
-    /** 模拟下游给 uniapp 的接口：整个类自定包络。 */
+    /** 模拟使用自定义响应格式的外部 API。 */
     @SkipApiResponse
     @RestController
-    @RequestMapping("/api-web/skip")
+    @RequestMapping("/external-api/skip")
     static class SkippedController {
 
         @GetMapping("/object")
@@ -135,7 +135,7 @@ class WebLayerTest {
     @interface WebApi {}
 
     @RestController
-    @RequestMapping("/api-web/mixed")
+    @RequestMapping("/external-api/mixed")
     static class MixedController {
 
         @SkipApiResponse
@@ -401,7 +401,7 @@ class WebLayerTest {
     @DisplayName("类上标 @SkipApiResponse：对象原样输出，不包统一响应")
     void skipsWrappingForAnnotatedClass() throws Exception {
         this.mockMvc
-                .perform(get("/api-web/skip/object"))
+                .perform(get("/external-api/skip/object"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.msg").value("ok"))
@@ -412,7 +412,7 @@ class WebLayerTest {
     @DisplayName("@SkipApiResponse 下返回 String 原样输出，不被序列化成 JSON 字符串")
     void skipsWrappingForStringReturnValue() throws Exception {
         this.mockMvc
-                .perform(get("/api-web/skip/text"))
+                .perform(get("/external-api/skip/text"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("pong"));
     }
@@ -421,15 +421,15 @@ class WebLayerTest {
     @DisplayName("方法上标 @SkipApiResponse 或其组合注解只跳过该方法，同类其他方法照常包装")
     void skipsWrappingOnlyForAnnotatedMethod() throws Exception {
         this.mockMvc
-                .perform(get("/api-web/mixed/skipped"))
+                .perform(get("/external-api/mixed/skipped"))
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data").doesNotExist());
         this.mockMvc
-                .perform(get("/api-web/mixed/meta"))
+                .perform(get("/external-api/mixed/meta"))
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data").doesNotExist());
         this.mockMvc
-                .perform(get("/api-web/mixed/wrapped"))
+                .perform(get("/external-api/mixed/wrapped"))
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.code").value(200));
     }

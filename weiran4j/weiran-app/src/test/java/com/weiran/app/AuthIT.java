@@ -66,10 +66,10 @@ class AuthIT extends IntegrationTestSupport {
 
         IntegrationTestSupport.assertOk(response);
         final JsonNode roots = IntegrationTestSupport.data(response);
-        assertThat(AuthIT.ids(roots)).containsExactly(1L, 2L, 9L, 1000L);
+        assertThat(AuthIT.ids(roots)).containsExactly(1L, 2L, 9L);
         final JsonNode system = roots.get(1);
         assertThat(system.path("type").asText()).isEqualTo("directory");
-        assertThat(AuthIT.ids(system.path("children"))).containsExactly(3L, 4L, 5L, 6L, 7L, 8L);
+        assertThat(AuthIT.ids(system.path("children"))).containsExactly(3L, 4L, 5L, 6L, 7L, 8L, 12L, 13L);
         final JsonNode users = system.path("children").get(0);
         assertThat(users.path("component").asText()).isEqualTo("system/users/UsersPage");
         assertThat(users.path("permission").asText()).isEqualTo("system:user:list");
@@ -78,10 +78,10 @@ class AuthIT extends IntegrationTestSupport {
         assertThat(users.path("keepAlive").isBoolean()).isTrue();
         assertThat(users.path("isExternal").isBoolean()).isTrue();
         assertThat(users.path("status").asText()).isEqualTo("enabled");
-        final JsonNode siteConfig = roots.get(3);
+        final JsonNode siteConfig = system.path("children").get(6);
         assertThat(siteConfig.path("title").asText()).isEqualTo("站点配置");
-        assertThat(siteConfig.path("component").asText()).isEqualTo("cqt/site-config");
-        assertThat(siteConfig.path("permission").asText()).isEqualTo("cqt:site-config:list");
+        assertThat(siteConfig.path("component").asText()).isEqualTo("system/site-config");
+        assertThat(siteConfig.path("permission").asText()).isEqualTo("system:site-config:list");
     }
 
     @Test

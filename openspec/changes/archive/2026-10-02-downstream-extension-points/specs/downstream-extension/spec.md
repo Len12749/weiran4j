@@ -57,7 +57,7 @@ Flyway **MUST** 以 `out-of-order: true` 运行:版本号早于已执行最大�
 
 标注 `@SkipApiResponse`(`com.weiran.framework.web`,可标在类或方法上,支持作为元注解)的 Controller 方法,其返回值 **MUST** 原样写出,
 不被包成 `{code, message, data}`;返回 `String` 时 **MUST NOT** 被序列化为 JSON 字符串。未标注的方法行为不变。
-`@SkipApiResponse` **MUST NOT** 用于 `/api/**` 下的接口(那里受 `admin-foundation` FR-001 约束),只供 `/api/**` 之外的前缀(如下游 `/api-web/**`)使用。
+`@SkipApiResponse` **MUST NOT** 用于 `/api/**` 下的接口(那里受 `admin-foundation` FR-001 约束),只供 `/api/**` 之外的前缀(如下游 `/external-api/**`)使用。
 
 #### Scenario: 类级标注
 - **WHEN** Controller 类标注 `@SkipApiResponse`,方法返回一个对象 `{"code":200,"msg":"ok"}`

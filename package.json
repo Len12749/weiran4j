@@ -6,7 +6,6 @@
     "dev": "turbo run dev",
     "dev:server": "turbo run dev --filter=@weiran/server",
     "dev:web": "turbo run dev --filter=@weiran/web",
-    "dev:uniapp": "turbo run dev --filter=@weiran/uniapp",
     "build": "pnpm --filter @weiran/web build",
     "test": "pnpm --filter @weiran/web test",
     "lint": "pnpm --filter @weiran/web lint",

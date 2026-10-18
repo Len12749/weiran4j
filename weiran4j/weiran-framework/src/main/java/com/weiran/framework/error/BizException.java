@@ -55,4 +55,9 @@ public class BizException extends RuntimeException {
     public static BizException duplicate(final String message) {
         return new BizException(CommonErrors.DUPLICATE_KEY, message);
     }
+
+    /** 快捷方法：依赖服务暂不可用。 */
+    public static BizException serviceUnavailable(final String message) {
+        return new BizException(CommonErrors.SERVICE_UNAVAILABLE, message);
+    }
 }
