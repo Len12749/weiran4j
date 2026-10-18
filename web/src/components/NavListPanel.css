@@ -92,7 +92,6 @@
     margin: 0 0 4px;
     padding: 8px;
     border-radius: 6px;
-    cursor: pointer;
     user-select: none;
     transition: background 0.15s;
 }
@@ -115,6 +114,22 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+}
+
+button.nav-list-item__body {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+button.nav-list-item__body:focus-visible {
+    outline: 2px solid var(--semi-color-primary);
+    outline-offset: 4px;
+    border-radius: 2px;
 }
 
 .nav-list-item__row1 {

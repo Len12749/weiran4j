@@ -317,8 +317,9 @@ body[theme-mode='dark'] ::-webkit-scrollbar-thumb:hover {
     font-size: 13px;
 }
 
-/* 便捷搜索（仅在有高级筛选时包这一层）：平时不产生盒子；窄屏隐藏，改用高级筛选面板 */
-.search-toolbar__quick {
+/* 便捷搜索不产生盒子；有高级筛选时窄屏隐藏整组，改用高级筛选面板 */
+.search-toolbar__quick,
+.search-toolbar__controls {
     display: contents;
 }
 

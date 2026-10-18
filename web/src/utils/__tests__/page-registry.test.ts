@@ -14,6 +14,10 @@ const SEED_COMPONENTS = [
     'logs/OperationLogsPage',
     'system/site-config',
     'system/media-library',
+    'demo/DemoListPage',
+    'demo/DemoNavigationPage',
+    'demo/DemoFieldsPage',
+    'demo/DemoAccessPage',
 ];
 
 describe('page-registry', () => {

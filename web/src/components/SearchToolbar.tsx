@@ -30,8 +30,8 @@ interface SearchToolbarProps {
     /** 树形表格：在工具区最前出现「展开树状」开关（全部展开 ↔ 全部收起）；`expanded` 为当前是否全部展开 */
     treeExpand?: { expanded: boolean; onToggle: () => void };
     /**
-     * 高级筛选面板的字段（每项用 `SearchField` 包一层）。提供时：工具栏的查询按钮只留图标、不显示「重置」，
-     * 其右侧出现「高级筛选」开关（默认收起），面板底部是「搜索 / 重置」。
+     * 高级筛选面板的字段（每项用 `SearchField` 包一层）。提供时：工具栏的「搜索 / 重置」图标按钮
+     * 与筛选控件一起在窄屏隐藏，其右侧出现「高级筛选」开关（默认收起），面板底部是文字「搜索 / 重置」。
      */
     advanced?: ReactNode;
     /** 已生效的查询条件：非空时在工具栏下方显示为可删除的标签，并带「清空」（调用 onReset） */
@@ -52,7 +52,7 @@ export function SearchField({ label, children }: { label: string; children: Reac
 }
 
 /**
- * 列表页顶部：（主操作）+ 常用筛选 + 查询 /（高级筛选开关），右侧工具按钮；
+ * 列表页顶部：（主操作）+ 常用筛选 + 搜索 / 重置图标按钮 +（高级筛选开关），右侧工具按钮；
  * 下方依次是可选的高级筛选面板、已生效条件标签行。
  */
 export function SearchToolbar({
@@ -80,32 +80,20 @@ export function SearchToolbar({
             <div className="search-toolbar">
                 <Space wrap spacing={8}>
                     {leading}
-                    {hasAdvanced ? (
-                        // 有高级筛选时，便捷搜索（筛选控件 + 图标查询按钮）整体在窄屏隐藏，高级面板是替代入口；
-                        // display: contents 不影响平时的排版
-                        <span className="search-toolbar__quick">
-                            {children}
-                            {onSearch && (
-                                <Tooltip content="查询">
-                                    <Button type="primary" theme="solid" icon={<Search size={16} />} aria-label="查询" onClick={onSearch} />
-                                </Tooltip>
-                            )}
-                        </span>
-                    ) : (
-                        <>
-                            {children}
-                            {onSearch && (
-                                <Button type="primary" icon={<Search size={14} />} onClick={onSearch}>
-                                    查询
-                                </Button>
-                            )}
-                        </>
-                    )}
-                    {onReset && !hasAdvanced && (
-                        <Button type="tertiary" icon={<RotateCcw size={14} />} onClick={onReset}>
-                            重置
-                        </Button>
-                    )}
+                    {/* 有高级筛选时，便捷搜索整体在窄屏隐藏，改用面板里的操作按钮；display: contents 不影响宽屏排版 */}
+                    <span className={hasAdvanced ? 'search-toolbar__quick' : 'search-toolbar__controls'}>
+                        {children}
+                        {onSearch && (
+                            <Tooltip content="搜索">
+                                <Button type="primary" theme="solid" icon={<Search size={16} />} aria-label="搜索" onClick={onSearch} />
+                            </Tooltip>
+                        )}
+                        {onReset && (
+                            <Tooltip content="重置">
+                                <Button type="tertiary" icon={<RotateCcw size={16} />} aria-label="重置" onClick={onReset} />
+                            </Tooltip>
+                        )}
+                    </span>
                     {hasAdvanced && (
                         <Tooltip content={advancedOpen ? '收起高级筛选' : '高级筛选'}>
                             <Button

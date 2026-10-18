@@ -33,7 +33,7 @@
 | 后端模块 | `weiran-system`；`MenuController` → `MenuApplicationService` → `MybatisMenuRepository` |
 | 接口前缀 | `/api/menus`（管理）；`/api/auth/menus`（当前用户可见菜单树，`AuthController`） |
 | 权限码 | `system:menu:list` · `system:menu:create` · `system:menu:update` · `system:menu:delete` |
-| 种子 | 菜单 id 1–11 固定（首页、系统管理 6 项、日志审计 2 项），按钮 id 100–119；前端与测试按 ID 引用 |
+| 种子 | 菜单 id 1–18 固定（首页、系统管理 8 项、日志审计 2 项、组件演示目录与 4 个子页），按钮 id 100–125；前端与测试按 ID 引用 |
 
 ## 1. 列表
 
@@ -121,6 +121,9 @@
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-18**
+- 将「组件演示」提升为顶层目录（id 14，`/demo`），分成列表与筛选、导航列表、字段与标签、权限与入口 4 个子页（id 15–18）；不新增业务接口或权限码。通过后续 Flyway 迁移兼容已应用旧菜单的数据库。
 
 **2026-09-27**
 - **#05 ✅ P3 菜单列表按 `rules/advisory/list-view.md` 约定改造**

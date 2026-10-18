@@ -50,6 +50,18 @@ const menus: MenuNode[] = [
     },
 ];
 
+const demoMenu: MenuNode = {
+    ...menuBase,
+    id: 14,
+    title: '组件演示',
+    type: 'directory',
+    path: '/demo',
+    icon: 'Puzzle',
+    children: [
+        { ...menuBase, id: 15, parentId: 14, title: '列表与筛选', type: 'menu', path: '/demo/list', component: 'demo/DemoListPage' },
+    ],
+};
+
 describe('App 路由', () => {
     afterEach(() => vi.unstubAllGlobals());
 
@@ -79,6 +91,24 @@ describe('App 路由', () => {
         signIn();
         mockFetch({ 'GET /api/auth/me': me, 'GET /api/auth/menus': menus });
         renderWithProviders(<App />, { route: '/no/such/page' });
+        expect(await screen.findByText('404 页面不存在')).toBeInTheDocument();
+    });
+
+    it('旧组件演示地址只在有新菜单路由时跳转', async () => {
+        signIn();
+        mockFetch({
+            'GET /api/auth/me': me,
+            'GET /api/auth/menus': [...menus, demoMenu],
+            'GET /api/dicts/code/sys_common_status/items': [],
+        });
+        renderWithProviders(<App />, { route: '/system/components-demo' });
+        expect(await screen.findByText('使用本地示例数据，操作仅影响当前页面')).toBeInTheDocument();
+    });
+
+    it('没有新菜单路由时旧地址保持 404', async () => {
+        signIn();
+        mockFetch({ 'GET /api/auth/me': me, 'GET /api/auth/menus': menus });
+        renderWithProviders(<App />, { route: '/system/components-demo' });
         expect(await screen.findByText('404 页面不存在')).toBeInTheDocument();
     });
 

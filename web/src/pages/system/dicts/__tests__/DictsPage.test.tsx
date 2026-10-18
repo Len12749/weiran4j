@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mockFetch, page, renderWithProviders } from '@/test/helpers';
 import type { DictItemView, DictView } from '@/types/api';
@@ -67,6 +68,22 @@ describe('DictsPage 左侧字典列表（NavListPanel，同 mono4ts）', () => {
         expect(await screen.findByText('党员')).toBeInTheDocument();
         expect(listItem('政治面貌')).toHaveClass('nav-list-item--active');
         expect(listItem('职称级别')).not.toHaveClass('nav-list-item--active');
+    });
+
+    it('条目主体可用 Enter 和空格选择，操作区按钮不嵌套在选择按钮里', async () => {
+        setup();
+        await screen.findByText('political_status');
+        const user = userEvent.setup();
+        const second = within(listItem('政治面貌')).getByRole('button', { pressed: false });
+        expect(second.closest('li')).toHaveClass('nav-list-item');
+        expect(second.contains(screen.getByRole('button', { name: '政治面貌的操作' }))).toBe(false);
+        second.focus();
+        await user.keyboard('{Enter}');
+        expect(listItem('政治面貌')).toHaveClass('nav-list-item--active');
+        const first = within(listItem('职称级别')).getByRole('button', { pressed: false });
+        first.focus();
+        await user.keyboard(' ');
+        expect(listItem('职称级别')).toHaveClass('nav-list-item--active');
     });
 
     it('条目「…」菜单：编辑打开表单且不切换选中；内置字典不可删除', async () => {

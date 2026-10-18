@@ -76,9 +76,15 @@ describe('UsersPage', () => {
         await screen.findByText('alice');
 
         fireEvent.change(screen.getByPlaceholderText('用户名 / 昵称 / 手机'), { target: { value: 'ali' } });
-        fireEvent.click(screen.getByRole('button', { name: '查询' }));
+        const toolbar = document.querySelector('.search-toolbar') as HTMLElement;
+        expect(within(toolbar).getByRole('button', { name: '搜索' })).toHaveTextContent('');
+        expect(within(toolbar).getByRole('button', { name: '重置' })).toHaveTextContent('');
+        fireEvent.click(within(toolbar).getByRole('button', { name: '搜索' }));
 
         await waitFor(() => expect(calls.some((c) => c.path === '/api/users' && c.search.includes('keyword=ali'))).toBe(true));
+        fireEvent.click(within(toolbar).getByRole('button', { name: '重置' }));
+        expect(screen.getByPlaceholderText('用户名 / 昵称 / 手机')).toHaveValue('');
+        await waitFor(() => expect(screen.queryByRole('group', { name: '已选条件' })).toBeNull());
     });
 
     it('内置用户的删除按钮禁用；删除普通用户调用 DELETE', async () => {
@@ -172,7 +178,7 @@ describe('UsersPage', () => {
             // Semi Select 要点容器才展开；选项里带 aria-label="tick" 的勾选图标，可访问名称是「tick 禁用」，所以用正则
             fireEvent.click(within(document.querySelector('.search-toolbar') as HTMLElement).getByText('状态').closest('.semi-select') as HTMLElement);
             fireEvent.click(await screen.findByRole('option', { name: /禁用/ }));
-            fireEvent.click(screen.getByRole('button', { name: /查询/ }));
+            fireEvent.click(within(document.querySelector('.search-toolbar') as HTMLElement).getByRole('button', { name: '搜索' }));
             await waitFor(() => expect(conditionTexts()).toEqual(['关键字：ali', '状态：禁用']));
             await waitFor(() => expect(lastListSearch(calls)).toBe('?page=1&pageSize=20&keyword=ali&status=disabled'));
 
@@ -198,7 +204,7 @@ describe('UsersPage', () => {
             fireEvent.change(screen.getByPlaceholderText('用户名 / 昵称 / 手机'), { target: { value: 'ali' } });
             fireEvent.click(within(document.querySelector('.search-toolbar') as HTMLElement).getByText('状态').closest('.semi-select') as HTMLElement);
             fireEvent.click(await screen.findByRole('option', { name: /启用/ }));
-            fireEvent.click(screen.getByRole('button', { name: /查询/ }));
+            fireEvent.click(within(document.querySelector('.search-toolbar') as HTMLElement).getByRole('button', { name: '搜索' }));
             const group = await screen.findByRole('group', { name: '已选条件' });
             await waitFor(() => expect(screen.queryByText('admin')).toBeNull());
             fireEvent.click(within(group).getByRole('button', { name: '清空' }));

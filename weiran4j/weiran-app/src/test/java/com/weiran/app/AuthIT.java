@@ -66,7 +66,7 @@ class AuthIT extends IntegrationTestSupport {
 
         IntegrationTestSupport.assertOk(response);
         final JsonNode roots = IntegrationTestSupport.data(response);
-        assertThat(AuthIT.ids(roots)).containsExactly(1L, 2L, 9L);
+        assertThat(AuthIT.ids(roots)).containsExactly(1L, 2L, 9L, 14L);
         final JsonNode system = roots.get(1);
         assertThat(system.path("type").asText()).isEqualTo("directory");
         assertThat(AuthIT.ids(system.path("children"))).containsExactly(3L, 4L, 5L, 6L, 7L, 8L, 12L, 13L);
@@ -82,6 +82,20 @@ class AuthIT extends IntegrationTestSupport {
         assertThat(siteConfig.path("title").asText()).isEqualTo("站点配置");
         assertThat(siteConfig.path("component").asText()).isEqualTo("system/site-config");
         assertThat(siteConfig.path("permission").asText()).isEqualTo("system:site-config:list");
+        final JsonNode componentsDemo = roots.get(3);
+        assertThat(componentsDemo.path("title").asText()).isEqualTo("组件演示");
+        assertThat(componentsDemo.path("type").asText()).isEqualTo("directory");
+        assertThat(componentsDemo.path("path").asText()).isEqualTo("/demo");
+        assertThat(componentsDemo.path("component").isNull()).isTrue();
+        assertThat(AuthIT.ids(componentsDemo.path("children"))).containsExactly(15L, 16L, 17L, 18L);
+        assertThat(componentsDemo.path("children").get(0).path("component").asText())
+                .isEqualTo("demo/DemoListPage");
+        assertThat(componentsDemo.path("children").get(1).path("component").asText())
+                .isEqualTo("demo/DemoNavigationPage");
+        assertThat(componentsDemo.path("children").get(2).path("component").asText())
+                .isEqualTo("demo/DemoFieldsPage");
+        assertThat(componentsDemo.path("children").get(3).path("component").asText())
+                .isEqualTo("demo/DemoAccessPage");
     }
 
     @Test

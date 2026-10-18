@@ -63,6 +63,7 @@ function AuthedApp() {
     const menus = useMemo(() => menusQuery.data ?? [], [menusQuery.data]);
     const routes = useMemo(() => menusToRoutes(menus), [menus]);
     const hasDashboardRoute = routes.some((r) => r.path === HOME_PATH);
+    const hasDemoListRoute = routes.some((r) => r.path === '/demo/list' && r.resolved);
 
     if (meQuery.isPending || menusQuery.isPending) return fullPageLoading;
     if (meQuery.isError || menusQuery.isError) {
@@ -96,6 +97,7 @@ function AuthedApp() {
                     {routes.map((r) => (
                         <Route key={r.id} path={r.path} element={menuRouteElement(r)} />
                     ))}
+                    {hasDemoListRoute && <Route path="/system/components-demo" element={<Navigate to="/demo/list" replace />} />}
                     {/* 首页是欢迎页，不需要权限；角色没勾首页菜单时也要能落地 */}
                     {!hasDashboardRoute && <Route path={HOME_PATH} element={<DashboardPage />} />}
                     <Route path="/profile" element={<ProfilePage />} />
