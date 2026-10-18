@@ -2,7 +2,7 @@
 
 # 能力索引
 
-11 个能力 / 67 条需求 —— active 7 · partial 0 · superseded 4。
+14 个能力 / 73 条需求 —— active 10 · partial 0 · superseded 4。
 
 状态口径见 `openspec/config.yaml` 的 `rules.specs`:
 `active` 现行有效 · `partial` 主体有效但有已知缺口(缺口写在 Purpose 里) · `superseded` 已被取代,内容仅供追溯、**不再具有约束力**。
@@ -15,6 +15,9 @@
 | [downstream-extension](downstream-extension/spec.md) | 10 | active | 本能力长期负责「以 git fork 跟随 weiran4j 的下游项目,不修改任何上游文件即可扩展」的约定:业务模… |
 | [external-identity](external-identity/spec.md) | 10 | active | 本能力长期负责「用外部身份提供方的账号登录本系统」:按配置接入 CAS 与标准 OIDC 提供方,经可校验的协议流程… |
 | [observability](observability/spec.md) | 6 | active | 本能力长期负责「线上出问题时能拿到现场」:每个请求有一个可在前后端、访问日志、异常日志、异步任务之间串联的请求号 |
+| [system-file-storage](system-file-storage/spec.md) | 1 | active | 本能力长期负责 system 模块文件的安全存储与访问：根据部署配置选择禁用、本地开发或阿里云 OSS 存储，约束对… |
+| [system-media-library](system-media-library/spec.md) | 4 | active | 本能力长期负责后台图片资产的登记与维护：让内容编辑人员能够在一个位置批量上传、检索、复用和安全删除图片，并避免删除站… |
+| [system-site-config](system-site-config/spec.md) | 1 | active | 本能力长期负责后台通用站点内容的配置与维护：管理员可按类别编辑站点介绍、协议、联系方式和首页素材，通过富文本维护内容… |
 | [user-list-search](user-list-search/spec.md) | 7 | active | 本能力长期负责后台用户列表的检索口径:`GET /api/users` 接受哪些查询条件、每个条件如何匹配、多个条件… |
 | [admin-console-shell](admin-console-shell/spec.md) | 4 | superseded → `admin-foundation` | 本能力长期承担后台管理前端的整体外壳职责：统一的侧边菜单、顶部栏、嵌套布局路由，以及基于当前登录账号权限的菜单显隐控制 |
 | [rbac-account-management](rbac-account-management/spec.md) | 5 | superseded → `admin-foundation` | 本能力长期负责后台管理员对账号（`pam_account`）生命周期的管理：分页检索账号、创建新账号、编辑账号资料、… |
