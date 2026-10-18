@@ -23,7 +23,11 @@ interface SearchToolbarProps {
     /** 右侧工具按钮（列设置等，见 ColumnSettings）；约定顺序：展开树状 / 列设置 / 导出 / 刷新，按需出现 */
     tools?: ReactNode;
     onSearch?: () => void;
+    /** 只显示查询图标按钮（适合需要与用户管理保持一致的工具栏） */
+    searchIconOnly?: boolean;
     onReset?: () => void;
+    /** 只显示重置图标按钮 */
+    resetIconOnly?: boolean;
     /** 提供时在工具区最末出现「刷新」（重新拉取当前查询，不改条件） */
     onRefresh?: () => void;
     refreshing?: boolean;
@@ -61,7 +65,9 @@ export function SearchToolbar({
     actions,
     tools,
     onSearch,
+    searchIconOnly = false,
     onReset,
+    resetIconOnly = false,
     onRefresh,
     refreshing,
     treeExpand,
@@ -94,14 +100,29 @@ export function SearchToolbar({
                     ) : (
                         <>
                             {children}
-                            {onSearch && (
+                            {onSearch && searchIconOnly && (
+                                <Tooltip content="查询">
+                                    <Button type="primary" theme="solid" icon={<Search size={16} />} aria-label="查询" onClick={onSearch} />
+                                </Tooltip>
+                            )}
+                            {onSearch && !searchIconOnly && (
                                 <Button type="primary" icon={<Search size={14} />} onClick={onSearch}>
                                     查询
                                 </Button>
                             )}
                         </>
                     )}
-                    {onReset && !hasAdvanced && (
+                    {onReset && !hasAdvanced && resetIconOnly && (
+                        <Tooltip content="重置">
+                            <Button
+                                type="tertiary"
+                                icon={<RotateCcw size={14} />}
+                                aria-label="重置"
+                                onClick={onReset}
+                            />
+                        </Tooltip>
+                    )}
+                    {onReset && !hasAdvanced && !resetIconOnly && (
                         <Button type="tertiary" icon={<RotateCcw size={14} />} onClick={onReset}>
                             重置
                         </Button>

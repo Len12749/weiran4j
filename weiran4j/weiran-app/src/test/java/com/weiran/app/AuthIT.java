@@ -66,7 +66,10 @@ class AuthIT extends IntegrationTestSupport {
 
         IntegrationTestSupport.assertOk(response);
         final JsonNode roots = IntegrationTestSupport.data(response);
-        assertThat(AuthIT.ids(roots)).containsExactly(1L, 2L, 9L, 1000L);
+        assertThat(AuthIT.ids(roots))
+                .containsExactly(
+                        1L, 2L, 9L, 1000L, 1010L, 1015L, 1016L, 1020L, 1025L, 1026L, 1030L, 1035L, 1036L, 1040L, 1045L,
+                        1046L, 1055L);
         final JsonNode system = roots.get(1);
         assertThat(system.path("type").asText()).isEqualTo("directory");
         assertThat(AuthIT.ids(system.path("children"))).containsExactly(3L, 4L, 5L, 6L, 7L, 8L);
@@ -82,6 +85,19 @@ class AuthIT extends IntegrationTestSupport {
         assertThat(siteConfig.path("title").asText()).isEqualTo("站点配置");
         assertThat(siteConfig.path("component").asText()).isEqualTo("cqt/site-config");
         assertThat(siteConfig.path("permission").asText()).isEqualTo("cqt:site-config:list");
+        final JsonNode news = roots.get(4);
+        assertThat(news.path("title").asText()).isEqualTo("大赛动态");
+        assertThat(news.path("component").asText()).isEqualTo("cqt/news");
+        assertThat(news.path("permission").asText()).isEqualTo("cqt:news:list");
+        final JsonNode reviews = roots.get(16);
+        assertThat(reviews.path("title").asText()).isEqualTo("赛事评审");
+        assertThat(reviews.path("type").asText()).isEqualTo("directory");
+        assertThat(AuthIT.ids(reviews.path("children")))
+                .containsExactly(
+                        1130L, 1131L, 1132L, 1050L, 1060L, 1070L, 1080L, 1086L, 1090L, 1094L, 1100L, 1110L, 1120L,
+                        1126L);
+        assertThat(reviews.path("children").get(3).path("component").asText()).isEqualTo("cqt/review/EntryReviewsPage");
+        assertThat(AuthIT.ids(reviews.path("children").get(3).path("children"))).doesNotContain(1054L);
     }
 
     @Test

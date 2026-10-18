@@ -2,10 +2,11 @@ import { Avatar, BackTop, Breadcrumb, Button, Dropdown, Nav, SideSheet, Spin, To
 import type { NavItemPropsWithItems, OnSelectedData, SubNavProps } from '@douyinfe/semi-ui/lib/es/navigation';
 import { ChevronDown, Expand, Lock, LogOut, Menu as MenuIcon, PanelLeftClose, PanelLeftOpen, Settings, Shrink, UserRound } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { matchPath, useLocation, useNavigate } from 'react-router-dom';
 import { AppLogo } from '@/components/AppLogo';
 import { LockScreen } from '@/components/LockScreen';
 import { HOME_PATH, config } from '@/config';
+import { PageTabsContext } from '@/hooks/usePageTabs';
 import { useAuth } from '@/hooks/useAuth';
 import { lockScreen, unlockScreen, useIsLocked } from '@/hooks/useLockScreen';
 import { useIsMobile } from '@/hooks/useMediaQuery';
@@ -217,11 +218,11 @@ export function AdminLayout({ menus, routes }: AdminLayoutProps) {
         [navLayout, navItems],
     );
 
-    const route = useMemo(() => routes.find((r) => r.path === pathname), [routes, pathname]);
+    const route = useMemo(() => routes.find((r) => r.path === pathname) ?? routes.find((r) => matchPath({ path: r.path, end: true }, pathname)), [routes, pathname]);
     const title = route?.title ?? STATIC_TITLES[pathname] ?? null;
     const routeIcons = useMemo(() => new Map(routes.map((r) => [r.path, r.icon])), [routes]);
     const homeIcon = routeIcons.get(HOME_PATH) ?? null;
-    const pageIcon = routeIcons.get(pathname) ?? null;
+    const pageIcon = route?.icon ?? null;
 
     const { tabs, close, closeOthers, closeAll } = useTabs(pathname, title, pageIcon, {
         enabled: prefs.enableTabs,
@@ -654,14 +655,22 @@ export function AdminLayout({ menus, routes }: AdminLayoutProps) {
                                     </div>
                                 }
                             >
-                                <KeepAliveOutlet
-                                    enabled={prefs.enableTabs && prefs.enablePageCache}
-                                    keepAlivePaths={keepAlivePaths}
-                                    openPaths={openTabPaths}
-                                    pathname={pathname}
-                                    refreshVersion={refreshSeq}
-                                    {...(prefs.routeAnimation !== 'none' ? { animationClass: `route-anim--${prefs.routeAnimation}` } : {})}
-                                />
+                                <PageTabsContext.Provider
+                                    value={{ closeAndGo: (key, path, refresh = false) => {
+                                        close(key);
+                                        if (refresh) setRefreshSeq((prev) => ({ ...prev, [path]: (prev[path] ?? 0) + 1 }));
+                                        void navigate(path, { replace: true });
+                                    } }}
+                                >
+                                    <KeepAliveOutlet
+                                        enabled={prefs.enableTabs && prefs.enablePageCache}
+                                        keepAlivePaths={keepAlivePaths}
+                                        openPaths={openTabPaths}
+                                        pathname={pathname}
+                                        refreshVersion={refreshSeq}
+                                        {...(prefs.routeAnimation !== 'none' ? { animationClass: `route-anim--${prefs.routeAnimation}` } : {})}
+                                    />
+                                </PageTabsContext.Provider>
                             </Suspense>
                             {/* 不用 ref：BackTop 挂载时父级 <main> 的 ref 还没绑定，DOM 却已插入 */}
                             {prefs.showBackTop && (
