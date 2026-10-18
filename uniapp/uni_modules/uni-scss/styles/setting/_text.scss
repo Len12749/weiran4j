@@ -1,3 +1,4 @@
+@use "./variables" as variables;
 @mixin get-styles($k,$c) {
 	@if $k == size or $k == weight{
 		font-#{$k}:#{$c}
@@ -6,7 +7,7 @@
 	}
 }
 
-@each $key, $child in $uni-headings {
+@each $key, $child in variables.$uni-headings {
 	/* #ifndef APP-NVUE */
 	.uni-#{$key} {
 		@each $k, $c in $child {

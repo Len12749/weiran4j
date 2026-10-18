@@ -14,7 +14,7 @@
 
 <style lang="scss">
 	/*每个页面公共css */
-	@import "@/common.scss";
+	@use "@/common.scss";
 
 	view {
 		user-select: text;

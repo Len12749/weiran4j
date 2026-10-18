@@ -1,7 +1,8 @@
-@import './setting/_variables.scss';
-@import './setting/_border.scss';
-@import './setting/_color.scss';
-@import './setting/_space.scss';
-@import './setting/_radius.scss';
-@import './setting/_text.scss';
-@import './setting/_styles.scss';
+@forward './setting/variables';
+@forward './setting/border';
+@forward './setting/color';
+// The original import chain exposed text.get-styles after space.get-styles.
+@forward './setting/space' hide get-styles;
+@forward './setting/radius';
+@forward './setting/text';
+@forward './setting/styles';

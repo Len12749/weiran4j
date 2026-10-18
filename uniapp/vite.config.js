@@ -6,6 +6,18 @@ import uni from '@dcloudio/vite-plugin-uni'
 
 export default defineConfig({
 	plugins: [uni()],
+	css: {
+		preprocessorOptions: {
+			// 普通 H5 使用 Vite 5.4 的现代 Sass API；其他端和 uni_modules 编译链需另行迁移。
+			// DCloud 当前声明 Vite 5.2.8 peer，5.4 作为兼容例外需核验 H5 构建及 CSS 差异。
+			scss: {
+				api: 'modern',
+			},
+			sass: {
+				api: 'modern',
+			},
+		},
+	},
 	server: {
 		host: '0.0.0.0',
 		port: 5174,

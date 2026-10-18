@@ -1,3 +1,5 @@
+@use "sass:color";
+@use "./variables" as variables;
 /* #ifndef APP-NVUE */
 
 $-color-white:#fff;
@@ -5,10 +7,10 @@ $-color-black:#000;
 @mixin base-style($color) {
 	color: #fff;
 	background-color: $color;
-	border-color: mix($-color-black, $color, 8%);
+	border-color: color.mix($-color-black, $color, 8%);
 	&:not([hover-class]):active {
-		background: mix($-color-black, $color, 10%);
-		border-color: mix($-color-black, $color, 20%);
+		background: color.mix($-color-black, $color, 10%);
+		border-color: color.mix($-color-black, $color, 20%);
 		color: $-color-white;
 		outline: none;
 	}
@@ -26,21 +28,21 @@ $-color-black:#000;
 		&[loading],
 	  &:not([hover-class]):active {
 	    color: $-color-white;
-			border-color: mix(darken($color,10%), $-color-white);
-	    background-color: mix($color, $-color-white);
+			border-color: color.mix(color.adjust($color, $lightness: -10%), $-color-white);
+	    background-color: color.mix($color, $-color-white);
 	  }
 	}
 
 }
 @mixin base-plain-style($color) {
 	color:$color;
-	background-color: mix($-color-white, $color, 90%);
-	border-color: mix($-color-white, $color, 70%);
+	background-color: color.mix($-color-white, $color, 90%);
+	border-color: color.mix($-color-white, $color, 70%);
 	&:not([hover-class]):active {
-	  background: mix($-color-white, $color, 80%);
+	  background: color.mix($-color-white, $color, 80%);
 	  color: $color;
 	  outline: none;
-		border-color: mix($-color-white, $color, 50%);
+		border-color: color.mix($-color-white, $color, 50%);
 	}
 }
 @mixin is-plain($color){
@@ -55,9 +57,9 @@ $-color-black:#000;
 		&[disabled] {
 		  &,
 		  &:active {
-		    color: mix($-color-white, $color, 40%);
-		    background-color: mix($-color-white, $color, 90%);
-				border-color: mix($-color-white, $color, 80%);
+		    color: color.mix($-color-white, $color, 40%);
+		    background-color: color.mix($-color-white, $color, 90%);
+				border-color: color.mix($-color-white, $color, 80%);
 		  }
 		}
 	}
@@ -89,24 +91,24 @@ $-color-black:#000;
 
 
 		&[disabled]{
-			color: mix($-color-white, #999, 60%);
+			color: color.mix($-color-white, #999, 60%);
 		  &,
 			&[loading],
 		  &:active {
-				color: mix($-color-white, #999, 60%);
-		    background-color: mix($-color-white,$-color-black , 98%);
-				border-color: mix($-color-white,  #999, 85%);
+				color: color.mix($-color-white, #999, 60%);
+		    background-color: color.mix($-color-white,$-color-black , 98%);
+				border-color: color.mix($-color-white,  #999, 85%);
 		  }
 		}
 
 		&[plain] {
 			color: #999;
 			background: none;
-			border-color: $uni-border-1;
+			border-color: variables.$uni-border-1;
 			&:not([hover-class]):active {
 				background: none;
-			  color: mix($-color-white, $-color-black, 80%);
-				border-color: mix($-color-white, $-color-black, 90%);
+			  color: color.mix($-color-white, $-color-black, 80%);
+				border-color: color.mix($-color-white, $-color-black, 90%);
 			  outline: none;
 			}
 			&[disabled]{
@@ -114,15 +116,15 @@ $-color-black:#000;
 				&[loading],
 			  &:active {
 			    background: none;
-					color: mix($-color-white, #999, 60%);
-					border-color: mix($-color-white,  #999, 85%);
+					color: color.mix($-color-white, #999, 60%);
+					border-color: color.mix($-color-white,  #999, 85%);
 			  }
 			}
 		}
 	}
 
 	&:not([hover-class]):active {
-	  color: mix($-color-white, $-color-black, 50%);
+	  color: color.mix($-color-white, $-color-black, 50%);
 	}
 
 	&[size=mini] {
@@ -144,24 +146,24 @@ $-color-black:#000;
 		border-radius: 999px;
 	}
 	&[type=primary] {
-		@include is-color($uni-primary);
-		@include is-plain($uni-primary)
+		@include is-color(variables.$uni-primary);
+		@include is-plain(variables.$uni-primary)
 	}
 	&[type=success] {
-		@include is-color($uni-success);
-		@include is-plain($uni-success)
+		@include is-color(variables.$uni-success);
+		@include is-plain(variables.$uni-success)
 	}
 	&[type=error] {
-		@include is-color($uni-error);
-		@include is-plain($uni-error)
+		@include is-color(variables.$uni-error);
+		@include is-plain(variables.$uni-error)
 	}
 	&[type=warning] {
-		@include is-color($uni-warning);
-		@include is-plain($uni-warning)
+		@include is-color(variables.$uni-warning);
+		@include is-plain(variables.$uni-warning)
 	}
 	&[type=info] {
-		@include is-color($uni-info);
-		@include is-plain($uni-info)
+		@include is-color(variables.$uni-info);
+		@include is-plain(variables.$uni-info)
 	}
 }
 /* #endif */

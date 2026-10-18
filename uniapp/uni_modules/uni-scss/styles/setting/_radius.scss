@@ -1,7 +1,11 @@
+@use "sass:map";
+@use "./variables" as variables;
 @mixin radius($r,$d:null ,$important: false){
-  $radius-value:map-get($uni-radius, $r) if($important, !important, null);
-  // Key exists within the $uni-radius variable
-  @if (map-has-key($uni-radius, $r) and  $d){
+  $priority: null;
+  @if $important { $priority: !important; }
+  $radius-value:map.get(variables.$uni-radius, $r) $priority;
+  // Key exists within the variables.$uni-radius variable
+  @if (map.has-key(variables.$uni-radius, $r) and  $d){
 		@if $d == t {
 				border-top-left-radius:$radius-value;
 				border-top-right-radius:$radius-value;
@@ -28,7 +32,7 @@
   }
 }
 
-@each $key, $child in $uni-radius {
+@each $key, $child in variables.$uni-radius {
 	@if($key){
 		.uni-radius-#{"" + $key} {
 				@include radius($key)
@@ -41,7 +45,7 @@
 }
 
 @each $direction in t, r, b, l,tl, tr, br, bl {
-	@each $key, $child in $uni-radius {
+	@each $key, $child in variables.$uni-radius {
 		@if($key){
 			.uni-radius-#{"" + $direction}-#{"" + $key} {
 				@include radius($key,$direction,false)

@@ -1,9 +1,10 @@
+@use "./variables" as variables;
 
 @mixin fn($space,$direction,$size,$n) {
 	@if $n {
-		#{$space}-#{$direction}: #{$size*$uni-space-root}px
+		#{$space}-#{$direction}: #{$size*variables.$uni-space-root}px
 	} @else {
-		 #{$space}-#{$direction}: #{-$size*$uni-space-root}px
+		 #{$space}-#{$direction}: #{-$size*variables.$uni-space-root}px
 	}
 }
 @mixin get-styles($direction,$i,$space,$n){
@@ -29,9 +30,9 @@
 	} 
 	@if $direction == a {
 		@if $n {
-			#{$space}:#{$i*$uni-space-root}px;
+			#{$space}:#{$i*variables.$uni-space-root}px;
 		} @else {
-			#{$space}:#{-$i*$uni-space-root}px;
+			#{$space}:#{-$i*variables.$uni-space-root}px;
 		}
 	} 
 }
