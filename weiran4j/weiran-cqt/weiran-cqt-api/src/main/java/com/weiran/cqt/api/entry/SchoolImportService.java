@@ -35,6 +35,12 @@ public interface SchoolImportService {
     /** 当前学校指定赛事的任务列表。 */
     List<SchoolImportTaskView> tasks(long accountId, long competitionId);
 
+    /** 按当前学校和任务ID读取轻量摘要，不加载结果行。 */
+    SchoolImportTaskView summary(long accountId, String taskId);
+
+    /** 按当前学校和任务ID读取逐行结果，无需赛事参数。 */
+    SchoolImportTaskView detailById(long accountId, String taskId);
+
     /** 仅当前学校可读任务详情。 */
     SchoolImportTaskView detail(long accountId, long competitionId, String taskId);
 }

@@ -84,9 +84,74 @@ class SchoolImportControllerTest {
                         "userid", 999L));
 
         final Map<String, Object> data = Objects.requireNonNull(result.data());
-        assertThat(data).containsEntry("task_id", "task-1").containsEntry("competitionid", 2027L);
+        assertThat(data)
+                .containsEntry("task_id", "task-1")
+                .containsEntry("job_id", "task-1")
+                .containsEntry("competitionid", 2027L);
         assertThat(data).containsEntry("message", "已提交导入任务");
         verify(service).confirm(77L, 2027L, "session-1", "session-1", "school", "作品.zip", "报名.xlsx");
+    }
+
+    @Test
+    @DisplayName("进度与结果区分排队、部分成功和失败，待处理行不计失败")
+    void progressAndResultReflectTerminalStates() {
+        final SchoolImportService service = mock(SchoolImportService.class);
+        final SchoolImportController controller = new SchoolImportController(service);
+        PortalAccount.set(77L);
+        for (final String state : List.of("QUEUED", "PROCESSING", "PARTIAL", "FAILED", "COMPLETED")) {
+            final List<Map<String, @Nullable Object>> rows = List.of(
+                    Map.of("row_number", 3, "status", 0),
+                    Map.of("row_number", 4, "status", 1),
+                    Map.of("row_number", 5, "status", 2));
+            final SchoolImportTaskView task = SchoolImportControllerTest.task(state, rows);
+            when(service.summary(77L, "task-1")).thenReturn(task);
+            when(service.detailById(77L, "task-1")).thenReturn(task);
+            final Map<String, @Nullable Object> progress =
+                    Objects.requireNonNull(controller.progress("task-1").data());
+            final boolean terminal = List.of("PARTIAL", "FAILED", "COMPLETED").contains(state);
+            assertThat(progress)
+                    .containsEntry("state", state)
+                    .containsEntry("finished", terminal)
+                    .containsEntry("progress", terminal ? 100 : 66)
+                    .containsEntry("processed_rows", 2);
+            final Map<String, @Nullable Object> result =
+                    Objects.requireNonNull(controller.result("task-1").data());
+            assertThat((List<?>) result.get("success_rows")).hasSize(1);
+            assertThat((List<?>) result.get("failed_rows")).hasSize(1);
+            assertThat(result.get("completed_at")).isEqualTo(terminal ? task.updatedAt() : null);
+            if ("PARTIAL".equals(state)) {
+                assertThat(result).containsEntry("status", 2);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("非终态百分比不溢出且最多99，未知总数为0")
+    void progressBoundsRemainSafe() {
+        final SchoolImportService service = mock(SchoolImportService.class);
+        final SchoolImportController controller = new SchoolImportController(service);
+        PortalAccount.set(77L);
+        for (final int total : List.of(0, 1, Integer.MAX_VALUE)) {
+            final SchoolImportTaskView task = new SchoolImportTaskView(
+                    "task",
+                    0,
+                    "PROCESSING",
+                    null,
+                    null,
+                    null,
+                    null,
+                    total,
+                    Integer.MAX_VALUE,
+                    0,
+                    0,
+                    null,
+                    null,
+                    List.of(),
+                    null);
+            when(service.summary(77L, "task")).thenReturn(task);
+            assertThat(Objects.requireNonNull(controller.progress("task").data()))
+                    .containsEntry("progress", total == 0 ? 0 : 99);
+        }
     }
 
     private static SchoolImportTaskView task(final String status) {
@@ -107,6 +172,8 @@ class SchoolImportControllerTest {
                 1,
                 1,
                 LocalDateTime.of(2026, 10, 16, 12, 0),
-                rows);
+                LocalDateTime.of(2026, 10, 16, 12, 5),
+                rows,
+                null);
     }
 }

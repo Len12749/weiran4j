@@ -122,7 +122,7 @@ public class SchoolImportApplicationService implements SchoolImportService {
             value.put("legacy_status", row.legacyStatus());
             value.put("firstcatid", row.firstCategoryLegacyId());
             value.put("secondcatid", row.secondCategoryLegacyId());
-            value.put("regionsid", row.regionLegacyId());
+            value.put("regionsid", row.regionId());
             value.put("purl", row.attachmentUrl());
             value.put("teachername", row.teacherNames());
             value.put("created_at", row.createdAt());
@@ -166,7 +166,8 @@ public class SchoolImportApplicationService implements SchoolImportService {
                 now.plusHours(2),
                 0,
                 now,
-                now));
+                now,
+                null));
         return id;
     }
 
@@ -203,7 +204,8 @@ public class SchoolImportApplicationService implements SchoolImportService {
                     now.plusHours(2),
                     0,
                     now,
-                    now));
+                    now,
+                    null));
             return id;
         }
         if (this.taskRepository.findOwned(sessionId, accountId).isEmpty()
@@ -270,6 +272,26 @@ public class SchoolImportApplicationService implements SchoolImportService {
                 this.taskRepository.rows(taskId).stream().map(this::resultView).toList());
     }
 
+    @Override
+    public SchoolImportTaskView summary(final long accountId, final String taskId) {
+        return this.view(this.ownedTask(accountId, taskId), List.of());
+    }
+
+    @Override
+    public SchoolImportTaskView detailById(final long accountId, final String taskId) {
+        final SchoolImportTask task = this.ownedTask(accountId, taskId);
+        return this.view(
+                task,
+                this.taskRepository.rows(task.id()).stream()
+                        .map(this::resultView)
+                        .toList());
+    }
+
+    private SchoolImportTask ownedTask(final long accountId, final String taskId) {
+        this.requireSchool(accountId);
+        return this.taskRepository.findOwned(taskId, accountId).orElseThrow(() -> BizException.notFound("导入记录不存在"));
+    }
+
     /** 领取并处理一个可恢复任务；由定时 worker 调用。 */
     public boolean processNext() {
         final LocalDateTime now = LocalDateTime.now(this.clock);
@@ -309,6 +331,10 @@ public class SchoolImportApplicationService implements SchoolImportService {
             parsedRows = this.spreadsheetParser.parse(input);
         } catch (final IOException | IllegalArgumentException ex) {
             this.recordTaskFailure(task, "报名Excel文件无法解析，请使用下载的模板检查文件格式");
+            return;
+        }
+        if (parsedRows.isEmpty()) {
+            this.recordTaskFailure(task, "报名表没有可导入的作品行");
             return;
         }
         final List<SchoolImportGroup> groups = SchoolImportGroups.assemble(parsedRows);
@@ -385,6 +411,8 @@ public class SchoolImportApplicationService implements SchoolImportService {
             if (firstResult == null || !"PENDING".equals(firstResult.status())) {
                 continue;
             }
+            final long entryId;
+            final String fingerprint = SchoolImportApplicationService.fingerprint(task, group);
             try {
                 final SchoolImportRow first = group.rows().getFirst();
                 final String attachmentError = attachmentErrors.get(group.firstSourceRow());
@@ -398,31 +426,37 @@ public class SchoolImportApplicationService implements SchoolImportService {
                 if (first.attachmentMode().contains("文件") && attachment == null) {
                     throw BizException.badRequest("ZIP 中未找到作品附件文件");
                 }
-                final String fingerprint = SchoolImportApplicationService.fingerprint(task, group);
-                final long entryId = this.entryWriter.create(
+                entryId = this.entryWriter.create(
                         task.accountId(),
                         task.competitionId(),
                         group,
                         attachment == null ? first.attachmentValue() : attachment.url(),
                         attachment == null ? null : attachment.name(),
                         fingerprint);
-                this.taskRepository.markSuccess(
-                        task.id(),
-                        group.firstSourceRow(),
-                        group.lastSourceRow(),
-                        fingerprint,
-                        entryId,
-                        LocalDateTime.now(this.clock));
-            } catch (final RuntimeException ex) {
+            } catch (final BizException ex) {
+                if (ex.getErrorCode().httpStatus() >= 500) {
+                    throw ex;
+                }
                 this.taskRepository.markFailure(
                         task.id(),
                         group.firstSourceRow(),
                         group.lastSourceRow(),
                         SchoolImportApplicationService.safeMessage(ex),
                         LocalDateTime.now(this.clock));
+                continue;
             }
+            this.taskRepository.markSuccess(
+                    task.id(),
+                    group.firstSourceRow(),
+                    group.lastSourceRow(),
+                    fingerprint,
+                    entryId,
+                    LocalDateTime.now(this.clock));
         }
         final List<SchoolImportRowResult> outcomes = this.taskRepository.rows(task.id());
+        if (outcomes.stream().anyMatch(row -> "PENDING".equals(row.status()))) {
+            throw new IllegalStateException("导入源行尚未全部处理");
+        }
         final long failures =
                 outcomes.stream().filter(row -> "FAILED".equals(row.status())).count();
         final long successes =
@@ -435,18 +469,16 @@ public class SchoolImportApplicationService implements SchoolImportService {
 
     private void recordTaskFailure(final SchoolImportTask task, final String message) {
         final LocalDateTime now = LocalDateTime.now(this.clock);
-        final Map<String, Object> display = new LinkedHashMap<>();
-        display.put("row_number", 0);
-        display.put("row_data", List.of());
-        display.put("status", 2);
-        display.put("error", message);
-        this.taskRepository.insertRows(
-                task.id(),
-                List.of(new SchoolImportRowResult(
-                        0, task.id(), 0, 0, null, null, "FAILED", this.json(display), message)),
-                1,
-                now);
-        this.taskRepository.finish(task.id(), SchoolImportTaskStatus.FAILED, now);
+        // Preserve known source rows; a task failure is not a fabricated Excel row.
+        for (final SchoolImportRowResult row : this.taskRepository.rows(task.id())) {
+            if ("PENDING".equals(row.status())) {
+                this.taskRepository.markFailure(task.id(), row.sourceRow(), row.sourceRow(), message, now);
+            }
+        }
+        final boolean hasSuccess =
+                this.taskRepository.rows(task.id()).stream().anyMatch(row -> "SUCCESS".equals(row.status()));
+        this.taskRepository.fail(
+                task.id(), hasSuccess ? SchoolImportTaskStatus.PARTIAL : SchoolImportTaskStatus.FAILED, message, now);
     }
 
     private SchoolImportTaskView view(final SchoolImportTask task, final List<Map<String, @Nullable Object>> results) {
@@ -463,13 +495,21 @@ public class SchoolImportApplicationService implements SchoolImportService {
                 task.successCount(),
                 task.failureCount(),
                 task.createdAt(),
-                results);
+                task.updatedAt(),
+                results,
+                task.errorMessage());
     }
 
     private Map<String, @Nullable Object> resultView(final SchoolImportRowResult result) {
         final Map<String, @Nullable Object> value = this.readDisplay(result.displayJson());
         value.put("row_number", result.sourceRow());
-        value.put("status", "SUCCESS".equals(result.status()) ? 1 : 2);
+        value.put(
+                "status",
+                switch (result.status()) {
+                    case "SUCCESS" -> 1;
+                    case "FAILED" -> 2;
+                    default -> 0;
+                });
         value.put("error", result.errorMessage());
         value.put("error_msg", result.errorMessage());
         value.put("product_id", result.entryId());

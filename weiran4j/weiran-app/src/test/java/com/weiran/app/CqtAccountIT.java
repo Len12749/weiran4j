@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
@@ -17,12 +16,6 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
 
     /** {@code htpasswd -bnBC 10 "" legacy123} 生成的 Laravel 风格哈希。 */
     private static final String LEGACY_HASH = "$2y$10$8i0rknbNSqH58osQwTv7iuUUZD0rXMS5moCMQX5FfWijAoZ9Wt07u";
-
-    @BeforeEach
-    void seedRegion() {
-        this.jdbc.update(
-                "INSERT IGNORE INTO cqt_regions (legacy_id, parent_legacy_id, name, code) VALUES (15, 0, '河北', '13')");
-    }
 
     @Test
     @DisplayName("sendSms：格式错误 400；开发模式回显 6 位验证码；60 秒内重发 429")
@@ -232,14 +225,14 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
         CqtAccountIT.assertPortalOk(this.post(
                 "/api-web/auth/updateuserinfo",
                 token,
-                Map.of("phone", phone, "school", "新学校", "rejectreason", "x", "status", 2, "type", 2, "cities", "15")));
+                Map.of("phone", phone, "school", "新学校", "rejectreason", "x", "status", 2, "type", 2, "cities", "3")));
         final Map<String, Object> row = this.jdbc.queryForMap(
-                "SELECT school_value, rejection_reason, CONCAT(audit_status, '/', user_type, '/', city_legacy_id) flags"
+                "SELECT school_value, rejection_reason, CONCAT(audit_status, '/', user_type, '/', region_id) flags"
                         + " FROM cqt_portal_accounts WHERE id = ?",
                 id);
         assertThat(row.get("school_value")).isEqualTo("新学校");
         assertThat(row.get("rejection_reason")).isEqualTo("原因");
-        assertThat(row.get("flags")).as("audit_status/user_type/city_legacy_id").isEqualTo("0/1/15");
+        assertThat(row.get("flags")).as("audit_status/user_type/region_id").isEqualTo("0/1/3");
 
         CqtAccountIT.assertPortalError(
                 this.post("/api-web/auth/updateuserinfo", token, Map.of("phone", "13800000000")), 400, "手机号不支持在此修改");

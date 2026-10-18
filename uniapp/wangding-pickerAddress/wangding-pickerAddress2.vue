@@ -7,92 +7,88 @@
 
 <script>
 	import AllAddress from './data.js'
-	let selectVal = ['', '']
-	let idVal = ['', '']
 
 	export default {
+		props: {
+			regions: {
+				type: Array,
+				default: () => [],
+			},
+		},
 		data() {
 			return {
-				value: [0, 0],
-				array: [],
-				index: 0
+				value: [0, 0, 0],
+				array: [[], [], []],
+				selectedNames: [],
+			selectedIds: [],
 			}
+		},
+		watch: {
+			regions() {
+				this.value = [0, 0, 0]
+				this.updateSourceDate().updateAddressDate()
+			},
 		},
 		created() {
 			this.initSelect()
 		},
 		methods: {
-			// 初始化地址选项
 			initSelect() {
-				this.updateSourceDate() // 更新源数据
-					.updateAddressDate() // 更新结果数据
-					.$forceUpdate() // 触发双向绑定
+				this.updateSourceDate().updateAddressDate()
 			},
-			// 地址控件改变控件
-			columnchange(d) {
-				this.updateSelectIndex(d.detail.column, d.detail.value) // 更新选择索引
-					.updateSourceDate() // 更新源数据
-					.updateAddressDate() // 更新结果数据
-					.$forceUpdate() // 触发双向绑定
+			getSourceData() {
+				if (this.regions.length) return this.regions
+				return AllAddress.map(province => ({
+					name: province.provinceName,
+					code: province.provinceCode,
+					children: province.city.map(city => ({
+						name: city.cityName,
+						code: city.cityCode,
+						children: (city.county || []).map(county => ({
+							name: county.countyName,
+							code: county.countyCode,
+						})),
+					})),
+				}))
 			},
-
-			/**
-			 * 更新源数据
-			 * */
+			getChildren(node) {
+				return node?.children || []
+			},
+			getCode(node) {
+				return node?.id ?? node?.code ?? ''
+			},
 			updateSourceDate() {
-				this.array = []
-				this.array[0] = AllAddress.map(obj => {
-					return {
-						name: obj.provinceName,
-						id: obj.provinceCode
-					}
-				})
-				this.array[1] = AllAddress[this.value[0]].city.map(obj => {
-					return {
-						name: obj.cityName,
-						id: obj.cityCode
-					}
-				})
+				const source = this.getSourceData()
+				const province = source[this.value[0]]
+				const cities = this.getChildren(province)
+				const city = cities[this.value[1]]
+				const counties = this.getChildren(city)
+				this.array = [source, cities, counties]
 				return this
 			},
-
-			/**
-			 * 更新索引
-			 * */
-			updateSelectIndex(column, value) {
-				let arr = JSON.parse(JSON.stringify(this.value))
-				arr[column] = value
-				if (column === 0) {
-					arr[1] = 0
-				}
-				this.value = arr
-				return this
+			columnchange(event) {
+				const column = event.detail.column
+				const nextValue = [...this.value]
+				nextValue[column] = event.detail.value
+				if (column === 0) nextValue[1] = 0
+				if (column <= 1) nextValue[2] = 0
+				this.value = nextValue
+				this.updateSourceDate().updateAddressDate()
 			},
-
-			/**
-			 * 更新结果数据 
-			 * */
 			updateAddressDate() {
-				selectVal[0] = this.array[0][this.value[0]].name
-				selectVal[1] = this.array[1][this.value[1]].name
-				idVal[0] = this.array[0][this.value[0]].id
-				idVal[1] = this.array[1][this.value[1]].id
+				const selected = this.array.map((column, index) => column[this.value[index]]).filter(Boolean)
+				this.selectedNames = selected.map(node => node.name)
+				this.selectedIds = selected.map(node => this.getCode(node))
 				return this
 			},
-
-			/**
-			 * 点击确定
-			 * */
-			bindPickerChange(e) {
+			bindPickerChange() {
 				this.$emit('change', {
 					index: this.value,
-					data: selectVal,
-					id: idVal
+					data: this.selectedNames,
+					id: this.selectedIds,
 				})
-				return this
-			}
-
-		}
+			},
+		},
 	}
 </script>
 

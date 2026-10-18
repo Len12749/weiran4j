@@ -39,7 +39,7 @@ public interface CqtSchoolImportTaskMapper extends BaseMapper<CqtSchoolImportTas
             @Param("now") LocalDateTime now);
 
     /** 将过期上传会话标记为失败，便于用户查看并重新提交。 */
-    @Update("UPDATE cqt_school_import_tasks SET status = 'FAILED', updated_at = #{now}"
+    @Update("UPDATE cqt_school_import_tasks SET status = 'FAILED', error_message = '上传会话已过期，请重新上传', updated_at = #{now}"
             + " WHERE status = 'UPLOADING' AND upload_expires_at <= #{now}")
     int expireUploading(@Param("now") LocalDateTime now);
 
@@ -79,6 +79,19 @@ public interface CqtSchoolImportTaskMapper extends BaseMapper<CqtSchoolImportTas
     /** 更新任务总组数。 */
     @Update("UPDATE cqt_school_import_tasks SET total_rows = #{totalRows}, updated_at = #{now} WHERE id = #{id}")
     int setTotalRows(@Param("id") String id, @Param("totalRows") int totalRows, @Param("now") LocalDateTime now);
+
+    /** 行结果提交时同步真实计数，进度查询无需加载行。 */
+    @Update("UPDATE cqt_school_import_tasks t SET updated_at = #{now},"
+            + " processed_rows = (SELECT COUNT(*) FROM cqt_school_import_rows r"
+            + " WHERE r.task_id = t.id AND r.status IN ('SUCCESS','FAILED')),"
+            + " success_count = (SELECT COUNT(*) FROM cqt_school_import_rows r WHERE r.task_id = t.id AND r.status = 'SUCCESS'),"
+            + " failure_count = (SELECT COUNT(*) FROM cqt_school_import_rows r WHERE r.task_id = t.id AND r.status = 'FAILED')"
+            + " WHERE id = #{id}")
+    int syncCounts(@Param("id") String id, @Param("now") LocalDateTime now);
+
+    /** 保存已脱敏的任务错误。 */
+    @Update("UPDATE cqt_school_import_tasks SET error_message = #{error} WHERE id = #{id}")
+    int setError(@Param("id") String id, @Param("error") String error);
 
     /** 完成任务并根据行状态同步进度。 */
     @Update("UPDATE cqt_school_import_tasks t SET status = #{status}, lease_until = NULL, updated_at = #{now},"

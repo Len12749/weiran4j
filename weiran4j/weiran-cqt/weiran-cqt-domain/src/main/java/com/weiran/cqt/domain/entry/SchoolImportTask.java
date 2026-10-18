@@ -23,4 +23,5 @@ public record SchoolImportTask(
         @Nullable LocalDateTime uploadExpiresAt,
         int attemptCount,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt) {}
+        LocalDateTime updatedAt,
+        @Nullable String errorMessage) {}

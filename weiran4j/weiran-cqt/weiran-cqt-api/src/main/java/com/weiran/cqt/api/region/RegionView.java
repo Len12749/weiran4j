@@ -3,10 +3,10 @@ package com.weiran.cqt.api.region;
 import org.jspecify.annotations.Nullable;
 
 /**
- * 前台赛区项（字段名即 uniapp 读取的键）。
+ * 前台地区项（字段名即 uniapp 读取的键）。
  *
- * @param id 赛区编号（{@code legacy_id}）
- * @param pid 上级赛区编号
+ * @param id 地区主键（{@code region.id}）
+ * @param pid 上级地区主键（0 为顶级）
  * @param name 名称
  * @param code 编码
  */

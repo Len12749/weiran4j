@@ -6,8 +6,6 @@ import com.weiran.cqt.api.competition.CompetitionView;
 import com.weiran.cqt.api.competition.GroupView;
 import com.weiran.cqt.api.entry.MyEntriesService;
 import com.weiran.cqt.api.entry.MyEntryView;
-import com.weiran.cqt.api.region.RegionService;
-import com.weiran.cqt.api.region.RegionView;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,29 +22,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/api-web/competcategory")
 public class CompetCategoryController {
 
-    private final RegionService regionService;
-
     private final CompetitionQueryService competitionQueryService;
 
     private final MyEntriesService myEntriesService;
 
     /** 构造 Controller。 */
     public CompetCategoryController(
-            final RegionService regionService,
-            final CompetitionQueryService competitionQueryService,
-            final MyEntriesService myEntriesService) {
-        this.regionService = regionService;
+            final CompetitionQueryService competitionQueryService, final MyEntriesService myEntriesService) {
         this.competitionQueryService = competitionQueryService;
         this.myEntriesService = myEntriesService;
-    }
-
-    /** 赛区列表（公开）。 */
-    @PortalPublic
-    @RequestMapping(
-            value = "/regions",
-            method = {RequestMethod.GET, RequestMethod.POST})
-    public PortalResult<List<RegionView>> regions() {
-        return PortalResult.ok(this.regionService.list());
     }
 
     /** 赛事列表（公开），可按 {@code status}、{@code name} 过滤。 */

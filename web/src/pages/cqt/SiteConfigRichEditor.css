@@ -19,7 +19,7 @@
 }
 
 .site-config-rich-editor__content {
-    min-height: 240px;
+    min-height: 480px;
     padding: 12px 16px;
     border: 1px solid var(--semi-color-border);
     border-radius: 0 0 6px 6px;

@@ -1,0 +1,72 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.6.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :build-logic:compileKotlin UP-TO-DATE
+> Task :build-logic:compileJava NO-SOURCE
+> Task :build-logic:pluginDescriptors UP-TO-DATE
+> Task :build-logic:processResources UP-TO-DATE
+> Task :build-logic:classes UP-TO-DATE
+> Task :build-logic:jar UP-TO-DATE
+> Task :weiran-app:spotlessJava UP-TO-DATE
+> Task :weiran-system-adapter:spotlessJava UP-TO-DATE
+> Task :weiran-system-application:spotlessJava UP-TO-DATE
+> Task :weiran-system-application:spotlessJavaApply UP-TO-DATE
+> Task :weiran-app:spotlessJavaApply UP-TO-DATE
+> Task :weiran-system-adapter:spotlessJavaApply UP-TO-DATE
+> Task :weiran-system-api:spotlessJava UP-TO-DATE
+> Task :weiran-app:spotlessApply UP-TO-DATE
+> Task :weiran-system-application:spotlessApply UP-TO-DATE
+> Task :weiran-system-adapter:spotlessApply UP-TO-DATE
+> Task :weiran-system-api:spotlessJavaApply UP-TO-DATE
+> Task :weiran-system-api:spotlessApply UP-TO-DATE
+> Task :weiran-cqt-api:spotlessJava UP-TO-DATE
+> Task :weiran-framework:spotlessJava UP-TO-DATE
+> Task :weiran-cqt-api:spotlessJavaApply UP-TO-DATE
+> Task :weiran-app:processResources UP-TO-DATE
+> Task :weiran-framework:spotlessJavaApply UP-TO-DATE
+> Task :weiran-cqt-api:spotlessApply UP-TO-DATE
+> Task :weiran-framework:spotlessApply UP-TO-DATE
+> Task :weiran-cqt-domain:spotlessJava UP-TO-DATE
+> Task :weiran-cqt-domain:spotlessJavaApply UP-TO-DATE
+> Task :weiran-cqt-domain:spotlessApply UP-TO-DATE
+> Task :weiran-system-domain:spotlessJava UP-TO-DATE
+> Task :weiran-system-infrastructure:spotlessJava UP-TO-DATE
+> Task :weiran-system-domain:spotlessJavaApply UP-TO-DATE
+> Task :weiran-system-infrastructure:spotlessJavaApply UP-TO-DATE
+> Task :weiran-system-domain:spotlessApply UP-TO-DATE
+> Task :weiran-system-infrastructure:spotlessApply UP-TO-DATE
+> Task :weiran-framework:compileJava UP-TO-DATE
+> Task :weiran-system-api:compileJava UP-TO-DATE
+> Task :weiran-system-domain:compileJava UP-TO-DATE
+> Task :weiran-cqt-domain:compileJava UP-TO-DATE
+> Task :weiran-cqt-api:compileJava UP-TO-DATE
+> Task :weiran-system-application:compileJava UP-TO-DATE
+> Task :weiran-system-infrastructure:compileJava UP-TO-DATE
+> Task :weiran-system-adapter:compileJava UP-TO-DATE
+> Task :weiran-cqt-adapter:spotlessJava
+> Task :weiran-cqt-adapter:spotlessJavaApply
+> Task :weiran-cqt-adapter:spotlessApply
+> Task :weiran-cqt-application:spotlessJava
+> Task :weiran-cqt-application:spotlessJavaApply
+> Task :weiran-cqt-application:spotlessApply
+> Task :weiran-cqt-infrastructure:spotlessJava
+> Task :weiran-cqt-infrastructure:spotlessJavaApply
+> Task :weiran-cqt-infrastructure:spotlessApply
+
+> Task :weiran-cqt-infrastructure:compileJava
+/Users/duoli/Projects/qidian-zhongxi/mono4j/weiran4j/weiran-cqt/weiran-cqt-infrastructure/src/main/java/com/weiran/cqt/infrastructure/persistence/MybatisEntryRepository.java:38: 警告: [NotJavadoc] This element has multiple Javadoc comments; only the last one will be used.
+    /** 前台报名的来源库。 */
+    ^
+    (see https://errorprone.info/bugpattern/NotJavadoc)
+1 个警告
+
+> Task :weiran-cqt-application:compileJava
+> Task :weiran-cqt-adapter:compileJava
+> Task :weiran-app:compileJava UP-TO-DATE
+> Task :weiran-app:classes UP-TO-DATE
+> Task :weiran-app:compileTestJava
+
+[Incubating] Problems report is available at: file:///Users/duoli/Projects/qidian-zhongxi/mono4j/weiran4j/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 12s
+42 actionable tasks: 10 executed, 32 up-to-date

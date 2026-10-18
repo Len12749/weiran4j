@@ -52,7 +52,7 @@ uniapp 实际读取的键：`dasaijieshao`、`dasaizhangcheng`、`dizhi`、`gong
 
 ## 4. 用到的公共组件
 
-Semi UI `Form`、`Form.TextArea`、`Tabs`、`PageContainer`、`Permission`；站点介绍与协议字段使用 Tiptap 富文本编辑器。
+Semi UI `Form`、`Form.TextArea`、`Tabs`、`PageContainer`、`Permission`；站点介绍与协议字段使用 Tiptap 富文本编辑器。公众号与首页图片使用 `SingleImageUpload`，回显旧地址、原图预览、移除清空；统一跟踪单图及富文本上传，上传与保存互斥。
 
 ## 5. 说明与建议
 
@@ -71,6 +71,10 @@ Semi UI `Form`、`Form.TextArea`、`Tabs`、`PageContainer`、`Permission`；站
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-18**
+- **#05 ✅ P2 配置图片统一单图上传（`cqt-competition-admin` 用户追加）**
+  gongzhonghao、shouyeimage不再手填URL；沿用图片上传接口与原contents字段，保留历史回显和空值，保存期间禁止变更图片。
 
 **2026-10-15**
 - **#04 ✅ P? change `cqt-site-config-admin` 将配置表单改为分类 Tab，增加 Tiptap 富文本和图片上传**

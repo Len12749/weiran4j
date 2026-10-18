@@ -9,6 +9,6 @@ public interface RegionRepository {
     /** 全部赛区，按上级编号、ID 升序。 */
     List<Region> findAll();
 
-    /** 按赛区编号取名称。 */
-    Optional<String> findNameByLegacyId(long legacyId);
+    /** 按地区 ID 取名称。 */
+    Optional<String> findNameById(long id);
 }

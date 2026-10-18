@@ -61,6 +61,9 @@ public interface EntryRepository {
     /** 写入作品级评审对象。 */
     void insertEntryTarget(long entryId);
 
+    /** 写入人员级评审对象。 */
+    void insertParticipantTarget(long entryId, long participantId);
+
     /** 某账号（来源库 + 旧用户编号）作为参赛人的全部未删除作品，按作品 ID 倒序。 */
     List<MyEntryRow> findByAccount(String sourceDatabase, long legacyUserId);
 

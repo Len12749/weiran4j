@@ -42,6 +42,7 @@ public class MybatisSchoolImportTaskRepository implements SchoolImportTaskReposi
         row.setExcelName(task.excelName());
         row.setImportType(task.importType());
         row.setStatus(task.status().name());
+        row.setErrorMessage(task.errorMessage());
         row.setTotalRows(task.totalRows());
         row.setProcessedRows(task.processedRows());
         row.setSuccessCount(task.successCount());
@@ -97,6 +98,7 @@ public class MybatisSchoolImportTaskRepository implements SchoolImportTaskReposi
     }
 
     @Override
+    @Transactional
     public void insertRows(
             final String taskId, final List<SchoolImportRowResult> rows, final int totalRows, final LocalDateTime now) {
         this.taskMapper.setTotalRows(taskId, totalRows, now);
@@ -118,6 +120,7 @@ public class MybatisSchoolImportTaskRepository implements SchoolImportTaskReposi
                 // 已持久化的任务在租约恢复时复用原有行结果。
             }
         }
+        this.taskMapper.syncCounts(taskId, now);
     }
 
     @Override
@@ -137,6 +140,7 @@ public class MybatisSchoolImportTaskRepository implements SchoolImportTaskReposi
     }
 
     @Override
+    @Transactional
     public void markSuccess(
             final String taskId,
             final int firstSourceRow,
@@ -145,9 +149,11 @@ public class MybatisSchoolImportTaskRepository implements SchoolImportTaskReposi
             final long entryId,
             final LocalDateTime now) {
         this.rowMapper.markSuccess(taskId, firstSourceRow, lastSourceRow, fingerprint, entryId);
+        this.taskMapper.syncCounts(taskId, now);
     }
 
     @Override
+    @Transactional
     public void markFailure(
             final String taskId,
             final int firstSourceRow,
@@ -155,11 +161,20 @@ public class MybatisSchoolImportTaskRepository implements SchoolImportTaskReposi
             final String error,
             final LocalDateTime now) {
         this.rowMapper.markFailure(taskId, firstSourceRow, lastSourceRow, error);
+        this.taskMapper.syncCounts(taskId, now);
     }
 
     @Override
     public void finish(final String taskId, final SchoolImportTaskStatus status, final LocalDateTime now) {
         this.taskMapper.finish(taskId, status.name(), now);
+    }
+
+    @Override
+    @Transactional
+    public void fail(
+            final String taskId, final SchoolImportTaskStatus status, final String error, final LocalDateTime now) {
+        this.taskMapper.finish(taskId, status.name(), now);
+        this.taskMapper.setError(taskId, error);
     }
 
     @Override
@@ -199,6 +214,7 @@ public class MybatisSchoolImportTaskRepository implements SchoolImportTaskReposi
                 row.getUploadExpiresAt(),
                 row.getAttemptCount(),
                 row.getCreatedAt(),
-                row.getUpdatedAt());
+                row.getUpdatedAt(),
+                row.getErrorMessage());
     }
 }

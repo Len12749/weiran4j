@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -92,7 +93,8 @@ public class SchoolImportController {
                 PortalParams.text(body.get("type")),
                 PortalParams.text(body.get("zip_name")),
                 PortalParams.text(body.get("excel_name")));
-        return PortalResult.ok(Map.of("task_id", taskId, "competitionid", competitionId, "message", "已提交导入任务"));
+        return PortalResult.ok(
+                Map.of("task_id", taskId, "job_id", taskId, "competitionid", competitionId, "message", "已提交导入任务"));
     }
 
     /** 任务列表沿用旧接口的 {@code data.data[]} 包装。 */
@@ -112,28 +114,86 @@ public class SchoolImportController {
             @RequestParam("Competitionid") final String competitionId, @RequestParam("id") final String taskId) {
         final SchoolImportTaskView view = this.service.detail(
                 PortalAccount.current().orElseThrow(), this.requiredLong("Competitionid", competitionId), taskId);
+        return PortalResult.ok(this.resultMap(view));
+    }
+
+    /** 当前学校任务的轻量进度。 */
+    @GetMapping("/api-web/dramacompetition/importProgress/{taskId}")
+    public PortalResult<Map<String, @Nullable Object>> progress(@PathVariable("taskId") final String taskId) {
+        return PortalResult.ok(
+                this.taskMap(this.service.summary(PortalAccount.current().orElseThrow(), taskId)));
+    }
+
+    /** 当前学校任务的真实逐行结果。 */
+    @GetMapping("/api-web/dramacompetition/importResult/{taskId}")
+    public PortalResult<Map<String, @Nullable Object>> result(@PathVariable("taskId") final String taskId) {
+        return PortalResult.ok(
+                this.resultMap(this.service.detailById(PortalAccount.current().orElseThrow(), taskId)));
+    }
+
+    private Map<String, @Nullable Object> resultMap(final SchoolImportTaskView view) {
         final Map<String, @Nullable Object> result = this.taskMap(view);
         result.put("results", view.results());
-        return PortalResult.ok(result);
+        result.put(
+                "success_rows",
+                view.results().stream()
+                        .filter(row -> Integer.valueOf(1).equals(row.get("status")))
+                        .toList());
+        result.put(
+                "failed_rows",
+                view.results().stream()
+                        .filter(row -> Integer.valueOf(2).equals(row.get("status")))
+                        .toList());
+        result.put("completed_at", SchoolImportController.finished(view) ? view.updatedAt() : null);
+        return result;
+    }
+
+    private static boolean finished(final SchoolImportTaskView view) {
+        return java.util.Set.of("COMPLETED", "PARTIAL", "FAILED").contains(view.status());
     }
 
     private Map<String, @Nullable Object> taskMap(final SchoolImportTaskView view) {
         final Map<String, @Nullable Object> result = new LinkedHashMap<>();
+        final boolean finished = SchoolImportController.finished(view);
+        final int progress = finished
+                ? 100
+                : view.totalRows() <= 0
+                        ? 0
+                        : (int) Math.min(99L, Math.max(0L, (long) view.processedRows()) * 100L / view.totalRows());
         result.put("id", view.id());
+        result.put("task_id", view.id());
+        result.put("job_id", view.id());
         result.put("competitionid", view.competitionId());
         result.put("oss_zip_url", view.zipUrl());
         result.put("zip_name", view.zipName());
         result.put("excel_url", view.excelUrl());
         result.put("excel_name", view.excelName());
         result.put("total_rows", view.totalRows());
+        result.put("processed_rows", view.processedRows());
         result.put("success_count", view.successCount());
         result.put("failed_count", view.failureCount());
+        result.put("state", view.status());
+        result.put("finished", finished);
+        result.put("progress", progress);
+        result.put(
+                "message",
+                view.errorMessage() != null && !view.errorMessage().isBlank()
+                        ? view.errorMessage()
+                        : switch (view.status()) {
+                            case "UPLOADING" -> "等待上传完成";
+                            case "QUEUED" -> "等待处理";
+                            case "PROCESSING" -> "正在导入";
+                            case "COMPLETED" -> "导入完成";
+                            case "PARTIAL" -> "导入完成，部分行失败";
+                            case "FAILED" -> "导入失败，请查看逐行错误";
+                            default -> "任务状态未知";
+                        });
         result.put(
                 "status",
                 switch (view.status()) {
                     case "UPLOADING", "QUEUED" -> 0;
                     case "PROCESSING" -> 1;
-                    case "COMPLETED" -> 2;
+                    case "COMPLETED", "PARTIAL" -> 2;
                     default -> 3;
                 });
         result.put("create_ad", view.createdAt());

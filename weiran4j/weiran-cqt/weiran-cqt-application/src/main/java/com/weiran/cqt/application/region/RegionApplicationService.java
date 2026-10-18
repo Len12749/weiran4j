@@ -18,7 +18,7 @@ public class RegionApplicationService implements RegionService {
     @Override
     public List<RegionView> list() {
         return this.regionRepository.findAll().stream()
-                .map(region -> new RegionView(region.legacyId(), region.parentLegacyId(), region.name(), region.code()))
+                .map(region -> new RegionView(region.id(), region.parentId(), region.name(), region.code()))
                 .toList();
     }
 }

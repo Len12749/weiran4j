@@ -13,7 +13,10 @@
 					</view>
 				</view>
 				<view class='lines'></view>
-				<view class="itemBox e2" v-for="(file, index) in fileList" :key="index"
+				<view v-if="loading">加载中…</view>
+                <view v-else-if="error" @click="fetchFilesByCategory(listType === list[0] ? 'SCRIPT_PAPER' : 'DRAMA_MATERIAL')">{{error}}，点击重试</view>
+                <view v-else-if="!fileList.length">暂无指导资料</view>
+                <view class="itemBox e2" v-for="(file, index) in fileList" :key="index"
 					@mouseenter="chooseClick = index" @mouseleave="chooseClick = -1">
 					<view class='text1 textsl1'>{{ file.title || file.name || '未命名文件' }}</view>
 					<view class='button zzz3' @click="downloadFile(file)">
@@ -31,6 +34,7 @@
 </template>
 
 <script>
+import { contentAll, downloadContent } from '@/util/content.js';
 	import topBox from '@/components/topBox.vue';
 	import bottomBox from '@/components/bottomBox.vue';
 	export default {
@@ -47,11 +51,11 @@
 
 				myInfo: {},
 				isLogin: true,
-				fileList: [] // 用于存储从接口获取的文件列表
+				fileList: [], loading: true, error: '', requestVersion: 0
 			}
 		},
 		onLoad() {
-			this.fetchFilesByCategory(5); // 默认加载 category=5
+			this.fetchFilesByCategory('SCRIPT_PAPER'); // 默认加载 category=5
 		},
 		onShow() {
 			this.getTabber(this.$isPC)
@@ -82,90 +86,20 @@
 			// 切换 tab 并重新请求数据
 			goListType(item, index) {
 				this.listType = item;
-				const category = item === '剧本写作稿纸下载' ? 5 : 6;
+				const category = item === '剧本写作稿纸下载' ? 'SCRIPT_PAPER' : 'DRAMA_MATERIAL';
 				this.fetchFilesByCategory(category);
 			},
-			fetchFilesByCategory(category) {
-				this.GET({
-					name: '指导',
-					url: `/api/product/index?category=${category}`,
-					data: {}
-				}).then((res) => {
-					this.fileList = res.data.data?.data || [];
-				}).catch(err => {
-					console.error('获取文件列表失败:', err);
-					this.fileList = []; // 请求失败时清空
-				});
-			},
+            async fetchFilesByCategory(category) {
+                const version = ++this.requestVersion;
+                this.loading = true; this.error = ''; this.fileList = [];
+                try {
+                    const rows = await contentAll(this, 'resources', { category });
+                    if (version === this.requestVersion) this.fileList = rows;
+                } catch (error) { if (version === this.requestVersion) this.error = error.message; }
+                finally { if (version === this.requestVersion) this.loading = false; }
+            },
+            downloadFile(file) { downloadContent(file.fileUrl, file.fileName); }
 
-
-			downloadFile(file) {
-				// 假设 file 对象中包含 downloadUrl 或 url 字段
-				const fileUrl = file.fujian || file.url || file.fileUrl;
-
-				if (!fileUrl) {
-					uni.showToast({
-						title: '文件地址无效',
-						icon: 'none'
-					});
-					return;
-				}
-
-				// #ifdef H5
-				const link = document.createElement('a');
-				link.href = fileUrl;
-				link.download = file.filename || 'download'; // 可选：指定下载文件名
-				document.body.appendChild(link);
-				link.click();
-				document.body.removeChild(link);
-				// #endif
-
-				// #ifndef H5
-				uni.showLoading({
-					title: '下载中...'
-				});
-
-				uni.downloadFile({
-					url: fileUrl,
-					success: (res) => {
-						if (res.statusCode === 200) {
-							const tempFilePath = res.tempFilePath;
-
-							// 尝试用系统打开（如 PDF、Word 等）
-							uni.openDocument({
-								filePath: tempFilePath,
-								success: () => {
-									console.log('文档已打开');
-								},
-								fail: () => {
-									// 如果无法打开，提示保存成功（实际已缓存）
-									uni.showToast({
-										title: '文件已下载，可在临时目录查看',
-										icon: 'success',
-										duration: 2000
-									});
-								}
-							});
-						} else {
-							uni.showToast({
-								title: '下载失败',
-								icon: 'none'
-							});
-						}
-					},
-					fail: (err) => {
-						console.error('下载失败:', err);
-						uni.showToast({
-							title: '网络错误，请重试',
-							icon: 'none'
-						});
-					},
-					complete: () => {
-						uni.hideLoading();
-					}
-				});
-				// #endif
-			}
 		}
 	}
 </script>

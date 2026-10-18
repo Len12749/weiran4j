@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * @param sex 性别
  * @param idCard 证件号（个人）
  * @param credentialType 证件类型（个人）
- * @param cityId 赛区（{@code cqt_regions.legacy_id}）
+ * @param cityId 行政区划 ID（{@code region.id}）
  * @param school 学校
  * @param schoolId 学校编号
  * @param contact 联系人（学校）

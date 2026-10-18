@@ -111,7 +111,7 @@ public class MybatisAccountRepository implements AccountRepository {
         row.setLegacySchoolId(account.getSchoolId());
         row.setIdCardValue(account.getIdCard());
         row.setCredentialType(account.getCredentialType().name());
-        row.setCityLegacyId(account.getCityId());
+        row.setRegionId(account.getCityId() == null ? null : account.getCityId().longValue());
         row.setSex(account.getSex());
         row.setSchoolValue(account.getSchool());
         row.setContactValue(account.getContact());
@@ -137,7 +137,7 @@ public class MybatisAccountRepository implements AccountRepository {
                 .schoolId(row.getLegacySchoolId())
                 .idCard(row.getIdCardValue())
                 .credentialType(CredentialType.ofStored(row.getCredentialType()))
-                .cityId(row.getCityLegacyId())
+                .cityId(row.getRegionId() == null ? null : Math.toIntExact(row.getRegionId()))
                 .sex(row.getSex())
                 .school(row.getSchoolValue())
                 .contact(row.getContactValue())

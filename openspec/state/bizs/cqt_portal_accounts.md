@@ -25,7 +25,7 @@
 | 后端模块 | `weiran-cqt`；`AuthController` → `AccountApplicationService` / `SmsApplicationService` → `MybatisAccountRepository` |
 | 接口 | `/api-web/auth/{sendSms,login,autologin,register,userinfo,updateuserinfo,resetPassword,getlinkinfo}` |
 | 权限码 | 无（前台令牌，`/api-web` 约定见 `AGENTS.biz.md`） |
-| 数据来源 | Flyway 只建表；`scripts/biz/import/cqt_portal_accounts.sql`（先导 `cqt_regions.sql`） |
+| 数据来源 | Flyway 建表；旧账号导入脚本不导入地区，地区需在新系统中重新选择 |
 
 ## 1. 列表
 
@@ -40,7 +40,7 @@
 | `name` | `name_value` | 注册时去空白后至少 2 个字符 |
 | `type` | `user_type` | 1 个人、2 学校；注册后不可改 |
 | `idcard` + `credential_type` | `id_card_value` + `credential_type` | 个人：「身份证号」按 18 位 / 出生日期 / 校验位校验，「其他」≤ 200 字符；去空白转大写；同类型不得与其他个人账号重复。学校：`id_card_value` 存学校编号 |
-| `cities` | `city_legacy_id` | 赛区编号（`cqt_regions.legacy_id`）；`userinfo.cityname` 由此解析 |
+| `cities` | `region_id` | 行政区划主键（`region.id`）；`userinfo.cityname` 由此解析 |
 | `status` | `audit_status` | 0 通过、1 审核中、2 驳回；个人注册即 0，学校注册为 1；驳回的学校改资料自动回 1；**本人不可改** |
 | `rejectreason` | `rejection_reason` | 本人不可改 |
 | `zhizhao` / `chengnuoshu` | `license_file` / `commitment_file` | 只存 URL 字符串；文件经 `POST /api-web/local-files/upload`（需登录，OSS 公共读）上传后由「学校认证」页通过 `updateuserinfo` 写入；学校注册时不再上传 |

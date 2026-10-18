@@ -19,40 +19,27 @@
 					</view>
 				</view>
 				<view class='e2 textXxs'>
-					统计信息: 总记录数:{{results.attachments_missing}}，已处理: {{results.processed_rows}}，完成时间:{{completed_at}}
+					{{importTaskLabel}}：{{importTask.message || ''}}。总记录数:{{importTask.total_rows || 0}}，已处理: {{importTask.processed_rows || 0}}，完成时间:{{completed_at}}
 				</view>
 				<view :class="$isPC?'e2 xinxiBox':'xinxiBox'">
 					<view class='e1'>
-						<view class='zzz3 itemNum' @click="console111">
-							<view class='textN1' style="color: #00aa00;">{{results.success}}</view>
+						<view class='zzz3 itemNum'>
+							<view class='textN1' style="color: #00aa00;">{{importTask.success_count || 0}}</view>
 							<view class='textN2'>成功导入</view>
 						</view>
-						<view class='itemL'></view>
-						<view class='zzz3 itemNum'>
-							<view class='textN1' style="color: #ff0000;">{{results.failed}}</view>
-							<view class='textN2'>导入失败</view>
-						</view>
-						<view class='itemL'></view>
-						<view class='zzz3 itemNum'>
-							<view class='textN1' style="color: #00aaff;">{{results.attachments_matched}}</view>
-							<view class='textN2'>附件匹配</view>
-						</view>
-						<view class='itemL'></view>
-						<view class='zzz3 itemNum'>
-							<view class='textN1' style="color: #aaaaaa;">{{results.attachments_missing}}</view>
-							<view class='textN2'>附件缺失</view>
-						</view>
-					</view>
+                        <view class='itemL'></view>
+                        <view class='zzz3 itemNum'><view class='textN1' style="color:#f00">{{importTask.failed_count || 0}}</view><view class='textN2'>导入失败</view></view>
+                    </view>
 					<view class='e1' v-if="$isPC">
 						<view class='pointer zzz3'
 							:style="{ backgroundColor: showSuccessList ? '#E62402' : '#F5F5F5', color: showSuccessList ? '#FFFFFF' : '#1F1F1F', padding: '8rpx 24rpx', borderRadius: '10rpx', marginRight: '20rpx' }"
 							@click="switchList(true)">
-							成功 ({{results.success}})
+							成功 ({{importTask.success_count || 0}})
 						</view>
 						<view class='pointer zzz3'
 							:style="{ backgroundColor: !showSuccessList ? '#E62402' : '#F5F5F5', color: !showSuccessList ? '#FFFFFF' : '#1F1F1F', padding: '8rpx 24rpx', borderRadius: '10rpx' }"
 							@click="switchList(false)">
-							失败 ({{results.failed}})
+							失败 ({{importTask.failed_count || 0}})
 						</view>
 					</view>
 					<view class='e2' v-else>
@@ -61,12 +48,12 @@
 							<view class='pointer zzz3'
 								:style="{ backgroundColor: showSuccessList ? '#E62402' : '#F5F5F5', color: showSuccessList ? '#FFFFFF' : '#1F1F1F', padding: '8rpx 24rpx', borderRadius: '10rpx', marginRight: '20rpx' }"
 								@click="switchList(true)">
-								成功 ({{results.success}})
+								成功 ({{importTask.success_count || 0}})
 							</view>
 							<view class='pointer zzz3'
 								:style="{ backgroundColor: !showSuccessList ? '#E62402' : '#F5F5F5', color: !showSuccessList ? '#FFFFFF' : '#1F1F1F', padding: '8rpx 24rpx', borderRadius: '10rpx' }"
 								@click="switchList(false)">
-								失败 ({{results.failed}})
+								失败 ({{importTask.failed_count || 0}})
 							</view>
 						</view>
 					</view>
@@ -82,7 +69,7 @@
 						<view style='width:15%;text-align:center;'>手机</view>
 						<view style='width:10%;text-align:center;'>作品类型</view>
 						<view style='width:35%;text-align:center;'>作品</view>
-						<view style='width:20%;text-align:center;' v-if="$isPC">{{showSuccessList?'导入状态':'失败原因'}}</view>
+						<view style='width:20%;text-align:center;'>{{showSuccessList?'导入状态':'失败原因'}}</view>
 					</view>
 
 					<!-- 滚动列表 -->
@@ -103,12 +90,12 @@
 							<view style='width:10%;text-align:center;' class='textsl1'>
 								{{item.row_data[1]}}
 							</view>
-							<view style='width:35%;text-align:center;'>{{item.row_data[14]}}</view>
-							<view style='width:20%;' class='zzz3' v-if="$isPC">
+							<view style='width:35%;text-align:center;'>{{item.row_data[11]}}</view>
+							<view style='width:20%;' class='zzz3'>
 								<view class='e1'>
 									<image class='TFimg'
 										:src="showSuccessList ? '/static/local_assets/ba7adb953c4b1810d2b1f7e6.png' : '/static/local_assets/95321ea1f821cdd7a0a6dca9.png'" />
-									<view>{{ showSuccessList ? '成功' : item.error||'失败' }}</view>
+									<view>{{ showSuccessList ? '成功' : item.error || item.error_msg || item.error_message || '失败' }}</view>
 								</view>
 							</view>
 						</view>
@@ -123,6 +110,13 @@
 		<!-- ========== 页面主体 ========== -->
 		<topBox pageName='个人中心' :myInfo='myInfo'></topBox>
 
+        <view v-if="job_id && myInfo.type==2" style="padding:20px;margin:16px;background:#fff;border:1px solid #ddd;border-radius:8px">
+            <view>学校导入：{{importTaskLabel}} · {{importTask.message || ''}}（{{importTask.progress || 0}}%）</view>
+            <progress :percent="importTask.progress || 0" activeColor="#0064FA" />
+            <view>总行数 {{importTask.total_rows || 0}} · 已处理 {{importTask.processed_rows || 0}} · 成功 {{importTask.success_count || 0}} · 失败 {{importTask.failed_count || 0}}</view>
+            <view v-if="importError" style="color:#d00">{{importError}} <text @click="resumeImport" style="text-decoration:underline">重试</text></view>
+            <view v-else-if="importTask.finished" @click="resumeImport" style="text-decoration:underline">查看导入结果</view>
+        </view>
 		<view class='pageBox zzz3'>
 			<view class='myBox'>
 				<!-- ========== 用户登录状态区域 ========== -->
@@ -265,13 +259,12 @@
 									</view>
 									<view class='e1'>
 										<view class='leftText'>*<span style="color: #1F1F1F">所在省市</span></view>
-										<picker @change="bindPickerChange2" :range="saiquList" range-key="name"
-											:value="saiquList.findIndex(item => item.name == stud_citieName)">
+						<pickerAddress :regions="regionTree" @change="bindPickerChange2">
 											<view class='long_box zzz2'>
 												<view class='input' v-if="stud_citieName">{{stud_citieName}}</view>
 												<view class='input' v-else style="color:#999999">请选择所在省市</view>
 											</view>
-										</picker>
+						</pickerAddress>
 									</view>
 									<view class='e1'>
 										<view class='leftText'>*<span style="color: #1F1F1F">所在学校</span></view>
@@ -313,13 +306,12 @@
 									</view>
 									<view class='e1'>
 										<view class='leftText'>*<span style="color: #1F1F1F">所在省市</span></view>
-										<picker @change="bindPickerChange2" :range="saiquList" range-key="name"
-											:value="saiquList.findIndex(item => item.name == stud_citieName)">
+						<pickerAddress :regions="regionTree" @change="bindPickerChange2">
 											<view class='long_box zzz2'>
 												<view class='input' v-if="stud_citieName">{{stud_citieName}}</view>
 												<view class='input' v-else style="color:#999999">请选择所在省市</view>
 											</view>
-										</picker>
+						</pickerAddress>
 									</view>
 									<view class='e1'>
 										<view class='leftText'>*<span style="color: #1F1F1F">电子邮箱</span></view>
@@ -729,7 +721,7 @@
 									</view>
 									<view class='e1' v-if="myInfo.type == 1">
 										<view class='leftText'>*<span style="color: #1F1F1F">赛区</span></view>
-										<picker @change="bind_saiQ" :range="saiQList" range-key="name">
+						<pickerAddress :regions="regionTree" @change="bind_saiQ">
 											<view class='long_box zzz2 pointer'>
 												<view class='e2 w100b'>
 													<view class='input' v-if="regionsname">{{ regionsname }}</view>
@@ -738,7 +730,7 @@
 														src='/static/local_assets/de02f8223a010b32f733b0e2.png' />
 												</view>
 											</view>
-										</picker>
+						</pickerAddress>
 									</view>
 									<view class='e1' v-if="myInfo.type == 1 && istuandui == 0">
 										<view class='leftText'>*<span style="color: #1F1F1F">年龄组别</span></view>
@@ -899,7 +891,7 @@
 										</view>
 										<view v-if='firstcatid==1'>
 											<view class='e1'>
-												<view class='leftText'>*<span style="color: #1F1F1F">作品ZIP文件上传</span>
+												<view class='leftText'><span style="color: #1F1F1F">作品 ZIP（纯链接可不上传）</span>
 												</view>
 												<view class='codeText pointer' v-if="!zip_id" @click="codeZIP">
 													点击上传
@@ -910,7 +902,7 @@
 											</view>
 											<view class='codeInfoBox' v-if="zip_id">
 												<view class='text1'>
-													导入成功（{{zip_name}}）
+													上传成功（{{zip_name}}）
 													<span class='text2'>100%</span>
 													<span class='text3 pointer' @click="yichuwenjian(1)">移除文件</span>
 												</view>
@@ -918,7 +910,7 @@
 										</view>
 										<view v-if="firstcatid!=''">
 											<view class='e1'>
-												<view class='leftText'>*<span style="color: #1F1F1F">作品Execl文件上传</span>
+												<view class='leftText'>*<span style="color: #1F1F1F">报名 Excel 文件上传</span>
 												</view>
 												<view class='codeText pointer' v-if="!execl_id" @click="codeExecl">
 													点击上传
@@ -933,7 +925,7 @@
 											</view>
 											<view class='codeInfoBox' v-if="execl_id">
 												<view class='text1'>
-													导入成功（{{execl_name}}）
+													上传成功（{{execl_name}}）
 													<span class='text2'>100%</span>
 													<span class='text3 pointer' @click="yichuwenjian(2)">移除文件</span>
 												</view>
@@ -1039,7 +1031,7 @@
 									<view style='width: 8%;text-align: center;' class='textsl1'>
 										<view v-if="item.status==0">待处理</view>
 										<view v-if="item.status==1">处理中</view>
-										<view v-if="item.status==2">成功</view>
+										<view v-if="item.status==2">{{item.state==='PARTIAL' ? '部分成功' : '完成'}}</view>
 										<view v-if="item.status==3">失败</view>
 									</view>
 									<view style='width: 20%;text-align: center;' class='textsl1'>
@@ -1286,8 +1278,10 @@
 </template>
 
 <script>
+import { schoolRequest, createImportPoller, importRows, importStateLabel, importSessionId } from '@/util/school-import.js';
 	import topBox from '@/components/topBox.vue';
 	import bottomBox from '@/components/bottomBox.vue';
+	import pickerAddress from '../../wangding-pickerAddress/wangding-pickerAddress2.vue'
 	import {
 		uploadOss
 	} from '@/util/upload.js'
@@ -1295,7 +1289,8 @@
 	export default {
 		components: {
 			topBox,
-			bottomBox
+			bottomBox,
+			pickerAddress
 		},
 		data() {
 			return {
@@ -1354,21 +1349,19 @@
 				majorid: '',
 				saishiId: '',
 				saishiName: '',
-				saiQList: [],
 				saiXList: [],
 				huojiangjilvList: [],
-				saiquList: [],
+				regionTree: [],
 				zip_id: '',
 				zip_name: '',
 				execl_id: '',
 				execl_name: '',
 				firstcategoryId: '',
-				pollTimer1: null,
-				pollTimer2: null,
 				job_id: '',
+                importTask: {}, importResultLoaded: false, importError: '', importPoller: null, importPageVisible: false, importSubmitting: false, importListVersion: 0,
 				failed_rows: [],
 				success_rows: [],
-				results: {},
+				results: [],
 				completed_at: '',
 				isBaoMing: 0,
 				showSuccessList: true,
@@ -1442,6 +1435,7 @@
 			};
 		},
 		computed: {
+            importTaskLabel() { return importStateLabel(this.importTask); },
 			certificateVisible() {
 				return this.shengCertificateVisible || this.guoCertificateVisible;
 			},
@@ -1465,7 +1459,9 @@
 				return this.daoruljList.slice(startIndex, endIndex);
 			}
 		},
+		onHide() { this.importPageVisible = false; this.importListVersion++; this.hideLoadingModal(); this.clearPolling(); },
 		onUnload() {
+            this.importPageVisible = false; this.importListVersion++; this.clearPolling();
 			// 页面销毁时移除监听（必须写）
 			uni.$off('loadingComplete');
 		},
@@ -1495,15 +1491,17 @@
 			});
 		},
 		onShow() {
+            this.importPageVisible = true;
+            if (this.job_id && !this.importResultLoaded) this.resumeImport();
 			this.getTabber(this.$isPC);
 			this.getlinkinfo()
 			this.getzipinfo()
 			this.GET({
-				name: '赛区',
-				url: '/api/competcategory/regions',
+				name: '行政区划',
+				url: '/api/regions/lookup',
 				data: {}
 			}).then((res) => {
-				this.saiquList = res.data.data
+				this.regionTree = res.data.data
 			});
 
 			this.GET({
@@ -1653,11 +1651,11 @@
 			},
 			getsaiQ() {
 				this.GET({
-					name: '赛区',
-					url: '/api/competcategory/regions',
+					name: '行政区划',
+					url: '/api/regions/lookup',
 					data: {}
 				}).then((res) => {
-					this.saiQList = res.data.data
+					this.regionTree = res.data.data
 				});
 			},
 			getsaiX() {
@@ -1670,8 +1668,8 @@
 				});
 			},
 			bind_saiQ(e) {
-				this.regionsid = this.saiQList[e.detail.value].id
-				this.regionsname = this.saiQList[e.detail.value].name
+				this.regionsid = e.id[0]
+				this.regionsname = e.data.join('-')
 			},
 			bind_zuBie(e) {
 				const selected = this.zbList[e.detail.value]
@@ -1710,6 +1708,10 @@
 				this.execl_name = ''
 			},
 			queren() {
+                if (this.myInfo.type == 2) {
+                    if (this.importSubmitting || this.showLoading) return;
+                    if (!this.execl_id) { uni.showToast({ title: '请先上传报名 Excel', icon: 'none' }); return; }
+                }
 				// 先去除首尾空格，再统一转小写，避免大小写/空格导致判断失效
 				const trimUrl = this.purl.trim().toLowerCase();
 
@@ -1810,46 +1812,23 @@
 						this.hideLoadingModal();
 					});
 				}
-				if (this.myInfo.type == 2) {
-					this.clearPolling();
-					this.POST({
-						name: '学校报名接口',
-						url: '/api/dramacompetition/confirmImportoss',
-						data: {
-							type: this.myInfo.status,
-							competitionid: this.saishiId,
-							session_id: this.firstcatid == 1 ? this.zip_id : 3 + 'session_id',
-							excel_id: this.execl_id,
-							userid: this.myInfo.id,
-							zip_name: this.firstcatid == 1 ? this.zip_name : '剧目演出',
-							excel_name: this.execl_name
-						}
-					}).then((res) => {
-						this.resetForm();
-						this.hideLoadingModal();
-						uni.showModal({
-							title: '提示',
-							content: res.data.data?.message || res.data.message,
-							success: (modal) => {
-								if (modal.confirm) {
-									console.log('用户点击确定');
-									this.leftName = '参赛记录'
-									this.rightName = '导入记录'
-									this.goDrJl(null, res.data.data.competitionid)
-								} else if (modal.cancel) {
-									console.log('用户点击取消');
-								}
-							}
-						});
-					}).catch(err => {
-						uni.showToast({
-							title: '提交失败',
-							icon: 'none'
-						});
-						this.hideLoadingModal();
-						console.error('confirmImport error:', err);
-					});
-				}
+                if (this.myInfo.type == 2) {
+                    if (this.importSubmitting) return;
+                    this.importSubmitting = true;
+                    schoolRequest(this, { method: 'POST', url: '/api/dramacompetition/confirmImportoss', data: {
+                        type: this.myInfo.status, competitionid: this.saishiId, session_id: importSessionId(this.zip_id), excel_id: this.execl_id,
+                        zip_name: this.zip_name, excel_name: this.execl_name,
+                    } }).then((res) => {
+                        const task = res.data.data;
+                        const id = task.task_id || task.job_id;
+                        if (!id) throw new Error('提交未返回任务编号，请到导入记录查询');
+                        this.startImportTask({ ...task, task_id: id });
+                        this.leftName = '参赛记录'; this.rightName = '导入记录';
+                        this.resetForm();
+                        this.goDrJl(null, task.competitionid);
+                    }).catch((error) => { uni.showToast({ title: error.message || '提交失败', icon: 'none' }); })
+                    .finally(() => { this.importSubmitting = false; this.hideLoadingModal(); });
+                }
 			},
 			getUserInfo() {
 				this.POST({
@@ -2027,8 +2006,8 @@
 				this.getcompetitionlists();
 			},
 			bindPickerChange2: function(e) {
-				this.stud_cities = this.saiquList[e.detail.value].id
-				this.stud_citieName = this.saiquList[e.detail.value].name
+				this.stud_cities = e.id[0]
+				this.stud_citieName = e.data.join('-')
 			},
 			bindPickerChange3: function(e) {
 				this.majorid = this.zyList[e.detail.value].id
@@ -2094,25 +2073,15 @@
 				this.rightName = '获奖记录详情'
 				this.hjjlDatas = item
 			},
-			goNext(item) {
-				this.GET({
-					name: '有无正在处理的',
-					url: '/api/competition/checksignup',
-					data: {}
-				}).then((res) => {
-					if (res.data.data == true) {
-						uni.showModal({
-							content: '当前有待处理的作品，请勿重复报名提交',
-							showCancel: false
-						});
-					} else {
-						this.saishiName = item.name
-						this.rightName = '作品上传'
-						this.saishiId = item.id
-						this.productid = item.productid
-					}
-				});
-			},
+            async goNext(item) {
+                const enter = () => { this.saishiName = item.name; this.rightName = '作品上传'; this.saishiId = item.id; this.productid = item.productid; };
+                if (this.myInfo.type != 2) { enter(); return; }
+                try {
+                    const response = await schoolRequest(this, { url: '/api/competition/checksignup', data: { competitionid: item.id } });
+                    if (response.data.data === true) uni.showModal({ content: '当前赛事有待处理的作品，请到导入记录查看进度', showCancel: false });
+                    else enter();
+                } catch (error) { uni.showToast({ title: error.message, icon: 'none' }); }
+            },
 			lookHJJilv(item) {
 				this.rightName = '获奖记录列表'
 				if (this.myInfo.type == 1) {
@@ -2141,35 +2110,31 @@
 			viewFile(url) {
 				window.open(url, '_blank');
 			},
-			checkImportProgress() {
-				if (!this.job_id) return;
-
-				this.GET({
-					name: '导入进度查询',
-					url: `/api/dramacompetition/importProgress/${this.job_id}`,
-					data: {}
-				}).then((res) => {
-					uni.showModal({
-						content: res.data.data.message,
-						showCancel: false
-					});
-					const progress = res.data?.data?.progress;
-					if (typeof progress === 'number' && progress >= 100) {
-						this.clearTimer1();
-						this.pollTimer2 = setInterval(() => {
-							this.checkImportResult();
-						}, 2000);
-					}
-				}).catch(err => {
-					this.hideLoadingModal();
-					console.error('importProgress error:', err);
-					this.clearPolling();
-					uni.showToast({
-						title: '进度查询失败',
-						icon: 'none'
-					});
-				});
-			},
+            startImportTask(task) {
+                this.clearPolling();
+                this.job_id = String(task.task_id || task.job_id || task.id || '');
+                this.importTask = { ...task, competitionid: task.competitionid || this.saishiId };
+                this.importError = ''; this.popup = false; this.importResultLoaded = false; this.results = []; this.failed_rows = []; this.success_rows = []; this.displayList = [];
+                this.resumeImport();
+            },
+            resumeImport() {
+                if (!this.job_id || !this.importPageVisible) return;
+                this.clearPolling(); this.importError = '';
+                this.importPoller = createImportPoller({
+                    progress: (id) => schoolRequest(this, { url: `/api/dramacompetition/importProgress/${encodeURIComponent(id)}` }).then((res) => res.data.data),
+                    result: (id) => schoolRequest(this, { url: `/api/dramacompetition/importResult/${encodeURIComponent(id)}` }).then((res) => res.data.data),
+                    onProgress: (task) => { this.importTask = task; },
+                    onResult: (task) => {
+                        this.importResultLoaded = true; this.importTask = task; this.completed_at = task.completed_at || '';
+                        this.results = importRows(task.results); this.success_rows = importRows(task.success_rows); this.failed_rows = importRows(task.failed_rows);
+                        this.switchList(this.failed_rows.length === 0); this.popup = true;
+                        if (task.state === 'FAILED') this.importError = task.message || '导入失败，请查看错误并重新上传';
+                    },
+                    onError: (error) => { this.importError = error.message || '查询失败，请重试'; },
+                });
+                this.importPoller.start(this.job_id);
+            },
+            checkImportProgress() { this.resumeImport(); },
 			resetForm() {
 				this.title = '';
 				this.teachername = '';
@@ -2258,40 +2223,7 @@
 			gofileType(e) {
 				this.localFileType = e; // 只切换类型，不删任何地址
 			},
-			checkImportResult() {
-				if (!this.job_id) return;
-				this.GET({
-					name: '导入结果查询',
-					url: `/api/dramacompetition/importResult/${this.job_id}`,
-					data: {}
-				}).then((res) => {
-					this.clearPolling();
-					const message = res.data?.msg || '导入完成';
-					uni.showToast({
-						title: message,
-						icon: 'none'
-					});
-					this.resetForm();
-					this.popup = true
-					this.failed_rows = res.data.data.failed_rows
-					this.success_rows = res.data.data.success_rows
-					this.switchList(this.showSuccessList);
-					this.results = res.data.data.results
-					this.completed_at = res.data.data.completed_at
-					this.zipProgress = 0
-					this.excelProgress = 0
-					this.leftName = '作品提交'
-					this.rightName = '赛事列表'
-				}).catch(err => {
-					this.hideLoadingModal();
-					console.error('importResult error:', err);
-					this.clearPolling();
-					uni.showToast({
-						title: '结果查询失败',
-						icon: 'none'
-					});
-				});
-			},
+            checkImportResult() { this.resumeImport(); },
 			yichuwenjian(e) {
 				if (e == 1) {
 					this.zip_id = ''
@@ -2321,22 +2253,10 @@
 					}
 				});
 			},
-			clearTimer1() {
-				if (this.pollTimer1) {
-					clearInterval(this.pollTimer1);
-					this.pollTimer1 = null;
-				}
-			},
-			clearTimer2() {
-				if (this.pollTimer2) {
-					clearInterval(this.pollTimer2);
-					this.pollTimer2 = null;
-				}
-			},
-			clearPolling() {
-				this.clearTimer1();
-				this.clearTimer2();
-			},
+            clearPolling() {
+                if (this.importPoller) this.importPoller.stop();
+                this.importPoller = null;
+            },
 			noBaoMing() {
 				uni.showToast({
 					title: '正在审核不能报名',
@@ -2387,9 +2307,7 @@
 				this.purl = '';
 				this.purlname = '';
 			},
-			console111() {
-				console.log('this.displayList', this.displayList)
-			},
+
 			switchList(isSuccess) {
 				// 不管是否相同，都强制刷新（修复初始化不显示）
 				this.showSuccessList = isSuccess;
@@ -2423,45 +2341,19 @@
 				// 页码+1
 				this.currentPage++;
 			},
-			goDrJl(item, competitionid) {
-				console.log('_____item', item)
-				console.log('_____competitionid', competitionid)
-				this.rightName = '导入记录'
-				this.displayedDrjlList = [];
-				this.showLoadingModal('加载中...')
-				this.POST({
-					name: '导入记录',
-					url: '/api/competition/getTaskResult',
-					data: {
-						competitionid: item == null ? competitionid : item.id,
-					}
-				}).then((res) => {
-					this.hideLoadingModal();
-					if (res.data.code === 200) {
-						if (res.data.data.data.length == 0) {
-							uni.showToast({
-								title: '暂无数据',
-								icon: 'none'
-							});
-							return
-						}
-						this.daoruljList = res.data.data.data;
-						this.displayedDrjlList = this.daoruljList.slice(0, this.drjlPageSize);
-					} else {
-						uni.showToast({
-							title: res.data.msg || '加载失败',
-							icon: 'none'
-						});
-					}
-				}).catch(err => {
-					this.hideLoadingModal();
-					console.error('加载详情失败', err);
-					uni.showToast({
-						title: '网络错误',
-						icon: 'none'
-					});
-				});
-			},
+            async goDrJl(item, competitionid) {
+                const version = ++this.importListVersion;
+                this.rightName = '导入记录'; this.displayedDrjlList = []; this.daoruljList = [];
+                const id = item == null ? competitionid : item.id;
+                this.showLoadingModal('加载中...');
+                try {
+                    const res = await schoolRequest(this, { method: 'POST', url: '/api/competition/getTaskResult', data: { competitionid: id } });
+                    if (version !== this.importListVersion || !this.importPageVisible) return;
+                    this.daoruljList = Array.isArray(res.data.data?.data) ? res.data.data.data : [];
+                    this.displayedDrjlList = this.daoruljList.slice(0, this.drjlPageSize);
+                } catch (error) { if (version === this.importListVersion && this.importPageVisible) uni.showToast({ title: error.message, icon: 'none' }); }
+                finally { if (version === this.importListVersion && this.importPageVisible) this.hideLoadingModal(); }
+            },
 			loadMoreDrjl() {
 				const currentlyDisplayedCount = this.displayedDrjlList.length;
 				const totalCount = this.daoruljList.length;
@@ -2503,38 +2395,7 @@
 					});
 				});
 			},
-			golookxq2(item) {
-				this.rightName = '导入记录详情'
-				this.savedScrollTop = this.currentScrollTop || 0;
-				this.showLoadingModal('加载中...')
-				this.GET({
-					name: '学校---参赛记录详情',
-					url: '/api/competition/getTaskDetail',
-					data: {
-						Competitionid: item.competitionid,
-						id: item.id
-					}
-				}).then((res) => {
-					this.hideLoadingModal();
-					if (res.data.code === 200) {
-						this.DiaoD = res.data.data;
-						this.daoruJiLvList = res.data.data.results;
-						this.daoruJiLvCompetitionid = res.data.data.competitionid;
-					} else {
-						uni.showToast({
-							title: res.data.msg || '加载失败',
-							icon: 'none'
-						});
-					}
-				}).catch(err => {
-					this.hideLoadingModal();
-					console.error('加载详情失败', err);
-					uni.showToast({
-						title: '网络错误',
-						icon: 'none'
-					});
-				});
-			},
+            golookxq2(item) { this.startImportTask(item); },
 			golookxq3(item) {
 				this.rightName = '参赛记录详情'
 				this.GET({
@@ -2569,142 +2430,28 @@
 				const random = Math.floor(Math.random() * 900) + 100;
 				return `${timestamp}` + `${random}`;
 			},
-			codeZIP() {
-				uni.chooseFile({
-					count: 1,
-					extension: ['.zip'],
-					success: (res) => {
-						this.zip_id = '';
-						this.zip_name = '';
-						this.execl_id = '';
-						this.execl_name = '';
-
-						const file = res.tempFiles[0];
-						const fileName = file.name;
-						this.startFakeZipProgress();
-						this.showLoadingModal('上传中...')
-
-						const timeRandom = this.getTimestampRandom();
-						const timename = `user_excel/${timeRandom}` + `${fileName}`;
-
-						uploadOss(file, timename).then(cosRes => {
-							console.log('cosRes', cosRes)
-							this.hideLoadingModal();
-							uni.showToast({
-								title: '上传成功',
-								icon: 'none'
-							});
-
-							this.POST({
-								name: '上传zip',
-								url: '/api/dramacompetition/uploadAttachmentZiposs',
-								data: {
-									oss_zip_url: cosRes
-								}
-							}).then((res) => {
-								this.zip_id = res.data.data.session_id;
-								this.zip_name = fileName;
-								this.zipProgress = 100;
-							}).catch(() => {
-								this.hideLoadingModal();
-								this.zipProgress = 0;
-							});
-						}).catch(() => {
-							this.hideLoadingModal();
-							this.zipProgress = 0;
-						});
-					},
-					fail: (err) => {
-						console.error('选择文件失败', err);
-						this.hideLoadingModal();
-						uni.showModal({
-							content: '选择文件失败，请重新上传，推荐使用Google Chrome浏览器',
-							showCancel: false
-						});
-						this.zipProgress = 0;
-					}
-				});
-			},
-			codeExecl() {
-				if (!this.zip_id && this.firstcatid == 1) {
-					uni.showToast({
-						title: '请先上传作品zip文件',
-						icon: 'none'
-					});
-					return;
-				}
-				uni.chooseFile({
-					count: 1,
-					extension: ['.xlsx', '.xls'],
-					success: (res) => {
-						const file = res.tempFiles[0];
-						const fileName = file.name;
-						this.startFakeExcelProgress();
-						this.showLoadingModal('上传中...')
-
-						const timeRandom = this.getTimestampRandom();
-						const timename = `user_excel/${timeRandom}-${fileName}`;
-
-						uploadOss(file, timename).then(cosRes => {
-							console.log('cosRes', cosRes)
-							this.hideLoadingModal();
-							uni.showToast({
-								title: '上传成功',
-								icon: 'none'
-							});
-
-							this.POST({
-								name: '上传excel',
-								url: '/api/dramacompetition/uploadexceloss',
-								data: {
-									session_id: this.firstcatid == 1 ? this.zip_id : 3 +
-										'session_id',
-									oss_excel_url: cosRes
-								}
-							}).then((res) => {
-								this.execl_id = res.data.data.excel_id;
-								this.execl_name = fileName;
-								this.excelProgress = 100;
-							}).catch(() => {
-								this.hideLoadingModal();
-								this.excelProgress = 0;
-							});
-						}).catch(() => {
-							this.hideLoadingModal();
-							this.excelProgress = 0;
-						});
-					},
-					fail: (err) => {
-						console.error('选择文件失败', err);
-						uni.showModal({
-							content: '选择文件失败，请重新上传，推荐使用Google Chrome浏览器',
-							showCancel: false
-						});
-						this.hideLoadingModal();
-						this.excelProgress = 0;
-					}
-				});
-			},
-			startFakeZipProgress() {
-				this.zipProgress = 0
-				let timer = setInterval(() => {
-					if (this.zipProgress < 95) {
-						this.zipProgress += Math.random() * 3
-					} else {
-						clearInterval(timer)
-					}
-				}, 100)
-			},
-			startFakeExcelProgress() {
-				this.excelProgress = 0
-				let timer = setInterval(() => {
-					if (this.excelProgress < 95) {
-						this.excelProgress += Math.random() * 3
-					} else {
-						clearInterval(timer)
-					}
-				}, 100)
-			},
+            codeZIP() { this.chooseImportFile('ZIP'); },
+            codeExecl() { this.chooseImportFile('EXCEL'); },
+            chooseImportFile(kind) {
+                if (this.showLoading || this.importSubmitting) return;
+                uni.chooseFile({ count: 1, extension: kind === 'ZIP' ? ['.zip'] : ['.xlsx', '.xls'],
+                    success: async (response) => {
+                        const file = response.tempFiles?.[0]; if (!file) return;
+                        if (kind === 'ZIP') { this.zip_id = ''; this.zip_name = ''; this.execl_id = ''; this.execl_name = ''; this.zipProgress = 0; this.excelProgress = 0; }
+                        else { this.execl_id = ''; this.execl_name = ''; this.excelProgress = 0; }
+                        this.showLoadingModal('上传并登记中...');
+                        try {
+                            const url = await uploadOss(file, `user_excel/${this.getTimestampRandom()}-${file.name}`);
+                            const res = await schoolRequest(this, { method: 'POST', url: `/api/dramacompetition/${kind === 'ZIP' ? 'uploadAttachmentZiposs' : 'uploadexceloss'}`,
+                                data: kind === 'ZIP' ? { oss_zip_url: url } : { session_id: importSessionId(this.zip_id), oss_excel_url: url } });
+                            if (kind === 'ZIP') { this.zip_id = res.data.data.session_id; this.zip_name = file.name; this.zipProgress = 100; }
+                            else { this.execl_id = res.data.data.excel_id; this.execl_name = file.name; this.excelProgress = 100; }
+                            uni.showToast({ title: '上传成功', icon: 'none' });
+                        } catch (error) { uni.showToast({ title: error.message || '上传失败，请重试', icon: 'none' }); }
+                        finally { this.hideLoadingModal(); }
+                    },
+                });
+            },
 			baocun_info() {
 				this.showLoadingModal('提交中...')
 				this.POST({

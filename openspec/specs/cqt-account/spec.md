@@ -83,7 +83,7 @@ status: "active"
 ### Requirement: [FR-004] 本人资料
 
 `GET` 或 `POST /api-web/auth/userinfo` **MUST** 需要登录，只返回令牌所属账号，字段为：
-`id, name, type, uniid, phone, schoolid, idcard, credential_type（「身份证号」/「其他」）, cities, cityname（按 cqt_regions.legacy_id 解析，查不到为空串）, sex, school, contact, address, email, status, zhizhao, chengnuoshu, rejectreason, source_database`。
+`id, name, type, uniid, phone, schoolid, idcard, credential_type（「身份证号」/「其他」）, cities（行政区划 region.id）, cityname（按 region.id 解析，查不到为空串）, sex, school, contact, address, email, status, zhizhao, chengnuoshu, rejectreason, source_database`。
 
 #### Scenario: 返回字段集
 - **WHEN** 已登录账号请求 `userinfo`

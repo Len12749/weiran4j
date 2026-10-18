@@ -89,7 +89,7 @@ public class CompetitionController {
         info.put("stage_scope", view.stage());
         info.put("first_category_legacy_id", view.firstCategoryId());
         info.put("second_category_legacy_id", view.secondCategoryId());
-        info.put("region_legacy_id", view.regionId());
+        info.put("region_id", view.regionId());
         info.put("legacy_school_id", view.schoolId());
         info.put("title", view.title());
         info.put("description", view.description());

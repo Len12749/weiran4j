@@ -30,11 +30,11 @@ ON DUPLICATE KEY UPDATE
 
 INSERT INTO cqt_entries
   (id, entry_no, import_fingerprint, source_channel_id, source_database, source_table, source_id, competition_id,
-   stage_scope, legacy_competition_id, first_category_legacy_id, second_category_legacy_id, region_legacy_id,
+   stage_scope, legacy_competition_id, first_category_legacy_id, second_category_legacy_id, region_id,
    legacy_school_id, title, description, attachment_url, attachment_name, attachment_type, teacher_names, major_name,
    group_name, entry_type, scoring_scope, status, legacy_status, submitted_at, created_at, updated_at)
 SELECT id, entry_no, import_fingerprint, source_channel_id, source_database, source_table, source_id, competition_id,
-       'BOTH', legacy_competition_id, first_category_legacy_id, second_category_legacy_id, region_legacy_id,
+       'BOTH', legacy_competition_id, first_category_legacy_id, second_category_legacy_id, NULL,
        legacy_school_id, title, description, attachment_url, attachment_name,
        CASE WHEN attachment_url IS NULL OR TRIM(attachment_url) = '' THEN NULL
             WHEN LOWER(attachment_url) LIKE '%.zip' THEN 'ZIP' ELSE 'LINK' END,

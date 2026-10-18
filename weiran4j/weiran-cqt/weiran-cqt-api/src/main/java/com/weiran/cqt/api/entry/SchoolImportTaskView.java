@@ -19,4 +19,6 @@ public record SchoolImportTaskView(
         int successCount,
         int failureCount,
         @Nullable LocalDateTime createdAt,
-        List<Map<String, @Nullable Object>> results) {}
+        @Nullable LocalDateTime updatedAt,
+        List<Map<String, @Nullable Object>> results,
+        @Nullable String errorMessage) {}

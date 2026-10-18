@@ -1,6 +1,6 @@
 -- 前台账号导入：cqtxj2026.portal_accounts → 当前库 cqt_portal_accounts（列一一对应，只改表名）。
 --
--- 前提：源库 cqtxj2026 与目标库在同一 MySQL 实例；目标库已由 Flyway 建表；先执行 cqt_regions.sql。
+-- 前提：源库 cqtxj2026 与目标库在同一 MySQL 实例；目标库已由 Flyway 建表。
 -- 执行：mysql -h <host> -u <user> -p <目标库> < scripts/biz/import/cqt_portal_accounts.sql
 --
 -- 两处加工（其余原样）：
@@ -9,14 +9,14 @@
 -- token_version 新插入为 0；重复执行时**不覆盖**已有值，避免把已重置过密码的账号版本回退、让旧令牌复活。
 INSERT INTO cqt_portal_accounts
   (`id`, `source_database`, `legacy_user_id`, `name_value`, `password_hash`, `remember_token`, `user_type`,
-   `legacy_uniid`, `phone_value`, `legacy_school_id`, `id_card_value`, `credential_type`, `city_legacy_id`, `sex`,
+   `legacy_uniid`, `phone_value`, `legacy_school_id`, `id_card_value`, `credential_type`, `region_id`, `sex`,
    `school_value`, `contact_value`, `address_value`, `email`, `audit_status`, `license_file`, `commitment_file`,
    `rejection_reason`, `token_version`, `created_at`, `updated_at`)
 SELECT
   src.`id`, src.`source_database`, src.`legacy_user_id`, src.`name_value`, src.`password_hash`, src.`remember_token`,
   src.`user_type`, src.`legacy_uniid`, src.`phone_value`, src.`legacy_school_id`, src.`normalized_id_card`,
   CASE WHEN src.`normalized_id_card` REGEXP '^[0-9]{17}[0-9X]$' THEN 'ID_CARD' ELSE 'OTHER' END,
-  src.`city_legacy_id`, src.`sex`, src.`school_value`, src.`contact_value`, src.`address_value`, src.`email`,
+  NULL, src.`sex`, src.`school_value`, src.`contact_value`, src.`address_value`, src.`email`,
   src.`audit_status`, src.`license_file`, src.`commitment_file`, src.`rejection_reason`, 0,
   src.`created_at`, src.`updated_at`
 FROM (
@@ -36,7 +36,7 @@ ON DUPLICATE KEY UPDATE
   `legacy_school_id` = VALUES(`legacy_school_id`),
   `id_card_value` = VALUES(`id_card_value`),
   `credential_type` = VALUES(`credential_type`),
-  `city_legacy_id` = VALUES(`city_legacy_id`),
+  `region_id` = VALUES(`region_id`),
   `sex` = VALUES(`sex`),
   `school_value` = VALUES(`school_value`),
   `contact_value` = VALUES(`contact_value`),

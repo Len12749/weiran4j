@@ -126,9 +126,8 @@ public class AccountApplicationService implements AccountService {
     public AccountProfileView profile(final long accountId) {
         final Account account = this.requireAccount(accountId);
         final Integer cityId = account.getCityId();
-        final String cityName = cityId == null
-                ? ""
-                : this.regionRepository.findNameByLegacyId(cityId).orElse("");
+        final String cityName =
+                cityId == null ? "" : this.regionRepository.findNameById(cityId).orElse("");
         return new AccountProfileView(
                 account.requireId(),
                 account.getName(),

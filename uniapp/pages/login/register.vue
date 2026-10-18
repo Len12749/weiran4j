@@ -63,32 +63,7 @@
 								placeholder-style='color:#999999' />
 						</view>
 					</view>
-					<view class='e1'>
-						<view class='leftText'>*<span style="color: #1F1F1F">密码</span></view>
-						<view class='long_box zzz2'>
-							<input class='input' :type="isMing1?'text':'password'" v-model='pass' placeholder='请输入密码'
-								placeholder-style='color:#999999' />
-						</view>
-						<image class='kanyubukan pointer'
-							src='/static/local_assets/d939602dc8b6d2d08fa8a1e1.png' v-if="isMing1==0"
-							@click="isMing1=1" />
-						<image class='kanyubukan pointer'
-							src='/static/local_assets/fc8bfaadb36b87e9738e7bd7.png'
-							v-if="isMing1==1" @click="isMing1=0" />
-					</view>
-					<view class='e1'>
-						<view class='leftText'>*<span style="color: #1F1F1F">确认密码</span></view>
-						<view class='long_box zzz2'>
-							<input class='input' :type="isMing2?'text':'password'" v-model='qrpass'
-								placeholder='请输入确认密码' placeholder-style='color:#999999' />
-						</view>
-						<image class='kanyubukan pointer'
-							src='/static/local_assets/d939602dc8b6d2d08fa8a1e1.png' v-if="isMing2==0"
-							@click="isMing2=1" />
-						<image class='kanyubukan pointer'
-							src='/static/local_assets/fc8bfaadb36b87e9738e7bd7.png'
-							v-if="isMing2==1" @click="isMing2=0" />
-					</view>
+					<view class='rightText'>注册后可在登录页通过“忘记密码”设置登录密码</view>
 					<view class='e1'>
 						<view class='leftText'>*<span style="color: #1F1F1F">验证码</span></view>
 						<view class='yzmBox e2'>
@@ -127,8 +102,16 @@
 						<view class='e1'>
 							<view class='leftText'>*<span style="color: #1F1F1F">身份类型</span></view>
 							<view class='sexBox e1'>
-								<view class='e1 pointer' @click="credential_type='身份证号'">{{credential_type==='身份证号'?'●':'○'}} 身份证号</view>
-								<view class='e1 pointer' @click="credential_type='其他'">{{credential_type==='其他'?'●':'○'}} 其他</view>
+								<view class='e1 pointer' @click="credential_type='身份证号'">
+									<image class='icon' src='/static/local_assets/4c13961eb4a95d2e91bf44b8.png' v-if="credential_type==='身份证号'" />
+									<image class='icon' src='/static/local_assets/f5781ebba6ba4715e8294f13.png' v-else />
+									<view class='text'>身份证号</view>
+								</view>
+								<view class='e1 pointer' @click="credential_type='其他'">
+									<image class='icon' src='/static/local_assets/4c13961eb4a95d2e91bf44b8.png' v-if="credential_type==='其他'" />
+									<image class='icon' src='/static/local_assets/f5781ebba6ba4715e8294f13.png' v-else />
+									<view class='text'>其他</view>
+								</view>
 							</view>
 						</view>
 					</view>
@@ -144,15 +127,14 @@
 					</view>
 					<view class='e1'>
 						<view class='leftText'>*<span style="color: #1F1F1F">所在省市</span></view>
+						<pickerAddress :regions="regionTree" @change="change_area">
 						<view class='long_box zzz2 pointer'>
 							<view class='e2 w100b'>
-								<picker @change="bindPickerChange1" :range="saiquList" range-key="name"
-									:value="saiquList.findIndex(item => item.name == info_city)">
-									<view class="input" style="color: #333" v-if="info_city">{{info_city}}</view>
-									<view class="input" style="color: #999" v-else>请选择省市</view>
-								</picker>
+								<view class="input" :style="info_city ? {color: '#333'} : {color: '#999'}">{{info_city || '请选择省市区'}}</view>
+								<image class='icon' src='/static/local_assets/de02f8223a010b32f733b0e2.png' />
 							</view>
 						</view>
+						</pickerAddress>
 					</view>
 					<view :class="$isPC?'e1':''" v-if="is_school==0">
 						<view class='e1'>
@@ -250,7 +232,7 @@
 				myInfo: {},
 				isLogin: true,
 				link_url: '',
-				saiquList: [],
+				regionTree: [],
 				businessLicenseId: '',
 				businessLicenseName: '',
 				commitmentLetterId: '',
@@ -288,12 +270,11 @@
 				});
 
 				this.GET({
-					name: '赛区',
-					url: '/api/competcategory/regions',
+					name: '行政区划',
+					url: '/api/regions/lookup',
 					data: {}
 				}).then((res) => {
-					console.log('赛区res', res)
-					this.saiquList = res.data.data
+					this.regionTree = res.data.data
 				});
 			}, 444)
 
@@ -429,18 +410,13 @@
 					this.link_url = res.data.data
 				});
 			},
-			change_area(data) {
-				console.log('---data', data)
-				this.info_city = data.data.join('-')
-				this.cities = data.id[0]
-			},
 			goZc(e) {
 				this.pagesIndex = 1
 				this.is_school = e
 			},
-			bindPickerChange1: function(e) {
-				this.cities = this.saiquList[e.detail.value].id
-				this.info_city = this.saiquList[e.detail.value].name
+			change_area(data) {
+				this.cities = data.id[0]
+				this.info_city = data.data.join('-')
 			},
 
 			// 新增：发送验证码逻辑
@@ -514,6 +490,10 @@
 				if (!this.code) {
 					this.showToast('请输入验证码');
 					return;
+				}
+				if (!this.pass) {
+					this.pass = this.createRegistrationPassword();
+					this.qrpass = this.pass;
 				}
 
 				if (this.is_school == 0) {
@@ -648,6 +628,18 @@
 						}
 					});
 				}
+			},
+
+			createRegistrationPassword() {
+				const bytes = new Uint8Array(24);
+				if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+					crypto.getRandomValues(bytes);
+				} else {
+					for (let i = 0; i < bytes.length; i++) {
+						bytes[i] = Math.floor(Math.random() * 256);
+					}
+				}
+				return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
 			},
 			quxiao() {
 				this.pagesIndex = 0

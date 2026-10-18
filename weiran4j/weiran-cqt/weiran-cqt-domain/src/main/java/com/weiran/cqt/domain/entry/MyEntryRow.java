@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
  * @param legacyStatus 审核状态
  * @param firstCategoryLegacyId 一级赛项
  * @param secondCategoryLegacyId 二级赛项
- * @param regionLegacyId 赛区
+ * @param regionId 行政区划 ID
  * @param attachmentUrl 附件
  * @param teacherNames 指导教师
  * @param createdAt 创建时间
@@ -32,7 +32,7 @@ public record MyEntryRow(
         @Nullable Integer legacyStatus,
         @Nullable Long firstCategoryLegacyId,
         @Nullable Long secondCategoryLegacyId,
-        @Nullable Long regionLegacyId,
+        @Nullable Long regionId,
         @Nullable String attachmentUrl,
         @Nullable String teacherNames,
         @Nullable LocalDateTime createdAt,

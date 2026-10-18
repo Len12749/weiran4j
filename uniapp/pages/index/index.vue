@@ -54,7 +54,9 @@
 			</view>
 
 			<!-- 学术评审团区域 -->
-			<view class='box4 zzz3 scroll-animate' :class="{ 'animate-in': isBox4Visible }" v-if="isShowPingshenflag">
+			<view v-if="expertLoading" style="padding:24px">学术评审团加载中…</view>
+            <view v-else-if="expertError" style="padding:24px" @click="expertLoading=true;get_index()">{{expertError}}，点击重试</view>
+            <view class='box4 zzz3 scroll-animate'  :class="{ 'animate-in': isBox4Visible }" v-if="hasHomeExperts">
 				<view class='nameBox zzz3 pointer'>
 					<view class='name1'>学术评审团</view>
 					<view class='name2'>Academic Review Panel</view>
@@ -106,6 +108,7 @@
 </template>
 
 <script>
+import { contentAll, expertView } from '@/util/content.js';
 	import topBox from '@/components/topBox.vue';
 	import bottomBox from '@/components/bottomBox.vue';
 	import competitionNewsItem from '@/components/competitionNewsItem.vue';
@@ -120,19 +123,7 @@
 		},
 		data() {
 			return {
-				list1: [{
-					image: '/static/local_assets/placeholder.svg',
-					name: '“戏润新苗”慈溪市第二届青少年戏曲大赛（决赛）暨小金桂选拔慈溪赛区暨小金桂选拔慈溪赛区',
-					time: '2025-11-06'
-				}, {
-					image: '/static/local_assets/placeholder.svg',
-					name: '梨园新苗戏曲大赛：传承与发扬传统艺术',
-					time: '2025-11-06'
-				}, {
-					image: '/static/local_assets/placeholder.svg',
-					name: '梨园新苗戏曲大赛：传承与发扬传统艺术',
-					time: '2025-11-06'
-				}, ],
+				list1: [],
 				list2: [],
 				tabHoverStates: [false, false, false, false, false], // 对应 5 个 tab
 				tabs: [{
@@ -173,7 +164,9 @@
 				isBox4Visible: false, // 控制 box4（学术评审团）是否显示动画
 				hasAnimated: false, // 标记是否已经执行过动画，防止重复
 
-				isShowPingshenflag: false,
+				hasHomeExperts: false,
+                expertLoading: true,
+                expertError: '',
 
 				configData: {}
 			}
@@ -193,17 +186,7 @@
 			});
 
 
-			this.GET({
-				name: '学术评审开关',
-				url: '/api/product/Pingshenflag',
-				data: {}
-			}).then((res) => {
-				if (res.data.data.flag == 1) {
-					this.isShowPingshenflag = true
-				} else {
-					this.isShowPingshenflag = false
-				}
-			});
+
 		},
 		onShow() {
 			this.getTabber(this.$isPC)
@@ -252,10 +235,13 @@
 			get_index3() {
 				this.GET({
 					name: '大赛动态',
-					url: '/api/product/index?category=2',
+					url: '/api/product/news?page=1&pageSize=3&homeOnly=true',
 					data: {}
 				}).then((res) => {
-					this.list1 = res.data.data.data || [];
+					this.list1 = (res.data.data.list || []).map((item) => ({
+						...item,
+						created_at: item.createdAt || item.created_at
+					}));
 				});
 			},
 			// 初始化滚动观察逻辑
@@ -309,37 +295,25 @@
 				}).exec();
 			},
 
-			get_index() {
-				this.GET({
-					name: '首页学术评审',
-					url: '/api/product/index?category=1',
-					data: {}
-				}).then((res) => {
-					const rawData = res.data.data.data || []; // 确保是数组
-
-					let groupSize = 5; // 默认 PC 端每组 5 人
-					if (!this.$isPC) {
-						groupSize = 3; // 手机端每组 3 人
-					}
-
-					// 将一维数组分组为二维数组
-					const groupedData = [];
-					for (let i = 0; i < rawData.length; i += groupSize) {
-						groupedData.push(rawData.slice(i, i + groupSize));
-					}
-
-					// 更新 list2
-					this.list2 = groupedData;
-
-					// 同步更新 selected 和 hoverStates（用于高亮和交互状态）
-					this.selected = this.list2.map(() => 0);
-					this.hoverStates = this.list2.map(group =>
-						group.map(() => false)
-					);
-
-					console.log('this.list2', this.list2)
-				});
-			},
+			async get_index() {
+                try {
+                    const rows = await contentAll(this, 'experts', { homeOnly: true });
+                    const rawData = rows.map(expertView);
+                    const groupSize = this.$isPC ? 5 : 3;
+                    this.list2 = [];
+                    for (let i = 0; i < rawData.length; i += groupSize) this.list2.push(rawData.slice(i, i + groupSize));
+                    this.selected = this.list2.map(() => 0);
+                    this.hoverStates = this.list2.map(group => group.map(() => false));
+                    this.swiperCurrent = 0;
+                    this.hasHomeExperts = rawData.length > 0;
+                    this.expertError = '';
+                    this.$nextTick(() => this.checkElementVisibility(0));
+                } catch (error) {
+                    this.list2 = [];
+                    this.hasHomeExperts = false;
+                    this.expertError = error.message;
+                } finally { this.expertLoading = false; }
+            },
 			// 在 index.vue 的 methods 中
 			golook1(index) {
 				const item = this.list1[index];

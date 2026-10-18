@@ -172,13 +172,17 @@ public class SchoolImportEntryWriter {
                         participants.getFirst().group(),
                         group.isTeam(),
                         participants.size(),
-                        now),
+                        now,
+                        account.getSourceDatabase()),
                 fingerprint);
         for (int index = 0; index < participants.size(); index++) {
             final Participant participant = participants.get(index);
             final long personSequence = this.sequenceGenerator.next(SchoolImportEntryWriter.PERSON_SEQUENCE);
             final long participantId = this.entryRepository.insertParticipant(
-                    entryId, participant, AccountTypes.SOURCE_ZHONGXI, null, personSequence, index == 0, index, now);
+                    entryId, participant, account.getSourceDatabase(), null, personSequence, index == 0, index, now);
+            if (!"zhongxi".equals(account.getSourceDatabase())) {
+                this.entryRepository.insertParticipantTarget(entryId, participantId);
+            }
             try {
                 this.entryRepository.insertParticipationKey(
                         competition.id(), stage, category.legacyId(), participant, entryId, participantId);
@@ -186,7 +190,9 @@ public class SchoolImportEntryWriter {
                 throw new BizException(CommonErrors.CONFLICT, "“" + participant.name() + "”已在本届同一赛项报名，请勿重复报名");
             }
         }
-        this.entryRepository.insertEntryTarget(entryId);
+        if ("zhongxi".equals(account.getSourceDatabase())) {
+            this.entryRepository.insertEntryTarget(entryId);
+        }
         return entryId;
     }
 
@@ -268,7 +274,7 @@ public class SchoolImportEntryWriter {
         }
         return regions.stream()
                 .filter(region -> EntryText.normalize(region.name()).equals(normalized))
-                .map(Region::legacyId)
+                .map(Region::id)
                 .findFirst()
                 .orElse(null);
     }

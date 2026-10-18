@@ -84,10 +84,11 @@
 				configData: {},
 				list1: [],
 				page_no: 1,
+				pageSize: 9,
+				totalNews: 0,
 				page_type: 'list',
 				in_type: 'list',
 				scrollPosition: 0,
-				currentPageData: [],
 				datas: {},
 				isShow: false,
 				myInfo: {},
@@ -161,7 +162,7 @@
 				return list;
 			},
 			totalPages() {
-				return Math.ceil(this.displayList1.length / 9);
+				return Math.ceil(this.totalNews / this.pageSize);
 			},
 			// 正文统一维护，电脑端和手机端使用同一内容
 			cleanContent() {
@@ -170,24 +171,21 @@
 				return this.datas.content.replace(/<video\b[^>]*>[\s\S]*?<\/video>/gi, '');
 			}
 		},
-		watch: {
-			displayList1() {
-				this.goPageNo(this.page_no);
-			}
-		},
 		methods: {
 			localMediaUrl(url) {
 				if (!url) return '';
 				if (url.startsWith('/uploads/')) return url;
 				return '/uploads/' + url.replace(/^https?:\/\/[^/]+\//, '').replace(/^(storage|uploads)\//, '');
 			},
-			get_index() {
+			get_index(page = 1) {
 				this.GET({
 					name: '大赛动态',
-					url: '/api/product/index?category=2',
+					url: `/api/product/news?page=${page}&pageSize=${this.pageSize}`,
 					data: {}
 				}).then((res) => {
-					this.list1 = res.data.data.data || [];
+					this.list1 = (res.data.data.list || []).map((item) => ({ ...item, created_at: item.createdAt || item.created_at }));
+					this.totalNews = res.data.data.total || 0;
+					this.page_no = page;
 				});
 			},
 			loadDetail(id) {
@@ -201,7 +199,7 @@
 				}).then((res) => {
 					uni.hideLoading();
 					if (res.data.code === 200 || res.data.code === 0) {
-						this.datas = res.data.data;
+						this.datas = { ...res.data.data, created_at: res.data.data.createdAt || res.data.data.created_at };
 						this.isShow = true;
 						this.$nextTick(() => {
 							// #ifdef H5
@@ -223,14 +221,10 @@
 					});
 				});
 			},
-			updateCurrentPageData(pageNo) {
-				const start = (pageNo - 1) * 9;
-				const end = start + 9;
-				this.currentPageData = this.displayList1.slice(start, end);
-			},
 			goPageNo(pageNo) {
-				this.page_no = pageNo;
-				this.updateCurrentPageData(pageNo);
+				if (pageNo >= 1 && pageNo <= this.totalPages) {
+					this.get_index(pageNo);
+				}
 			},
 			golook1(item) {
 				// #ifdef H5

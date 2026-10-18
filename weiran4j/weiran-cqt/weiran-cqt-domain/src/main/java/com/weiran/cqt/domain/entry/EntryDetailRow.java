@@ -15,7 +15,7 @@ import org.jspecify.annotations.Nullable;
  * @param firstCategoryName 一级赛项名
  * @param secondCategoryLegacyId 二级赛项
  * @param secondCategoryName 二级赛项名
- * @param regionLegacyId 赛区
+ * @param regionId 行政区划 ID
  * @param regionName 赛区名
  * @param legacySchoolId 学校编号
  * @param title 作品名
@@ -42,7 +42,7 @@ public record EntryDetailRow(
         @Nullable String firstCategoryName,
         @Nullable Long secondCategoryLegacyId,
         @Nullable String secondCategoryName,
-        @Nullable Long regionLegacyId,
+        @Nullable Long regionId,
         @Nullable String regionName,
         @Nullable Long legacySchoolId,
         @Nullable String title,

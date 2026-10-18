@@ -38,7 +38,7 @@ public class CqtPortalAccountDO {
 
     private String credentialType;
 
-    private Integer cityLegacyId;
+    private Long regionId;
 
     private Integer sex;
 

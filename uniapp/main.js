@@ -104,7 +104,8 @@ const getTokenHeader = () => {
 
 // ==================== 请求封装 ====================
 // 页面与工具里的接口路径沿用旧写法 /api/...，发请求前统一改写成后端的 /api-web/...
-export const toWebApi = (url) => url.replace(/^\/api\//, '/api-web/');
+// 行政区划 lookup 属于 weiran-region 公共 API，保留 /api/regions/lookup 路径。
+export const toWebApi = (url) => url.startsWith('/api/regions/lookup') ? url : url.replace(/^\/api\//, '/api-web/');
 
 const requestPublic = (configObj, resolve, reject) => {
 	const {
@@ -118,11 +119,12 @@ const requestPublic = (configObj, resolve, reject) => {
 	const historicalLookup = Number(data?.year) === 1 && [
 		'/api/product/Competitionlist', '/api/product/ViewGrades', '/api/product/view-grades', '/api/competition/certificate'
 	].includes(url);
+	const regionLookup = url === '/api/regions/lookup';
 	const fullHeader = {
 		'Content-Type': 'application/json',
 		version: 1,
 		'X-CQTXJ-Database': historicalLookup ? 'cqtxj2026' : 'cqtxj2027',
-		...getTokenHeader(),
+		...(regionLookup ? {} : getTokenHeader()),
 		...header,
 	};
 
@@ -166,6 +168,8 @@ const requestPublic = (configObj, resolve, reject) => {
 			if (res.data) {
 				if (res.data.code == 200) {
 					app.config.globalProperties.isLogin.value = true;
+					resolve(res);
+				} else if (regionLookup && res.data.code === 0) {
 					resolve(res);
 				} else if (res.data.code == 401 || res.data.message === '请求参数缺token') {
 					app.config.globalProperties.isLogin.value = false;

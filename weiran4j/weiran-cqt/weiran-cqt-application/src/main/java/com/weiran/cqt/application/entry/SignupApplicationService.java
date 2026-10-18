@@ -159,7 +159,8 @@ public class SignupApplicationService implements SignupService {
                 participants.get(0).group(),
                 command.team(),
                 participants.size(),
-                now));
+                now,
+                account.getSourceDatabase()));
         for (int i = 0; i < participants.size(); i++) {
             final Participant participant = participants.get(i);
             final long participantId = this.entryRepository.insertParticipant(
@@ -171,6 +172,9 @@ public class SignupApplicationService implements SignupService {
                     i == 0,
                     i,
                     now);
+            if (!"zhongxi".equals(account.getSourceDatabase())) {
+                this.entryRepository.insertParticipantTarget(entryId, participantId);
+            }
             try {
                 this.entryRepository.insertParticipationKey(
                         competition.id(), stage, firstId, participant, entryId, participantId);
@@ -178,7 +182,9 @@ public class SignupApplicationService implements SignupService {
                 throw new BizException(CommonErrors.CONFLICT, "“" + participant.name() + "”已在本届同一赛项报名，请勿重复报名");
             }
         }
-        this.entryRepository.insertEntryTarget(entryId);
+        if ("zhongxi".equals(account.getSourceDatabase())) {
+            this.entryRepository.insertEntryTarget(entryId);
+        }
         SignupApplicationService.log.info(
                 "前台报名成功 account={} entry={} entryNo={} competition={} category={} stage={} members={}",
                 accountId,

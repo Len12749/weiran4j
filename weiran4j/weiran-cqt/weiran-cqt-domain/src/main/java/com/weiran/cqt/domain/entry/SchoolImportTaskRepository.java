@@ -46,6 +46,9 @@ public interface SchoolImportTaskRepository {
     /** 按行结果重算计数并结束任务。 */
     void finish(String taskId, SchoolImportTaskStatus status, LocalDateTime now);
 
+    /** 结束异常任务并保存可回显的任务级错误。 */
+    void fail(String taskId, SchoolImportTaskStatus status, String error, LocalDateTime now);
+
     /** 查当前学校账号指定赛事的任务。 */
     List<SchoolImportTask> listOwned(long accountId, long competitionId);
 

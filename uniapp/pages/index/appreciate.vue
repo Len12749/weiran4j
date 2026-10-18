@@ -14,7 +14,10 @@
 					</view>
 				</view>
 				<view class='tabLine'></view>
-				<view class='listBox'>
+				<view v-if="loading">加载中…</view>
+                <view v-else-if="error" @click="get_index()">{{error}}，点击重试</view>
+                <view v-else-if="!currentPageData.length">暂无佳作</view>
+                <view class='listBox'>
 					<view class='listBox'>
 						<view class='e2 e3'>
 							<view class="itemBox pointer" v-for='(item, index) in currentPageData' :key='index'
@@ -29,7 +32,7 @@
 											<view>作</view>
 											<view>者：</view>
 										</view>
-										<view class='text2 textsl1'>{{item.auth}}</view>
+										<view class='text2 textsl1'>{{item.author}}</view>
 									</view>
 									<view class='e1'>
 										<view class='text1 e2'>
@@ -69,7 +72,9 @@
 				</view>
 			</view>
 
-			<!-- 详情页部分 -->
+			<view v-if="page_type==='details' && detailLoading" style="padding:24px">加载中…</view>
+            <view v-if="page_type==='details' && detailError" style="padding:24px">{{detailError}}<view @click="goList">返回佳作列表</view></view>
+            <!-- 详情页部分 -->
 			<view class='boxs3' v-if="page_type=='details'&&isShow==true">
 				<view class='e1 breadcrumb-row'>
 					<view class='e1 breadcrumb-left'>
@@ -90,8 +95,8 @@
 						<view class='BigTitle'>{{datas.title}}</view>
 
 						<!-- 单独展示视频 -->
-						<video v-if="datas.video" class="news-video"
-							:src="fixImageUrl(datas.video)" controls autoplay
+						<video v-if="datas.videoUrl" class="news-video"
+							:src="fixImageUrl(datas.videoUrl)" controls autoplay
 							:style="$isPC ? 'height:1200rpx' : 'height:400rpx'"></video>
 
 						<!-- 【媒体展示区域】统一展示提取出的图片 -->
@@ -105,12 +110,13 @@
 							</view>
 						</view>
 
-						<view class='text1'>作者姓名：<span class='text2'>{{datas.auth}}</span></view>
+						<view class='text1'>作者姓名：<span class='text2'>{{datas.author}}</span></view>
 						<view class='text1'>指导老师：<span class='text2'>{{datas.teacher}}</span></view>
 						<view class='text1'>所在学校：<span class='text2'>{{datas.school}}</span></view>
 						<view class='text1'>作品简介：<span class='text2'>{{datas.description}}</span></view>
 
-						<!-- 【内容区域】已移除视频标签 -->
+						<view v-if="datas.attachmentUrl" class="pointer" @click="downloadAttachment">下载附件：{{datas.attachmentName || '作品附件'}}</view>
+                        <!-- 【内容区域】已移除视频标签 -->
 						<view class='fwb' v-html="cleanContent"></view>
 					</view>
 					<view class='heightBox'></view>
@@ -122,6 +128,7 @@
 </template>
 
 <script>
+import { contentGet, contentUrl, downloadContent } from '@/util/content.js';
 	import topBox from '@/components/topBox.vue';
 	import bottomBox from '@/components/bottomBox.vue';
 	export default {
@@ -148,7 +155,7 @@
 				page_no: 1,
 				page_type: 'list',
 				scrollPosition: 0,
-				jzlist: [],
+				jzlist: [], total: 0, loading: false, error: '', detailLoading: false, detailError: '', requestVersion: 0, detailRequestVersion: 0,
 				currentPageData: [],
 				datas: {},
 				type_id: 0,
@@ -188,7 +195,7 @@
 		},
 		computed: {
 			totalPages() {
-				return Math.ceil(this.jzlist.length / 8);
+				return Math.ceil(this.total / 12);
 			},
 			placeholderCount() {
 				const count = this.currentPageData.length;
@@ -203,45 +210,25 @@
 		},
 		methods: {
 			// ====================== 核心方法：自动补全图片链接 ======================
-			fixImageUrl(url) {
-				if (!url) return '';
-				if (url.startsWith('http://') || url.startsWith('https://')) {
-					return url;
-				}
-				return '/uploads/' + url.replace(/^(storage|uploads)\//, '');
-			},
-
-			get_index() {
-				this.GET({
-					name: '佳作欣赏 - 作品',
-					url: '/api/product/index?category=3&secondcategory=' + this.type_id,
-					data: {}
-				}).then((res) => {
-					this.jzlist = res.data.data.data;
-					this.updateCurrentPageData(1);
-				});
-			},
+            fixImageUrl: contentUrl,
+            async get_index() {
+                const version = ++this.requestVersion;
+                this.loading = true; this.error = ''; this.currentPageData = [];
+                const category = { 1: 'SCRIPT', 2: 'PERFORMANCE' }[this.type_id];
+                try {
+                    const result = await contentGet(this, 'showcases', { page: this.page_no, pageSize: 12, category });
+                    if (version === this.requestVersion) { this.currentPageData = result.list; this.total = result.total; }
+                } catch (error) { if (version === this.requestVersion) { this.error = error.message; this.total = 0; } }
+                finally { if (version === this.requestVersion) this.loading = false; }
+            },
 			handleAboutPageChange(pageName) {
 				this.aboutPage = pageName;
 			},
-			updateCurrentPageData(pageNo) {
-				const start = (pageNo - 1) * 12;
-				const end = start + 12;
-				this.currentPageData = this.jzlist.slice(start, end);
-			},
-			goPageNo(pageNo) {
-				this.page_no = pageNo;
-				this.updateCurrentPageData(pageNo);
-			},
-			goAbout_Page(item) {
-				this.isShowAboutTab = false;
-				this.aboutPage = item;
-				this.type_id = item.id;
-				this.get_index();
-			},
-			goPageNo(e) {
-				this.page_no = e;
-			},
+            goPageNo(pageNo) { this.page_no = pageNo; this.get_index(); },
+            goAbout_Page(item) {
+                this.isShowAboutTab = false; this.type_id = item.id;
+                this.page_no = 1; this.get_index();
+            },
 
 			// 提取图片
 			extractMedia(content) {
@@ -279,43 +266,23 @@
 				};
 			},
 
-			golook1(item) {
-				this.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-				this.isShow = false;
-				this.page_type = 'details';
-				this.mediaList = [];
-
-				uni.showLoading({
-					title: '加载中...'
-				});
-
-				this.GET({
-					name: '详情',
-					url: '/api/product/newsdetail?id=' + item.id,
-					data: {}
-				}).then((res) => {
-					uni.hideLoading();
-					const rawData = res.data.data;
-
-					if (rawData && rawData.content) {
-						const result = this.extractMedia(rawData.content);
-						rawData.content = result.cleanContent;
-						this.mediaList = result.media;
-					} else {
-						this.mediaList = [];
-					}
-
-					this.datas = rawData;
-					this.isShow = true;
-
-					this.$nextTick(() => {
-						window.scrollTo(0, 0);
-					});
-				}).catch((err) => {
-					uni.hideLoading();
-					console.error(err);
-				});
-			},
+            async golook1(item) {
+                const version = ++this.detailRequestVersion;
+                this.scrollPosition = typeof window !== 'undefined' ? window.pageYOffset : 0;
+                this.page_type = 'details'; this.isShow = false;
+                this.detailLoading = true; this.detailError = ''; this.mediaList = []; this.datas = {};
+                try {
+                    const data = await contentGet(this, `showcases/${item.id}`);
+                    if (version !== this.detailRequestVersion) return;
+                    const result = this.extractMedia(data.content || '');
+                    this.datas = { ...data, content: result.cleanContent };
+                    this.mediaList = result.media;
+                    this.isShow = true;
+                    uni.pageScrollTo({ scrollTop: 0, duration: 0 });
+                } catch (error) { if (version === this.detailRequestVersion) this.detailError = error.message; }
+                finally { if (version === this.detailRequestVersion) this.detailLoading = false; }
+            },
+            downloadAttachment() { downloadContent(this.datas.attachmentUrl, this.datas.attachmentName); },
 
 			mediaError(type, url) {
 				console.error(`❌ ${type} 加载失败:`, url);
@@ -327,9 +294,11 @@
 			},
 
 			goList() {
+                this.detailRequestVersion++;
+                this.detailLoading = false;
 				this.page_type = 'list';
 				this.$nextTick(() => {
-					window.scrollTo(0, this.scrollPosition);
+					uni.pageScrollTo({ scrollTop: this.scrollPosition, duration: 0 });
 				});
 			},
 		}

@@ -29,7 +29,7 @@ public class EntryDetailRowDO {
 
     private String secondCategoryName;
 
-    private Long regionLegacyId;
+    private Long regionId;
 
     private String regionName;
 

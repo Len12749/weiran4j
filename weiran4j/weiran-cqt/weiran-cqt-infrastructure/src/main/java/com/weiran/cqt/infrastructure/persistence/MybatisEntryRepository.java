@@ -30,13 +30,10 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DuplicateKeyException;
 
 /**
- * {@link EntryRepository} 的 MyBatis-Plus 实现。前台报名写入的来源固定为 {@code zhongxi / fastapi_signup}（同原系统），
+ * {@link EntryRepository} 的 MyBatis-Plus 实现。前台报名写入来源取当前账号，来源表为 {@code fastapi_signup}，
  * 账号与参赛人靠 {@code (source_database, legacy_user_id)} 关联。
  */
 public class MybatisEntryRepository implements EntryRepository {
-
-    /** 前台报名的来源库。 */
-    static final String SOURCE_DATABASE = "zhongxi";
 
     /** 前台报名的来源表标记。 */
     static final String SOURCE_TABLE = "fastapi_signup";
@@ -102,7 +99,7 @@ public class MybatisEntryRepository implements EntryRepository {
         row.setEntryNo(entry.entryNo());
         row.setImportFingerprint(importFingerprint);
         row.setSourceChannelId(entry.sourceChannelId());
-        row.setSourceDatabase(MybatisEntryRepository.SOURCE_DATABASE);
+        row.setSourceDatabase(entry.sourceDatabase());
         row.setSourceTable(MybatisEntryRepository.SOURCE_TABLE);
         row.setSourceId(entry.sourceId());
         row.setCompetitionId(entry.competitionId());
@@ -110,7 +107,7 @@ public class MybatisEntryRepository implements EntryRepository {
         row.setLegacyCompetitionId(entry.legacyCompetitionId());
         row.setFirstCategoryLegacyId(entry.firstCategoryLegacyId());
         row.setSecondCategoryLegacyId(entry.secondCategoryLegacyId());
-        row.setRegionLegacyId(entry.regionLegacyId());
+        row.setRegionId(entry.regionId());
         row.setLegacySchoolId(entry.legacySchoolId());
         row.setTitle(entry.title());
         row.setDescription(entry.description());
@@ -125,7 +122,7 @@ public class MybatisEntryRepository implements EntryRepository {
         row.setGroupName(entry.groupName());
         row.setEntryType(entry.team() ? "TEAM" : "INDIVIDUAL");
         row.setDeclaredGroupSize(entry.groupSize());
-        row.setScoringScope("ENTRY");
+        row.setScoringScope("zhongxi".equals(entry.sourceDatabase()) ? "ENTRY" : "PARTICIPANT");
         row.setStatus("ACTIVE");
         row.setLegacyStatus(1);
         row.setSubmittedAt(entry.now());
@@ -164,7 +161,7 @@ public class MybatisEntryRepository implements EntryRepository {
         final CqtEntryParticipantDO row = new CqtEntryParticipantDO();
         row.setEntryId(entryId);
         row.setPersonId(person.getId());
-        row.setSourceDatabase(MybatisEntryRepository.SOURCE_DATABASE);
+        row.setSourceDatabase(accountSourceDatabase);
         row.setSourceTable(MybatisEntryRepository.SOURCE_TABLE);
         row.setSourceId(sourceId);
         row.setIsLeader(leader);
@@ -194,7 +191,8 @@ public class MybatisEntryRepository implements EntryRepository {
         row.setNormalizedIdCard(participant.idCard());
         row.setEntryId(entryId);
         row.setEntryParticipantId(participantId);
-        row.setSourceDatabase(MybatisEntryRepository.SOURCE_DATABASE);
+        final CqtEntryDO entry = Objects.requireNonNull(this.entryMapper.selectById(entryId), "作品不存在");
+        row.setSourceDatabase(entry.getSourceDatabase());
         try {
             this.keyMapper.insert(row);
         } catch (final DuplicateKeyException ex) {
@@ -207,6 +205,16 @@ public class MybatisEntryRepository implements EntryRepository {
         final CqtEvaluationTargetDO row = new CqtEvaluationTargetDO();
         row.setEntryId(entryId);
         row.setTargetType("ENTRY");
+        row.setStatus("ACTIVE");
+        this.targetMapper.insert(row);
+    }
+
+    @Override
+    public void insertParticipantTarget(final long entryId, final long participantId) {
+        final CqtEvaluationTargetDO row = new CqtEvaluationTargetDO();
+        row.setEntryId(entryId);
+        row.setEntryParticipantId(participantId);
+        row.setTargetType("PARTICIPANT");
         row.setStatus("ACTIVE");
         this.targetMapper.insert(row);
     }
@@ -246,7 +254,7 @@ public class MybatisEntryRepository implements EntryRepository {
                 row.getFirstCategoryName(),
                 row.getSecondCategoryLegacyId(),
                 row.getSecondCategoryName(),
-                row.getRegionLegacyId(),
+                row.getRegionId(),
                 row.getRegionName(),
                 row.getLegacySchoolId(),
                 row.getTitle(),
@@ -289,7 +297,7 @@ public class MybatisEntryRepository implements EntryRepository {
                 row.getLegacyStatus(),
                 row.getFirstCategoryLegacyId(),
                 row.getSecondCategoryLegacyId(),
-                row.getRegionLegacyId(),
+                row.getRegionId(),
                 row.getAttachmentUrl(),
                 row.getTeacherNames(),
                 row.getCreatedAt(),

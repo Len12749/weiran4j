@@ -27,7 +27,7 @@ public class MyEntryRowDO {
 
     private Long secondCategoryLegacyId;
 
-    private Long regionLegacyId;
+    private Long regionId;
 
     private String attachmentUrl;
 

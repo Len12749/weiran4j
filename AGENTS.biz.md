@@ -6,10 +6,9 @@
 
 ## 先读这四条
 
-1. **不改任何上游文件。** 只在契约 `weiran4j/docs/01-架构与接口契约.md` §2.2「下游扩展入口」列出的位置落改动，
-   同步上游（`git fetch upstream && git merge upstream/main`）才不会冲突。框架有问题去 weiran4j 修，再 merge 回来。
+1. **不改任何上游文件。** 唯一例外是用户明确要求把上游 `weiran-region` 完整复制到本仓：保留五层模块结构，按本项目号段调整地区错误码与菜单 ID，并开放地区 lookup 供匿名注册选择；不要顺带同步其它上游改动。其它改动仍只落在契约 `weiran4j/docs/01-架构与接口契约.md` §2.2 的扩展点。
    `scripts/biz/upstream-boundary.sh` 在提交时拦截对上游文件的改动（启用见下「常用命令」）。
-2. **业务只有一个模块 `weiran-cqt`**（包 `com.weiran.cqt`）。宪法 CP-12 禁止业务模块互相依赖，
+2. **本仓包含两个互不依赖的业务模块**：通用行政区划 `weiran-region`（从上游复制）和常青藤赛事 `weiran-cqt`（包 `com.weiran.cqt`）。宪法 CP-12 禁止业务模块互相依赖，
    而报名、评审、奖项共用作品数据，所以按子包分领域，不拆模块：
    `account`（C 端账号/短信/实名）· `content`（新闻/站点配置）· `match`（赛事/赛区/赛项/报名/作品/导入）·
    `review`（初审/省审/国审）· `award`（奖项/成绩/证书）。
@@ -31,8 +30,8 @@
    - 业务错误码在 `weiran-cqt-api` 的 `CqtErrors`（序号段 20–39），只有前端要区分、或通用码没有对应状态（如 429 / 503）时才加；
    - 集成测试写在 `weiran-app/src/test/java/com/weiran/app/Cqt*IT.java`（继承包级私有的 `IntegrationTestSupport`），
      测试专用 Controller 用测试类上的 `@Import` 注册；测试密钥在 `weiran-app/src/test/resources/application-biz-test.yml`。
-4. **号段与表前缀**（登记在 `weiran4j/docs/business-modules.md`）：错误码序号 `20`–`39`、菜单 id `1000`–`1999`、
-   权限码前缀 `cqt:`、Flyway 目录 `db/migration/cqt/`、表前缀 `cqt_`。
+4. **号段与表前缀**（登记在 `weiran4j/docs/business-modules.md`）：`weiran-cqt` 使用错误码序号 `20`–`39`、菜单 id `1000`–`1999`、
+   权限码前缀 `cqt:`、Flyway 目录 `db/migration/cqt/`、表前缀 `cqt_`；`weiran-region` 使用 `40`–`49`、`2000`–`2099`、`region:`、`db/migration/region/` 与表 `region`。
    原统一库 `cqtxj2026` 的表迁入时一律加 `cqt_` 前缀（2026-10-02 决定）。
 
 ## 下游自有文件（上游永不创建）
@@ -41,6 +40,7 @@
 | --- | --- |
 | `AGENTS.biz.md` | 本文件 |
 | `weiran4j/weiran-cqt/**` | 业务模块五层；五层必须一次建齐，缺层构建失败 |
+| `weiran4j/weiran-region/**` | 用户要求从上游复制的行政区划五层模块；不得依赖 `weiran-cqt` |
 | `weiran4j/docs/business-modules.md` 的 `weiran-cqt` 行 | 号段登记（上游只维护表头与基座行） |
 | `weiran-cqt-*/src/main/resources/application-biz.yml` | 业务默认配置，全应用只能一份，**不放密钥**（走环境变量 `WEIRAN_CQT_*`） |
 | `weiran-cqt-infrastructure/src/main/resources/db/migration/cqt/` | Flyway 脚本 `V<yyyyMMddHHmm>__cqt_<desc>.sql` |
@@ -88,9 +88,9 @@ pnpm dev:uniapp
   不得约束框架已管理的依赖，传递依赖拉偏框架版本时 `:weiran-app:verifyFrameworkVersions` 会失败。
 - 验证码与短信 IP 计数都存在进程内，只支持单实例部署；多实例前要把 `SmsCodeStore`、`SmsIpCounter` 换成共享存储。
   本地开发写进 gitignore 掉的 `weiran4j/config/application-local.yml`（`weiran.cqt.jwt.secret`）。
-- 数据：Flyway 只建表；原统一库 `cqtxj2026` 的数据用 `scripts/biz/import/<表>.sql` 在切换时导入（源库与目标库同实例，可重复执行）。
+- 数据：Flyway 建表；原统一库 `cqtxj2026` 的业务数据用 `scripts/biz/import/<表>.sql` 在切换时导入（源库与目标库同实例，可重复执行）。旧地区表不导入，旧账号与作品地区不迁移；用户在新地区树中重新选择，旧地区范围评委权限需重新配置。
   导入前先看 `openspec/state/bizs/cqt_setting.md#01`：`cqtxj2026.sql` 导出文件的中文是双重编码乱码，生产库是否同样乱码未确认。
-  导入顺序：`cqt_setting.sql`、`cqt_regions.sql`、`cqt_portal_accounts.sql`、`cqt_competitions.sql`、`cqt_entries.sql`。
+  导入顺序：`cqt_setting.sql`、`cqt_portal_accounts.sql`、`cqt_competitions.sql`、`cqt_entries.sql`。旧账号和作品地区不迁移，需由用户在新地区树中重新选择。
   源库 `cqtxj2026` 须是执行过 FastAPI `migrations` 001–017 的最终形态（导入脚本按列名读取）。
 - 新一届赛事（change `cqt-signup`）：改 `scripts/biz/seed/competition_next.sql` 顶部变量（年份、届次、名称、报名时间、`national_entry_mode`）后执行；
   新赛事默认停用，确认无误后 `UPDATE cqt_competitions SET status = 1 WHERE ...` 开放报名；止血时改回 0。

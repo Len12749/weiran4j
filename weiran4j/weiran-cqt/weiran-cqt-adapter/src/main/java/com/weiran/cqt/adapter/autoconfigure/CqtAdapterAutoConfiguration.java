@@ -3,11 +3,19 @@ package com.weiran.cqt.adapter.autoconfigure;
 import com.weiran.cqt.adapter.portal.AuthController;
 import com.weiran.cqt.adapter.portal.CompetCategoryController;
 import com.weiran.cqt.adapter.portal.CompetitionController;
+import com.weiran.cqt.adapter.portal.ExpertPortalController;
 import com.weiran.cqt.adapter.portal.LocalFilesController;
+import com.weiran.cqt.adapter.portal.NewsPortalController;
 import com.weiran.cqt.adapter.portal.PortalAuthInterceptor;
 import com.weiran.cqt.adapter.portal.PortalExceptionAdvice;
 import com.weiran.cqt.adapter.portal.ProductController;
+import com.weiran.cqt.adapter.portal.ResourcePortalController;
 import com.weiran.cqt.adapter.portal.SchoolImportController;
+import com.weiran.cqt.adapter.portal.ShowcasePortalController;
+import com.weiran.cqt.adapter.web.ExpertAdminController;
+import com.weiran.cqt.adapter.web.NewsAdminController;
+import com.weiran.cqt.adapter.web.ResourceAdminController;
+import com.weiran.cqt.adapter.web.ShowcaseAdminController;
 import com.weiran.cqt.adapter.web.SiteConfigAdminController;
 import com.weiran.cqt.api.portal.PortalAuthService;
 import java.nio.file.Path;
@@ -25,6 +33,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @AutoConfiguration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @Import({
+    com.weiran.cqt.adapter.competition.admin.CompetitionAdminController.class,
+    com.weiran.cqt.adapter.entryexport.EntryExportAdminController.class,
+    com.weiran.cqt.adapter.review.ReviewAdminController.class,
+    com.weiran.cqt.adapter.award.AwardAdminController.class,
+    ResourcePortalController.class,
+    ResourceAdminController.class,
+    ShowcasePortalController.class,
+    ShowcaseAdminController.class,
+    ExpertPortalController.class,
+    ExpertAdminController.class,
     PortalExceptionAdvice.class,
     ProductController.class,
     SiteConfigAdminController.class,
@@ -32,7 +50,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
     CompetCategoryController.class,
     LocalFilesController.class,
     CompetitionController.class,
-    SchoolImportController.class
+    SchoolImportController.class,
+    NewsAdminController.class,
+    NewsPortalController.class
 })
 public class CqtAdapterAutoConfiguration {
 

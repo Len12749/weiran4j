@@ -63,7 +63,7 @@ abstract class CqtIntegrationTestSupport extends IntegrationTestSupport {
         form.put("sex", "1");
         form.put("idcard", idCard);
         form.put("credential_type", "身份证号");
-        form.put("cities", 15);
+        form.put("cities", 3);
         form.put("school", "测试中学");
         form.put("schoolid", "");
         form.put("password", CqtIntegrationTestSupport.PASSWORD);

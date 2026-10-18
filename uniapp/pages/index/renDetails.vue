@@ -18,9 +18,11 @@
 					</view>
 				</view>
 				<view class='titleLine'></view>
-				<view class='zzz3'>
-					<view class='BigTitle'>{{datas.title}}</view>
-					<view class='timeTitle'>{{datas.created_at}}</view>
+				<view v-if="loading">加载中…</view>
+                <view v-else-if="error" @click="golook1()">{{error}}，点击重试或返回上级</view>
+                <view class='zzz3' v-else>
+                    <view class='BigTitle'>{{datas.name}}</view>
+					<view class='timeTitle'>{{datas.createdAt}}</view>
 					<view class='fwb' v-html="datas.content"></view>
 				</view>
 			</view>
@@ -30,6 +32,7 @@
 </template>
 
 <script>
+import { contentGet } from '@/util/content.js';
 	import topBox from '@/components/topBox.vue';
 	import bottomBox from '@/components/bottomBox.vue';
 	import competitionNewsItem from '@/components/competitionNewsItem.vue';
@@ -49,6 +52,7 @@
 				scrollPosition: 0,
 				currentPageData: [], // 当前页的数据
 				datas: {},
+                id: '', loading: true, error: '',
 				isShow: false,
 				myInfo: {},
 				isLogin: true,
@@ -82,15 +86,15 @@
 			});
 		},
 		methods: {
-			golook1() {
-				this.GET({
-					name: '人详情',
-					url: '/api/product/newsdetail?id=' + this.id,
-					data: {}
-				}).then((res) => {
-					this.datas = res.data.data;
-				});
-			},
+            goBack() { uni.navigateBack({ fail: () => uni.redirectTo({ url: '/pages/index/about' }) }); },
+            async golook1() {
+                this.loading = true; this.error = '';
+                try {
+                    if (!/^\d+$/.test(String(this.id)) || Number(this.id) <= 0) throw new Error('人物不存在');
+                    this.datas = await contentGet(this, `experts/${this.id}`);
+                } catch (error) { this.datas = {}; this.error = error.message; }
+                finally { this.loading = false; }
+            },
 		}
 	}
 </script>

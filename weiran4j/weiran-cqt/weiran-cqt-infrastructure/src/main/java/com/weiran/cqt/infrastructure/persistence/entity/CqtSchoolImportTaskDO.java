@@ -36,6 +36,8 @@ public class CqtSchoolImportTaskDO {
 
     private String status;
 
+    private String errorMessage;
+
     private Integer totalRows;
 
     private Integer processedRows;

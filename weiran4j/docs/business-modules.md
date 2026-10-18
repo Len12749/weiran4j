@@ -9,3 +9,4 @@
 | --- | --- | --- | --- | --- |
 | 框架 + 基座 | `00`–`19` | `1`–`999` | `system:` | `db/migration/system/`、`db/migration/platform/` · `sys_` |
 | 常青藤赛事 `weiran-cqt` | `20`–`39` | `1000`–`1999` | `cqt:` | `db/migration/cqt/` · `cqt_` |
+| 行政区划 `weiran-region`（本下游复制） | `40`–`49` | `2000`–`2099` | `region:` | `db/migration/region/` · `region` |

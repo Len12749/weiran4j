@@ -19,6 +19,8 @@ public class CqtEvaluationTargetDO {
 
     private Long entryId;
 
+    private Long entryParticipantId;
+
     private String targetType;
 
     private String status;

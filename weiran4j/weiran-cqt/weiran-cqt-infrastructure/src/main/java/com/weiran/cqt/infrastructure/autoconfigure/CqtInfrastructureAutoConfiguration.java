@@ -9,13 +9,17 @@ import com.weiran.cqt.domain.sms.SmsIpCounter;
 import com.weiran.cqt.domain.sms.SmsSender;
 import com.weiran.cqt.infrastructure.file.LocalFileStorage;
 import com.weiran.cqt.infrastructure.file.OssFileStorage;
+import com.weiran.cqt.infrastructure.persistence.JdbcRegionRepository;
 import com.weiran.cqt.infrastructure.persistence.MybatisAccountRepository;
 import com.weiran.cqt.infrastructure.persistence.MybatisCompetitionRepository;
 import com.weiran.cqt.infrastructure.persistence.MybatisEntryRepository;
-import com.weiran.cqt.infrastructure.persistence.MybatisRegionRepository;
+import com.weiran.cqt.infrastructure.persistence.MybatisExpertRepository;
+import com.weiran.cqt.infrastructure.persistence.MybatisNewsRepository;
+import com.weiran.cqt.infrastructure.persistence.MybatisResourceRepository;
 import com.weiran.cqt.infrastructure.persistence.MybatisSchoolImportTaskRepository;
 import com.weiran.cqt.infrastructure.persistence.MybatisSequenceGenerator;
 import com.weiran.cqt.infrastructure.persistence.MybatisSettingRepository;
+import com.weiran.cqt.infrastructure.persistence.MybatisShowcaseRepository;
 import com.weiran.cqt.infrastructure.security.BCryptPasswordHasher;
 import com.weiran.cqt.infrastructure.security.JjwtPortalTokenCodec;
 import com.weiran.cqt.infrastructure.sms.AliyunSmsSender;
@@ -41,13 +45,21 @@ import org.springframework.context.annotation.Import;
 @MapperScan("com.weiran.cqt.infrastructure.persistence.mapper")
 @EnableConfigurationProperties(CqtProperties.class)
 @Import({
+    com.weiran.cqt.infrastructure.competition.admin.JdbcCompetitionAdminRepository.class,
+    com.weiran.cqt.infrastructure.entryexport.JdbcEntryExportRepository.class,
+    com.weiran.cqt.infrastructure.review.JdbcReviewRepository.class,
+    com.weiran.cqt.infrastructure.award.JdbcAwardRepository.class,
+    MybatisResourceRepository.class,
+    MybatisShowcaseRepository.class,
+    MybatisExpertRepository.class,
     MybatisSettingRepository.class,
     MybatisAccountRepository.class,
-    MybatisRegionRepository.class,
+    JdbcRegionRepository.class,
     MybatisCompetitionRepository.class,
     MybatisEntryRepository.class,
     MybatisSequenceGenerator.class,
-    MybatisSchoolImportTaskRepository.class
+    MybatisSchoolImportTaskRepository.class,
+    MybatisNewsRepository.class
 })
 public class CqtInfrastructureAutoConfiguration {
 

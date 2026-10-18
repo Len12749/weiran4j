@@ -103,3 +103,10 @@ status: "active"
 - **WHEN** 未登录或缺少对应 `cqt:site-config:list` / `cqt:site-config:update` 权限的用户调用管理读写接口
 - **THEN** 请求分别返回认证失败或权限拒绝，数据库内容不变
 - **判据**:HTTP 集成测试断言未授权状态码及 `cqt_setting.contents` 未改变
+
+公众号图片gongzhonghao与首页图片shouyeimage **MUST** 使用SingleImageUpload，支持历史路径回显、原图预览、删除清空及上传重试。图片地址仍保存在原contents字段，上传期间不得保存，保存期间不得变更图片；移除不物理删除存储对象。
+
+#### Scenario: 配置图片上传与清空
+- **WHEN** 管理员编辑公众号图片和首页图片
+- **THEN** 旧图回显，上传返回URL写入对应原字段，删除后可保存为空；预览不触发上传
+- **判据**:静态复核组件绑定与互斥，后续授权后运行浏览器上传验收

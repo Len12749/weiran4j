@@ -15,7 +15,7 @@ import org.jspecify.annotations.Nullable;
  * @param stage 阶段
  * @param firstCategoryLegacyId 一级赛项
  * @param secondCategoryLegacyId 二级赛项
- * @param regionLegacyId 赛区
+ * @param regionId 行政区划 ID
  * @param legacySchoolId 学校编号
  * @param title 作品名
  * @param description 作品介绍
@@ -36,7 +36,7 @@ public record NewEntry(
         EntryStage stage,
         long firstCategoryLegacyId,
         @Nullable Long secondCategoryLegacyId,
-        @Nullable Long regionLegacyId,
+        @Nullable Long regionId,
         @Nullable Long legacySchoolId,
         String title,
         @Nullable String description,
@@ -46,4 +46,49 @@ public record NewEntry(
         String groupName,
         boolean team,
         int groupSize,
-        LocalDateTime now) {}
+        LocalDateTime now,
+        String sourceDatabase) {
+    /** 兼容既有内部调用，默认中戏来源。 */
+    public NewEntry(
+            String entryNo,
+            int sourceChannelId,
+            long sourceId,
+            long competitionId,
+            @Nullable Long legacyCompetitionId,
+            EntryStage stage,
+            long firstCategoryLegacyId,
+            @Nullable Long secondCategoryLegacyId,
+            @Nullable Long regionId,
+            @Nullable Long legacySchoolId,
+            String title,
+            @Nullable String description,
+            Attachment attachment,
+            @Nullable String teacherNames,
+            @Nullable String majorName,
+            String groupName,
+            boolean team,
+            int groupSize,
+            LocalDateTime now) {
+        this(
+                entryNo,
+                sourceChannelId,
+                sourceId,
+                competitionId,
+                legacyCompetitionId,
+                stage,
+                firstCategoryLegacyId,
+                secondCategoryLegacyId,
+                regionId,
+                legacySchoolId,
+                title,
+                description,
+                attachment,
+                teacherNames,
+                majorName,
+                groupName,
+                team,
+                groupSize,
+                now,
+                "zhongxi");
+    }
+}

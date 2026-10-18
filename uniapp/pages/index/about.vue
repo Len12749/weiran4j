@@ -36,10 +36,13 @@
 			</view>
 
 			<view class='bjBox zzz3' v-if="aboutPage=='学术评审'">
-				<view class='bjWidth2 e2 e3'>
+				<view v-if="expertError" @click="get_index()">{{expertError}}，点击重试</view>
+                <view v-else-if="loading">加载中…</view>
+                <view v-else-if="!xslist.length">暂无学术评审团资料</view>
+                <view class='bjWidth2 e2 e3'>
 					<view class='peopleBox zzz3' v-for="(item, index) in displayXsList" :key="index"
 						:class="{ 'placeholder': !item.title }"
-						@click="navigateTo('/pages/index/renDetails?id='+item.id)">
+						@click="item.id && navigateTo('/pages/index/renDetails?id='+item.id)">
 						<image class='avaImg' :src='item.image' mode="aspectFit" style="" />
 						<view class='textBox zzz3'>
 							<view class='name-line zzz3'>
@@ -55,6 +58,9 @@
 					</view>
 				</view>
 			</view>
+
+            <view v-if="aboutPage==='学术评审' && !noMore && !loading" @click="loadMore()" style="padding:24px;text-align:center">加载更多</view>
+            <view v-if="expertError && aboutPage!=='学术评审'" @click="get_index()" style="padding:16px;text-align:center">学术评审资料加载失败，点击重试</view>
 
 			<view class='bjBox zzz3' v-if="aboutPage=='联系我们'">
 				<view class='bjWidth tuwen' :class="$isPC?'e22':''">
@@ -122,6 +128,7 @@
 	</view>
 </template>
 <script>
+import { contentGet, expertView } from '@/util/content.js';
 	import topBox from '@/components/topBox.vue';
 	import bottomBox from '@/components/bottomBox.vue';
 	import setBox from '@/components/setBox.vue';
@@ -135,7 +142,8 @@
 			return {
 				isShowAboutTab: true,
 				aboutPage: '大赛介绍',
-				list: [],
+				list: ['大赛介绍', '大赛章程', '赛项设置', '联系我们'],
+                expertError: '', requestVersion: 0,
 				xslist: [],
 				myInfo: {},
 				isLogin: true,
@@ -149,17 +157,7 @@
 			}
 		},
 		onLoad() {
-			this.GET({
-				name: '学术评审开关',
-				url: '/api/product/Pingshenflag',
-				data: {}
-			}).then((res) => {
-				if (res.data.data.flag == 1) {
-					this.list = ['大赛介绍', '大赛章程', '赛项设置', '学术评审', '联系我们']
-				} else {
-					this.list = ['大赛介绍', '大赛章程', '赛项设置', '联系我们']
-				}
-			});
+
 			this.POST({
 				name: '个人信息2',
 				url: '/api/auth/userinfo',
@@ -176,7 +174,8 @@
 		},
 		onShow() {
 			this.getTabber(this.$isPC)
-			this.get_index()
+			this.page = 1; this.noMore = false; this.xslist = [];
+            this.get_index(true)
 
 			this.GET({
 				name: '获取网站配置',
@@ -204,41 +203,24 @@
 			}
 		},
 		methods: {
-			get_index() {
-				if (this.loading || this.noMore) return;
-				this.loading = true;
-
-				this.GET({
-					name: '学术评审',
-					url: '/api/product/index',
-					data: {
-						category: 1,
-						page: this.page,
-						limit: this.limit
-					}
-				}).then((res) => {
-					this.loading = false;
-					const data = res.data.data.data || [];
-
-					if (data.length < this.limit) {
-						this.noMore = true;
-					}
-
-					if (this.page === 1) {
-						this.xslist = data;
-					} else {
-						this.xslist = [...this.xslist, ...data];
-					}
-				}).catch(() => {
-					this.loading = false;
-				});
-			},
-
-			loadMore() {
-				if (this.noMore || this.loading) return;
-				this.page++;
-				this.get_index();
-			},
+            async get_index(reset = false) {
+                if (!reset && (this.loading || this.noMore)) return;
+                const version = ++this.requestVersion;
+                const page = this.page;
+                this.loading = true;
+                this.expertError = '';
+                try {
+                    const result = await contentGet(this, 'experts', { page, pageSize: this.limit });
+                    if (version !== this.requestVersion) return;
+                    const rows = result.list.map(expertView);
+                    this.xslist = page === 1 ? rows : [...this.xslist, ...rows];
+                    this.noMore = this.xslist.length >= result.total || !rows.length;
+                    this.page++;
+                    this.list = ['大赛介绍', '大赛章程', '赛项设置', ...(result.total > 0 ? ['学术评审'] : []), '联系我们'];
+                } catch (error) { if (version === this.requestVersion) this.expertError = error.message; }
+                finally { if (version === this.requestVersion) this.loading = false; }
+            },
+            loadMore() { this.get_index(); },
 
 			handleAboutPageChange(pageName) {
 				this.aboutPage = pageName
@@ -252,7 +234,7 @@
 					this.page = 1;
 					this.noMore = false;
 					this.xslist = [];
-					this.get_index();
+					this.get_index(true);
 				}
 			},
 

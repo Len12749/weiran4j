@@ -48,3 +48,8 @@ weiran:
       local:
         root: ${WEIRAN_CQT_STORAGE_LOCAL_ROOT:${java.io.tmpdir}/cqt-uploads}
         url-prefix: /uploads
+
+# Never emit SQL bind values containing assessment comments or private credentials.
+logging:
+  level:
+    org.springframework.jdbc.core: INFO

@@ -79,6 +79,10 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     @BeforeEach
     void resetSettings() {
         this.jdbc.update("DELETE FROM cqt_setting");
+        this.jdbc.update("DELETE FROM cqt_news");
+        this.jdbc.update("DELETE FROM cqt_experts");
+        this.jdbc.update("DELETE FROM cqt_showcases");
+        this.jdbc.update("DELETE FROM cqt_resources");
         this.jdbc.update(
                 "INSERT INTO cqt_setting (ident, name, contents) VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?), (?, ?, ?), "
                         + "(?, ?, ?), (?, ?, ?)",
@@ -171,6 +175,167 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     }
 
     @Test
+    @DisplayName("独立内容公开查询只展示启用项，首页筛选与资源ID隔离")
+    void isolatesContentResourcesAndVisibility() {
+        final String admin = this.adminToken();
+        final Map<String, Object> expert =
+                Map.of("name", "评审甲", "image", "/uploads/expert.png", "content", "<p>介绍</p>", "sort", 2);
+        final ResponseEntity<JsonNode> created = this.post("/api/cqt/experts", admin, expert);
+        IntegrationTestSupport.assertOk(created);
+        final long id = IntegrationTestSupport.data(created).asLong();
+        final ResponseEntity<JsonNode> publicDetail = this.get("/api-web/content/experts/" + id, null);
+        CqtWebIT.assertPortalOk(publicDetail);
+        assertThat(IntegrationTestSupport.data(publicDetail).path("enabled").asBoolean())
+                .isTrue();
+        assertThat(IntegrationTestSupport.data(publicDetail).path("showOnHome").asBoolean())
+                .isTrue();
+        final ResponseEntity<JsonNode> home = this.get("/api-web/content/experts?homeOnly=true", null);
+        CqtWebIT.assertPortalOk(home);
+        assertThat(IntegrationTestSupport.data(home).path("list")).hasSize(1);
+        assertThat(IntegrationTestSupport.body(this.get("/api-web/content/showcases/" + id, null))
+                        .path("code")
+                        .asInt())
+                .isEqualTo(404);
+        assertThat(IntegrationTestSupport.body(this.get("/api-web/content/resources/" + id, null))
+                        .path("code")
+                        .asInt())
+                .isEqualTo(404);
+        final Map<String, Object> disabled = new LinkedHashMap<>(expert);
+        disabled.put("enabled", false);
+        IntegrationTestSupport.assertOk(this.put("/api/cqt/experts/" + id, admin, disabled));
+        assertThat(IntegrationTestSupport.body(this.get("/api-web/content/experts/" + id, null))
+                        .path("code")
+                        .asInt())
+                .isEqualTo(404);
+        assertThat(IntegrationTestSupport.data(this.get("/api-web/content/experts", null))
+                        .path("list"))
+                .isEmpty();
+        CqtIntegrationTestSupport.assertError(
+                this.post("/api/cqt/experts", null, expert), HttpStatus.UNAUTHORIZED, 40100);
+        final ResponseEntity<JsonNode> showcase = this.post(
+                "/api/cqt/showcases",
+                admin,
+                Map.of("title", "剧本甲", "image", "/uploads/showcase.png", "category", "SCRIPT"));
+        IntegrationTestSupport.assertOk(showcase);
+        final long showcaseId = IntegrationTestSupport.data(showcase).asLong();
+        assertThat(IntegrationTestSupport.data(this.get("/api-web/content/showcases/" + showcaseId, null))
+                        .path("title")
+                        .asText())
+                .isEqualTo("剧本甲");
+        final ResponseEntity<JsonNode> resource = this.post(
+                "/api/cqt/resources",
+                admin,
+                Map.of(
+                        "title",
+                        "稿纸甲",
+                        "category",
+                        "SCRIPT_PAPER",
+                        "fileUrl",
+                        "/uploads/paper.pdf",
+                        "fileName",
+                        "paper.pdf"));
+        IntegrationTestSupport.assertOk(resource);
+        assertThat(IntegrationTestSupport.data(this.get("/api-web/content/resources?category=DRAMA_MATERIAL", null))
+                        .path("list"))
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("内容写入拒绝未知分类、危险URL及缺少必填字段")
+    void rejectsInvalidContent() {
+        final String admin = this.adminToken();
+        CqtIntegrationTestSupport.assertError(
+                this.post("/api/cqt/experts", admin, Map.of()), HttpStatus.BAD_REQUEST, 40000);
+        CqtIntegrationTestSupport.assertError(
+                this.post(
+                        "/api/cqt/experts",
+                        admin,
+                        Map.of("name", "甲", "image", "javascript:alert(1)", "content", "简介")),
+                HttpStatus.BAD_REQUEST,
+                40000);
+        CqtIntegrationTestSupport.assertError(
+                this.post("/api/cqt/showcases", admin, Map.of("title", "甲", "image", "/a.png", "category", "UNKNOWN")),
+                HttpStatus.BAD_REQUEST,
+                40000);
+        CqtIntegrationTestSupport.assertError(
+                this.post(
+                        "/api/cqt/resources",
+                        admin,
+                        Map.of("title", "甲", "category", "SCRIPT_PAPER", "fileUrl", "//evil.test/a", "fileName", "a")),
+                HttpStatus.BAD_REQUEST,
+                40000);
+        assertThat(IntegrationTestSupport.body(this.get("/api-web/content/resources?category=UNKNOWN", null))
+                        .path("code")
+                        .asInt())
+                .isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("动态后台增删改查、首页展示筛选与公开详情保持一致")
+    void managesNewsAndServesPortalPages() {
+        final String admin = this.adminToken();
+        final Map<String, Object> first = Map.of(
+                "title", "首页动态",
+                "image", "/uploads/news/cover.png",
+                "showOnHome", true,
+                "sort", 2,
+                "content", "<p>正文原文</p>");
+        final Map<String, Object> second = Map.of(
+                "title", "普通动态",
+                "image", "",
+                "showOnHome", false,
+                "sort", 1,
+                "content", "<p>不在首页</p>");
+
+        final ResponseEntity<JsonNode> firstCreated = this.post("/api/cqt/news", admin, first);
+        IntegrationTestSupport.assertOk(firstCreated);
+        final long firstId = IntegrationTestSupport.data(firstCreated).asLong();
+        final ResponseEntity<JsonNode> secondCreated = this.post("/api/cqt/news", admin, second);
+        IntegrationTestSupport.assertOk(secondCreated);
+        final long secondId = IntegrationTestSupport.data(secondCreated).asLong();
+
+        final ResponseEntity<JsonNode> adminPage = this.get("/api/cqt/news?page=1&pageSize=10&keyword=动态", admin);
+        IntegrationTestSupport.assertOk(adminPage);
+        assertThat(IntegrationTestSupport.data(adminPage).path("total").asLong())
+                .isEqualTo(2);
+
+        final ResponseEntity<JsonNode> homePage =
+                this.get("/api-web/product/news?page=1&pageSize=3&homeOnly=true", null);
+        CqtWebIT.assertPortalOk(homePage);
+        final JsonNode homeList = IntegrationTestSupport.data(homePage).path("list");
+        assertThat(homeList).hasSize(1);
+        assertThat(homeList.get(0).path("id").asLong()).isEqualTo(firstId);
+
+        final ResponseEntity<JsonNode> publicPage = this.get("/api-web/product/news?page=1&pageSize=10", null);
+        CqtWebIT.assertPortalOk(publicPage);
+        assertThat(IntegrationTestSupport.data(publicPage).path("list")).hasSize(2);
+        final ResponseEntity<JsonNode> detail = this.get("/api-web/product/newsdetail?id=" + firstId, null);
+        CqtWebIT.assertPortalOk(detail);
+        assertThat(IntegrationTestSupport.data(detail).path("content").asText()).isEqualTo("<p>正文原文</p>");
+
+        final Map<String, Object> updated =
+                Map.of("title", "更新后动态", "image", "", "showOnHome", false, "sort", 0, "content", "<p>已更新</p>");
+        IntegrationTestSupport.assertOk(this.put("/api/cqt/news/" + firstId, admin, updated));
+        final ResponseEntity<JsonNode> emptyHome =
+                this.get("/api-web/product/news?page=1&pageSize=3&homeOnly=true", null);
+        CqtWebIT.assertPortalOk(emptyHome);
+        assertThat(IntegrationTestSupport.data(emptyHome).path("total").asLong())
+                .isZero();
+
+        IntegrationTestSupport.assertOk(this.delete("/api/cqt/news/" + secondId, admin));
+        CqtIntegrationTestSupport.assertError(
+                this.get("/api/cqt/news/" + secondId, admin), HttpStatus.NOT_FOUND, 40400);
+        CqtIntegrationTestSupport.assertError(this.post("/api/cqt/news", null, first), HttpStatus.UNAUTHORIZED, 40100);
+        CqtIntegrationTestSupport.assertError(
+                this.post(
+                        "/api/cqt/news",
+                        admin,
+                        Map.of("title", " ", "image", "", "showOnHome", false, "sort", 0, "content", "x")),
+                HttpStatus.BAD_REQUEST,
+                40000);
+    }
+
+    @Test
     @DisplayName("后台图片上传要求更新权限、只允许图片扩展名并返回可访问 URL")
     void uploadsSiteConfigImage() {
         CqtIntegrationTestSupport.assertError(
@@ -186,6 +351,18 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                 .startsWith("/uploads/cqt/user_files/")
                 .endsWith(".png");
         assertThat(image.path("name").asText()).isEqualTo("photo.png");
+    }
+
+    @Test
+    @DisplayName("动态首图上传校验图片扩展名并返回文件地址")
+    void uploadsNewsImage() {
+        final String admin = this.adminToken();
+        CqtIntegrationTestSupport.assertError(this.uploadNewsImage(admin, "cover.svg"), HttpStatus.BAD_REQUEST, 40000);
+        final ResponseEntity<JsonNode> response = this.uploadNewsImage(admin, "cover.png");
+        IntegrationTestSupport.assertOk(response);
+        assertThat(IntegrationTestSupport.data(response).path("url").asText())
+                .startsWith("/uploads/cqt/user_files/")
+                .endsWith(".png");
     }
 
     @Test
@@ -282,7 +459,19 @@ class CqtWebIT extends CqtIntegrationTestSupport {
         final String taskId =
                 IntegrationTestSupport.data(confirmation).path("task_id").asText();
 
+        assertThat(IntegrationTestSupport.data(confirmation).path("job_id").asText())
+                .isEqualTo(taskId);
+        final JsonNode queuedProgress = IntegrationTestSupport.data(
+                this.get("/api-web/dramacompetition/importProgress/" + taskId, schoolToken));
+        assertThat(queuedProgress.path("state").asText()).isEqualTo("QUEUED");
+        assertThat(queuedProgress.path("progress").asInt()).isZero();
         this.schoolImportService.processNext();
+        final JsonNode finalResult =
+                IntegrationTestSupport.data(this.get("/api-web/dramacompetition/importResult/" + taskId, schoolToken));
+        assertThat(finalResult.path("state").asText()).isEqualTo("COMPLETED");
+        assertThat(finalResult.path("progress").asInt()).isEqualTo(100);
+        assertThat(finalResult.path("success_rows")).hasSize(2);
+        assertThat(finalResult.path("failed_rows")).isEmpty();
 
         final ResponseEntity<JsonNode> detailResponse = this.get(
                 "/api-web/competition/getTaskDetail?Competitionid=" + competitionId + "&id=" + taskId, schoolToken);
@@ -547,6 +736,16 @@ class CqtWebIT extends CqtIntegrationTestSupport {
 
     private ResponseEntity<JsonNode> uploadSiteConfigImage(
             final @org.jspecify.annotations.Nullable String token, final String fileName) {
+        return this.uploadImage("/api/cqt/site-config/images", token, fileName);
+    }
+
+    private ResponseEntity<JsonNode> uploadNewsImage(
+            final @org.jspecify.annotations.Nullable String token, final String fileName) {
+        return this.uploadImage("/api/cqt/news/images", token, fileName);
+    }
+
+    private ResponseEntity<JsonNode> uploadImage(
+            final String path, final @org.jspecify.annotations.Nullable String token, final String fileName) {
         final MultiValueMap<String, Object> form = new LinkedMultiValueMap<>();
         form.add("file", new ByteArrayResource(new byte[] {1, 2, 3}) {
             @Override
@@ -560,10 +759,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
             headers.setBearerAuth(token);
         }
         return this.rest.exchange(
-                "/api/cqt/site-config/images",
-                HttpMethod.POST,
-                new org.springframework.http.HttpEntity<>(form, headers),
-                JsonNode.class);
+                path, HttpMethod.POST, new org.springframework.http.HttpEntity<>(form, headers), JsonNode.class);
     }
 
     private static String rawContent(final JsonNode items, final String key) {
