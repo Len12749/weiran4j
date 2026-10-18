@@ -69,7 +69,7 @@ class AuthIT extends IntegrationTestSupport {
         assertThat(AuthIT.ids(roots)).containsExactly(1L, 2L, 9L, 14L);
         final JsonNode system = roots.get(1);
         assertThat(system.path("type").asText()).isEqualTo("directory");
-        assertThat(AuthIT.ids(system.path("children"))).containsExactly(3L, 4L, 5L, 6L, 7L, 8L, 12L, 13L);
+        assertThat(AuthIT.ids(system.path("children"))).containsExactly(3L, 4L, 5L, 6L, 7L, 8L, 12L, 1000L, 13L);
         final JsonNode users = system.path("children").get(0);
         assertThat(users.path("component").asText()).isEqualTo("system/users/UsersPage");
         assertThat(users.path("permission").asText()).isEqualTo("system:user:list");
@@ -82,6 +82,10 @@ class AuthIT extends IntegrationTestSupport {
         assertThat(siteConfig.path("title").asText()).isEqualTo("站点配置");
         assertThat(siteConfig.path("component").asText()).isEqualTo("system/site-config");
         assertThat(siteConfig.path("permission").asText()).isEqualTo("system:site-config:list");
+        final JsonNode regions = system.path("children").get(7);
+        assertThat(regions.path("title").asText()).isEqualTo("行政区划");
+        assertThat(regions.path("component").asText()).isEqualTo("system/regions/RegionsPage");
+        assertThat(regions.path("permission").asText()).isEqualTo("region:list");
         final JsonNode componentsDemo = roots.get(3);
         assertThat(componentsDemo.path("title").asText()).isEqualTo("组件演示");
         assertThat(componentsDemo.path("type").asText()).isEqualTo("directory");

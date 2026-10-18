@@ -1,0 +1,9 @@
+2026-10-19 | L7 test verification
+
+Backend command: JDK 21 ./gradlew check -x :weiran-app:spotlessJavaCheck --no-daemon
+Result: PASS. This ran backend tests and quality checks, including weiran-app integration tests and RegionIT.
+
+Frontend command: pnpm --filter @weiran/web test
+Result: PASS. 36 test files and 295 tests passed.
+
+The unmodified full Gradle check was also attempted. It failed only at weiran-app:spotlessJavaCheck because the pre-existing extra blank line at EOF in weiran-app/src/main/java/com/weiran/app/WeiranApplication.java was preserved as user data. No region source formatting failure was reported.

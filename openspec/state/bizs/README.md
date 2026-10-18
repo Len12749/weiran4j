@@ -77,3 +77,4 @@
 | 平台能力(weiran-system) | `sys_dict` / `sys_dict_item` 字典 | [`sys_dict.md`](sys_dict.md) |
 | 平台能力(weiran-system) | `sys_config` 系统配置 | [`sys_config.md`](sys_config.md) |
 | 平台能力(weiran-system) | `sys_operation_log` 操作日志 | [`sys_operation_log.md`](sys_operation_log.md) |
+| 行政区划(weiran-region) | `region` 行政区划 | [`region.md`](region.md) |

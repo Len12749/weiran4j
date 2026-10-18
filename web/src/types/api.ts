@@ -288,6 +288,41 @@ export interface DepartmentSaveRequest {
     status?: Status;
 }
 
+/* ---------- 行政区划 ---------- */
+
+export type RegionLevel = 'province' | 'city' | 'county';
+
+export interface RegionView {
+    id: number;
+    code: string;
+    name: string;
+    level: RegionLevel;
+    parentCode: string | null;
+    sort: number;
+    status: Status;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface RegionNode extends RegionView {
+    children: RegionNode[];
+}
+
+export interface RegionQuery {
+    keyword?: string;
+    level?: RegionLevel;
+    status?: Status;
+}
+
+export interface RegionSaveRequest {
+    code: string;
+    name: string;
+    level: RegionLevel;
+    parentCode?: string | null;
+    sort?: number;
+    status?: Status;
+}
+
 /* ---------- 字典 ---------- */
 
 export interface DictView {
