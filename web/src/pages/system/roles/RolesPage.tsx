@@ -79,6 +79,7 @@ export default function RolesPage() {
     ];
 
     const columns: ColumnProps<RoleView>[] = [
+        { title: 'ID', dataIndex: 'id', width: 180 },
         {
             title: '角色名称',
             dataIndex: 'name',

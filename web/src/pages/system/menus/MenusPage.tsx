@@ -43,7 +43,13 @@ export default function MenusPage() {
     const [target, setTarget] = useState<MenuFormTarget | null>(null);
     const [expandedKeys, setExpandedKeys] = useState<(string | number)[] | null>(null);
 
-    const tree = useMemo(() => pruneEmptyChildren(data ?? []), [data]);
+    const tree = useMemo(() => {
+        const sortSiblings = (nodes: MenuNode[]): MenuNode[] =>
+            pruneEmptyChildren(nodes)
+                .map((node) => ({ ...node, ...(node.children ? { children: sortSiblings(node.children) } : {}) }))
+                .sort((a, b) => b.id - a.id);
+        return sortSiblings(data ?? []);
+    }, [data]);
     // 默认展开目录与菜单两级，按钮行收起
     const defaultExpanded = useMemo(
         () =>
@@ -64,6 +70,7 @@ export default function MenusPage() {
     const allExpanded = allKeys.length > 0 && allKeys.every((k) => currentExpanded.includes(k));
 
     const columns: ColumnProps<MenuNode>[] = [
+        { title: 'ID', dataIndex: 'id', width: 180 },
         {
             title: '菜单名称',
             dataIndex: 'title',

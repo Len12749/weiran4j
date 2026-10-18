@@ -224,7 +224,7 @@ public class MybatisUserRepository implements UserRepository {
                 .le(criteria.lastLoginTo() != null, SysUserDO::getLastLoginAt, criteria.lastLoginTo())
                 // 子查询而非 join：一人多角色也只出一行，total 正确；role_id 走参数绑定
                 .apply(roleId != null, "id in (select user_id from sys_user_role where role_id = {0})", roleId)
-                .orderByAsc(SysUserDO::getId);
+                .orderByDesc(SysUserDO::getId);
         return MybatisPages.toResult(
                 this.userMapper.selectPage(MybatisPages.of(pageQuery), wrapper),
                 pageQuery,

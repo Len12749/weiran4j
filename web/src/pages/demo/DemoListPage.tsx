@@ -27,9 +27,9 @@ interface Filters {
 
 const EMPTY_FILTERS: Filters = { keyword: '', status: undefined };
 const INITIAL_ROWS: DemoRow[] = [
-    { id: 1, name: '产品设计', description: '演示列设置和表格操作', status: 'enabled', gender: 'female' },
+    { id: 3, name: '产品设计', description: '演示列设置和表格操作', status: 'enabled', gender: 'female' },
     { id: 2, name: '研发协作', description: '演示搜索条件和字典标签', status: 'enabled', gender: 'male' },
-    { id: 3, name: '归档示例', description: '演示禁用状态', status: 'disabled', gender: 'female' },
+    { id: 1, name: '归档示例', description: '演示禁用状态', status: 'disabled', gender: 'female' },
 ];
 
 export default function DemoListPage() {
@@ -63,6 +63,7 @@ export default function DemoListPage() {
         row.name.includes(filters.keyword) && (!filters.status || row.status === filters.status),
     );
     const columns: ColumnProps<DemoRow>[] = [
+        { title: 'ID', dataIndex: 'id', width: 180 },
         { title: '名称', dataIndex: 'name', width: 150 },
         { title: '说明', dataIndex: 'description' },
         { title: '性别字典', dataIndex: 'gender', width: 100, render: (value: string) => <DictTag dictCode="sys_user_gender" value={value} /> },

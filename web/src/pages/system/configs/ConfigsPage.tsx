@@ -128,6 +128,7 @@ export default function ConfigsPage() {
     const deleteConfig = useDeleteConfig();
 
     const columns: ColumnProps<ConfigView>[] = [
+        { title: 'ID', dataIndex: 'id', width: 180 },
         {
             title: '配置键',
             dataIndex: 'configKey',

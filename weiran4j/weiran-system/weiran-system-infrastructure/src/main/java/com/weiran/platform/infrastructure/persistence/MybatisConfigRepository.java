@@ -72,7 +72,7 @@ public class MybatisConfigRepository implements ConfigRepository {
                         w -> w.like(SysConfigDO::getConfigKey, Likes.escape(keyword))
                                 .or()
                                 .like(SysConfigDO::getDescription, Likes.escape(keyword)))
-                .orderByAsc(SysConfigDO::getId);
+                .orderByDesc(SysConfigDO::getId);
         return MybatisPages.toResult(
                 this.configMapper.selectPage(MybatisPages.of(pageQuery), wrapper),
                 pageQuery,

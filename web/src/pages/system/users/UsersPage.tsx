@@ -243,13 +243,13 @@ export default function UsersPage() {
         return list;
     })();
 
-    // 列宽合计（含弹性列「角色」按 ROLE_MIN_WIDTH 计）原为 1114：1440 宽下最窄的是双列布局，表格可用 1115，四种导航布局都平铺操作列、不出横向滚动；
-    // 配置了外部身份提供方时多一个「外部身份」操作，合计 1186（见 ACTIONS_WIDTH_WITH_IDENTITY）：双列（1115）与侧边 / 混合（1135）布局下会横向滚动，顶部菜单（1375）不受影响；
+    // 列宽合计（含弹性列「角色」按 ROLE_MIN_WIDTH 计）为 1230：1440 宽下双列布局可用 1115，表格横向滚动，操作列固定在右侧；
+    // 配置外部身份提供方时多一个「外部身份」操作，合计 1302（见 ACTIONS_WIDTH_WITH_IDENTITY），各宽屏布局均可横向滚动；
     // 视口 < 992（便捷搜索隐藏）时操作列收成「…」（useCompactActions）；其间放不下就横向滚动（操作列固定在右侧）。
     // 各固定列已压到「内容 + 24 内边距」：时间 158（156 时小数宽度会把时分秒挤到第二行）；手机 116（Inter 数字不等宽，最宽的 11 位约 91）；
-    // 性别 52；5 位 ID 64；用户名 / 部门是普通文字，79 即可，超长时自然折行。加列前先实测再算，加列前先实测再算
+    // 性别 52；ID 180（容纳最多 19 位）；用户名 / 部门是普通文字，79 即可，超长时自然折行。加列前先实测再算。
     const columns: ColumnProps<UserView>[] = [
-        { title: 'ID', dataIndex: 'id', width: 64 },
+        { title: 'ID', dataIndex: 'id', width: 180 },
         { title: '用户名', dataIndex: 'username', width: 79 },
         { title: '昵称', dataIndex: 'nickname', width: 90 },
         {
