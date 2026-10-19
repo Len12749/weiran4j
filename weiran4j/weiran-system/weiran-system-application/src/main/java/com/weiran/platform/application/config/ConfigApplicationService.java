@@ -5,14 +5,17 @@ import com.weiran.framework.error.CommonErrors;
 import com.weiran.framework.page.PageQuery;
 import com.weiran.framework.page.PageResult;
 import com.weiran.framework.text.Texts;
+import com.weiran.platform.api.config.ConfigGroupView;
 import com.weiran.platform.api.config.ConfigService;
 import com.weiran.platform.api.config.ConfigView;
 import com.weiran.platform.api.config.PublicConfigView;
 import com.weiran.platform.api.config.SaveConfigCommand;
+import com.weiran.platform.domain.config.ConfigGroupDefinition;
 import com.weiran.platform.domain.config.ConfigRepository;
 import com.weiran.platform.domain.config.ConfigType;
 import com.weiran.platform.domain.config.JsonSyntax;
 import com.weiran.platform.domain.config.SystemConfig;
+import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +40,22 @@ public class ConfigApplicationService implements ConfigService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ConfigView> all() {
+        return this.configRepository.findAll().stream()
+                .map(ConfigApplicationService::toView)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ConfigGroupView> groups() {
+        return ConfigGroupDefinition.items().stream()
+                .map(item -> new ConfigGroupView(item.key(), item.label()))
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ConfigView get(final long id) {
         return ConfigApplicationService.toView(this.requireConfig(id));
     }
@@ -52,6 +71,10 @@ public class ConfigApplicationService implements ConfigService {
                 .configKey(key)
                 .configValue(command.configValue())
                 .configType(ConfigType.of(command.configType()))
+                .groupKey(command.groupKey().strip())
+                .fieldType(command.fieldType())
+                .fieldOptions(Texts.trimToNull(command.fieldOptions()))
+                .required(command.required())
                 .description(Texts.trimToNull(command.description()))
                 .builtin(false)
                 .build()
@@ -68,6 +91,10 @@ public class ConfigApplicationService implements ConfigService {
                 key,
                 command.configValue(),
                 ConfigType.of(command.configType()),
+                command.groupKey().strip(),
+                command.fieldType(),
+                Texts.trimToNull(command.fieldOptions()),
+                command.required(),
                 Texts.trimToNull(command.description()),
                 this.jsonSyntax);
         if (!config.getConfigKey().equals(key) && this.configRepository.existsByKey(key)) {
@@ -107,6 +134,10 @@ public class ConfigApplicationService implements ConfigService {
                 config.getConfigKey(),
                 config.getConfigValue(),
                 config.getConfigType().value(),
+                config.getGroupKey(),
+                config.getFieldType(),
+                config.getFieldOptions(),
+                config.isRequired(),
                 config.getDescription(),
                 config.isBuiltin(),
                 config.getCreatedAt(),

@@ -2,10 +2,18 @@
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
   "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".vitepress/dist/**"]
+    },
     "dev": {
       "cache": false,
       "persistent": true,
       "passThroughEnv": ["JAVA_HOME", "JAVA_HOME_21", "WEIRAN_*", "SERVER_PORT", "SPRING_*"]
+    },
+    "preview": {
+      "cache": false,
+      "persistent": true
     }
   }
 }

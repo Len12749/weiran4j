@@ -371,12 +371,22 @@ export interface DictItemSaveRequest {
 /* ---------- 系统配置 ---------- */
 
 export type ConfigType = 'string' | 'number' | 'boolean' | 'json';
+export type ConfigFieldType = 'input' | 'textarea' | 'number' | 'switch' | 'select' | 'json';
+
+export interface ConfigGroupView {
+    key: string;
+    label: string;
+}
 
 export interface ConfigView {
     id: number;
     configKey: string;
     configValue: string;
     configType: ConfigType;
+    groupKey: string;
+    fieldType: ConfigFieldType;
+    fieldOptions: string | null;
+    required: boolean;
     description: string | null;
     isBuiltin: boolean;
     createdAt: string;
@@ -391,25 +401,14 @@ export interface ConfigSaveRequest {
     configKey: string;
     configValue: string;
     configType: ConfigType;
+    groupKey: string;
+    fieldType: ConfigFieldType;
+    fieldOptions?: string | null;
+    required: boolean;
     description?: string | null;
 }
 
-/* ---------- 系统站点配置与媒体库 ---------- */
-
-export interface SystemSiteConfigItem {
-    key: string;
-    label: string;
-    ident: number;
-    contents: string | null;
-}
-
-export interface SystemSiteConfigResponse {
-    items: SystemSiteConfigItem[];
-}
-
-export interface SystemSiteConfigSaveRequest {
-    items: Array<Pick<SystemSiteConfigItem, 'key' | 'contents'>>;
-}
+/* ---------- 系统媒体库 ---------- */
 
 export interface SystemMediaImageUpload {
     url: string;

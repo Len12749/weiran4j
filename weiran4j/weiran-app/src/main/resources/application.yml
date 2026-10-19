@@ -48,6 +48,14 @@ weiran:
         access-key-id: ${WEIRAN_STORAGE_OSS_ACCESS_KEY_ID:}
         access-key-secret: ${WEIRAN_STORAGE_OSS_ACCESS_KEY_SECRET:}
         public-base-url: ${WEIRAN_STORAGE_OSS_PUBLIC_BASE_URL:}
+    sms:
+      # 短信默认关闭；log 模式记录模板内容，仅供受控开发/测试联调。
+      mode: ${WEIRAN_SYSTEM_SMS_MODE:disabled}
+      access-key-id: ${WEIRAN_SYSTEM_SMS_ACCESS_KEY_ID:}
+      access-key-secret: ${WEIRAN_SYSTEM_SMS_ACCESS_KEY_SECRET:}
+      sign-name: ${WEIRAN_SYSTEM_SMS_SIGN_NAME:}
+      connect-timeout: ${WEIRAN_SYSTEM_SMS_CONNECT_TIMEOUT:3}
+      read-timeout: ${WEIRAN_SYSTEM_SMS_READ_TIMEOUT:5}
   auth:
     jwt:
       # 生产环境必须由环境变量注入，至少 32 字节；缺失或过短时应用启动失败。仓库里不放真实密钥。

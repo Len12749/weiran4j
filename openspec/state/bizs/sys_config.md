@@ -13,7 +13,7 @@
 > [`MybatisConfigRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/weiran/platform/infrastructure/persistence/MybatisConfigRepository.java)、
 > [`V202609260101__platform_init_schema.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/platform/V202609260101__platform_init_schema.sql) /
 > [`V202609260102__platform_seed_data.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/platform/V202609260102__platform_seed_data.sql)、
-> [`ConfigsPage.tsx`](../../../web/src/pages/system/configs/ConfigsPage.tsx)（页面、内嵌 `ConfigFormModal` 与 `validateConfigValue`）、
+> [`ConfigsPage.tsx`](../../../web/src/pages/system/configs/ConfigsPage.tsx)（页面、内嵌字段设置表单与分组校验）、
 > [`hooks/queries/configs.ts`](../../../web/src/hooks/queries/configs.ts)。
 >
 > 盘点基线：`e23c511`（2026-09-26，D-008 框架重写后的首次盘点）。
@@ -27,39 +27,37 @@
 | 路由 | `/system/configs` |
 | 页面组件 | `system/configs/ConfigsPage`（同文件内的 `ConfigFormModal`） |
 | 后端模块 | `weiran-system`；`ConfigController` → `ConfigApplicationService` → `MybatisConfigRepository` |
-| 接口前缀 | `/api/configs` |
+| 接口前缀 | `/api/configs`；页面另用 `/all`、`/groups` |
 | 权限码 | `system:config:list` · `system:config:create` · `system:config:update` · `system:config:delete`；`GET /public/{key}` 为 `@PublicApi`（免登录） |
-| 种子 | `sys.site.title` = `Weiran Admin`（string，内置） |
+| 种子 | `system.site.title` = `Weiran Admin`（string，内置）；`system.user.enable_phone_login` = `false`（boolean，内置） |
 
-## 1. 列表
+## 1. 可视化表单
 
-接口 `GET /api/configs`，按 `id` 升序；无排序参数。
+页面不再以分页表格为主要编辑入口，而是按代码定义的分组目录显示 Tab；当前有 `general`（通用设置）和 `user`（用户）。
+分组编码暂不允许在管理页面扩充。不同模块可将自己的配置项放入同一目录；以后可以在此元数据模型上继续扩展低代码配置。
+配置项可在已有分组中新增、编辑和删除（内置项仍不可删除）。
 
-| # | 列表列 | 来源 | 渲染 |
+接口 `GET /api/configs/all` 返回全部配置项，`GET /api/configs/groups` 返回固定分组目录；
+`GET /api/configs` 的分页列表接口仍保留。
+
+每条配置项通过 `group_key`、`field_type`、`field_options`、`required` 描述分组、控件和校验规则。
+键必须以 `system.` 开头，匿名读取仅允许 `system.site.*`。
+
+## 2. 配置字段
+
+| 字段 | 控件 | 校验 | DB 列 / 类型 |
 | --- | --- | --- | --- |
-| 1 | 配置键 | `config_key` | 可复制文本；内置项追加蓝色「内置」`Tag` |
-| 2 | 配置值 | `config_value` | 单行省略，悬停显示全文 |
-| 3 | 类型 | `config_type` | 原值（`string/number/boolean/json`） |
-| 4 | 描述 | `description` | 空值 `—` |
-| 5 | 更新时间 | `updated_at` | 原值 |
-| 6 | 操作 | — | 有 `update` / `delete` 任一权限才出现 |
-
-**筛选项**：输入框「配置键 / 描述」→ `keyword`（`config_key`、`description` 两列 `LIKE`），「查询」/ 回车生效，「重置」清空。
-
-**分页**：`page` 默认 1、`pageSize` 默认 20（上限 200）；前端可切换条数、显示总数。
-
-## 2. 字段与表单
-
-| 字段 | 前端控件 | 前端校验 | 后端校验 | DB 列 / 类型 |
-| --- | --- | --- | --- | --- |
-| 配置键 | `Form.Input`，内置项 `disabled`；提交前 `trim` | 必填；`maxLength=128` | `@NotBlank` `@Size(max=128)`；去空白后查重 40900「配置键已存在」；内置项改键 40901；无格式规则 | `config_key varchar(128)` 唯一 |
-| 类型 | `Form.Select`（字符串 / 数字 / 布尔 / JSON），默认 `string` | 无 | `@NotBlank`；只能 `string/number/boolean/json`（40000）；内置项也可改类型 | `config_type varchar(16)` 默认 `string` |
-| 配置值 ❌ | `Form.TextArea`（4 行） | `maxLength=4096`；`validateConfigValue` 按类型校验（见下） | `@NotNull` `@Size(max=4096)`（可为空串）；领域 `ConfigType.validate` 按类型校验，不合法 40000 `configValue: 不是合法的 <type> 值` | `config_value varchar(4096)` 默认 `''` |
-| 描述 | `Form.TextArea`（2 行） | `maxLength=256` | `@Size(max=256)`；空白存 `null` | `description varchar(256) null` |
+| 配置键 | 输入；内置项不可改 | 必填、最多 128 字符、`system.` 前缀；重复 40900；内置项改键 40901 | `config_key varchar(128)` 唯一 |
+| 分组 | 从内置目录选择 | 必须是代码定义的分组编码 | `group_key varchar(64)` |
+| 表单字段 | 单行 / 多行 / 数字 / 开关 / 下拉 / JSON | 字段类型与值类型匹配；下拉选项为合法 JSON 数组 | `field_type varchar(16)`、`field_options varchar(2048)` |
+| 必填 | 开关 | 必填项不可为空 | `required tinyint(1)` |
+| 类型 | 随控件设置 | 只能 `string/number/boolean/json` | `config_type varchar(16)` 默认 `string` |
+| 配置值 | 由 `field_type` 渲染 | 最多 4096 字符，并按类型校验（见下） | `config_value varchar(4096)` 默认 `''` |
+| 描述 | 多行输入 | 最多 256 字符 | `description varchar(256) null` |
 
 **按类型校验的口径**：
 
-| 类型 | 前端 `validateConfigValue` | 后端 `ConfigType.validate` |
+| 类型 | 前端校验 | 后端校验 |
 | --- | --- | --- |
 | string | 不校验 | 不校验 |
 | number | 去空白后非空，且 `Number(v)` 不是 `NaN` | 非空白、**首尾不能有空白**、`new BigDecimal(v)` 可解析 |
@@ -75,19 +73,20 @@
 | 新增配置（工具栏最左） | `POST /api/configs` → `{id}` | `system:config:create` | ✅ 系统配置 / 新增配置 | 见 §2 |
 | 编辑（行） | `PUT /api/configs/{id}` | `system:config:update` | ✅ 修改配置 | 404 配置不存在；内置项改键 40901；新值按新类型校验 |
 | 删除（行「操作」列，确认后执行；窄屏（< 992px）收在「…」菜单里） | `DELETE /api/configs/{id}` | `system:config:delete` | ✅ 删除配置 | 内置 40901「内置配置不可删除」（前端按钮 disabled） |
-| —（公开读取） | `GET /api/configs/public/{key}` | 免登录 | — | 键不以 `sys.site.` 开头 40300「该配置不允许公开读取」；查不到 40400；因库排序规则大小写不敏感，查回后用库里的真实键再判一次前缀 |
+| —（公开读取） | `GET /api/configs/public/{key}` | 免登录 | — | 键不以 `system.site.` 开头 40300「该配置不允许公开读取」；查不到 40400；按库里的真实键复核前缀 |
 | —（详情） | `GET /api/configs/{id}` | `system:config:list` | — | 前端页面未调用 |
 
 ## 4. 用到的公共组件
 
-- `PageContainer`、`SearchToolbar`（`leading` / `conditions` / `onRefresh`）、`TableActions`（`useActionsColumn`）、`Permission`
+- `PageContainer`、`Permission`、Semi UI `Form` / `Tabs`
 
 ## 5. 说明与建议
 
 - 配置写入后没有缓存层，公开接口每次查库。
+- 页面按内置分组目录生成 Tab，配置项以 `group_key` 归组；`field_type`、`field_options`、`required` 控制表单渲染和校验。键统一以 `system.` 开头，匿名读取仅允许 `system.site.*`。
 - **前端目前不消费任何配置**：`web/src` 里没有调用 `/api/configs/public/*` 的代码，站点标题取自构建期环境变量 `VITE_APP_TITLE`（见 #02）。
-- 内置配置只保护「键不可改、不可删」，值与类型都可以改（例如把 `sys.site.title` 的类型改成 `number` 并填数字）。
-- 建议：前端 number 校验与后端对齐（#01）；登录页 / 顶栏改读 `sys.site.title`，或修改种子描述（#02）。
+- 内置配置只保护「键不可改、不可删」，值与表单配置都可以改。
+- [系统配置说明](../../../docs/configuration.md)记录了分组和表单字段的使用方式。
 
 ## 6. 已知问题汇总
 
@@ -96,14 +95,18 @@
   `new BigDecimal(v)` 可解析，这四个值都会被拒。症状：表单校验通过，提交后 Toast 显示 40000
   「configValue: 不是合法的 number 值」。
 
-- **#02 🔴 P3 种子配置 `sys.site.title` 描述称用于前端登录页与顶栏，但前端并未读取**
-  种子描述写「站点标题（前端登录页与顶栏展示）」，`GET /api/configs/public/{key}` 也专为它开放免登录读取；
+- **#02 🔴 P3 种子配置 `system.site.title` 前端仍未读取**
+  `GET /api/configs/public/{key}` 为其开放免登录读取；
   但前端 `config.ts` 的 `appTitle` 来自 `import.meta.env.VITE_APP_TITLE`（缺省 `Weiran Admin`），全仓无调用公开配置接口之处。
-  症状：在系统配置页修改 `sys.site.title` 后，登录页与顶栏标题不变。
+  症状：在系统配置页修改 `system.site.title` 后，登录页与顶栏标题不变。
 
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-19**
+- 新增 `user` 内置分组与 `system.user.enable_phone_login` 开关（默认关闭）。
+- 系统配置改为按固定内置分组目录渲染动态表单，配置键统一使用 `system.`；站点配置独立模块已移除。
 
 **2026-09-27**
 - **#04 ✅ P3 系统配置列表按 `rules/advisory/list-view.md` 约定改造**

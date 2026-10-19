@@ -24,7 +24,7 @@ mysql -uroot -e "CREATE DATABASE weiran4j DEFAULT CHARACTER SET utf8mb4"
 cp config/application-local.yml.example config/application-local.yml   # 填库密码与 JWT 密钥（openssl rand -base64 48）
 
 # 3. 一条命令起前后端（仓库根目录，turbo 编排）
-cd .. && pnpm install && pnpm dev      # 后端 bootRun(3310) + 前端 vite(5373)，/api 代理到 3310
+cd .. && pnpm install && pnpm dev      # 后端(3310) + 前端(5373) + 文档站(5173)，/api 代理到后端
                                        # 只起后端：pnpm dev:server，或在 weiran4j/ 下 ./gradlew :weiran-app:bootRun
 ```
 
@@ -38,12 +38,17 @@ cd .. && pnpm install && pnpm dev      # 后端 bootRun(3310) + 前端 vite(5373
 | `weiran-dependencies` | BOM：框架版本只在这里；fork 下游的业务版本在 `biz-dependencies.gradle.kts`（D-013） |
 | `weiran-framework` | 纯 Java 契约（错误码、分页、响应包络）+ 统一响应、全局异常、认证拦截、`@RequiresPermission`、`@OperationLog`、MyBatis-Plus 配置 |
 | `weiran-system-*` | 后台基座：认证 / 用户 / 角色 / 菜单 / 部门 / 登录日志（包 `com.weiran.system`）+ 字典 / 系统配置 / 操作日志（包 `com.weiran.platform`） |
+| `weiran-region-*` | 行政区划管理与查询，按 DDD 五层组织 |
 | `weiran-app` | 启动模块与集成测试 |
 
 ## 文档
 
 | 文档 | 内容 |
 | --- | --- |
+| [`../README.md`](../README.md) | 仓库根目录快速开始 |
+| [`../docs/index.md`](../docs/index.md) | VitePress 项目文档站入口 |
+| [`../docs/usage.md`](../docs/usage.md) | 本地使用指南 |
+| [`../docs/architecture.md`](../docs/architecture.md) | 整体架构 |
 | [`AGENTS.md`](../AGENTS.md)(仓库根) | 开发约定、分层规矩、门禁硬约束（AI 与人都读这份） |
 | [`docs/01-架构与接口契约.md`](docs/01-架构与接口契约.md) | **前后端唯一契约**：模块、表结构、种子数据、全部接口与错误码 |
 | [`docs/00-决策记录.md`](docs/00-决策记录.md) | 关键决策与理由，只增不改（重写见 D-008） |

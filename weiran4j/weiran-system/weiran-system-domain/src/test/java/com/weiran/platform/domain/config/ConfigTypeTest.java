@@ -62,24 +62,44 @@ class ConfigTypeTest {
     void protectsBuiltinConfig() {
         final SystemConfig builtin = SystemConfig.builder()
                 .id(1L)
-                .configKey("sys.site.title")
+                .configKey("system.site.title")
                 .configValue("Weiran Admin")
                 .configType(ConfigType.STRING)
+                .groupKey("general")
+                .fieldType("input")
+                .required(true)
                 .builtin(true)
                 .build();
 
-        assertThatThrownBy(() -> builtin.withDetails("other", "x", ConfigType.STRING, null, ConfigTypeTest.JSON))
+        assertThatThrownBy(() -> builtin.withDetails(
+                        "other", "x", ConfigType.STRING, "general", "input", null, true, null, ConfigTypeTest.JSON))
                 .isInstanceOfSatisfying(
                         BizException.class, ex -> assertThat(ex.getErrorCode()).isEqualTo(CommonErrors.CONFLICT));
         assertThatThrownBy(builtin::ensureDeletable).hasMessage("内置配置不可删除");
-        assertThatThrownBy(() ->
-                        builtin.withDetails("sys.site.title", "abc", ConfigType.NUMBER, null, ConfigTypeTest.JSON))
+        assertThatThrownBy(() -> builtin.withDetails(
+                        "system.site.title",
+                        "abc",
+                        ConfigType.NUMBER,
+                        "general",
+                        "number",
+                        null,
+                        true,
+                        null,
+                        ConfigTypeTest.JSON))
                 .hasMessageStartingWith("configValue");
-        final SystemConfig updated =
-                builtin.withDetails("sys.site.title", "新标题", ConfigType.STRING, "站点标题", ConfigTypeTest.JSON);
+        final SystemConfig updated = builtin.withDetails(
+                "system.site.title",
+                "新标题",
+                ConfigType.STRING,
+                "general",
+                "input",
+                null,
+                true,
+                "系统标题",
+                ConfigTypeTest.JSON);
         assertThat(updated.getConfigValue()).isEqualTo("新标题");
         assertThat(updated.requireId()).isEqualTo(1L);
-        assertThat(SystemConfig.isPublicKey("sys.site.title")).isTrue();
+        assertThat(SystemConfig.isPublicKey("system.site.title")).isTrue();
         assertThat(SystemConfig.isPublicKey("sys.secret")).isFalse();
         assertThatCode(() -> builtin.toBuilder().builtin(false).build().ensureDeletable())
                 .doesNotThrowAnyException();

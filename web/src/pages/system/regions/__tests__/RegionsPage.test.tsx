@@ -47,7 +47,7 @@ const baseRoutes = () => ({
 describe('RegionsPage', () => {
     afterEach(() => vi.unstubAllGlobals());
 
-    it('显示 ID 首列和弹性名称列，树默认折叠并按同级 ID 倒序展示', async () => {
+    it('把地区行展开按钮放在首列，并支持全部展开/收起', async () => {
         mockFetch(baseRoutes());
         renderWithProviders(<RegionsPage />);
 
@@ -58,6 +58,16 @@ describe('RegionsPage', () => {
 
         const rows = [...document.querySelectorAll('.semi-table-body tbody tr')];
         expect(rows.map((row) => row.querySelector('td')?.textContent?.trim())).toEqual(['10', '9']);
+
+        const beijingRow = screen.getByText('北京市').closest('tr');
+        expect(beijingRow).not.toBeNull();
+        const expandButton = within(beijingRow as HTMLElement).getByRole('button', { name: 'Expand this row' });
+        expect(beijingRow?.querySelector('td')).toContainElement(expandButton);
+        fireEvent.click(expandButton);
+        expect(await screen.findByText('北京市辖区')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: '全部收起' }));
+        expect(screen.queryByText('北京市辖区')).not.toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: '全部展开' }));
         expect(await screen.findByText('北京市辖区')).toBeInTheDocument();

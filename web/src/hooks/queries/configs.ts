@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toQueryString } from '@/lib/query';
 import { http } from '@/utils/request';
-import type { ConfigQuery, ConfigSaveRequest, ConfigView, IdResult, PageResult } from '@/types/api';
+import type { ConfigGroupView, ConfigQuery, ConfigSaveRequest, ConfigView, IdResult, PageResult } from '@/types/api';
 
 export const configKeys = {
     all: ['configs'] as const,
@@ -13,6 +13,20 @@ export function useConfigList(query: ConfigQuery) {
         queryKey: configKeys.list(query),
         queryFn: () => http.get<PageResult<ConfigView>>(`/api/configs${toQueryString(query)}`),
         placeholderData: keepPreviousData,
+    });
+}
+
+export function useConfigAll() {
+    return useQuery({
+        queryKey: [...configKeys.all, 'all'] as const,
+        queryFn: () => http.get<ConfigView[]>('/api/configs/all'),
+    });
+}
+
+export function useConfigGroups() {
+    return useQuery({
+        queryKey: [...configKeys.all, 'groups'] as const,
+        queryFn: () => http.get<ConfigGroupView[]>('/api/configs/groups'),
     });
 }
 

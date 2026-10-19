@@ -7,7 +7,6 @@ import static org.mockito.Mockito.when;
 
 import com.weiran.framework.error.BizException;
 import com.weiran.system.domain.media.MediaRepository;
-import com.weiran.system.domain.siteconfig.SiteConfigRepository;
 import com.weiran.system.domain.storage.FileStorage;
 import com.weiran.system.domain.storage.FileStorageException;
 import java.io.ByteArrayInputStream;
@@ -20,7 +19,6 @@ class MediaApplicationServiceTest {
     @DisplayName("存储未配置时上传返回 503")
     void returnsServiceUnavailableWhenStorageIsDisabled() {
         final MediaRepository mediaRepository = mock(MediaRepository.class);
-        final SiteConfigRepository siteConfigRepository = mock(SiteConfigRepository.class);
         final FileStorage fileStorage = mock(FileStorage.class);
         when(fileStorage.store(
                         org.mockito.ArgumentMatchers.anyString(),
@@ -28,7 +26,7 @@ class MediaApplicationServiceTest {
                         org.mockito.ArgumentMatchers.anyLong()))
                 .thenThrow(new FileStorageException("文件存储未配置"));
         final MediaApplicationService service = new MediaApplicationService(
-                mediaRepository, siteConfigRepository, fileStorage, new MediaAssetDeletionService(mediaRepository));
+                mediaRepository, fileStorage, new MediaAssetDeletionService(mediaRepository));
 
         assertThatThrownBy(() -> service.upload(
                         "image.png",

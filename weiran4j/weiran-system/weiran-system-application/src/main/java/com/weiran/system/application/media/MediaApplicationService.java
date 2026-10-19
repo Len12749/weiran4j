@@ -8,7 +8,6 @@ import com.weiran.system.api.media.MediaService;
 import com.weiran.system.api.media.MediaView;
 import com.weiran.system.domain.media.MediaAsset;
 import com.weiran.system.domain.media.MediaRepository;
-import com.weiran.system.domain.siteconfig.SiteConfigRepository;
 import com.weiran.system.domain.storage.FileStorage;
 import com.weiran.system.domain.storage.FileStorage.StoredFile;
 import com.weiran.system.domain.storage.FileStorageException;
@@ -30,17 +29,14 @@ public class MediaApplicationService implements MediaService {
     private static final String[] ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif"};
 
     private final MediaRepository mediaRepository;
-    private final SiteConfigRepository siteConfigRepository;
     private final FileStorage fileStorage;
     private final MediaAssetDeletionService deletionService;
 
     public MediaApplicationService(
             final MediaRepository mediaRepository,
-            final SiteConfigRepository siteConfigRepository,
             final FileStorage fileStorage,
             final MediaAssetDeletionService deletionService) {
         this.mediaRepository = mediaRepository;
-        this.siteConfigRepository = siteConfigRepository;
         this.fileStorage = fileStorage;
         this.deletionService = deletionService;
     }
@@ -106,12 +102,6 @@ public class MediaApplicationService implements MediaService {
     @Transactional
     public void delete(final long id) {
         final MediaAsset asset = this.mediaRepository.findById(id).orElseThrow(() -> BizException.notFound("图片不存在"));
-        final var contents = this.siteConfigRepository.lockAndFindContents();
-        if (contents.values().stream()
-                .filter(java.util.Objects::nonNull)
-                .anyMatch(value -> value.contains(asset.url()))) {
-            throw BizException.conflict("图片仍被站点配置引用，不能删除");
-        }
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {

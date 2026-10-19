@@ -6,6 +6,8 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+    url: /v3/api-docs
+    disable-swagger-default-url: true
 
 logging:
   level:

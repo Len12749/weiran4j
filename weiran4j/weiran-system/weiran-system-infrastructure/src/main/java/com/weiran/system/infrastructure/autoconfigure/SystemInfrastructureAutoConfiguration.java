@@ -6,6 +6,7 @@ import com.weiran.system.domain.auth.TokenIssuerReader;
 import com.weiran.system.domain.auth.TokenVerifier;
 import com.weiran.system.domain.identity.ExternalIdentityProviders;
 import com.weiran.system.domain.identity.SsoStateSigner;
+import com.weiran.system.domain.sms.SmsSender;
 import com.weiran.system.domain.storage.FileStorage;
 import com.weiran.system.domain.user.PasswordHasher;
 import com.weiran.system.infrastructure.identity.AuthProvidersProperties;
@@ -16,7 +17,6 @@ import com.weiran.system.infrastructure.persistence.MybatisLoginLogRepository;
 import com.weiran.system.infrastructure.persistence.MybatisMediaRepository;
 import com.weiran.system.infrastructure.persistence.MybatisMenuRepository;
 import com.weiran.system.infrastructure.persistence.MybatisRoleRepository;
-import com.weiran.system.infrastructure.persistence.MybatisSiteConfigRepository;
 import com.weiran.system.infrastructure.persistence.MybatisUserIdentityRepository;
 import com.weiran.system.infrastructure.persistence.MybatisUserRepository;
 import com.weiran.system.infrastructure.security.AuthJwtProperties;
@@ -24,6 +24,10 @@ import com.weiran.system.infrastructure.security.BCryptPasswordHasher;
 import com.weiran.system.infrastructure.security.JwtIssuerReader;
 import com.weiran.system.infrastructure.security.JwtTokenCodec;
 import com.weiran.system.infrastructure.security.SystemSecurityProperties;
+import com.weiran.system.infrastructure.sms.AliyunSmsSender;
+import com.weiran.system.infrastructure.sms.DisabledSmsSender;
+import com.weiran.system.infrastructure.sms.LogSmsSender;
+import com.weiran.system.infrastructure.sms.SystemSmsProperties;
 import com.weiran.system.infrastructure.storage.DisabledFileStorage;
 import com.weiran.system.infrastructure.storage.LocalFileStorage;
 import com.weiran.system.infrastructure.storage.OssFileStorage;
@@ -49,7 +53,8 @@ import org.springframework.context.annotation.Import;
     SystemSecurityProperties.class,
     AuthJwtProperties.class,
     AuthProvidersProperties.class,
-    SystemStorageProperties.class
+    SystemStorageProperties.class,
+    SystemSmsProperties.class
 })
 @Import({
     MybatisUserRepository.class,
@@ -58,10 +63,20 @@ import org.springframework.context.annotation.Import;
     MybatisDepartmentRepository.class,
     MybatisLoginLogRepository.class,
     MybatisUserIdentityRepository.class,
-    MybatisMediaRepository.class,
-    MybatisSiteConfigRepository.class
+    MybatisMediaRepository.class
 })
 public class SystemInfrastructureAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(SmsSender.class)
+    public SmsSender systemSmsSender(final SystemSmsProperties properties, final ObjectMapper objectMapper) {
+        return switch (properties.mode()) {
+            case "disabled" -> new DisabledSmsSender();
+            case "log" -> new LogSmsSender(objectMapper);
+            case "aliyun" -> AliyunSmsSender.create(properties, objectMapper);
+            default -> throw new IllegalStateException("短信模式无效，请检查 WEIRAN_SYSTEM_SMS_MODE（允许值：disabled、log、aliyun）");
+        };
+    }
 
     @Bean
     @ConditionalOnMissingBean(FileStorage.class)

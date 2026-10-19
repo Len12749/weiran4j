@@ -27,4 +27,41 @@ public class JacksonJsonSyntax implements JsonSyntax {
             return false;
         }
     }
+
+    @Override
+    public boolean hasChoice(final String json, final String value) {
+        try {
+            final var options = this.objectMapper.readTree(json);
+            if (options == null || !options.isArray()) {
+                return false;
+            }
+            for (final var option : options) {
+                if (option.path("value").isTextual()
+                        && value.equals(option.path("value").asText())) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (final JsonProcessingException ex) {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean hasOptions(final String json) {
+        try {
+            final var options = this.objectMapper.readTree(json);
+            if (options == null || !options.isArray() || options.isEmpty()) {
+                return false;
+            }
+            for (final var option : options) {
+                if (!option.path("label").isTextual() || !option.path("value").isTextual()) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (final JsonProcessingException ex) {
+            return false;
+        }
+    }
 }

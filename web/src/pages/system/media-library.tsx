@@ -106,7 +106,7 @@ export default function SystemMediaLibraryPage() {
             setDeleting(null);
         } catch (error) {
             if (isReferenceConflict(error)) {
-                Toast.error('图片仍被站点配置引用，无法删除');
+                Toast.error('图片删除失败');
             } else if (error instanceof Error) {
                 Toast.error(error.message);
             } else {
@@ -235,7 +235,7 @@ export default function SystemMediaLibraryPage() {
                 cancelText="取消"
             >
                 <Typography.Paragraph>
-                    确定删除「{deleting?.originalName}」？仍被站点配置引用的图片无法删除。
+                    确定删除「{deleting?.originalName}」？
                 </Typography.Paragraph>
             </Modal>
         </PageContainer>

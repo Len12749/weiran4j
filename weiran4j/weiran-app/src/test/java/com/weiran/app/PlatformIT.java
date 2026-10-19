@@ -77,10 +77,10 @@ class PlatformIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("配置按类型校验值，内置项保护，公开接口只放行 sys.site.* 且无需登录")
+    @DisplayName("配置按类型校验值，内置项保护，公开接口只放行 system.site.* 且无需登录")
     void configRules() {
         final String admin = this.adminToken();
-        final String prefix = IntegrationTestSupport.unique("cfg");
+        final String prefix = "system.private." + IntegrationTestSupport.unique("cfg");
 
         IntegrationTestSupport.assertError(
                 this.post("/api/configs", admin, PlatformIT.config(prefix + ".n", "abc", "number")),
@@ -116,21 +116,21 @@ class PlatformIT extends IntegrationTestSupport {
                         .asLong())
                 .isEqualTo(3L);
 
-        final long builtinId = Objects.requireNonNull(
-                this.jdbc.queryForObject("SELECT id FROM sys_config WHERE config_key = 'sys.site.title'", Long.class));
+        final long builtinId = Objects.requireNonNull(this.jdbc.queryForObject(
+                "SELECT id FROM sys_config WHERE config_key = 'system.site.title'", Long.class));
         IntegrationTestSupport.assertError(this.delete("/api/configs/" + builtinId, admin), HttpStatus.CONFLICT, 40901);
         IntegrationTestSupport.assertError(
-                this.put("/api/configs/" + builtinId, admin, PlatformIT.config("sys.site.name", "x", "string")),
+                this.put("/api/configs/" + builtinId, admin, PlatformIT.config("system.site.name", "x", "string")),
                 HttpStatus.CONFLICT,
                 40901);
 
-        final JsonNode title = IntegrationTestSupport.data(this.get("/api/configs/public/sys.site.title", null));
-        assertThat(title.path("configKey").asText()).isEqualTo("sys.site.title");
+        final JsonNode title = IntegrationTestSupport.data(this.get("/api/configs/public/system.site.title", null));
+        assertThat(title.path("configKey").asText()).isEqualTo("system.site.title");
         assertThat(title.path("configValue").asText()).isEqualTo("Weiran Admin");
         IntegrationTestSupport.assertError(
                 this.get("/api/configs/public/" + prefix + ".n", null), HttpStatus.FORBIDDEN, 40300);
         IntegrationTestSupport.assertError(
-                this.get("/api/configs/public/sys.site.missing", null), HttpStatus.NOT_FOUND, 40400);
+                this.get("/api/configs/public/system.site.missing", null), HttpStatus.NOT_FOUND, 40400);
 
         IntegrationTestSupport.assertOk(this.delete("/api/configs/" + jsonId, admin));
     }
@@ -201,6 +201,27 @@ class PlatformIT extends IntegrationTestSupport {
     }
 
     private static Map<String, Object> config(final String key, final String value, final String type) {
-        return Map.of("configKey", key, "configValue", value, "configType", type, "description", "测试");
+        final String fieldType =
+                switch (type) {
+                    case "number" -> "number";
+                    case "boolean" -> "switch";
+                    case "json" -> "json";
+                    default -> "input";
+                };
+        return Map.of(
+                "configKey",
+                key,
+                "configValue",
+                value,
+                "configType",
+                type,
+                "groupKey",
+                "general",
+                "fieldType",
+                fieldType,
+                "required",
+                true,
+                "description",
+                "测试");
     }
 }

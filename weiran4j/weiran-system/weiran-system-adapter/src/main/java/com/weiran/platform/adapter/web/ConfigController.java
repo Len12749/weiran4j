@@ -8,11 +8,13 @@ import com.weiran.framework.page.PageResult;
 import com.weiran.framework.response.ApiResponse;
 import com.weiran.framework.response.IdResult;
 import com.weiran.platform.adapter.web.request.SaveConfigRequest;
+import com.weiran.platform.api.config.ConfigGroupView;
 import com.weiran.platform.api.config.ConfigService;
 import com.weiran.platform.api.config.ConfigView;
 import com.weiran.platform.api.config.PublicConfigView;
 import com.weiran.platform.api.config.SaveConfigCommand;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,7 +50,21 @@ public class ConfigController {
         return this.configService.page(keyword, new PageQuery(page, pageSize));
     }
 
-    /** 公开配置（仅 {@code sys.site.*}），无需登录。 */
+    /** 全量配置，用于生成分组表单。 */
+    @RequiresPermission("system:config:list")
+    @GetMapping("/all")
+    public List<ConfigView> all() {
+        return this.configService.all();
+    }
+
+    /** 系统内置分组目录。 */
+    @RequiresPermission("system:config:list")
+    @GetMapping("/groups")
+    public List<ConfigGroupView> groups() {
+        return this.configService.groups();
+    }
+
+    /** 公开配置（仅 {@code system.site.*}），无需登录。 */
     @PublicApi
     @GetMapping("/public/{key}")
     public PublicConfigView getPublic(@PathVariable final String key) {
@@ -90,6 +106,13 @@ public class ConfigController {
 
     private static SaveConfigCommand toCommand(final SaveConfigRequest request) {
         return new SaveConfigCommand(
-                request.configKey(), request.configValue(), request.configType(), request.description());
+                request.configKey(),
+                request.configValue(),
+                request.configType(),
+                request.groupKey(),
+                request.fieldType(),
+                request.fieldOptions(),
+                request.required(),
+                request.description());
     }
 }

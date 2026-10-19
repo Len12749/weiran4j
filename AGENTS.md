@@ -11,8 +11,8 @@
 
 ## 先读这四条
 
-1. **前后端契约只有一份：[`weiran4j/docs/01-架构与接口契约.md`](weiran4j/docs/01-架构与接口契约.md)。**
-   改接口、字段、错误码、表结构、种子菜单时先改它，再改代码；前端 `web/src/types/api.ts` 手动同步。
+1. **前后端契约说明见 [`weiran4j/docs/01-架构与接口契约.md`](weiran4j/docs/01-架构与接口契约.md)。**
+   HTTP OpenAPI 定义由 Springdoc 根据 Controller 的接口声明动态生成，Swagger UI 与 `/v3/api-docs` 仅在 `local` profile 开启。改接口、字段、错误码、表结构、种子菜单时先更新契约文档，再改代码；前端 `web/src/types/api.ts` 手动同步。
 2. **构建必须用 JDK 21。** 本机默认 JDK 可能更高，Gradle daemon 跑在高版本上
    palantir-java-format 会直接崩，报错看起来像代码问题但不是。
    所有 Gradle 命令前置 `JAVA_HOME=$(/usr/libexec/java_home -v 21)`，或用 `mise` 自动切换。
@@ -27,9 +27,9 @@
 ## 常用命令
 
 ```bash
-# ── 一条命令起前后端（仓库根，turbo 编排）──
-pnpm dev                          # = turbo run dev：后端 bootRun(3310) + 后台 vite(5373)
-pnpm dev:server / pnpm dev:web    # 单独启动后端或后台前端
+# ── 一条命令起后端、后台前端和文档站（仓库根，turbo 编排）──
+pnpm dev                          # = turbo run dev：后端 bootRun(3310) + 后台 vite(5373) + VitePress(5173)
+pnpm dev:server / pnpm dev:web / pnpm dev:docs  # 单独启动后端、后台前端或文档站
 # 后端的 dev 是 weiran4j/scripts/dev.mjs：自动找 JDK 21、缺本地配置时先提示，Ctrl-C 会一并停掉应用 JVM。
 # 给后端传环境变量（如 SERVER_PORT、WEIRAN_*）必须先在 turbo.json 的 passThroughEnv 里放行，否则被静默丢弃。
 
@@ -41,9 +41,12 @@ cd weiran4j && export JAVA_HOME=$(/usr/libexec/java_home -v 21)
 ./gradlew :weiran-system-domain:check   # 只验一个模块，迭代时用
 ./gradlew :weiran-app:bootRun     # 起服务（需要 MySQL 与 weiran4j/config/application-local.yml）
 
-# ── 前端与 openspec（在仓库根）──
+# ── 前端、文档站与 openspec（在仓库根）──
 pnpm install
-pnpm test / pnpm lint / pnpm build   # 目前只作用于前端
+pnpm test / pnpm lint             # 前端
+pnpm build                        # Turbo 构建前端与文档站
+pnpm build:docs                   # 只构建 VitePress 文档站
+pnpm docs:preview                 # 预览文档站构建结果
 pnpm openspec:check               # = node openspec/check.mjs，结构检查，零依赖
 node openspec/check.mjs --explain # 看全部检查项
 pnpm hooks:install                # 新 clone 后跑一次，启用 .githooks/pre-commit
@@ -62,10 +65,12 @@ export COMPOSE_ENV_FILES=weiran4j/.env && docker compose up -d --build
 
 ```
 duoli-weiran4j/                  # git 仓库根 = pnpm 工作区根 = openspec 根
+├── README.md                    # 仓库快速开始与文档入口
+├── docs/                        # VitePress 项目文档站（使用指南、整体架构），由 Turbo 管理
 ├── AGENTS.md                    # 本文件：仓库级 AI 协作规范（2026-09-27 起唯一一份，CLAUDE.md 已删除，见 D-010）
 ├── .claude/                     # Claude Code 配置与 skill（见下「AI 工作流文件放在哪」）
 ├── .githooks/pre-commit         # 提交前跑 openspec check
-├── turbo.json                   # turbo 任务编排（pnpm dev 同时起后端与后台前端）
+├── turbo.json                   # turbo 任务编排（pnpm dev 同时起后端、后台前端与文档站）
 ├── openspec/                    # 规格治理流水线（L0–L10 闸门）
 ├── web/                         # 前端：Vite + React 19 + Semi UI + TanStack Query，路由由菜单驱动
 └── weiran4j/                    # 后端：Gradle 多模块（package.json 只为接入 turbo，名 @weiran/server）
@@ -77,7 +82,7 @@ duoli-weiran4j/                  # git 仓库根 = pnpm 工作区根 = openspec 
     ├── weiran-system/           # 后台基座（DDD 五层）：身份与权限（认证 / 用户 / 角色 / 菜单 / 部门 / 登录日志，
     │                            #   Java 包 com.weiran.system）+ 平台能力（字典 / 系统配置 / 操作日志，包 com.weiran.platform）
     ├── weiran-app/              # 可执行应用：依赖聚合 + application.yml + 集成测试
-    └── docs/                    # 决策记录、架构与接口契约、部署手册（02-部署.md）
+    └── docs/                    # 后端决策记录、接口契约与部署手册（02-部署.md）
 ```
 
 业务模块的五层：`weiran-<mod>-{api,domain,application,infrastructure,adapter}`。模块路径是**扁平**的

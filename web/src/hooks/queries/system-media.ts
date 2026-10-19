@@ -5,31 +5,13 @@ import type {
     SystemMediaImageQuery,
     SystemMediaImageUpload,
     SystemMediaImageView,
-    SystemSiteConfigResponse,
-    SystemSiteConfigSaveRequest,
     PageResult,
 } from '@/types/api';
 
-export const systemSiteConfigKeys = { all: ['system-site-config'] as const };
 export const systemMediaKeys = {
     all: ['system-media'] as const,
     page: (query: SystemMediaImageQuery) => [...systemMediaKeys.all, query] as const,
 };
-
-export function useSystemSiteConfig() {
-    return useQuery({
-        queryKey: systemSiteConfigKeys.all,
-        queryFn: () => http.get<SystemSiteConfigResponse>('/api/system/site-config'),
-    });
-}
-
-export function useSaveSystemSiteConfig() {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (body: SystemSiteConfigSaveRequest) => http.put<null>('/api/system/site-config', body),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: systemSiteConfigKeys.all }),
-    });
-}
 
 export function uploadSystemImage(file: File) {
     const body = new FormData();

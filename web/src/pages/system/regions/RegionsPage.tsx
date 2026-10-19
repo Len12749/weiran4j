@@ -1,6 +1,6 @@
 import { Button, Input, Select, Space, Table, Toast } from '@douyinfe/semi-ui';
 import type { ColumnProps } from '@douyinfe/semi-ui/lib/es/table';
-import { ChevronDown, ChevronRight, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useColumnSettings } from '@/components/ColumnSettings';
 import { PageContainer } from '@/components/PageContainer';
@@ -67,17 +67,6 @@ export default function RegionsPage() {
         () => flattenTree(tree).filter((node) => node.children.length > 0).map((node) => node.id),
         [tree],
     );
-    const depthById = useMemo(() => {
-        const depths = new Map<number, number>();
-        const visit = (nodes: readonly RegionNode[], depth: number) => {
-            for (const node of nodes) {
-                depths.set(node.id, depth);
-                visit(node.children, depth + 1);
-            }
-        };
-        visit(tree, 0);
-        return depths;
-    }, [tree]);
     const allExpanded = expandableKeys.length > 0 && expandableKeys.every((id) => expandedKeys.includes(id));
 
     const search = () => {
@@ -115,52 +104,11 @@ export default function RegionsPage() {
     ];
 
     const columns: ColumnProps<RegionNode>[] = [
-        { title: 'ID', dataIndex: 'id', width: 180, useFullRender: true },
+        { title: 'ID', dataIndex: 'id', width: 180 },
         {
             title: '地区名称',
             dataIndex: 'name',
-            render: (name: string, record: RegionNode) => {
-                const expandable = record.children.length > 0;
-                const expanded = expandedKeys.includes(record.id);
-                const ToggleIcon = expanded ? ChevronDown : ChevronRight;
-                return (
-                    <span
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            paddingInlineStart: (depthById.get(record.id) ?? 0) * 20,
-                        }}
-                    >
-                        {expandable ? (
-                            <button
-                                type="button"
-                                aria-label={`${expanded ? '收起' : '展开'}${record.name}`}
-                                onClick={() =>
-                                    setExpandedKeys((keys) =>
-                                        expanded ? keys.filter((id) => id !== record.id) : [...keys, record.id],
-                                    )
-                                }
-                                style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: 20,
-                                    height: 24,
-                                    padding: 0,
-                                    border: 0,
-                                    background: 'transparent',
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                <ToggleIcon size={14} />
-                            </button>
-                        ) : (
-                            <span aria-hidden="true" style={{ display: 'inline-block', width: 20 }} />
-                        )}
-                        <span>{name}</span>
-                    </span>
-                );
-            },
+            render: (name: string) => name,
         },
         { title: '区划代码', dataIndex: 'code', width: 140 },
         { title: '级别', dataIndex: 'level', width: 80, render: (value: RegionLevel) => LEVEL_LABEL[value] },
@@ -285,7 +233,6 @@ export default function RegionsPage() {
                 dataSource={tree}
                 loading={isFetching}
                 pagination={false}
-                hideExpandedColumn
                 expandedRowKeys={expandedKeys}
                 onExpandedRowsChange={(rows) => setExpandedKeys((rows ?? []).map((row) => (row as RegionNode).id))}
                 scroll={{ x: tableScrollX(tableColumns) }}

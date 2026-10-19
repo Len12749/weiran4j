@@ -12,7 +12,6 @@ const SEED_COMPONENTS = [
     'system/configs/ConfigsPage',
     'logs/LoginLogsPage',
     'logs/OperationLogsPage',
-    'system/site-config',
     'system/media-library',
     'demo/DemoListPage',
     'demo/DemoNavigationPage',
