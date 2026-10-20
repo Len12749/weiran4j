@@ -1,11 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { http } from '@/utils/request';
-import { useSession } from '@/utils/session';
+import { refreshSession, useSession } from '@/utils/session';
+import { unlockScreen } from '@/hooks/useLockScreen';
 import type {
     CurrentUserView,
     FavoriteMenusSaveRequest,
     MenuNode,
     PasswordChangeRequest,
+    LoginResult,
+    PhoneLoginCodeRequest,
+    PhoneLoginRequest,
     ProfileUpdateRequest,
     VerifyPasswordRequest,
 } from '@/types/api';
@@ -15,6 +19,26 @@ export const authKeys = {
     menus: ['auth', 'menus'] as const,
     favoriteMenus: ['auth', 'favorite-menus'] as const,
 };
+
+/** 公开发送短信验证码；登录页负责校验手机号与展示错误。 */
+export function useSendPhoneLoginCode() {
+    return useMutation({
+        mutationFn: (body: PhoneLoginCodeRequest) => http.post<null>('/api/system/auth/phone/sendCode', body, { silent: true }),
+    });
+}
+
+/** 手机号验证码登录，成功后按密码登录相同的会话刷新流程处理。 */
+export function usePhoneLogin() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (body: PhoneLoginRequest) => http.post<LoginResult>('/api/system/auth/phone/login', body, { silent: true }),
+        onSuccess: () => {
+            qc.clear();
+            unlockScreen();
+            refreshSession();
+        },
+    });
+}
 
 export function useMe() {
     const session = useSession();

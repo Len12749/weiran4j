@@ -35,6 +35,15 @@ export interface LoginRequest {
     password: string;
 }
 
+export interface PhoneLoginCodeRequest {
+    phone: string;
+}
+
+export interface PhoneLoginRequest {
+    phone: string;
+    code: string;
+}
+
 /**
  * POST /api/auth/login 的响应（契约 §6.1）。默认模式下令牌只走 HttpOnly Cookie，
  * `accessToken` 为 null 或缺省，前端两种都按「没有」处理、也不读它；`X-Auth-Mode: token` 时才有值（给非浏览器客户端）。
@@ -103,6 +112,7 @@ export interface ProviderView {
 /** GET /api/auth/providers（公开）：只含已启用的提供方 */
 export interface ProvidersView {
     passwordLoginEnabled: boolean;
+    phoneLoginEnabled?: boolean;
     providers: ProviderView[];
 }
 
@@ -217,6 +227,14 @@ export interface UserCreateRequest {
 }
 
 export type UserUpdateRequest = Omit<UserCreateRequest, 'username' | 'password'>;
+
+/** PUT /api/system/user/updateAccountField/{id}：管理员单字段设置账号标识 */
+export type UserAccountField = 'username' | 'phone' | 'email';
+
+export interface UserAccountFieldUpdateRequest {
+    field: UserAccountField;
+    value: string;
+}
 
 export interface UserOption {
     id: number;

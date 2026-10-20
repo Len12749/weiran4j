@@ -23,6 +23,7 @@ import { toDayRange } from '@/utils/date';
 import { ResetPasswordModal } from './ResetPasswordModal';
 import { UserFormModal } from './UserFormModal';
 import { UserIdentitiesModal } from './UserIdentitiesModal';
+import { SetUserAccountFieldModal } from './SetUserAccountFieldModal';
 
 /** 工具栏快速搜索（keyword / status / departmentId）+ 高级筛选的单字段条件（契约 §6.2） */
 export interface Filters {
@@ -97,14 +98,14 @@ function findDepartmentName(nodes: readonly DepartmentNode[], id: number): strin
     return null;
 }
 
-/** 操作列平铺宽度：编辑 / 重置密码 / 删除 */
-const ACTIONS_WIDTH = 176;
+/** 操作列平铺宽度：编辑 / 设置账号信息 / 重置密码 / 删除 */
+const ACTIONS_WIDTH = 300;
 /**
- * 配置了外部身份提供方时多一个「外部身份」（四字按钮约 68 + 间距 4）：248。
- * 列宽合计从 1114 变成 1186，1440 宽下双列 / 侧边 / 混合布局会横向滚动（操作列固定在右侧）——只影响启用了 SSO 的部署，
+ * 基础操作列按四个按钮完整显示预留 300px；配置了外部身份提供方时多一个「外部身份」（约 68 + 间距 4）：372。
+ * 列宽合计从 1395 变成 1467，1440 宽下双列 / 侧边 / 混合布局会横向滚动（操作列固定在右侧）——只影响启用了 SSO 的部署，
  * 登记在 state/bizs/sys_user.md §6
  */
-const ACTIONS_WIDTH_WITH_IDENTITY = 248;
+const ACTIONS_WIDTH_WITH_IDENTITY = 372;
 /** 弹性列「角色」计算滚动宽度时的最小值：一个角色标签约 64，多个时换行 */
 const ROLE_MIN_WIDTH = 78;
 
@@ -121,6 +122,7 @@ export default function UsersPage() {
     const [editing, setEditing] = useState<UserView | null | undefined>(undefined);
     const [resetting, setResetting] = useState<UserView | null>(null);
     const [identityOf, setIdentityOf] = useState<UserView | null>(null);
+    const [settingAccountOf, setSettingAccountOf] = useState<UserView | null>(null);
 
     const { data, isFetching, refetch } = useUserList(toQuery(filters, page, pageSize));
     const deleteUser = useDeleteUser();
@@ -243,14 +245,14 @@ export default function UsersPage() {
         return list;
     })();
 
-    // 列宽合计（含弹性列「角色」按 ROLE_MIN_WIDTH 计）为 1230：1440 宽下双列布局可用 1115，表格横向滚动，操作列固定在右侧；
-    // 配置外部身份提供方时多一个「外部身份」操作，合计 1302（见 ACTIONS_WIDTH_WITH_IDENTITY），各宽屏布局均可横向滚动；
+    // 列宽合计（含弹性列「角色」按 ROLE_MIN_WIDTH 计）为 1395：1440 宽下双列布局可用 1115，表格横向滚动，操作列固定在右侧；
+    // 配置外部身份提供方时多一个「外部身份」操作，合计 1467（见 ACTIONS_WIDTH_WITH_IDENTITY），各宽屏布局均可横向滚动；
     // 视口 < 992（便捷搜索隐藏）时操作列收成「…」（useCompactActions）；其间放不下就横向滚动（操作列固定在右侧）。
     // 各固定列已压到「内容 + 24 内边距」：时间 158（156 时小数宽度会把时分秒挤到第二行）；手机 116（Inter 数字不等宽，最宽的 11 位约 91）；
-    // 性别 52；ID 180（容纳最多 19 位）；用户名 / 部门是普通文字，79 即可，超长时自然折行。加列前先实测再算。
+    // 性别 52；ID 160；用户名加宽到 140，减少常见用户名折行。操作列 300 可完整展示四个文字按钮。
     const columns: ColumnProps<UserView>[] = [
-        { title: 'ID', dataIndex: 'id', width: 180 },
-        { title: '用户名', dataIndex: 'username', width: 79 },
+        { title: 'ID', dataIndex: 'id', width: 160 },
+        { title: '用户名', dataIndex: 'username', width: 140 },
         { title: '昵称', dataIndex: 'nickname', width: 90 },
         {
             title: '部门',
@@ -308,6 +310,12 @@ export default function UsersPage() {
             label: '编辑',
             permission: 'system:user:update',
             onClick: () => setEditing(record),
+        },
+        {
+            key: 'account-field',
+            label: '设置账号信息',
+            permission: 'system:user:update',
+            onClick: () => setSettingAccountOf(record),
         },
         {
             key: 'reset',
@@ -520,6 +528,9 @@ export default function UsersPage() {
             {editing !== undefined && <UserFormModal record={editing} onClose={() => setEditing(undefined)} />}
             {resetting && <ResetPasswordModal user={resetting} onClose={() => setResetting(null)} />}
             {identityOf && <UserIdentitiesModal user={identityOf} onClose={() => setIdentityOf(null)} />}
+            {settingAccountOf && (
+                <SetUserAccountFieldModal user={settingAccountOf} onClose={() => setSettingAccountOf(null)} />
+            )}
         </PageContainer>
     );
 }

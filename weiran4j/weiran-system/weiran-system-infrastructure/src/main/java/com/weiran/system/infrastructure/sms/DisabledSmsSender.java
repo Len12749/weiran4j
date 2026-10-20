@@ -8,6 +8,11 @@ import java.util.Map;
 public final class DisabledSmsSender implements SmsSender {
 
     @Override
+    public boolean isAvailable() {
+        return false;
+    }
+
+    @Override
     public SmsSendOutcome send(final String phone, final String templateCode, final Map<String, String> parameters) {
         return SmsSendOutcome.NOT_CONFIGURED;
     }

@@ -130,12 +130,11 @@ describe('DictsPage 左侧字典列表（NavListPanel，同 mono4ts）', () => {
         expect(await screen.findByText('字典项：职称等级（professional_title_level）')).toBeInTheDocument();
     });
 
-    it('没有增删改权限时条目不显示「…」，标题栏菜单只有刷新', async () => {
+    it('没有增删改权限时条目不显示「…」，标题栏只显示刷新图标', async () => {
         setup(['system:dict:query']);
         await screen.findByText('professional_title_level');
         expect(screen.queryByRole('button', { name: '职称级别的操作' })).toBeNull();
-        fireEvent.click(screen.getByRole('button', { name: '字典列表操作' }));
-        expect(await screen.findByText('刷新')).toBeInTheDocument();
-        expect(screen.queryByText('新增字典')).toBeNull();
+        expect(screen.getByRole('button', { name: '刷新字典列表' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: '新增字典' })).toBeNull();
     });
 });

@@ -16,6 +16,11 @@ public class SmsApplicationService implements SmsService {
     }
 
     @Override
+    public boolean isAvailable() {
+        return this.smsSender.isAvailable();
+    }
+
+    @Override
     public SmsSendResult send(final SmsSendCommand command) {
         final SmsSendOutcome outcome =
                 this.smsSender.send(command.phone(), command.templateCode(), command.templateParameters());

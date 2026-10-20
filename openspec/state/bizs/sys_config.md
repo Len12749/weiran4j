@@ -29,7 +29,7 @@
 | 后端模块 | `weiran-system`；`ConfigController` → `ConfigApplicationService` → `MybatisConfigRepository` |
 | 接口前缀 | `/api/system/config`；具体 HTTP 接口以 Springdoc OpenAPI 为准 |
 | 权限码 | `system:config:list` · `system:config:create` · `system:config:update` · `system:config:delete`；`GET /public/{key}` 为 `@PublicApi`（免登录） |
-| 种子 | `system.site.title` = `Weiran Admin`（string，内置）；`system.user.enable_phone_login` = `false`（boolean，内置）；`general`、`user` 为配置组种子，可从页面新增组 |
+| 种子 | `system.site.title` = `Weiran Admin`（string，内置）；`system.user.enable_phone_login` = `false`（boolean，内置）；`system.user.phone_login_sms_template_code`（string，内置，默认为空，填写已审核的短信模板 CODE）；`general`、`user` 为配置组种子，可从页面新增组 |
 
 ## 1. 可视化表单
 
@@ -87,7 +87,8 @@
 
 - 配置写入后没有缓存层，公开接口每次查库。
 - 页面按 `sys_group(type=config)` 分组，配置项以 `group_key` 归组；`field_type`、`field_options`、`required` 控制表单渲染和校验。键统一以 `system.` 开头，匿名读取仅允许 `system.site.*`。
-- **前端目前不消费任何配置**：`web/src` 里没有调用公开配置接口的代码，站点标题取自构建期环境变量 `VITE_APP_TITLE`（见 #02）。
+- 登录页通过公开 `/api/auth/providers` 获取手机号登录状态；后端只有在 `system.user.enable_phone_login=true`、短信发送模式可用且 `system.user.phone_login_sms_template_code` 非空时才返回 `phoneLoginEnabled=true`。短信模板 CODE 由管理员在 `user` 配置组维护。
+- 站点标题仍取自构建期环境变量 `VITE_APP_TITLE`（见 #02）；`web/src` 不直接调用公开配置接口。
 - 内置配置只保护「键不可改、不可删」，值与表单配置都可以改。
 - [系统配置说明](../../../docs/configuration.md)记录了分组和表单字段的使用方式。
 
@@ -108,6 +109,7 @@
 新条目插在本节最上方（按日期倒序，新在上）。
 
 **2026-10-20**
+- 新增内置配置 `system.user.phone_login_sms_template_code`，用于配置已审核的手机号登录验证码短信模板 CODE；手机号登录需同时启用开关、短信发送器和模板 CODE。
 - 配置组改为复用 `sys_group(type=config)`，页面改为左侧导航与右侧动态表单；左栏支持刷新、新增、编辑和删除，展示创建时间、内置及可删除状态；右栏标题显示当前组名、创建时间、内置和可删除状态，不展示说明，新增配置项默认当前组；配置 action 路由统一放在 `/api/system/config/{action}`。内置分组和仍有配置项的分组不可删除。配置项标题隐藏配置键并显示内置标签，设置图标紧随必填标记并在悬停时显示；编辑弹窗删除按钮始终显示，不可删除时置灰。新增配置项按钮带图标并置于标题行右侧。
 
 **2026-10-19**

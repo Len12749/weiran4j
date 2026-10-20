@@ -16,6 +16,7 @@ import com.weiran.system.api.auth.LogoutResult;
 import com.weiran.system.api.auth.UpdateProfileCommand;
 import com.weiran.system.api.menu.MenuNode;
 import com.weiran.system.application.menu.MenuAssembler;
+import com.weiran.system.application.user.UserDuplicateErrors;
 import com.weiran.system.domain.auth.Authorization;
 import com.weiran.system.domain.auth.TokenClaims;
 import com.weiran.system.domain.auth.TokenCodec;
@@ -40,6 +41,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -167,6 +169,14 @@ public class AuthApplicationService implements AuthService {
         this.appendLog(userId, username, client, LoginLog.EVENT_LOGIN, LoginLog.STATUS_FAIL, message);
     }
 
+    /** 手机号登录失败留痕；手机号或验证码本身不写入日志。 */
+    void recordPhoneLoginFailure(
+            final @Nullable Long userId, final String phone, final ClientContext client, final String message) {
+        final String maskedPhone =
+                phone.length() <= 4 ? "****" : phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
+        this.appendLog(userId, maskedPhone, client, LoginLog.EVENT_LOGIN, LoginLog.STATUS_FAIL, message);
+    }
+
     @Override
     public AuthenticatedUser authenticate(final String username, final String password, final ClientContext client) {
         final String name = username.strip();
@@ -245,12 +255,24 @@ public class AuthApplicationService implements AuthService {
     @Transactional
     public void updateProfile(final long userId, final UpdateProfileCommand command) {
         final User user = this.requireUser(userId);
-        this.userRepository.updateProfile(user.withProfile(
-                command.nickname().strip(),
-                Texts.trimToNull(command.email()),
-                Texts.trimToNull(command.phone()),
-                Texts.trimToNull(command.avatar()),
-                command.gender() == null ? user.getGender() : Gender.of(command.gender())));
+        final String email = Texts.trimToNull(command.email());
+        final String phone = Texts.trimToNull(command.phone());
+        if (email != null && this.userRepository.existsByEmail(email, userId)) {
+            throw BizException.duplicate("邮箱已存在");
+        }
+        if (phone != null && this.userRepository.existsByPhone(phone, userId)) {
+            throw BizException.duplicate("手机号已存在");
+        }
+        try {
+            this.userRepository.updateProfile(user.withProfile(
+                    command.nickname().strip(),
+                    email,
+                    phone,
+                    Texts.trimToNull(command.avatar()),
+                    command.gender() == null ? user.getGender() : Gender.of(command.gender())));
+        } catch (final DuplicateKeyException ex) {
+            throw UserDuplicateErrors.from(ex, "邮箱或手机号已存在");
+        }
         this.cache.evict(userId);
     }
 

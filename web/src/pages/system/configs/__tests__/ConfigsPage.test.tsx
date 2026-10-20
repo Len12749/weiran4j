@@ -78,8 +78,7 @@ describe('ConfigsPage 配置分组侧栏', () => {
         const user = userEvent.setup();
         const fetch = setup();
         expect(await screen.findByText('通用设置', { selector: '.nav-list-item__primary' })).toBeInTheDocument();
-        await user.click(screen.getByRole('button', { name: '配置分组操作' }));
-        await user.click(await screen.findByRole('menuitem', { name: '新增分组' }));
+        await user.click(screen.getByRole('button', { name: '新增分组' }));
         await user.type(screen.getByLabelText('分组编码'), 'custom_group');
         await user.type(screen.getByLabelText('分组名称'), '自定义组');
         await user.click(screen.getByText('新增').closest('button')!);
@@ -132,8 +131,7 @@ describe('ConfigsPage 配置分组侧栏', () => {
         const builtinDelete = await screen.findByRole('menuitem', { name: '内置分组不可删除' });
         expect(builtinDelete.closest('li')).toHaveClass('semi-dropdown-item-disabled');
         await user.keyboard('{Escape}');
-        await user.click(screen.getByRole('button', { name: '配置分组操作' }));
-        await user.click(await screen.findByRole('menuitem', { name: '新增分组' }));
+        await user.click(screen.getByRole('button', { name: '新增分组' }));
         await user.type(screen.getByLabelText('分组编码'), 'custom_group');
         await user.type(screen.getByLabelText('分组名称'), '自定义组');
         await user.click(screen.getByText('新增').closest('button')!);
@@ -143,18 +141,23 @@ describe('ConfigsPage 配置分组侧栏', () => {
         expect(await screen.findByRole('menuitem', { name: '删除' })).toBeEnabled();
     });
 
-    it('配置项标题不展示配置键，悬停编辑入口打开设置弹窗并在弹窗内提供删除', async () => {
+    it('配置项标题前的设置图标由标题栏开关控制，并在弹窗内提供删除', async () => {
         const user = userEvent.setup();
         setup();
         expect(await screen.findByText('系统标题')).toBeInTheDocument();
         expect(screen.queryByText('system.site.title')).not.toBeInTheDocument();
         expect(screen.getAllByText('内置')).toHaveLength(4);
 
+        expect(screen.queryByRole('button', { name: '字段设置：页脚信息' })).not.toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: '显示设置' }));
         const editButton = screen.getByRole('button', { name: '字段设置：页脚信息' });
         expect(editButton).toHaveClass('config-field-title__edit');
         expect(editButton.querySelector('svg')).toHaveClass('lucide-settings');
         expect(screen.queryByRole('button', { name: '删除配置项' })).not.toBeInTheDocument();
-        await user.click(editButton);
+        await user.click(screen.getByRole('button', { name: '关闭设置' }));
+        expect(screen.queryByRole('button', { name: '字段设置：页脚信息' })).not.toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: '显示设置' }));
+        await user.click(screen.getByRole('button', { name: '字段设置：页脚信息' }));
         expect(await screen.findByRole('button', { name: '删除配置项' })).toBeEnabled();
         await user.click(screen.getByRole('button', { name: '取消' }));
         await user.click(screen.getByRole('button', { name: '字段设置：系统标题' }));

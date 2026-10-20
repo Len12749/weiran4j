@@ -8,6 +8,8 @@ import com.weiran.system.application.auth.ExternalLoginApplicationService;
 import com.weiran.system.application.auth.IdentityProvisioner;
 import com.weiran.system.application.auth.LocalIdentityResolver;
 import com.weiran.system.application.auth.LocalRbacPermissionSource;
+import com.weiran.system.application.auth.PhoneLoginApplicationService;
+import com.weiran.system.application.auth.PhoneLoginSettings;
 import com.weiran.system.application.department.DepartmentApplicationService;
 import com.weiran.system.application.loginlog.LoginLogApplicationService;
 import com.weiran.system.application.media.MediaApplicationService;
@@ -33,6 +35,8 @@ import org.springframework.context.annotation.Import;
     LocalRbacPermissionSource.class,
     DispatchingTokenAuthenticator.class,
     AuthApplicationService.class,
+    PhoneLoginSettings.class,
+    PhoneLoginApplicationService.class,
     IdentityProvisioner.class,
     ExternalLoginApplicationService.class,
     UserApplicationService.class,

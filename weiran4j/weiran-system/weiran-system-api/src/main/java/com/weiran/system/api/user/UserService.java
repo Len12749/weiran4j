@@ -19,6 +19,9 @@ public interface UserService {
     /** 修改。 */
     void update(long id, UpdateUserCommand command);
 
+    /** 管理员单字段修改用户名、手机号或邮箱。 */
+    void updateAccountField(long id, UpdateUserAccountFieldCommand command);
+
     /** 删除；内置用户与操作人自己不能删（40901）。 */
     void delete(long id, long operatorId);
 

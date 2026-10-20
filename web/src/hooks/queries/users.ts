@@ -5,6 +5,7 @@ import type {
     IdResult,
     PageResult,
     UserCreateRequest,
+    UserAccountFieldUpdateRequest,
     UserOption,
     UserQuery,
     UserUpdateRequest,
@@ -56,5 +57,14 @@ export function useResetUserPassword() {
     return useMutation({
         mutationFn: ({ id, password }: { id: number; password: string }) =>
             http.put<null>(`/api/users/${id}/password`, { password }),
+    });
+}
+
+export function useSetUserAccountField() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, body }: { id: number; body: UserAccountFieldUpdateRequest }) =>
+            http.put<null>(`/api/system/user/updateAccountField/${id}`, body),
+        onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.all }),
     });
 }

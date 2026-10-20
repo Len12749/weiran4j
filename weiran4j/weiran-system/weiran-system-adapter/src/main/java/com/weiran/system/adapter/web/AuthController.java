@@ -29,6 +29,7 @@ import com.weiran.system.api.auth.ProvidersView;
 import com.weiran.system.api.auth.UpdateProfileCommand;
 import com.weiran.system.api.auth.UserIdentityView;
 import com.weiran.system.api.menu.MenuNode;
+import com.weiran.system.application.auth.PhoneLoginSettings;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -66,16 +67,20 @@ public class AuthController {
 
     private final ExternalLoginService externalLoginService;
 
+    private final PhoneLoginSettings phoneLoginSettings;
+
     /** 构造控制器。 */
     public AuthController(
             final AuthService authService,
             final ObjectMapper objectMapper,
             final AuthCookies authCookies,
-            final ExternalLoginService externalLoginService) {
+            final ExternalLoginService externalLoginService,
+            final PhoneLoginSettings phoneLoginSettings) {
         this.authService = authService;
         this.objectMapper = objectMapper;
         this.authCookies = authCookies;
         this.externalLoginService = externalLoginService;
+        this.phoneLoginSettings = phoneLoginSettings;
     }
 
     /** 登录。 */
@@ -109,7 +114,9 @@ public class AuthController {
     @PublicApi
     @GetMapping("/providers")
     public ProvidersView providers() {
-        return this.externalLoginService.providers();
+        final ProvidersView providers = this.externalLoginService.providers();
+        return new ProvidersView(
+                providers.passwordLoginEnabled(), this.phoneLoginSettings.isEnabled(), providers.providers());
     }
 
     /** 本人的外部身份。 */

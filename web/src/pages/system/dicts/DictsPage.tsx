@@ -1,4 +1,4 @@
-import { Button, Dropdown, Empty, Modal, Pagination, Table, Tag, Toast } from '@douyinfe/semi-ui';
+import { Button, Dropdown, Empty, Modal, Pagination, Table, Tag, Toast, Tooltip } from '@douyinfe/semi-ui';
 import type { TagProps } from '@douyinfe/semi-ui/lib/es/tag';
 import type { ColumnProps } from '@douyinfe/semi-ui/lib/es/table';
 import { MoreHorizontal, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
@@ -176,25 +176,29 @@ export default function DictsPage() {
                 <NavListPanel
                     title="字典列表"
                     headerExtra={
-                        <Dropdown
-                            trigger="click"
-                            position="bottomRight"
-                            clickToHide
-                            render={
-                                <Dropdown.Menu>
-                                    <Dropdown.Item icon={<RefreshCw size={14} />} onClick={() => void refetch()}>
-                                        刷新
-                                    </Dropdown.Item>
-                                    {hasPermission('system:dict:create') && (
-                                        <Dropdown.Item icon={<Plus size={14} />} onClick={() => setEditing(null)}>
-                                            新增字典
-                                        </Dropdown.Item>
-                                    )}
-                                </Dropdown.Menu>
-                            }
-                        >
-                            <Button theme="borderless" size="small" aria-label="字典列表操作" icon={<MoreHorizontal size={14} />} />
-                        </Dropdown>
+                        <>
+                            <Tooltip content="刷新字典列表">
+                                <Button
+                                    theme="borderless"
+                                    size="small"
+                                    aria-label="刷新字典列表"
+                                    icon={<RefreshCw size={14} />}
+                                    loading={isFetching}
+                                    onClick={() => void refetch()}
+                                />
+                            </Tooltip>
+                            {hasPermission('system:dict:create') && (
+                                <Tooltip content="新增字典">
+                                    <Button
+                                        theme="borderless"
+                                        size="small"
+                                        aria-label="新增字典"
+                                        icon={<Plus size={14} />}
+                                        onClick={() => setEditing(null)}
+                                    />
+                                </Tooltip>
+                            )}
+                        </>
                     }
                     search={{ value: draft, onChange: setDraft, placeholder: '名称 / 编码', onEnterPress: search }}
                     loading={isFetching}

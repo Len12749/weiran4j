@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 
 /** 用户仓储端口（含用户-角色关联）。 */
 public interface UserRepository {
@@ -19,8 +20,26 @@ public interface UserRepository {
     /** 按用户名查找。 */
     Optional<User> findByUsername(String username);
 
+    /** 按手机号查找。 */
+    Optional<User> findByPhone(String phone);
+
     /** 用户名是否已存在。 */
     boolean existsByUsername(String username);
+
+    /** 邮箱是否被除指定用户外的用户占用。 */
+    boolean existsByEmail(String email, long excludedUserId);
+
+    /** 手机号是否被除指定用户外的用户占用。 */
+    boolean existsByPhone(String phone, long excludedUserId);
+
+    /** 邮箱是否已被任何用户占用。 */
+    boolean existsByEmail(String email);
+
+    /** 手机号是否已被任何用户占用。 */
+    boolean existsByPhone(String phone);
+
+    /** 定向修改一个账号字段。 */
+    void updateAccountField(long id, UserAccountField field, @Nullable String value);
 
     /** 新增用户，返回 ID。 */
     long insert(User user);

@@ -1,4 +1,4 @@
-import { Button, Dropdown, Empty, Form, Modal, Pagination, Space, Tag, Toast } from '@douyinfe/semi-ui';
+import { Button, Dropdown, Empty, Form, Modal, Pagination, Space, Tag, Toast, Tooltip } from '@douyinfe/semi-ui';
 import type { FormApi } from '@douyinfe/semi-ui/lib/es/form';
 import { Eye, EyeOff, MoreHorizontal, Pencil, Plus, RefreshCw, Settings, Trash2 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
@@ -443,36 +443,40 @@ export default function ConfigsPage() {
                 <NavListPanel
                     title="配置分组"
                     headerExtra={
-                        <Dropdown
-                            trigger="click"
-                            position="bottomRight"
-                            clickToHide
-                            render={
-                                <Dropdown.Menu>
-                                    {canEdit && (
-                                        <Dropdown.Item
-                                            icon={showConfigSettings ? <EyeOff size={14} /> : <Eye size={14} />}
-                                            onClick={() => setShowConfigSettings((visible) => !visible)}
-                                        >
-                                            {showConfigSettings ? '关闭设置' : '显示设置'}
-                                        </Dropdown.Item>
-                                    )}
-                                    <Dropdown.Item
-                                        icon={<RefreshCw size={14} />}
-                                        onClick={() => void refetchGroups()}
-                                    >
-                                        刷新
-                                    </Dropdown.Item>
-                                    {canCreate && (
-                                        <Dropdown.Item icon={<Plus size={14} />} onClick={() => setCreatingGroup(true)}>
-                                            新增分组
-                                        </Dropdown.Item>
-                                    )}
-                                </Dropdown.Menu>
-                            }
-                        >
-                            <Button theme="borderless" size="small" aria-label="配置分组操作" icon={<MoreHorizontal size={14} />} />
-                        </Dropdown>
+                        <>
+                            {canEdit && (
+                                <Tooltip content={showConfigSettings ? '关闭设置' : '显示设置'}>
+                                    <Button
+                                        theme="borderless"
+                                        size="small"
+                                        aria-label={showConfigSettings ? '关闭设置' : '显示设置'}
+                                        icon={showConfigSettings ? <EyeOff size={14} /> : <Eye size={14} />}
+                                        onClick={() => setShowConfigSettings((visible) => !visible)}
+                                    />
+                                </Tooltip>
+                            )}
+                            <Tooltip content="刷新配置分组">
+                                <Button
+                                    theme="borderless"
+                                    size="small"
+                                    aria-label="刷新配置分组"
+                                    icon={<RefreshCw size={14} />}
+                                    loading={isFetchingGroups}
+                                    onClick={() => void refetchGroups()}
+                                />
+                            </Tooltip>
+                            {canCreate && (
+                                <Tooltip content="新增分组">
+                                    <Button
+                                        theme="borderless"
+                                        size="small"
+                                        aria-label="新增分组"
+                                        icon={<Plus size={14} />}
+                                        onClick={() => setCreatingGroup(true)}
+                                    />
+                                </Tooltip>
+                            )}
+                        </>
                     }
                     search={{
                         value: groupDraft,
