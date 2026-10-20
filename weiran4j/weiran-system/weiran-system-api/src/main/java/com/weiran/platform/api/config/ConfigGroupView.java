@@ -1,4 +1,12 @@
 package com.weiran.platform.api.config;
 
-/** 内置系统配置分组。 */
-public record ConfigGroupView(String key, String label) {}
+import java.time.LocalDateTime;
+import org.jspecify.annotations.Nullable;
+
+/** 系统配置分组。 */
+public record ConfigGroupView(
+        String key,
+        String label,
+        boolean isBuiltin,
+        boolean canDelete,
+        @Nullable LocalDateTime createdAt) {}

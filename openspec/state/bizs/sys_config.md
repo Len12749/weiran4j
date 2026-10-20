@@ -27,18 +27,18 @@
 | 路由 | `/system/configs` |
 | 页面组件 | `system/configs/ConfigsPage`（同文件内的 `ConfigFormModal`） |
 | 后端模块 | `weiran-system`；`ConfigController` → `ConfigApplicationService` → `MybatisConfigRepository` |
-| 接口前缀 | `/api/configs`；页面另用 `/all`、`/groups` |
+| 接口前缀 | `/api/system/config`；具体 HTTP 接口以 Springdoc OpenAPI 为准 |
 | 权限码 | `system:config:list` · `system:config:create` · `system:config:update` · `system:config:delete`；`GET /public/{key}` 为 `@PublicApi`（免登录） |
-| 种子 | `system.site.title` = `Weiran Admin`（string，内置）；`system.user.enable_phone_login` = `false`（boolean，内置） |
+| 种子 | `system.site.title` = `Weiran Admin`（string，内置）；`system.user.enable_phone_login` = `false`（boolean，内置）；`general`、`user` 为配置组种子，可从页面新增组 |
 
 ## 1. 可视化表单
 
-页面不再以分页表格为主要编辑入口，而是按代码定义的分组目录显示 Tab；当前有 `general`（通用设置）和 `user`（用户）。
-分组编码暂不允许在管理页面扩充。不同模块可将自己的配置项放入同一目录；以后可以在此元数据模型上继续扩展低代码配置。
+页面以左侧配置分组导航、右侧动态表单编辑配置；当前分组 `general`（通用设置）和 `user`（用户）持久化在 `sys_group`，且只查询 `type=config`、已启用的记录。左侧列表交互严格参照字典列表：名称/编码搜索回车生效、分页及每页条数控制、默认选择当前页首项、标题栏刷新/新增、条目编辑/删除菜单；条目展示创建时间和内置标识，不显示可删除状态，侧栏宽度和窄屏高度规则与字典列表一致。
+分组由共享分组数据表承载，可供后续模块复用；左栏菜单支持刷新、新增分组，分组条目显示创建时间和内置状态并提供编辑/删除操作。右侧配置详情只展示当前分组名称，不显示创建时间、内置或可删除状态。新增配置项默认使用当前选中分组。
 配置项可在已有分组中新增、编辑和删除（内置项仍不可删除）。
+右侧分组标题与新增配置项按钮共用标题行，标题只显示当前组名；配置字段标题显示说明及内置标签，不单独显示配置键。设置图标紧随必填标记，在标题悬停或聚焦时绝对定位出现，不占用标题前的空间；编辑弹窗内删除按钮始终显示，无删除权限或内置项时置灰。
 
-接口 `GET /api/configs/all` 返回全部配置项，`GET /api/configs/groups` 返回固定分组目录；
-`GET /api/configs` 的分页列表接口仍保留。
+配置分组目录和配置项通过 Springdoc OpenAPI 发布；系统配置路由遵循 `/api/system/config/{action}`。
 
 每条配置项通过 `group_key`、`field_type`、`field_options`、`required` 描述分组、控件和校验规则。
 键必须以 `system.` 开头，匿名读取仅允许 `system.site.*`。
@@ -48,7 +48,7 @@
 | 字段 | 控件 | 校验 | DB 列 / 类型 |
 | --- | --- | --- | --- |
 | 配置键 | 输入；内置项不可改 | 必填、最多 128 字符、`system.` 前缀；重复 40900；内置项改键 40901 | `config_key varchar(128)` 唯一 |
-| 分组 | 从内置目录选择 | 必须是代码定义的分组编码 | `group_key varchar(64)` |
+| 分组 | 从启用的配置分组选择 | 必须是 `sys_group` 中已启用且 `type=config` 的编码 | `group_key varchar(64)` |
 | 表单字段 | 单行 / 多行 / 数字 / 开关 / 下拉 / JSON | 字段类型与值类型匹配；下拉选项为合法 JSON 数组 | `field_type varchar(16)`、`field_options varchar(2048)` |
 | 必填 | 开关 | 必填项不可为空 | `required tinyint(1)` |
 | 类型 | 随控件设置 | 只能 `string/number/boolean/json` | `config_type varchar(16)` 默认 `string` |
@@ -70,21 +70,24 @@
 
 | 按钮 | 接口 | 权限码 | `@OperationLog` | 业务规则 / 错误码 |
 | --- | --- | --- | --- | --- |
-| 新增配置（工具栏最左） | `POST /api/configs` → `{id}` | `system:config:create` | ✅ 系统配置 / 新增配置 | 见 §2 |
-| 编辑（行） | `PUT /api/configs/{id}` | `system:config:update` | ✅ 修改配置 | 404 配置不存在；内置项改键 40901；新值按新类型校验 |
-| 删除（行「操作」列，确认后执行；窄屏（< 992px）收在「…」菜单里） | `DELETE /api/configs/{id}` | `system:config:delete` | ✅ 删除配置 | 内置 40901「内置配置不可删除」（前端按钮 disabled） |
-| —（公开读取） | `GET /api/configs/public/{key}` | 免登录 | — | 键不以 `system.site.` 开头 40300「该配置不允许公开读取」；查不到 40400；按库里的真实键复核前缀 |
-| —（详情） | `GET /api/configs/{id}` | `system:config:list` | — | 前端页面未调用 |
+| 新增配置 | `POST /api/system/config/create` → `{id}` | `system:config:create` | ✅ 系统配置 / 新增配置 | 见 §2 |
+| 新增配置分组 | `POST /api/system/config/createGroup` → `{id}` | `system:config:create` | ✅ 系统配置 / 新增配置分组 | 编码须匹配 `[a-z][a-z0-9_-]*` 且不得重复；持久化为启用的 `type=config` 组 |
+| 编辑配置分组 | `PUT /api/system/config/updateGroup/{key}` | `system:config:update` | ✅ 系统配置 / 修改配置分组 | 只修改名称，编码不变；停用或不存在的组返回 404 |
+| 删除配置分组 | `DELETE /api/system/config/deleteGroup/{key}` | `system:config:delete` | ✅ 系统配置 / 删除配置分组 | 仅允许删除空的自定义分组；内置分组或仍有配置项时 40901 |
+| 编辑配置 | `PUT /api/system/config/update/{id}` | `system:config:update` | ✅ 修改配置 | 404 配置不存在；内置项改键 40901；新值按新类型校验 |
+| 删除配置 | `DELETE /api/system/config/delete/{id}` | `system:config:delete` | ✅ 删除配置 | 内置 40901「内置配置不可删除」 |
+| 公开读取 | `GET /api/system/config/getPublic/{key}` | 免登录 | — | 键不以 `system.site.` 开头 40300「该配置不允许公开读取」；查不到 40400；按库里的真实键复核前缀 |
+| 详情 | `GET /api/system/config/get/{id}` | `system:config:list` | — | 页面未调用 |
 
 ## 4. 用到的公共组件
 
-- `PageContainer`、`Permission`、Semi UI `Form` / `Tabs`
+- `NavListPanel` / `NavListItem`（左栏）、`PageContainer`、`Permission`、Semi UI `Form`
 
 ## 5. 说明与建议
 
 - 配置写入后没有缓存层，公开接口每次查库。
-- 页面按内置分组目录生成 Tab，配置项以 `group_key` 归组；`field_type`、`field_options`、`required` 控制表单渲染和校验。键统一以 `system.` 开头，匿名读取仅允许 `system.site.*`。
-- **前端目前不消费任何配置**：`web/src` 里没有调用 `/api/configs/public/*` 的代码，站点标题取自构建期环境变量 `VITE_APP_TITLE`（见 #02）。
+- 页面按 `sys_group(type=config)` 分组，配置项以 `group_key` 归组；`field_type`、`field_options`、`required` 控制表单渲染和校验。键统一以 `system.` 开头，匿名读取仅允许 `system.site.*`。
+- **前端目前不消费任何配置**：`web/src` 里没有调用公开配置接口的代码，站点标题取自构建期环境变量 `VITE_APP_TITLE`（见 #02）。
 - 内置配置只保护「键不可改、不可删」，值与表单配置都可以改。
 - [系统配置说明](../../../docs/configuration.md)记录了分组和表单字段的使用方式。
 
@@ -96,13 +99,16 @@
   「configValue: 不是合法的 number 值」。
 
 - **#02 🔴 P3 种子配置 `system.site.title` 前端仍未读取**
-  `GET /api/configs/public/{key}` 为其开放免登录读取；
+  `GET /api/system/config/getPublic/{key}` 为其开放免登录读取；
   但前端 `config.ts` 的 `appTitle` 来自 `import.meta.env.VITE_APP_TITLE`（缺省 `Weiran Admin`），全仓无调用公开配置接口之处。
   症状：在系统配置页修改 `system.site.title` 后，登录页与顶栏标题不变。
 
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-20**
+- 配置组改为复用 `sys_group(type=config)`，页面改为左侧导航与右侧动态表单；左栏支持刷新、新增、编辑和删除，展示创建时间、内置及可删除状态；右栏标题显示当前组名、创建时间、内置和可删除状态，不展示说明，新增配置项默认当前组；配置 action 路由统一放在 `/api/system/config/{action}`。内置分组和仍有配置项的分组不可删除。配置项标题隐藏配置键并显示内置标签，设置图标紧随必填标记并在悬停时显示；编辑弹窗删除按钮始终显示，不可删除时置灰。新增配置项按钮带图标并置于标题行右侧。
 
 **2026-10-19**
 - 新增 `user` 内置分组与 `system.user.enable_phone_login` 开关（默认关闭）。

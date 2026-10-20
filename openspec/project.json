@@ -10,15 +10,21 @@
     "weiran4j/weiran-*",
     "web/src"
   ],
-  "checks-note": "项目级检查插件。rules-index.mjs 守 AGENTS.md 的规则索引表（`openspec/rules/` 不会被自动注入提示词，那张表是它唯一的唤起途径）；components-registry.mjs 守 `rules/advisory/components.md` 的组件登记完整性（新增未登记即报错）；state-waitlist.mjs 守 `state/bizs/*.md` 的文件内 `#NN` 编号（重号、悬空引用、已废止的 T-NN/B-NN）；spec-xref / worktree-orphan / ratchet 与技术栈无关。mono4ts 的 drizzle-journal.mjs 不适用（本仓用 Flyway），Flyway 版本号的唯一性目前由 Flyway 自身在启动时校验。",
+  "checks-note": "项目级检查插件。rules-index.mjs 守 AGENTS.md 的规则索引表（`openspec/rules/` 不会被自动注入提示词，那张表是它唯一的唤起途径）；components-registry.mjs 守 `rules/advisory/components.md` 的组件登记完整性（新增未登记即报错）；api-route-convention.mjs 守新 Spring Controller 路由的 `/api/{module}/{resource}/{action}` 结构，按 HEAD 中的精确方法+路径集合兼容存量，并允许 project.json 登记有理由的精确例外；state-waitlist.mjs 守 `state/bizs/*.md` 的文件内 `#NN` 编号（重号、悬空引用、已废止的 T-NN/B-NN）；spec-xref / worktree-orphan / ratchet 与技术栈无关。mono4ts 的 drizzle-journal.mjs 不适用（本仓用 Flyway），Flyway 版本号的唯一性目前由 Flyway 自身在启动时校验。",
   "checks": [
     "./guards/rules-index.mjs",
     "./guards/components-registry.mjs",
+    "./guards/api-route-convention.mjs",
     "./guards/state-waitlist.mjs",
     "./guards/spec-xref.mjs",
     "./guards/worktree-orphan.mjs",
     "./guards/ratchet.mjs"
   ],
+  "apiRouteConvention": {
+    "exceptions": {
+      "GET /api/health": "Spring Boot 存活探针由部署平台直接探测，保留短路径以兼容探针配置。"
+    }
+  },
   "capabilities": {
     "legacyChangeNamed": [],
     "knownArchiveDrift": [],

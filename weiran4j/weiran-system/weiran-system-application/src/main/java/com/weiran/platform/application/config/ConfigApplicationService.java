@@ -8,9 +8,12 @@ import com.weiran.framework.text.Texts;
 import com.weiran.platform.api.config.ConfigGroupView;
 import com.weiran.platform.api.config.ConfigService;
 import com.weiran.platform.api.config.ConfigView;
+import com.weiran.platform.api.config.CreateConfigGroupCommand;
 import com.weiran.platform.api.config.PublicConfigView;
 import com.weiran.platform.api.config.SaveConfigCommand;
-import com.weiran.platform.domain.config.ConfigGroupDefinition;
+import com.weiran.platform.api.config.UpdateConfigGroupCommand;
+import com.weiran.platform.domain.config.ConfigGroup;
+import com.weiran.platform.domain.config.ConfigGroupRepository;
 import com.weiran.platform.domain.config.ConfigRepository;
 import com.weiran.platform.domain.config.ConfigType;
 import com.weiran.platform.domain.config.JsonSyntax;
@@ -24,11 +27,17 @@ public class ConfigApplicationService implements ConfigService {
 
     private final ConfigRepository configRepository;
 
+    private final ConfigGroupRepository configGroupRepository;
+
     private final JsonSyntax jsonSyntax;
 
     /** 构造服务。 */
-    public ConfigApplicationService(final ConfigRepository configRepository, final JsonSyntax jsonSyntax) {
+    public ConfigApplicationService(
+            final ConfigRepository configRepository,
+            final ConfigGroupRepository configGroupRepository,
+            final JsonSyntax jsonSyntax) {
         this.configRepository = configRepository;
+        this.configGroupRepository = configGroupRepository;
         this.jsonSyntax = jsonSyntax;
     }
 
@@ -49,9 +58,65 @@ public class ConfigApplicationService implements ConfigService {
     @Override
     @Transactional(readOnly = true)
     public List<ConfigGroupView> groups() {
-        return ConfigGroupDefinition.items().stream()
-                .map(item -> new ConfigGroupView(item.key(), item.label()))
+        return this.configGroupRepository.findEnabled().stream()
+                .map(item -> new ConfigGroupView(
+                        item.key(),
+                        item.label(),
+                        item.builtin(),
+                        !item.builtin() && !this.configRepository.existsByGroupKey(item.key()),
+                        item.createdAt()))
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public long createGroup(final CreateConfigGroupCommand command) {
+        final String key = command.key().strip();
+        final String label = command.label().strip();
+        if (key.isEmpty() || !key.matches("[a-z][a-z0-9_-]*")) {
+            throw BizException.badRequest("分组编码必须以小写字母开头，且只能包含小写字母、数字、下划线和连字符");
+        }
+        if (label.isEmpty()) {
+            throw BizException.badRequest("分组名称不能为空");
+        }
+        if (this.configGroupRepository.existsByKey(key)) {
+            throw BizException.duplicate("配置分组编码已存在");
+        }
+        final int sort = this.configGroupRepository.findEnabled().size() + 1;
+        return this.configGroupRepository.save(new ConfigGroup(key, label, sort, false, null));
+    }
+
+    @Override
+    @Transactional
+    public void updateGroup(final UpdateConfigGroupCommand command) {
+        final String key = command.key().strip();
+        final String label = command.label().strip();
+        if (label.isEmpty()) {
+            throw BizException.badRequest("分组名称不能为空");
+        }
+        if (this.configGroupRepository.findEnabledByKey(key).isEmpty()) {
+            throw new BizException(CommonErrors.NOT_FOUND, "配置分组不存在");
+        }
+        if (!this.configGroupRepository.updateLabel(key, label)) {
+            throw new BizException(CommonErrors.NOT_FOUND, "配置分组不存在");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteGroup(final String groupKey) {
+        final String key = groupKey.strip();
+        final ConfigGroup group =
+                this.configGroupRepository.findEnabledByKey(key).orElseThrow(() -> BizException.notFound("配置分组不存在"));
+        if (group.builtin()) {
+            throw BizException.conflict("内置配置分组不可删除");
+        }
+        if (this.configRepository.existsByGroupKey(key)) {
+            throw BizException.conflict("分组下仍有配置项，不能删除");
+        }
+        if (!this.configGroupRepository.deleteByKey(key)) {
+            throw BizException.notFound("配置分组不存在");
+        }
     }
 
     @Override
@@ -63,6 +128,7 @@ public class ConfigApplicationService implements ConfigService {
     @Override
     @Transactional
     public long create(final SaveConfigCommand command) {
+        this.requireConfigGroup(command.groupKey().strip());
         final String key = command.configKey().strip();
         if (this.configRepository.existsByKey(key)) {
             throw BizException.duplicate("配置键已存在");
@@ -85,6 +151,7 @@ public class ConfigApplicationService implements ConfigService {
     @Override
     @Transactional
     public void update(final long id, final SaveConfigCommand command) {
+        this.requireConfigGroup(command.groupKey().strip());
         final SystemConfig config = this.requireConfig(id);
         final String key = command.configKey().strip();
         final SystemConfig updated = config.withDetails(
@@ -126,6 +193,12 @@ public class ConfigApplicationService implements ConfigService {
 
     private SystemConfig requireConfig(final long id) {
         return this.configRepository.findById(id).orElseThrow(() -> BizException.notFound("配置不存在"));
+    }
+
+    private void requireConfigGroup(final String groupKey) {
+        if (this.configGroupRepository.findEnabledByKey(groupKey).isEmpty()) {
+            throw BizException.badRequest("配置分组不存在或未启用");
+        }
     }
 
     private static ConfigView toView(final SystemConfig config) {

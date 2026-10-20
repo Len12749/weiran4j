@@ -44,6 +44,11 @@ public class MybatisConfigRepository implements ConfigRepository {
     }
 
     @Override
+    public boolean existsByGroupKey(final String groupKey) {
+        return this.configMapper.exists(Wrappers.lambdaQuery(SysConfigDO.class).eq(SysConfigDO::getGroupKey, groupKey));
+    }
+
+    @Override
     public long save(final SystemConfig config) {
         final SysConfigDO row = new SysConfigDO();
         row.setId(config.getId());

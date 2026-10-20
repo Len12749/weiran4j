@@ -1,8 +1,8 @@
-# sys_dict 字典管理
+# sys_group 字典与共享分组管理
 
 > 属于 `openspec/state/`，**只描述事实，不是规范**：过期不会被 `check.mjs` 拦截，**以代码为准**，发现不符回来改这里。
 > 契约文档 `weiran4j/docs/01-架构与接口契约.md` 只作索引；它与代码不一致的地方以代码为准写在下文，并在 §6 登记。
-> 本文件同时覆盖子表 `sys_dict_item`（字典项）。
+> `sys_group` 通过 `type=dict/config` 同时承载字典与系统配置分组；本文件同时覆盖子表 `sys_dict_item`（字典项）。
 >
 > 事实源：
 > [`DictController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/weiran/platform/adapter/web/DictController.java)、
@@ -12,6 +12,9 @@
 > [`Dict.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/weiran/platform/domain/dict/Dict.java) /
 > [`DictItem.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/weiran/platform/domain/dict/DictItem.java)、
 > [`MybatisDictRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/weiran/platform/infrastructure/persistence/MybatisDictRepository.java)、
+> [`SysGroupDO.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/weiran/platform/infrastructure/persistence/entity/SysGroupDO.java)、
+> [`MybatisConfigGroupRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/weiran/platform/infrastructure/persistence/MybatisConfigGroupRepository.java)、
+> [`V202610201001__platform_unify_dict_config_groups.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/platform/V202610201001__platform_unify_dict_config_groups.sql)、
 > [`V202609260101__platform_init_schema.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/platform/V202609260101__platform_init_schema.sql) /
 > [`V202609260102__platform_seed_data.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/platform/V202609260102__platform_seed_data.sql)、
 > [`DictsPage.tsx`](../../../web/src/pages/system/dicts/DictsPage.tsx) /
@@ -25,7 +28,7 @@
 
 | 项 | 值 |
 | --- | --- |
-| 表 | `sys_dict`（字典）+ `sys_dict_item`（字典项，`dict_id` 关联；唯一键 `(dict_id, value)`） |
+| 表 | `sys_group`（`type=dict/config`；字典组/配置组）+ `sys_dict_item`（字典项，`group_id` 关联；唯一键 `(group_id, value)`） |
 | 菜单 | 系统管理 › 字典管理（`sys_menu.id = 7`） |
 | 路由 | `/system/dicts` |
 | 页面组件 | `system/dicts/DictsPage`（左：`NavListPanel` 字典列表，同 mono4ts；右：`DictItemsPanel` 字典项；弹窗 `DictFormModal`、`DictItemFormModal`） |
@@ -77,7 +80,7 @@
 | 字段 | 前端控件 | 前端校验 | 后端校验 | DB 列 / 类型 |
 | --- | --- | --- | --- | --- |
 | 字典名称 | `Form.Input` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)` | `name varchar(64)` |
-| 字典编码 | `Form.Input`，内置字典 `disabled`；提交前 `trim` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)`；去空白后查重 40900「字典编码已存在」；内置字典改编码 40901；无格式规则 | `code varchar(64)` 唯一 |
+| 字典编码 | `Form.Input`，内置字典 `disabled`；提交前 `trim` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)`；去空白后在字典类型内查重 40900「字典编码已存在」；内置字典改编码 40901；无格式规则 | `code varchar(64)`，唯一 `(type, code)` |
 | 描述 | `Form.TextArea` | `maxLength=256` | `@Size(max=256)`；空白存 `null` | `description varchar(256) null` |
 | 状态 ❌ | `Form.RadioGroup`，**内置字典也可选禁用** | 无 | 新增 `enabled`，编辑保持原值；内置字典禁用 40901「内置字典不可禁用」 | `status varchar(16)` 默认 `enabled` |
 
@@ -86,7 +89,7 @@
 | 字段 | 前端控件 | 前端校验 | 后端校验 | DB 列 / 类型 |
 | --- | --- | --- | --- | --- |
 | 标签 | `Form.Input` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)` | `label varchar(64)` |
-| 值 | `Form.Input` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)`；去空白后在同一字典内查重 40900「字典项值已存在」 | `value varchar(64)`，唯一 `(dict_id, value)` |
+| 值 | `Form.Input` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)`；去空白后在同一字典内查重 40900「字典项值已存在」 | `value varchar(64)`，唯一 `(group_id, value)` |
 | 颜色 | `Form.Select`（15 个 Semi `Tag` 预置色），可清空 | 无 | `@Size(max=32)`；不限定取值 | `color varchar(32) null` |
 | 排序 | `Form.InputNumber` | `min=0` | 可空；新增 0，编辑保持原值 | `sort int` 默认 0 |
 | 状态 | `Form.RadioGroup` | 无 | 新增 `enabled`，编辑保持原值 | `status varchar(16)` 默认 `enabled` |
@@ -136,6 +139,9 @@
 
 新条目插在本节最上方（按日期倒序，新在上）。
 
+**2026-10-20**
+- `sys_dict` 已通过追加迁移并入 `sys_group`；已有字典记录的 `type=dict`，配置分组 `general/user` 为 `type=config`。`sys_dict_item.dict_id` 改为 `group_id`，数据关联值保留，字典 HTTP 字段仍为 `dictId`。系统配置分组侧栏显示审计创建时间与内置标识，支持按编码修改名称（编码保持稳定）。
+
 **2026-09-27**
 - **#07 ✅ P3 字典项列表按 `rules/advisory/list-view.md` 约定改造**
   右栏字典项表格：操作列（编辑 / 删除）固定在右侧（补 `scroll.x`）并改用 `TableActions`，右栏窄屏（< 992px）收成「…」。
@@ -148,4 +154,4 @@
 
 **2026-09-26**
 - **#05 ✅ P? D-008 框架重写时建立本文件**
-  按 `e23c511` 的代码首次盘点 `sys_dict` / `sys_dict_item` 的双栏页面、表单、动作与已知问题。
+  按 `e23c511` 的代码首次盘点原 `sys_dict` / `sys_dict_item` 的双栏页面、表单、动作与已知问题。

@@ -28,4 +28,4 @@ features:
 - [架构说明](/architecture)：仓库结构、前后端关系、后端分层和请求流程。
 - [系统配置](/configuration)：分组 Tab、动态表单字段、校验与配置键前缀。
 
-接口、数据库与错误码的权威说明仍以 `weiran4j/docs/01-架构与接口契约.md` 为准；生产部署步骤见 `weiran4j/docs/02-部署.md`。
+数据库、错误码与跨接口业务规则见 `weiran4j/docs/01-架构与接口契约.md`；HTTP 接口定义以 Springdoc 生成的 OpenAPI 为准。生产部署步骤见 `weiran4j/docs/02-部署.md`。

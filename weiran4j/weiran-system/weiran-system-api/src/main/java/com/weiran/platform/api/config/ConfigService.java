@@ -14,8 +14,17 @@ public interface ConfigService {
     /** 全量系统配置，用于可视化表单。 */
     List<ConfigView> all();
 
-    /** 系统内置分组目录。 */
+    /** 查询启用的系统配置分组。 */
     List<ConfigGroupView> groups();
+
+    /** 新增配置分组，返回分组 ID。 */
+    long createGroup(CreateConfigGroupCommand command);
+
+    /** 修改配置分组名称，分组编码保持不变。 */
+    void updateGroup(UpdateConfigGroupCommand command);
+
+    /** 删除空的自定义配置分组；内置分组或含配置项的分组不可删。 */
+    void deleteGroup(String key);
 
     /** 详情；不存在抛 40400。 */
     ConfigView get(long id);

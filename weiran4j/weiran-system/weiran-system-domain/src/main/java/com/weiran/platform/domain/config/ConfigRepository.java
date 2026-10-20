@@ -18,6 +18,9 @@ public interface ConfigRepository {
     /** 键是否已存在。 */
     boolean existsByKey(String configKey);
 
+    /** 分组是否包含配置项。 */
+    boolean existsByGroupKey(String groupKey);
+
     /** 新增或更新，返回 ID。 */
     long save(SystemConfig config);
 

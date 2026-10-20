@@ -7,12 +7,16 @@ import com.weiran.framework.page.PageQuery;
 import com.weiran.framework.page.PageResult;
 import com.weiran.framework.response.ApiResponse;
 import com.weiran.framework.response.IdResult;
+import com.weiran.platform.adapter.web.request.CreateConfigGroupRequest;
 import com.weiran.platform.adapter.web.request.SaveConfigRequest;
+import com.weiran.platform.adapter.web.request.UpdateConfigGroupRequest;
 import com.weiran.platform.api.config.ConfigGroupView;
 import com.weiran.platform.api.config.ConfigService;
 import com.weiran.platform.api.config.ConfigView;
+import com.weiran.platform.api.config.CreateConfigGroupCommand;
 import com.weiran.platform.api.config.PublicConfigView;
 import com.weiran.platform.api.config.SaveConfigCommand;
+import com.weiran.platform.api.config.UpdateConfigGroupCommand;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -26,9 +30,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 系统配置接口 {@code /api/configs}。 */
+/** 系统配置接口 {@code /api/system/config}。 */
 @RestController
-@RequestMapping("/api/configs")
+@RequestMapping("/api/system/config")
 public class ConfigController {
 
     private static final String MODULE = "系统配置";
@@ -42,7 +46,7 @@ public class ConfigController {
 
     /** 分页查询。 */
     @RequiresPermission("system:config:list")
-    @GetMapping
+    @GetMapping("/list")
     public PageResult<ConfigView> page(
             @RequestParam(required = false) final @Nullable String keyword,
             @RequestParam(defaultValue = "1") final int page,
@@ -52,28 +56,56 @@ public class ConfigController {
 
     /** 全量配置，用于生成分组表单。 */
     @RequiresPermission("system:config:list")
-    @GetMapping("/all")
+    @GetMapping("/listAll")
     public List<ConfigView> all() {
         return this.configService.all();
     }
 
     /** 系统内置分组目录。 */
     @RequiresPermission("system:config:list")
-    @GetMapping("/groups")
+    @GetMapping("/listGroups")
     public List<ConfigGroupView> groups() {
         return this.configService.groups();
     }
 
+    /** 新增配置分组。 */
+    @RequiresPermission("system:config:create")
+    @OperationLog(module = ConfigController.MODULE, description = "新增配置分组")
+    @PostMapping("/createGroup")
+    public IdResult createGroup(@Valid @RequestBody final CreateConfigGroupRequest request) {
+        return new IdResult(
+                this.configService.createGroup(new CreateConfigGroupCommand(request.key(), request.label())));
+    }
+
+    /** 修改配置分组名称。 */
+    @RequiresPermission("system:config:update")
+    @OperationLog(module = ConfigController.MODULE, description = "修改配置分组")
+    @PutMapping("/updateGroup/{key}")
+    public ApiResponse<Void> updateGroup(
+            @PathVariable final String key, @Valid @RequestBody final UpdateConfigGroupRequest request) {
+        this.configService.updateGroup(new UpdateConfigGroupCommand(key, request.label()));
+        return ApiResponse.ok();
+    }
+
+    /** 删除空的自定义配置分组。 */
+    @RequiresPermission("system:config:delete")
+    @OperationLog(module = ConfigController.MODULE, description = "删除配置分组")
+    @DeleteMapping("/deleteGroup/{key}")
+    public ApiResponse<Void> deleteGroup(@PathVariable final String key) {
+        this.configService.deleteGroup(key);
+        return ApiResponse.ok();
+    }
+
     /** 公开配置（仅 {@code system.site.*}），无需登录。 */
     @PublicApi
-    @GetMapping("/public/{key}")
+    @GetMapping("/getPublic/{key}")
     public PublicConfigView getPublic(@PathVariable final String key) {
         return this.configService.getPublic(key);
     }
 
     /** 详情。 */
     @RequiresPermission("system:config:list")
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     public ConfigView get(@PathVariable final long id) {
         return this.configService.get(id);
     }
@@ -81,7 +113,7 @@ public class ConfigController {
     /** 新增。 */
     @RequiresPermission("system:config:create")
     @OperationLog(module = ConfigController.MODULE, description = "新增配置")
-    @PostMapping
+    @PostMapping("/create")
     public IdResult create(@Valid @RequestBody final SaveConfigRequest request) {
         return new IdResult(this.configService.create(ConfigController.toCommand(request)));
     }
@@ -89,7 +121,7 @@ public class ConfigController {
     /** 修改。 */
     @RequiresPermission("system:config:update")
     @OperationLog(module = ConfigController.MODULE, description = "修改配置")
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ApiResponse<Void> update(@PathVariable final long id, @Valid @RequestBody final SaveConfigRequest request) {
         this.configService.update(id, ConfigController.toCommand(request));
         return ApiResponse.ok();
@@ -98,7 +130,7 @@ public class ConfigController {
     /** 删除。 */
     @RequiresPermission("system:config:delete")
     @OperationLog(module = ConfigController.MODULE, description = "删除配置")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ApiResponse<Void> delete(@PathVariable final long id) {
         this.configService.delete(id);
         return ApiResponse.ok();

@@ -108,7 +108,7 @@ describe('DictsPage 左侧字典列表（NavListPanel，同 mono4ts）', () => {
         expect(fetch.calls.at(-1)?.search).toContain('page=1');
     });
 
-    it('编辑当前选中的字典后，右栏标题跟着列表刷新（sys_dict.md#01）', async () => {
+    it('编辑当前选中的字典后，右栏标题跟着列表刷新（sys_group.md#01）', async () => {
         let list = dicts;
         mockFetch({
             'GET /api/dicts': () => page(list),

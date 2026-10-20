@@ -1,7 +1,16 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toQueryString } from '@/lib/query';
 import { http } from '@/utils/request';
-import type { ConfigGroupView, ConfigQuery, ConfigSaveRequest, ConfigView, IdResult, PageResult } from '@/types/api';
+import type {
+    ConfigGroupSaveRequest,
+    ConfigGroupUpdateRequest,
+    ConfigGroupView,
+    ConfigQuery,
+    ConfigSaveRequest,
+    ConfigView,
+    IdResult,
+    PageResult,
+} from '@/types/api';
 
 export const configKeys = {
     all: ['configs'] as const,
@@ -11,7 +20,7 @@ export const configKeys = {
 export function useConfigList(query: ConfigQuery) {
     return useQuery({
         queryKey: configKeys.list(query),
-        queryFn: () => http.get<PageResult<ConfigView>>(`/api/configs${toQueryString(query)}`),
+        queryFn: () => http.get<PageResult<ConfigView>>(`/api/system/config/list${toQueryString(query)}`),
         placeholderData: keepPreviousData,
     });
 }
@@ -19,14 +28,39 @@ export function useConfigList(query: ConfigQuery) {
 export function useConfigAll() {
     return useQuery({
         queryKey: [...configKeys.all, 'all'] as const,
-        queryFn: () => http.get<ConfigView[]>('/api/configs/all'),
+        queryFn: () => http.get<ConfigView[]>('/api/system/config/listAll'),
     });
 }
 
 export function useConfigGroups() {
     return useQuery({
         queryKey: [...configKeys.all, 'groups'] as const,
-        queryFn: () => http.get<ConfigGroupView[]>('/api/configs/groups'),
+        queryFn: () => http.get<ConfigGroupView[]>('/api/system/config/listGroups'),
+    });
+}
+
+export function useCreateConfigGroup() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (body: ConfigGroupSaveRequest) => http.post<IdResult>('/api/system/config/createGroup', body),
+        onSuccess: () => qc.invalidateQueries({ queryKey: [...configKeys.all, 'groups'] }),
+    });
+}
+
+export function useUpdateConfigGroup() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ key, body }: { key: string; body: ConfigGroupUpdateRequest }) =>
+            http.put<null>(`/api/system/config/updateGroup/${key}`, body),
+        onSuccess: () => qc.invalidateQueries({ queryKey: [...configKeys.all, 'groups'] }),
+    });
+}
+
+export function useDeleteConfigGroup() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (key: string) => http.delete<null>(`/api/system/config/deleteGroup/${key}`),
+        onSuccess: () => qc.invalidateQueries({ queryKey: configKeys.all }),
     });
 }
 
@@ -34,7 +68,9 @@ export function useSaveConfig() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ id, body }: { id?: number | undefined; body: ConfigSaveRequest }) =>
-            id === undefined ? http.post<IdResult>('/api/configs', body) : http.put<null>(`/api/configs/${id}`, body),
+            id === undefined
+                ? http.post<IdResult>('/api/system/config/create', body)
+                : http.put<null>(`/api/system/config/update/${id}`, body),
         onSuccess: () => qc.invalidateQueries({ queryKey: configKeys.all }),
     });
 }
@@ -42,7 +78,7 @@ export function useSaveConfig() {
 export function useDeleteConfig() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => http.delete<null>(`/api/configs/${id}`),
+        mutationFn: (id: number) => http.delete<null>(`/api/system/config/delete/${id}`),
         onSuccess: () => qc.invalidateQueries({ queryKey: configKeys.all }),
     });
 }

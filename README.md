@@ -25,7 +25,7 @@ pnpm dev
 - [使用指南](docs/usage.md)：本地启动、常用命令和部署入口
 - [架构说明](docs/architecture.md)：模块关系、后端分层和请求流程
 - [文档站首页](docs/index.md)：VitePress 文档入口
-- [API 与数据库契约](weiran4j/docs/01-架构与接口契约.md)
+- [架构、数据库与业务约束](weiran4j/docs/01-架构与接口契约.md)
 - [部署手册](weiran4j/docs/02-部署.md)
 - [开发约定](AGENTS.md)
 

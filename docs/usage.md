@@ -52,5 +52,5 @@ pnpm dev
 ## 部署与接口
 
 - Docker Compose 部署步骤、环境变量和反向代理配置：`weiran4j/docs/02-部署.md`
-- API、数据库、权限码与错误码契约：`weiran4j/docs/01-架构与接口契约.md`
+- 数据库、权限码、错误码与跨接口业务规则：`weiran4j/docs/01-架构与接口契约.md`；HTTP 接口定义以 OpenAPI 为准
 - 关键架构决策：`weiran4j/docs/00-决策记录.md`

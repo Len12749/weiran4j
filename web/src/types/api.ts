@@ -350,6 +350,7 @@ export interface DictSaveRequest {
 
 export interface DictItemView {
     id: number;
+    /** HTTP compatibility field; persisted as sys_dict_item.group_id. */
     dictId: number;
     label: string;
     value: string;
@@ -375,6 +376,18 @@ export type ConfigFieldType = 'input' | 'textarea' | 'number' | 'switch' | 'sele
 
 export interface ConfigGroupView {
     key: string;
+    label: string;
+    isBuiltin: boolean;
+    canDelete: boolean;
+    createdAt: string | null;
+}
+
+export interface ConfigGroupSaveRequest {
+    key: string;
+    label: string;
+}
+
+export interface ConfigGroupUpdateRequest {
     label: string;
 }
 

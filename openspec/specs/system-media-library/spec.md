@@ -46,19 +46,14 @@ status: "active"
 - **THEN** 对应文件被拒绝且不会创建媒体资产
 - **判据**:API 测试断言错误响应并检查数据库中无对应对象记录
 
-### Requirement: [FR-004] 图片删除与引用保护
+### Requirement: [FR-005] 图片资产删除
 
-具备 `system:media-library:delete` 权限的管理员 **MUST** 能通过 `DELETE /api/system/media-library/{id}` 删除未被站点配置引用的登记图片；删除前 **MUST** 检查 `sys_site_config.contents` 是否包含目标 URL。只要站点配置仍引用目标 URL，系统 **MUST** 拒绝删除且不改变文件或媒体记录。删除与站点配置保存事务 **MUST** 按 ident 升序锁定相同的 `sys_site_config` 配置行，避免并发写入形成失效引用。文件对象删除 **MUST** 在数据库事务提交后执行；重复删除对象应安全，确保外部存储错误或数据库提交失败时资产记录仍可重试处理。
+具备 `system:media-library:delete` 权限的管理员 **MUST** 能通过 `DELETE /api/system/media-library/{id}` 删除登记图片。图片删除不依赖站点配置引用检查；文件对象删除 **MUST** 在数据库事务提交后执行。重复删除对象应安全，确保外部存储错误或数据库提交失败时资产记录仍可重试处理。
 
-#### Scenario: 删除未引用的图片
-- **WHEN** 图片 URL 未出现在站点配置内容中，且管理员有删除权限
+#### Scenario: 删除图片
+- **WHEN** 管理员有删除权限且目标图片已登记
 - **THEN** 系统删除存储对象和媒体资产记录
 - **判据**:测试断言对象不可访问、媒体查询不再返回该记录，操作日志包含删除事件
-
-#### Scenario: 拒绝删除仍被站点配置引用的图片
-- **WHEN** 站点配置原始 HTML 仍包含目标图片 URL
-- **THEN** 系统返回冲突错误且保留存储对象与媒体资产记录
-- **判据**:集成测试断言删除被拒绝且文件和记录仍存在
 
 #### Scenario: 未授权删除
 - **WHEN** 用户缺少 `system:media-library:delete` 权限或请求的媒体 id 不存在

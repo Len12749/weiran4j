@@ -1,11 +1,22 @@
-import { Button, Form, Modal, Space, Tabs, Toast, Typography } from '@douyinfe/semi-ui';
+import { Button, Dropdown, Empty, Form, Modal, Pagination, Space, Tag, Toast } from '@douyinfe/semi-ui';
 import type { FormApi } from '@douyinfe/semi-ui/lib/es/form';
+import { Eye, EyeOff, MoreHorizontal, Pencil, Plus, RefreshCw, Settings, Trash2 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { PageContainer } from '@/components/PageContainer';
+import { NavListItem, NavListPanel } from '@/components/NavListPanel';
 import { Permission } from '@/components/Permission';
-import { useConfigAll, useConfigGroups, useDeleteConfig, useSaveConfig } from '@/hooks/queries/configs';
+import {
+    useConfigAll,
+    useConfigGroups,
+    useCreateConfigGroup,
+    useDeleteConfig,
+    useDeleteConfigGroup,
+    useSaveConfig,
+    useUpdateConfigGroup,
+} from '@/hooks/queries/configs';
 import { usePermission } from '@/hooks/usePermission';
-import type { ConfigFieldType, ConfigSaveRequest, ConfigView } from '@/types/api';
+import { useTableDefaults } from '@/hooks/useTableDefaults';
+import type { ConfigFieldType, ConfigGroupView, ConfigSaveRequest, ConfigView } from '@/types/api';
 
 interface ConfigMetadataForm {
     configKey: string;
@@ -38,17 +49,22 @@ function parseOptions(value: string): Array<{ label: string; value: string }> {
     try {
         const options: unknown = JSON.parse(value);
         if (!Array.isArray(options)) return [];
-        return options.filter(
-            (option): option is { label: string; value: string } =>
-                typeof option?.label === 'string' && typeof option?.value === 'string',
-        );
+        return options.filter((option: unknown): option is { label: string; value: string } => {
+            if (typeof option !== 'object' || option === null) return false;
+            const candidate = option as Record<string, unknown>;
+            return typeof candidate.label === 'string' && typeof candidate.value === 'string';
+        });
     } catch {
         return [];
     }
 }
 
+function toTextValue(value: unknown): string {
+    return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value) : '';
+}
+
 function validateField(record: ConfigView, value: unknown): string | null {
-    const text = record.fieldType === 'switch' ? String(Boolean(value)) : String(value ?? '');
+    const text = record.fieldType === 'switch' ? String(Boolean(value)) : toTextValue(value);
     if (record.required && !text.trim()) return '此项必填';
     if (record.fieldType === 'number' && text.trim() && (text.trim() !== text || Number.isNaN(Number(text)))) {
         return '请输入合法数字';
@@ -71,11 +87,15 @@ function ConfigMetadataModal({
     record,
     defaultGroup,
     groups,
+    canDelete,
+    onDelete,
     onClose,
 }: {
     record: ConfigView | null;
     defaultGroup?: { key: string; label: string } | undefined;
     groups: Array<{ key: string; label: string }>;
+    canDelete: boolean;
+    onDelete: (record: ConfigView) => void;
     onClose: () => void;
 }) {
     const api = useRef<FormApi<ConfigMetadataForm> | null>(null);
@@ -107,8 +127,26 @@ function ConfigMetadataModal({
             title={isEdit ? '编辑配置项' : '新增配置项'}
             width={640}
             onCancel={onClose}
-            onOk={() => submit().catch(() => undefined)}
-            okButtonProps={{ loading: save.isPending }}
+            footer={
+                <div className="config-metadata-modal__footer">
+                    {record ? (
+                        <Button
+                            type="danger"
+                            theme="borderless"
+                            disabled={!canDelete || record.isBuiltin}
+                            onClick={() => { onClose(); onDelete(record); }}
+                        >
+                            删除配置项
+                        </Button>
+                    ) : <span />}
+                    <Space>
+                        <Button onClick={onClose}>取消</Button>
+                        <Button type="primary" theme="solid" loading={save.isPending} onClick={() => submit().catch(() => undefined)}>
+                            {isEdit ? '保存' : '新增'}
+                        </Button>
+                    </Space>
+                </div>
+            }
             maskClosable={false}
         >
             <Form<ConfigMetadataForm>
@@ -136,7 +174,7 @@ function ConfigMetadataModal({
                 />
                 <Form.Select
                     field="groupKey"
-                    label="内置分组"
+                    label="配置分组"
                     optionList={groups.map((group) => ({ label: group.label, value: group.key }))}
                     style={{ width: '100%' }}
                     rules={[{ required: true, message: '请选择分组' }]}
@@ -151,7 +189,7 @@ function ConfigMetadataModal({
                         {
                             validator: (_rule: unknown, value: unknown) => {
                                 if (api.current?.getValue('fieldType') !== 'select' || !value) return true;
-                                return parseOptions(String(value)).length > 0;
+                                return parseOptions(typeof value === 'string' ? value : '').length > 0;
                             },
                             message: '请输入有效的选项数组 JSON',
                         },
@@ -169,18 +207,79 @@ function ConfigMetadataModal({
     );
 }
 
+function ConfigGroupModal({
+    record,
+    onClose,
+    onCreated,
+}: {
+    record: ConfigGroupView | null;
+    onClose: () => void;
+    onCreated: (key: string) => void;
+}) {
+    const api = useRef<FormApi<{ key: string; label: string }> | null>(null);
+    const createGroup = useCreateConfigGroup();
+    const updateGroup = useUpdateConfigGroup();
+    const isEdit = record !== null;
+
+    const submit = async () => {
+        const value = await api.current?.validate();
+        if (!value) return;
+        const key = record?.key ?? value.key.trim();
+        if (record) {
+            await updateGroup.mutateAsync({ key, body: { label: value.label.trim() } });
+            Toast.success('配置分组已更新');
+        } else {
+            await createGroup.mutateAsync({ key, label: value.label.trim() });
+            Toast.success('配置分组已创建');
+        }
+        onCreated(key);
+        onClose();
+    };
+
+    return (
+        <Modal
+            visible
+            title={isEdit ? '编辑配置分组' : '新增配置分组'}
+            okText={isEdit ? '保存' : '新增'}
+            onCancel={onClose}
+            onOk={() => void submit().catch(() => undefined)}
+            okButtonProps={{ loading: createGroup.isPending || updateGroup.isPending }}
+            maskClosable={false}
+        >
+            <Form<{ key: string; label: string }>
+                getFormApi={(formApi) => {
+                    api.current = formApi;
+                }}
+                initValues={{ key: record?.key ?? '', label: record?.label ?? '' }}
+                labelPosition="left"
+                labelWidth={100}
+            >
+                <Form.Input
+                    field="key"
+                    label="分组编码"
+                    maxLength={64}
+                    disabled={isEdit}
+                    rules={[
+                        { required: true, message: '请输入分组编码' },
+                        { pattern: /^[a-z][a-z0-9_-]*$/, message: '以小写字母开头，只能包含小写字母、数字、下划线和连字符' },
+                    ]}
+                />
+                <Form.Input field="label" label="分组名称" maxLength={64} rules={[{ required: true, message: '请输入分组名称' }]} />
+            </Form>
+        </Modal>
+    );
+}
+
 function ConfigGroupPanel({
     records,
     canEdit,
-    canDelete,
+    showSettings,
     onEdit,
-    onDelete,
 }: {
     records: ConfigView[];
     canEdit: boolean;
-    canDelete: boolean;
+    showSettings: boolean;
     onEdit: (record: ConfigView) => void;
-    onDelete: (record: ConfigView) => void;
 }) {
     const api = useRef<FormApi<Record<string, unknown>> | null>(null);
     const save = useSaveConfig();
@@ -205,7 +304,7 @@ function ConfigGroupPanel({
                 const value = values[String(record.id)];
                 const body: ConfigSaveRequest = {
                     configKey: record.configKey,
-                    configValue: record.fieldType === 'switch' ? String(Boolean(value)) : String(value ?? ''),
+                    configValue: record.fieldType === 'switch' ? String(Boolean(value)) : toTextValue(value),
                     configType: record.configType,
                     groupKey: record.groupKey,
                     fieldType: record.fieldType,
@@ -221,6 +320,7 @@ function ConfigGroupPanel({
 
     return (
         <Form<Record<string, unknown>>
+            style={{ width: '100%' }}
             getFormApi={(formApi) => {
                 api.current = formApi;
             }}
@@ -231,11 +331,24 @@ function ConfigGroupPanel({
                 {records.map((record) => {
                     const field = String(record.id);
                     const label = (
-                        <Space>
-                            <span>{record.description || record.configKey}</span>
-                            <Typography.Text type="tertiary" size="small">{record.configKey}</Typography.Text>
-                            {record.isBuiltin && <Typography.Text type="tertiary" size="small">内置</Typography.Text>}
-                        </Space>
+                        <div className="config-field-title">
+                            {canEdit && showSettings && (
+                                <Button
+                                    className="config-field-title__edit"
+                                    theme="borderless"
+                                    size="small"
+                                    icon={<Settings size={14} />}
+                                    aria-label={`字段设置：${record.description || record.configKey}`}
+                                    onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        onEdit(record);
+                                    }}
+                                />
+                            )}
+                            <span>{record.description || '未命名配置项'}</span>
+                            {record.isBuiltin && <Tag size="small" color="blue">内置</Tag>}
+                        </div>
                     );
                     const common = {
                         field,
@@ -258,20 +371,6 @@ function ConfigGroupPanel({
                             ) : (
                                 <Form.Input {...common} maxLength={4096} />
                             )}
-                            <Space style={{ marginTop: 4 }}>
-                                {canEdit && <Button theme="borderless" size="small" onClick={() => onEdit(record)}>字段设置</Button>}
-                                {canDelete && (
-                                    <Button
-                                        theme="borderless"
-                                        type="danger"
-                                        size="small"
-                                        disabled={record.isBuiltin}
-                                        onClick={() => onDelete(record)}
-                                    >
-                                        删除
-                                    </Button>
-                                )}
-                            </Space>
                         </div>
                     );
                 })}
@@ -287,17 +386,34 @@ function ConfigGroupPanel({
 
 export default function ConfigsPage() {
     const { hasAnyPermission } = usePermission();
-    const { data, isFetching, refetch } = useConfigAll();
-    const { data: groupCatalog = [] } = useConfigGroups();
+    const { data } = useConfigAll();
+    const { data: groupCatalog = [], isFetching: isFetchingGroups, refetch: refetchGroups } = useConfigGroups();
     const deleteConfig = useDeleteConfig();
+    const deleteConfigGroup = useDeleteConfigGroup();
     const [editing, setEditing] = useState<ConfigView | null | undefined>(undefined);
-    const [activeGroup, setActiveGroup] = useState('general');
-    const groups = useMemo(
-        () => groupCatalog.map((group) => ({ ...group, records: (data ?? []).filter((config) => config.groupKey === group.key) })),
-        [data, groupCatalog],
-    );
+    const [creatingGroup, setCreatingGroup] = useState(false);
+    const [editingGroup, setEditingGroup] = useState<ConfigGroupView | null | undefined>(undefined);
+    const [activeGroup, setActiveGroup] = useState<string | null>(null);
+    const [showConfigSettings, setShowConfigSettings] = useState(false);
+    const [groupDraft, setGroupDraft] = useState('');
+    const [groupKeyword, setGroupKeyword] = useState('');
+    const [page, setPage] = useState(1);
+    const { pageSize: defaultPageSize, pageSizeOpts } = useTableDefaults();
+    const [pageSize, setPageSize] = useState(defaultPageSize);
     const canEdit = hasAnyPermission('system:config:update');
     const canDelete = hasAnyPermission('system:config:delete');
+    const canCreate = hasAnyPermission('system:config:create');
+    const filteredGroups = groupCatalog.filter((group) => `${group.label} ${group.key}`.toLowerCase().includes(groupKeyword.toLowerCase()));
+    const pageCount = Math.max(1, Math.ceil(filteredGroups.length / pageSize));
+    const currentPage = Math.min(page, pageCount);
+    const pageGroups = filteredGroups.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const selectedGroup = pageGroups.find((group) => group.key === activeGroup) ?? pageGroups[0] ?? null;
+    const selectedRecords = selectedGroup ? (data ?? []).filter((record) => record.groupKey === selectedGroup.key) : [];
+
+    const searchGroups = () => {
+        setGroupKeyword(groupDraft.trim());
+        setPage(1);
+    };
 
     const removeConfig = (record: ConfigView) => {
         Modal.confirm({
@@ -307,45 +423,191 @@ export default function ConfigsPage() {
         });
     };
 
+    const removeConfigGroup = (group: ConfigGroupView) => {
+        Modal.confirm({
+            title: `确定删除配置分组「${group.label}」？`,
+            content: '仅空的自定义分组可以删除',
+            okText: '删除',
+            okButtonProps: { type: 'danger', theme: 'solid' },
+            onOk: () =>
+                deleteConfigGroup.mutateAsync(group.key).then(() => {
+                    setActiveGroup(null);
+                    Toast.success('配置分组已删除');
+                }),
+        });
+    };
+
     return (
-        <PageContainer>
+        <div className="config-groups-layout">
+            <div className="config-groups-layout__master">
+                <NavListPanel
+                    title="配置分组"
+                    headerExtra={
+                        <Dropdown
+                            trigger="click"
+                            position="bottomRight"
+                            clickToHide
+                            render={
+                                <Dropdown.Menu>
+                                    {canEdit && (
+                                        <Dropdown.Item
+                                            icon={showConfigSettings ? <EyeOff size={14} /> : <Eye size={14} />}
+                                            onClick={() => setShowConfigSettings((visible) => !visible)}
+                                        >
+                                            {showConfigSettings ? '关闭设置' : '显示设置'}
+                                        </Dropdown.Item>
+                                    )}
+                                    <Dropdown.Item
+                                        icon={<RefreshCw size={14} />}
+                                        onClick={() => void refetchGroups()}
+                                    >
+                                        刷新
+                                    </Dropdown.Item>
+                                    {canCreate && (
+                                        <Dropdown.Item icon={<Plus size={14} />} onClick={() => setCreatingGroup(true)}>
+                                            新增分组
+                                        </Dropdown.Item>
+                                    )}
+                                </Dropdown.Menu>
+                            }
+                        >
+                            <Button theme="borderless" size="small" aria-label="配置分组操作" icon={<MoreHorizontal size={14} />} />
+                        </Dropdown>
+                    }
+                    search={{
+                        value: groupDraft,
+                        onChange: setGroupDraft,
+                        placeholder: '名称 / 编码',
+                        onEnterPress: searchGroups,
+                    }}
+                    loading={isFetchingGroups && groupCatalog.length === 0}
+                    emptyText={groupKeyword ? '没有匹配的配置分组' : '暂无配置分组'}
+                    footer={
+                        <Pagination
+                            size="small"
+                            total={filteredGroups.length}
+                            currentPage={currentPage}
+                            pageSize={pageSize}
+                            pageSizeOpts={pageSizeOpts}
+                            showSizeChanger
+                            onPageChange={setPage}
+                            onPageSizeChange={(size) => {
+                                setPage(1);
+                                setPageSize(size);
+                            }}
+                        />
+                    }
+                    dataSource={pageGroups}
+                    renderItem={(group) => (
+                        <NavListItem
+                            key={group.key}
+                            active={selectedGroup?.key === group.key}
+                            onClick={() => setActiveGroup(group.key)}
+                            primary={group.label}
+                            secondary={group.key}
+                            meta={
+                                <>
+                                    <span>{group.createdAt ?? ''}</span>
+                                    {group.isBuiltin && <Tag size="small" color="blue">内置</Tag>}
+                                </>
+                            }
+                            {...((canEdit || canDelete) && {
+                                extra: (
+                                    <Dropdown
+                                        trigger="click"
+                                        position="bottomRight"
+                                        clickToHide
+                                        render={
+                                            <Dropdown.Menu>
+                                                {canEdit && (
+                                                    <Dropdown.Item icon={<Pencil size={14} />} onClick={() => setEditingGroup(group)}>
+                                                        编辑
+                                                    </Dropdown.Item>
+                                                )}
+                                                {canDelete && (
+                                                    <Dropdown.Item
+                                                        type="danger"
+                                                        icon={<Trash2 size={14} />}
+                                                        disabled={!group.canDelete}
+                                                        onClick={() => removeConfigGroup(group)}
+                                                    >
+                                                        {group.canDelete
+                                                            ? '删除'
+                                                            : group.isBuiltin
+                                                              ? '内置分组不可删除'
+                                                              : '分组下仍有配置项不可删除'}
+                                                    </Dropdown.Item>
+                                                )}
+                                            </Dropdown.Menu>
+                                        }
+                                    >
+                                        <Button theme="borderless" size="small" aria-label={`${group.label}的操作`} icon={<MoreHorizontal size={14} />} />
+                                    </Dropdown>
+                                ),
+                            })}
+                        />
+                    )}
+                />
+            </div>
+            <PageContainer
+                title={
+                    selectedGroup?.label ?? '系统配置'
+                }
+                extra={
+                    <Permission code="system:config:create">
+                        <Button type="primary" theme="solid" icon={<Plus size={16} />} onClick={() => setEditing(null)}>
+                            新增配置项
+                        </Button>
+                    </Permission>
+                }
+            >
             <Space vertical align="start" style={{ width: '100%' }} spacing={16}>
-                <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                    <Typography.Text type="tertiary">按分组维护系统参数；表单控件与校验由每个配置项的字段设置生成。</Typography.Text>
-                    <Space>
-                        <Button icon="🔄" aria-label="刷新配置" loading={isFetching} onClick={() => void refetch()} />
-                        <Permission code="system:config:create">
-                            <Button type="primary" theme="solid" onClick={() => setEditing(null)}>新增配置项</Button>
-                        </Permission>
-                    </Space>
-                </Space>
-                {groups.length === 0 ? (
-                    <Typography.Text type="tertiary">尚未注册内置分组。</Typography.Text>
+                {!selectedGroup ? (
+                    <Empty title="暂无配置分组" description="请使用左侧分组菜单新增配置分组" style={{ padding: 48 }} />
                 ) : (
-                    <Tabs type="line" keepDOM activeKey={activeGroup} onChange={(key) => setActiveGroup(String(key))}>
-                        {groups.map((group) => (
-                            <Tabs.TabPane key={group.key} itemKey={group.key} tab={group.label}>
-                                <ConfigGroupPanel
-                                    key={`${group.key}-${group.records.map((record) => record.id).join('-')}`}
-                                    records={group.records}
-                                    canEdit={canEdit}
-                                    canDelete={canDelete}
-                                    onEdit={(record) => setEditing(record)}
-                                    onDelete={removeConfig}
-                                />
-                            </Tabs.TabPane>
-                        ))}
-                    </Tabs>
+                    <ConfigGroupPanel
+                        key={`${selectedGroup.key}-${selectedRecords.map((record) => record.id).join('-')}`}
+                        records={selectedRecords}
+                        canEdit={canEdit}
+                        showSettings={showConfigSettings}
+                        onEdit={(record) => setEditing(record)}
+                    />
                 )}
             </Space>
+            </PageContainer>
             {editing !== undefined && (
                 <ConfigMetadataModal
                     record={editing}
-                    defaultGroup={groupCatalog.find((group) => group.key === activeGroup) ?? groupCatalog[0]}
-                    groups={groups}
+                    defaultGroup={selectedGroup ?? undefined}
+                    groups={groupCatalog}
+                    canDelete={canDelete}
+                    onDelete={removeConfig}
                     onClose={() => setEditing(undefined)}
                 />
             )}
-        </PageContainer>
+            {creatingGroup && (
+                <ConfigGroupModal
+                    record={null}
+                    onClose={() => setCreatingGroup(false)}
+                    onCreated={(key) => {
+                        setGroupDraft('');
+                        setGroupKeyword('');
+                        const createdIndex = groupCatalog.findIndex((group) => group.key === key);
+                        setPage(Math.ceil(((createdIndex >= 0 ? createdIndex : groupCatalog.length) + 1) / pageSize));
+                        setActiveGroup(key);
+                    }}
+                />
+            )}
+            {editingGroup && (
+                <ConfigGroupModal
+                    record={editingGroup}
+                    onClose={() => setEditingGroup(undefined)}
+                    onCreated={(key) => {
+                        setGroupKeyword('');
+                        setActiveGroup(key);
+                    }}
+                />
+            )}
+        </div>
     );
 }

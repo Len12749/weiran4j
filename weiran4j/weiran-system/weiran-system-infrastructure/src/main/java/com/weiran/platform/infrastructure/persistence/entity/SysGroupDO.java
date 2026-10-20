@@ -8,12 +8,14 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jspecify.annotations.NullUnmarked;
 
-/** {@code sys_dict} 表映射。 */
+/** {@code sys_group} 表映射。 */
 @NullUnmarked
 @Getter
 @Setter
-@TableName("sys_dict")
-public class SysDictDO extends AuditableDO {
+@TableName("sys_group")
+public class SysGroupDO extends AuditableDO {
+
+    private String type;
 
     private String name;
 
@@ -23,6 +25,8 @@ public class SysDictDO extends AuditableDO {
     private String description;
 
     private String status;
+
+    private Integer sort;
 
     private Boolean isBuiltin;
 }

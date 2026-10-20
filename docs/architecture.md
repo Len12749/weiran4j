@@ -69,4 +69,4 @@ weiran4j/weiran-region/
 - 系统配置页面由分组和表单元数据驱动，具体用法见[系统配置说明](/configuration)。
 - 本地配置放在 `weiran4j/config/application-local.yml`，不提交到版本库。
 - 部署密钥通过环境变量注入，不写入源码或日志。
-- API 与数据库契约见 `weiran4j/docs/01-架构与接口契约.md`；OpenAPI 由 Springdoc 动态生成，本地 Swagger UI 地址为 `/swagger-ui.html`，JSON 定义地址为 `/v3/api-docs`（仅 `local` profile 开启）；部署操作见 `weiran4j/docs/02-部署.md`；工程约束见根目录 `AGENTS.md`。
+- 数据库、错误码与跨接口业务约束见 `weiran4j/docs/01-架构与接口契约.md`；HTTP 接口定义由 Springdoc 动态生成，本地 Swagger UI 地址为 `/swagger-ui.html`，JSON 定义地址为 `/v3/api-docs`（仅 `local` profile 开启）；部署操作见 `weiran4j/docs/02-部署.md`；工程约束见根目录 `AGENTS.md`。

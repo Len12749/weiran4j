@@ -26,6 +26,10 @@ class PlatformIT extends IntegrationTestSupport {
     void dictCrud() {
         final String admin = this.adminToken();
         final String code = IntegrationTestSupport.unique("dict");
+        assertThat(this.jdbc.queryForObject("SELECT type FROM sys_group WHERE id = 1", String.class))
+                .isEqualTo("dict");
+        assertThat(this.jdbc.queryForObject("SELECT group_id FROM sys_dict_item WHERE id = 1", Long.class))
+                .isEqualTo(1L);
         final long dictId = this.create("/api/dicts", admin, Map.of("name", "测试字典", "code", code));
 
         final long itemA = this.create(
@@ -70,8 +74,8 @@ class PlatformIT extends IntegrationTestSupport {
 
         IntegrationTestSupport.assertOk(this.delete("/api/dicts/" + dictId + "/items/" + itemB, admin));
         IntegrationTestSupport.assertOk(this.delete("/api/dicts/" + dictId, admin));
-        final Integer remaining =
-                this.jdbc.queryForObject("SELECT COUNT(*) FROM sys_dict_item WHERE dict_id = ?", Integer.class, dictId);
+        final Integer remaining = this.jdbc.queryForObject(
+                "SELECT COUNT(*) FROM sys_dict_item WHERE group_id = ?", Integer.class, dictId);
         assertThat(remaining).isZero();
         IntegrationTestSupport.assertError(this.get("/api/dicts/" + dictId, admin), HttpStatus.NOT_FOUND, 40400);
     }
@@ -81,58 +85,120 @@ class PlatformIT extends IntegrationTestSupport {
     void configRules() {
         final String admin = this.adminToken();
         final String prefix = "system.private." + IntegrationTestSupport.unique("cfg");
+        final JsonNode groups = IntegrationTestSupport.data(this.get("/api/system/config/listGroups", admin));
+        assertThat(groups.findValuesAsText("key")).containsExactly("general", "user");
+        assertThat(this.jdbc.queryForObject(
+                        "SELECT config_value FROM sys_config WHERE config_key = 'system.user.enable_phone_login'",
+                        String.class))
+                .isEqualTo("false");
+        final String customGroup = IntegrationTestSupport.unique("custom");
+        final long customGroupId =
+                this.create("/api/system/config/createGroup", admin, Map.of("key", customGroup, "label", "自定义分组"));
+        assertThat(this.jdbc.queryForObject("SELECT type FROM sys_group WHERE id = ?", String.class, customGroupId))
+                .isEqualTo("config");
+        assertThat(IntegrationTestSupport.data(this.get("/api/system/config/listGroups", admin))
+                        .findValuesAsText("key"))
+                .contains(customGroup);
+        final JsonNode customGroupView =
+                IntegrationTestSupport.data(this.get("/api/system/config/listGroups", admin))
+                        .findParents("key")
+                        .stream()
+                        .filter(item -> customGroup.equals(item.path("key").asText()))
+                        .findFirst()
+                        .orElseThrow();
+        assertThat(customGroupView.path("isBuiltin").asBoolean()).isFalse();
+        assertThat(customGroupView.path("canDelete").asBoolean()).isTrue();
+        assertThat(customGroupView.path("createdAt").asText()).isNotBlank();
+        final long customConfigId = this.create(
+                "/api/system/config/create",
+                admin,
+                PlatformIT.config(prefix + ".group-item", "x", "string", customGroup));
+        final JsonNode populatedGroupView =
+                IntegrationTestSupport.data(this.get("/api/system/config/listGroups", admin))
+                        .findParents("key")
+                        .stream()
+                        .filter(item -> customGroup.equals(item.path("key").asText()))
+                        .findFirst()
+                        .orElseThrow();
+        assertThat(populatedGroupView.path("canDelete").asBoolean()).isFalse();
+        IntegrationTestSupport.assertError(
+                this.delete("/api/system/config/deleteGroup/" + customGroup, admin), HttpStatus.CONFLICT, 40901);
+        IntegrationTestSupport.assertError(
+                this.delete("/api/system/config/deleteGroup/general", admin), HttpStatus.CONFLICT, 40901);
+        IntegrationTestSupport.assertOk(
+                this.put("/api/system/config/updateGroup/" + customGroup, admin, Map.of("label", "已编辑分组")));
+        assertThat(this.jdbc.queryForObject("SELECT name FROM sys_group WHERE id = ?", String.class, customGroupId))
+                .isEqualTo("已编辑分组");
+        IntegrationTestSupport.assertError(
+                this.post(
+                        "/api/system/config/create",
+                        admin,
+                        PlatformIT.config(prefix + ".wrong-group", "x", "string", "sys_user_gender")),
+                HttpStatus.BAD_REQUEST,
+                40000);
 
         IntegrationTestSupport.assertError(
-                this.post("/api/configs", admin, PlatformIT.config(prefix + ".n", "abc", "number")),
+                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + ".n", "abc", "number")),
                 HttpStatus.BAD_REQUEST,
                 40000);
         IntegrationTestSupport.assertError(
-                this.post("/api/configs", admin, PlatformIT.config(prefix + ".b", "yes", "boolean")),
+                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + ".b", "yes", "boolean")),
                 HttpStatus.BAD_REQUEST,
                 40000);
         IntegrationTestSupport.assertError(
-                this.post("/api/configs", admin, PlatformIT.config(prefix + ".j", "{broken", "json")),
+                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + ".j", "{broken", "json")),
                 HttpStatus.BAD_REQUEST,
                 40000);
         IntegrationTestSupport.assertError(
-                this.post("/api/configs", admin, PlatformIT.config(prefix + ".t", "x", "yaml")),
+                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + ".t", "x", "yaml")),
                 HttpStatus.BAD_REQUEST,
                 40000);
 
-        this.create("/api/configs", admin, PlatformIT.config(prefix + ".n", "3.5", "number"));
-        this.create("/api/configs", admin, PlatformIT.config(prefix + ".b", "true", "boolean"));
-        final long jsonId =
-                this.create("/api/configs", admin, PlatformIT.config(prefix + ".j", "{\"a\":[1,2]}", "json"));
+        this.create("/api/system/config/create", admin, PlatformIT.config(prefix + ".n", "3.5", "number"));
+        this.create("/api/system/config/create", admin, PlatformIT.config(prefix + ".b", "true", "boolean"));
+        final long jsonId = this.create(
+                "/api/system/config/create", admin, PlatformIT.config(prefix + ".j", "{\"a\":[1,2]}", "json"));
         IntegrationTestSupport.assertError(
-                this.post("/api/configs", admin, PlatformIT.config(prefix + ".j", "{}", "json")),
+                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + ".j", "{}", "json")),
                 HttpStatus.CONFLICT,
                 40900);
 
-        final JsonNode view = IntegrationTestSupport.data(this.get("/api/configs/" + jsonId, admin));
+        final JsonNode view = IntegrationTestSupport.data(this.get("/api/system/config/get/" + jsonId, admin));
         assertThat(view.path("configType").asText()).isEqualTo("json");
         assertThat(view.path("configValue").asText()).isEqualTo("{\"a\":[1,2]}");
-        assertThat(IntegrationTestSupport.data(this.get("/api/configs?keyword=" + prefix, admin))
+        assertThat(IntegrationTestSupport.data(this.get("/api/system/config/list?keyword=" + prefix, admin))
                         .path("total")
                         .asLong())
-                .isEqualTo(3L);
+                .isEqualTo(4L);
 
         final long builtinId = Objects.requireNonNull(this.jdbc.queryForObject(
                 "SELECT id FROM sys_config WHERE config_key = 'system.site.title'", Long.class));
-        IntegrationTestSupport.assertError(this.delete("/api/configs/" + builtinId, admin), HttpStatus.CONFLICT, 40901);
         IntegrationTestSupport.assertError(
-                this.put("/api/configs/" + builtinId, admin, PlatformIT.config("system.site.name", "x", "string")),
+                this.delete("/api/system/config/delete/" + builtinId, admin), HttpStatus.CONFLICT, 40901);
+        IntegrationTestSupport.assertError(
+                this.put(
+                        "/api/system/config/update/" + builtinId,
+                        admin,
+                        PlatformIT.config("system.site.name", "x", "string")),
                 HttpStatus.CONFLICT,
                 40901);
 
-        final JsonNode title = IntegrationTestSupport.data(this.get("/api/configs/public/system.site.title", null));
+        final JsonNode title =
+                IntegrationTestSupport.data(this.get("/api/system/config/getPublic/system.site.title", null));
         assertThat(title.path("configKey").asText()).isEqualTo("system.site.title");
         assertThat(title.path("configValue").asText()).isEqualTo("Weiran Admin");
         IntegrationTestSupport.assertError(
-                this.get("/api/configs/public/" + prefix + ".n", null), HttpStatus.FORBIDDEN, 40300);
+                this.get("/api/system/config/getPublic/" + prefix + ".n", null), HttpStatus.FORBIDDEN, 40300);
         IntegrationTestSupport.assertError(
-                this.get("/api/configs/public/system.site.missing", null), HttpStatus.NOT_FOUND, 40400);
+                this.get("/api/system/config/getPublic/system.site.missing", null), HttpStatus.NOT_FOUND, 40400);
 
-        IntegrationTestSupport.assertOk(this.delete("/api/configs/" + jsonId, admin));
+        IntegrationTestSupport.assertOk(this.delete("/api/system/config/delete/" + jsonId, admin));
+        IntegrationTestSupport.assertOk(this.delete("/api/system/config/delete/" + customConfigId, admin));
+        IntegrationTestSupport.assertOk(this.delete("/api/system/config/deleteGroup/" + customGroup, admin));
+        IntegrationTestSupport.assertError(
+                this.put("/api/system/config/updateGroup/" + customGroup, admin, Map.of("label", "不存在")),
+                HttpStatus.NOT_FOUND,
+                40400);
     }
 
     @Test
@@ -201,6 +267,11 @@ class PlatformIT extends IntegrationTestSupport {
     }
 
     private static Map<String, Object> config(final String key, final String value, final String type) {
+        return PlatformIT.config(key, value, type, "general");
+    }
+
+    private static Map<String, Object> config(
+            final String key, final String value, final String type, final String groupKey) {
         final String fieldType =
                 switch (type) {
                     case "number" -> "number";
@@ -216,7 +287,7 @@ class PlatformIT extends IntegrationTestSupport {
                 "configType",
                 type,
                 "groupKey",
-                "general",
+                groupKey,
                 "fieldType",
                 fieldType,
                 "required",

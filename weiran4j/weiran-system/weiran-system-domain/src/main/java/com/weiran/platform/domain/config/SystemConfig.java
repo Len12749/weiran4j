@@ -57,9 +57,6 @@ public final class SystemConfig {
         if (!this.configKey.startsWith("system.")) {
             throw BizException.badRequest("configKey: 必须使用 system. 前缀");
         }
-        if (ConfigGroupDefinition.find(this.groupKey).isEmpty()) {
-            throw BizException.badRequest("配置分组不存在");
-        }
         if (this.required && this.configValue.isBlank()) {
             throw BizException.badRequest("该配置项不能为空");
         }
