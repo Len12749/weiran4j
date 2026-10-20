@@ -26,21 +26,21 @@ describe('useAuth.logout', () => {
 
     it('响应带 ssoLogoutUrl：清本地会话后整页跳到提供方登出地址', async () => {
         const assign = stubLocationAssign();
-        mockFetch({ 'POST /api/auth/logout': { ssoLogoutUrl: 'https://sso.example.com/logout?post_logout_redirect_uri=x' }, 'GET /api/auth/me': null });
+        mockFetch({ 'POST /api/system/auth/logout': { ssoLogoutUrl: 'https://sso.example.com/logout?post_logout_redirect_uri=x' }, 'GET /api/system/auth/getCurrentUser': null });
         await clickLogout();
         expect(assign).toHaveBeenCalledWith('https://sso.example.com/logout?post_logout_redirect_uri=x');
     });
 
     it('ssoLogoutUrl 为 null：只清本地，不跳转', async () => {
         const assign = stubLocationAssign();
-        mockFetch({ 'POST /api/auth/logout': { ssoLogoutUrl: null }, 'GET /api/auth/me': null });
+        mockFetch({ 'POST /api/system/auth/logout': { ssoLogoutUrl: null }, 'GET /api/system/auth/getCurrentUser': null });
         await clickLogout();
         expect(assign).not.toHaveBeenCalled();
     });
 
     it('登出接口失败：照样清本地，不跳转', async () => {
         const assign = stubLocationAssign();
-        mockFetch({ 'POST /api/auth/logout': () => Response.json({ code: 50000, message: '服务异常', data: null }, { status: 500 }), 'GET /api/auth/me': null });
+        mockFetch({ 'POST /api/system/auth/logout': () => Response.json({ code: 50000, message: '服务异常', data: null }, { status: 500 }), 'GET /api/system/auth/getCurrentUser': null });
         await clickLogout();
         expect(assign).not.toHaveBeenCalled();
     });

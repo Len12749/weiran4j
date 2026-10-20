@@ -97,7 +97,7 @@ class ExternalLoginApplicationServiceTest {
         final SsoState state = new SsoState(
                 "kc", "st", "n", "v", "/target", mode, mode == SsoMode.BIND ? 7L : null, NOW.plusSeconds(600));
         when(this.signer.verify("cookie", NOW)).thenReturn(Optional.of(state));
-        when(this.provider.complete(any(), eq(state), eq("https://admin.example.com/api/auth/sso/kc/callback")))
+        when(this.provider.complete(any(), eq(state), eq("https://admin.example.com/api/system/auth/callbackSso/kc")))
                 .thenReturn(Optional.of(identity));
         return this.service.callback("kc", Map.of("state", "st", "code", "c"), "cookie", CLIENT);
     }
@@ -117,7 +117,7 @@ class ExternalLoginApplicationServiceTest {
                 .authorizeUrl(
                         org.mockito.ArgumentMatchers.argThat(
                                 s -> s.redirect().equals("/") && s.mode() == SsoMode.LOGIN),
-                        eq("https://admin.example.com/api/auth/sso/kc/callback"));
+                        eq("https://admin.example.com/api/system/auth/callbackSso/kc"));
 
         assertThat(this.service.authorize("kc", "/profile", "bind", null).location())
                 .isEqualTo("/login?ssoError=40100");

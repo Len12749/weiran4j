@@ -35,7 +35,7 @@ public class AuthCookies {
     public static final String SSO_COOKIE = "weiran_sso";
 
     /** 流程 Cookie 只在 authorize 与 callback 之间用。 */
-    public static final String SSO_PATH = "/api/auth/sso";
+    public static final String SSO_PATH = "/api/system/auth/callbackSso";
 
     /** 流程 Cookie 有效期：IdP 登录页上停留超过 10 分钟就重新发起。 */
     public static final Duration SSO_TTL = Duration.ofMinutes(10);

@@ -30,54 +30,62 @@ class PlatformIT extends IntegrationTestSupport {
                 .isEqualTo("dict");
         assertThat(this.jdbc.queryForObject("SELECT group_id FROM sys_dict_item WHERE id = 1", Long.class))
                 .isEqualTo(1L);
-        final long dictId = this.create("/api/dicts", admin, Map.of("name", "测试字典", "code", code));
+        final long dictId = this.create("/api/system/dict/create", admin, Map.of("name", "测试字典", "code", code));
 
         final long itemA = this.create(
-                "/api/dicts/" + dictId + "/items",
+                "/api/system/dict/createItem/" + dictId,
                 admin,
                 Map.of("label", "甲", "value", "a", "sort", 2, "color", "blue"));
-        final long itemB =
-                this.create("/api/dicts/" + dictId + "/items", admin, Map.of("label", "乙", "value", "b", "sort", 1));
+        final long itemB = this.create(
+                "/api/system/dict/createItem/" + dictId, admin, Map.of("label", "乙", "value", "b", "sort", 1));
         IntegrationTestSupport.assertError(
-                this.post("/api/dicts/" + dictId + "/items", admin, Map.of("label", "重复", "value", "a")),
+                this.post("/api/system/dict/createItem/" + dictId, admin, Map.of("label", "重复", "value", "a")),
                 HttpStatus.CONFLICT,
                 40900);
         IntegrationTestSupport.assertOk(this.put(
-                "/api/dicts/" + dictId + "/items/" + itemA,
+                "/api/system/dict/updateItem/" + dictId + "/" + itemA,
                 admin,
                 Map.of("label", "甲", "value", "a", "sort", 2, "status", "disabled")));
 
-        final JsonNode items = IntegrationTestSupport.data(this.get("/api/dicts/" + dictId + "/items", admin));
+        final JsonNode items = IntegrationTestSupport.data(this.get("/api/system/dict/listItems/" + dictId, admin));
         assertThat(AuthIT.ids(items)).containsExactly(itemB, itemA);
-        final JsonNode enabled = IntegrationTestSupport.data(this.get("/api/dicts/code/" + code + "/items", admin));
+        final JsonNode enabled =
+                IntegrationTestSupport.data(this.get("/api/system/dict/listItemsByCode/" + code, admin));
         assertThat(enabled.findValuesAsText("value")).containsExactly("b");
         assertThat(enabled.get(0).path("dictId").asLong()).isEqualTo(dictId);
 
-        final JsonNode gender =
-                IntegrationTestSupport.data(this.get("/api/dicts/code/sys_user_gender/items", this.adminToken()));
+        final JsonNode gender = IntegrationTestSupport.data(
+                this.get("/api/system/dict/listItemsByCode/sys_user_gender", this.adminToken()));
         assertThat(gender.findValuesAsText("value")).containsExactly("male", "female", "unknown");
 
-        final JsonNode page = IntegrationTestSupport.data(this.get("/api/dicts?keyword=" + code, admin));
+        final JsonNode page = IntegrationTestSupport.data(this.get("/api/system/dict/list?keyword=" + code, admin));
         assertThat(page.path("total").asLong()).isEqualTo(1L);
         assertThat(page.path("list").get(0).path("isBuiltin").asBoolean()).isFalse();
 
-        IntegrationTestSupport.assertError(this.delete("/api/dicts/1", admin), HttpStatus.CONFLICT, 40901);
+        IntegrationTestSupport.assertError(this.delete("/api/system/dict/delete/1", admin), HttpStatus.CONFLICT, 40901);
         IntegrationTestSupport.assertError(
                 this.put(
-                        "/api/dicts/1", admin, Map.of("name", "用户性别", "code", "sys_user_gender", "status", "disabled")),
+                        "/api/system/dict/update/1",
+                        admin,
+                        Map.of("name", "用户性别", "code", "sys_user_gender", "status", "disabled")),
                 HttpStatus.CONFLICT,
                 40901);
         IntegrationTestSupport.assertError(
-                this.put("/api/dicts/1", admin, Map.of("name", "性别", "code", "renamed")), HttpStatus.CONFLICT, 40901);
+                this.put("/api/system/dict/update/1", admin, Map.of("name", "性别", "code", "renamed")),
+                HttpStatus.CONFLICT,
+                40901);
         IntegrationTestSupport.assertError(
-                this.post("/api/dicts", admin, Map.of("name", "重复", "code", code)), HttpStatus.CONFLICT, 40900);
+                this.post("/api/system/dict/create", admin, Map.of("name", "重复", "code", code)),
+                HttpStatus.CONFLICT,
+                40900);
 
-        IntegrationTestSupport.assertOk(this.delete("/api/dicts/" + dictId + "/items/" + itemB, admin));
-        IntegrationTestSupport.assertOk(this.delete("/api/dicts/" + dictId, admin));
+        IntegrationTestSupport.assertOk(this.delete("/api/system/dict/deleteItem/" + dictId + "/" + itemB, admin));
+        IntegrationTestSupport.assertOk(this.delete("/api/system/dict/delete/" + dictId, admin));
         final Integer remaining = this.jdbc.queryForObject(
                 "SELECT COUNT(*) FROM sys_dict_item WHERE group_id = ?", Integer.class, dictId);
         assertThat(remaining).isZero();
-        IntegrationTestSupport.assertError(this.get("/api/dicts/" + dictId, admin), HttpStatus.NOT_FOUND, 40400);
+        IntegrationTestSupport.assertError(
+                this.get("/api/system/dict/get/" + dictId, admin), HttpStatus.NOT_FOUND, 40400);
     }
 
     @Test
@@ -211,8 +219,8 @@ class PlatformIT extends IntegrationTestSupport {
         user.put("nickname", "被审计");
         user.put("password", "Passw0rd1");
         user.put("roleIds", List.of());
-        this.create("/api/users", admin, user);
-        IntegrationTestSupport.assertError(this.delete("/api/users/1", admin), HttpStatus.CONFLICT, 40901);
+        this.create("/api/system/user/create", admin, user);
+        IntegrationTestSupport.assertError(this.delete("/api/system/user/delete/1", admin), HttpStatus.CONFLICT, 40901);
 
         final String like = "%" + username + "%";
         await().atMost(Duration.ofSeconds(10))
@@ -230,7 +238,7 @@ class PlatformIT extends IntegrationTestSupport {
         assertThat(row.get("module")).isEqualTo("用户管理");
         assertThat(row.get("description")).isEqualTo("新增用户");
         assertThat(row.get("method")).isEqualTo("POST");
-        assertThat(row.get("path")).isEqualTo("/api/users");
+        assertThat(row.get("path")).isEqualTo("/api/system/user/create");
         assertThat(row.get("response_code")).isEqualTo(0);
         assertThat(row.get("success")).isIn(true, 1, (byte) 1);
         assertThat((String) row.get("request_body"))
@@ -239,12 +247,12 @@ class PlatformIT extends IntegrationTestSupport {
 
         await().atMost(Duration.ofSeconds(10))
                 .untilAsserted(() -> assertThat(this.jdbc.queryForObject(
-                                "SELECT COUNT(*) FROM sys_operation_log WHERE path = '/api/users/1' AND response_code = 40901",
+                                "SELECT COUNT(*) FROM sys_operation_log WHERE path = '/api/system/user/delete/1' AND response_code = 40901",
                                 Integer.class))
                         .isPositive());
 
         final JsonNode failures = IntegrationTestSupport.data(
-                this.get("/api/operation-logs?success=false&module=用户管理&username=admin", admin));
+                this.get("/api/system/operationLog/list?success=false&module=用户管理&username=admin", admin));
         final JsonNode failure = failures.path("list").get(0);
         assertThat(failure.path("success").isBoolean()).isTrue();
         assertThat(failure.path("success").asBoolean()).isFalse();
@@ -252,12 +260,12 @@ class PlatformIT extends IntegrationTestSupport {
         assertThat(failure.path("errorMessage").asText()).isEqualTo("内置用户不可删除");
 
         final JsonNode detail = IntegrationTestSupport.data(
-                this.get("/api/operation-logs/" + failure.path("id").asLong(), admin));
+                this.get("/api/system/operationLog/get/" + failure.path("id").asLong(), admin));
         assertThat(detail.path("method").asText()).isEqualTo("DELETE");
         assertThat(detail.path("durationMs").isNumber()).isTrue();
         assertThat(detail.path("createdAt").asText()).matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}");
         IntegrationTestSupport.assertError(
-                this.get("/api/operation-logs/987654321", admin), HttpStatus.NOT_FOUND, 40400);
+                this.get("/api/system/operationLog/get/987654321", admin), HttpStatus.NOT_FOUND, 40400);
     }
 
     @Test

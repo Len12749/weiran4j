@@ -12,7 +12,7 @@ export const menuKeys = {
 export function useMenuTree(enabled = true) {
     return useQuery({
         queryKey: menuKeys.tree,
-        queryFn: () => http.get<MenuNode[]>('/api/menus'),
+        queryFn: () => http.get<MenuNode[]>('/api/system/menu/list'),
         enabled,
     });
 }
@@ -21,7 +21,7 @@ export function useSaveMenu() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ id, body }: { id?: number | undefined; body: MenuSaveRequest }) =>
-            id === undefined ? http.post<IdResult>('/api/menus', body) : http.put<null>(`/api/menus/${id}`, body),
+            id === undefined ? http.post<IdResult>('/api/system/menu/create', body) : http.put<null>(`/api/system/menu/update/${id}`, body),
         onSuccess: async () => {
             await qc.invalidateQueries({ queryKey: menuKeys.all });
             // 侧边栏也来自菜单表，一并刷新
@@ -33,7 +33,7 @@ export function useSaveMenu() {
 export function useDeleteMenu() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => http.delete<null>(`/api/menus/${id}`),
+        mutationFn: (id: number) => http.delete<null>(`/api/system/menu/delete/${id}`),
         onSuccess: async () => {
             await qc.invalidateQueries({ queryKey: menuKeys.all });
             await qc.invalidateQueries({ queryKey: authKeys.menus });

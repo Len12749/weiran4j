@@ -21,7 +21,7 @@ export const userKeys = {
 export function useUserList(query: UserQuery) {
     return useQuery({
         queryKey: userKeys.list(query),
-        queryFn: () => http.get<PageResult<UserView>>(`/api/users${toQueryString(query)}`),
+        queryFn: () => http.get<PageResult<UserView>>(`/api/system/user/list${toQueryString(query)}`),
         placeholderData: keepPreviousData,
     });
 }
@@ -29,7 +29,7 @@ export function useUserList(query: UserQuery) {
 export function useUserOptions() {
     return useQuery({
         queryKey: userKeys.options,
-        queryFn: () => http.get<UserOption[]>('/api/users/options'),
+        queryFn: () => http.get<UserOption[]>('/api/system/user/listOptions'),
         staleTime: LOOKUP_STALE_TIME,
     });
 }
@@ -39,8 +39,8 @@ export function useSaveUser() {
     return useMutation({
         mutationFn: (args: { id: number; body: UserUpdateRequest } | { id?: undefined; body: UserCreateRequest }) =>
             args.id === undefined
-                ? http.post<IdResult>('/api/users', args.body)
-                : http.put<null>(`/api/users/${args.id}`, args.body),
+                ? http.post<IdResult>('/api/system/user/create', args.body)
+                : http.put<null>(`/api/system/user/update/${args.id}`, args.body),
         onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.all }),
     });
 }
@@ -48,7 +48,7 @@ export function useSaveUser() {
 export function useDeleteUser() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => http.delete<null>(`/api/users/${id}`),
+        mutationFn: (id: number) => http.delete<null>(`/api/system/user/delete/${id}`),
         onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.all }),
     });
 }
@@ -56,7 +56,7 @@ export function useDeleteUser() {
 export function useResetUserPassword() {
     return useMutation({
         mutationFn: ({ id, password }: { id: number; password: string }) =>
-            http.put<null>(`/api/users/${id}/password`, { password }),
+            http.put<null>(`/api/system/user/updatePassword/${id}`, { password }),
     });
 }
 

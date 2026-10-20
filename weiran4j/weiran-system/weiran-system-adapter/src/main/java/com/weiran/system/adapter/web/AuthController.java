@@ -48,7 +48,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 认证接口 {@code /api/auth}。
+ * 认证与当前用户接口。
  *
  * <p>登录 / 登出写的是登录日志（sys_login_log），不再重复记操作日志。
  *
@@ -56,7 +56,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 请求头 {@code X-Auth-Mode: token} 时改为响应体返回令牌、不写 Cookie，供脚本等非浏览器调用方用 Bearer 头。
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/system/auth")
 public class AuthController {
 
     private final AuthService authService;
@@ -112,7 +112,7 @@ public class AuthController {
 
     /** 登录页需要的认证方式：外部身份提供方与密码登录开关（不含任何密钥与地址）。 */
     @PublicApi
-    @GetMapping("/providers")
+    @GetMapping("/listProviders")
     public ProvidersView providers() {
         final ProvidersView providers = this.externalLoginService.providers();
         return new ProvidersView(
@@ -120,34 +120,34 @@ public class AuthController {
     }
 
     /** 本人的外部身份。 */
-    @GetMapping("/identities")
+    @GetMapping("/listCurrentIdentities")
     public List<UserIdentityView> identities() {
         return this.externalLoginService.identitiesOf(CurrentUser.require().id());
     }
 
     /** 本人解绑外部身份（没有本地密码时不能解绑最后一个）。 */
     @OperationLog(module = "个人中心", description = "解绑外部账号")
-    @DeleteMapping("/identities/{id}")
+    @DeleteMapping("/deleteCurrentIdentity/{id}")
     public ApiResponse<Void> unbindIdentity(@PathVariable final long id) {
         this.externalLoginService.unbindOwn(CurrentUser.require().id(), id);
         return ApiResponse.ok();
     }
 
     /** 当前用户。 */
-    @GetMapping("/me")
+    @GetMapping("/getCurrentUser")
     public CurrentUserView me() {
         return this.authService.me(CurrentUser.require().id());
     }
 
     /** 当前用户可见菜单树。 */
-    @GetMapping("/menus")
+    @GetMapping("/listCurrentMenus")
     public List<MenuNode> menus() {
         return this.authService.menus(CurrentUser.require().id());
     }
 
     /** 修改个人资料。 */
     @OperationLog(module = "个人中心", description = "修改个人资料")
-    @PutMapping("/profile")
+    @PutMapping("/updateProfile")
     public ApiResponse<Void> updateProfile(@Valid @RequestBody final UpdateProfileRequest request) {
         this.authService.updateProfile(
                 CurrentUser.require().id(),
@@ -158,7 +158,7 @@ public class AuthController {
 
     /** 修改自己的密码。 */
     @OperationLog(module = "个人中心", description = "修改密码")
-    @PutMapping("/password")
+    @PutMapping("/updatePassword")
     public ApiResponse<Void> changePassword(@Valid @RequestBody final ChangePasswordRequest request) {
         this.authService.changePassword(
                 CurrentUser.require().id(), new ChangePasswordCommand(request.oldPassword(), request.newPassword()));
@@ -166,7 +166,7 @@ public class AuthController {
     }
 
     /** 当前用户的界面偏好；从未保存过返回 null。 */
-    @GetMapping("/preferences")
+    @GetMapping("/getPreferences")
     public ApiResponse<JsonNode> preferences() {
         final String json = this.authService.preferences(CurrentUser.require().id());
         if (json == null) {
@@ -184,7 +184,7 @@ public class AuthController {
      *
      * <p>不记操作日志：前端改任何设置都会防抖后自动保存，记下来只会淹没真正有意义的操作。
      */
-    @PutMapping("/preferences")
+    @PutMapping("/updatePreferences")
     public ApiResponse<Void> updatePreferences(@RequestBody final JsonNode body) {
         if (!body.isObject()) {
             throw BizException.badRequest("preferences: 必须是 JSON 对象");
@@ -200,20 +200,20 @@ public class AuthController {
     }
 
     /** 收藏的菜单 ID（按收藏顺序，已失效的自动过滤）。 */
-    @GetMapping("/favorite-menus")
+    @GetMapping("/listFavoriteMenus")
     public List<Long> favoriteMenus() {
         return this.authService.favoriteMenus(CurrentUser.require().id());
     }
 
     /** 全量覆盖收藏菜单。 */
-    @PutMapping("/favorite-menus")
+    @PutMapping("/updateFavoriteMenus")
     public ApiResponse<Void> updateFavoriteMenus(@Valid @RequestBody final SaveFavoriteMenusRequest request) {
         this.authService.updateFavoriteMenus(CurrentUser.require().id(), request.menuIds());
         return ApiResponse.ok();
     }
 
     /** 校验当前用户密码（锁屏解锁）：不改令牌、不写登录日志。 */
-    @PostMapping("/verify-password")
+    @PostMapping("/verifyPassword")
     public ApiResponse<Void> verifyPassword(@Valid @RequestBody final VerifyPasswordRequest request) {
         this.authService.verifyPassword(CurrentUser.require().id(), request.password());
         return ApiResponse.ok();

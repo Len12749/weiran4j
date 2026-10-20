@@ -45,7 +45,7 @@ export interface PhoneLoginRequest {
 }
 
 /**
- * POST /api/auth/login 的响应（契约 §6.1）。默认模式下令牌只走 HttpOnly Cookie，
+ * POST /api/system/auth/login 的响应（契约 §6.1）。默认模式下令牌只走 HttpOnly Cookie，
  * `accessToken` 为 null 或缺省，前端两种都按「没有」处理、也不读它；`X-Auth-Mode: token` 时才有值（给非浏览器客户端）。
  */
 export interface LoginResult {
@@ -84,17 +84,17 @@ export interface PasswordChangeRequest {
     newPassword: string;
 }
 
-/** PUT /api/auth/favorite-menus：全量覆盖；重复 id 静默去重保序，去重后 ≤ 50 */
+/** PUT /api/system/auth/updateFavoriteMenus：全量覆盖；重复 id 静默去重保序，去重后 ≤ 50 */
 export interface FavoriteMenusSaveRequest {
     menuIds: number[];
 }
 
-/** POST /api/auth/verify-password：锁屏解锁；错误返回 40101，不影响会话 */
+/** POST /api/system/auth/verifyPassword：锁屏解锁；错误返回 40101，不影响会话 */
 export interface VerifyPasswordRequest {
     password: string;
 }
 
-/** POST /api/auth/logout 的响应：会话来自配置了登出的外部身份提供方时为其登出地址，前端整页跳转；否则 null */
+/** POST /api/system/auth/logout 的响应：会话来自配置了登出的外部身份提供方时为其登出地址，前端整页跳转；否则 null */
 export interface LogoutResult {
     ssoLogoutUrl: string | null;
 }
@@ -109,14 +109,14 @@ export interface ProviderView {
     name: string;
 }
 
-/** GET /api/auth/providers（公开）：只含已启用的提供方 */
+/** GET /api/system/auth/listProviders（公开）：只含已启用的提供方 */
 export interface ProvidersView {
     passwordLoginEnabled: boolean;
     phoneLoginEnabled?: boolean;
     providers: ProviderView[];
 }
 
-/** 已绑定的外部身份：本人 `/api/auth/identities`，管理员 `/api/users/{id}/identities` 结构相同 */
+/** 已绑定的外部身份：本人 `/api/system/auth/listCurrentIdentities`，管理员 `/api/system/user/listIdentities/{id}` 结构相同 */
 export interface UserIdentityView {
     id: number;
     provider: string;
@@ -126,7 +126,7 @@ export interface UserIdentityView {
     createdAt: string;
 }
 
-/** POST /api/users/{id}/identities：管理员手工绑定 */
+/** POST /api/system/user/createIdentity/{id} */
 export interface BindIdentityRequest {
     provider: string;
     externalId: string;
@@ -191,7 +191,7 @@ export interface UserView {
     updatedAt: string;
 }
 
-/** `GET /api/users` 查询参数（契约 §6.2）：`keyword` 为三列模糊的快速搜索，其余为高级筛选的单字段条件 */
+/** `GET /api/system/user/list` 查询参数（契约 §6.2）：`keyword` 为三列模糊的快速搜索，其余为高级筛选的单字段条件 */
 export interface UserQuery extends PageQuery {
     keyword?: string;
     status?: Status;

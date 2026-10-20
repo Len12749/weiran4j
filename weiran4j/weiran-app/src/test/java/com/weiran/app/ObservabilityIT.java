@@ -51,18 +51,19 @@ class ObservabilityIT extends IntegrationTestSupport {
     @DisplayName("失败体带 requestId 且与响应头一致：400 / 401 / 403 / 404")
     void errorBodiesCarryRequestId() {
         ObservabilityIT.assertErrorCarriesRequestId(
-                this.post("/api/auth/login", null, Map.of("username", "", "password", "x")),
+                this.post("/api/system/auth/login", null, Map.of("username", "", "password", "x")),
                 HttpStatus.BAD_REQUEST,
                 40000);
-        ObservabilityIT.assertErrorCarriesRequestId(this.get("/api/auth/me", null), HttpStatus.UNAUTHORIZED, 40100);
+        ObservabilityIT.assertErrorCarriesRequestId(
+                this.get("/api/system/auth/getCurrentUser", null), HttpStatus.UNAUTHORIZED, 40100);
 
         final String username = IntegrationTestSupport.unique("norole");
         this.create(
-                "/api/users",
+                "/api/system/user/create",
                 this.adminToken(),
                 Map.of("username", username, "nickname", "无角色", "password", "Passw0rd1", "roleIds", List.of()));
         ObservabilityIT.assertErrorCarriesRequestId(
-                this.get("/api/users", this.tokenOf(username, "Passw0rd1")), HttpStatus.FORBIDDEN, 40300);
+                this.get("/api/system/user/list", this.tokenOf(username, "Passw0rd1")), HttpStatus.FORBIDDEN, 40300);
 
         ObservabilityIT.assertErrorCarriesRequestId(
                 this.get("/api/no-such-endpoint", null), HttpStatus.NOT_FOUND, 40400);
@@ -71,7 +72,7 @@ class ObservabilityIT extends IntegrationTestSupport {
     @Test
     @DisplayName("成功体没有 requestId 键，但响应头有")
     void successBodyHasNoRequestId() {
-        final ResponseEntity<JsonNode> response = this.get("/api/auth/me", this.adminToken());
+        final ResponseEntity<JsonNode> response = this.get("/api/system/auth/getCurrentUser", this.adminToken());
         IntegrationTestSupport.assertOk(response);
         assertThat(IntegrationTestSupport.body(response).has("requestId")).isFalse();
         assertThat(ObservabilityIT.requestIdHeader(response)).matches("[0-9a-f]{32}");

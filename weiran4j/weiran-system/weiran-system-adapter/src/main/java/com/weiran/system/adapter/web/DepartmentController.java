@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 部门管理接口 {@code /api/departments}。部门树只需登录，供各处下拉共用。 */
+/** 部门管理接口。部门树只需登录，供各处下拉共用。 */
 @RestController
-@RequestMapping("/api/departments")
+@RequestMapping("/api/system/department")
 public class DepartmentController {
 
     private static final String MODULE = "部门管理";
@@ -36,14 +36,14 @@ public class DepartmentController {
     }
 
     /** 部门树。 */
-    @GetMapping
+    @GetMapping("/list")
     public List<DepartmentNode> tree(@RequestParam(required = false) final @Nullable String status) {
         return this.departmentService.tree(status);
     }
 
     /** 详情。 */
     @RequiresPermission("system:department:list")
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     public DepartmentNode get(@PathVariable final long id) {
         return this.departmentService.get(id);
     }
@@ -51,7 +51,7 @@ public class DepartmentController {
     /** 新增。 */
     @RequiresPermission("system:department:create")
     @OperationLog(module = DepartmentController.MODULE, description = "新增部门")
-    @PostMapping
+    @PostMapping("/create")
     public IdResult create(@Valid @RequestBody final SaveDepartmentRequest request) {
         return new IdResult(this.departmentService.create(DepartmentController.toCommand(request)));
     }
@@ -59,7 +59,7 @@ public class DepartmentController {
     /** 修改。 */
     @RequiresPermission("system:department:update")
     @OperationLog(module = DepartmentController.MODULE, description = "修改部门")
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ApiResponse<Void> update(
             @PathVariable final long id, @Valid @RequestBody final SaveDepartmentRequest request) {
         this.departmentService.update(id, DepartmentController.toCommand(request));
@@ -69,7 +69,7 @@ public class DepartmentController {
     /** 删除。 */
     @RequiresPermission("system:department:delete")
     @OperationLog(module = DepartmentController.MODULE, description = "删除部门")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ApiResponse<Void> delete(@PathVariable final long id) {
         this.departmentService.delete(id);
         return ApiResponse.ok();

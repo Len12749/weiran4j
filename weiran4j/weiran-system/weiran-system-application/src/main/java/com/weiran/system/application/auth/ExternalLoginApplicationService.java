@@ -257,7 +257,7 @@ public class ExternalLoginApplicationService implements ExternalLoginService {
                 "个人中心",
                 "绑定外部账号（" + providerId + "）",
                 "GET",
-                "/api/auth/sso/" + providerId + "/callback",
+                "/api/system/auth/callbackSso/" + providerId,
                 null,
                 0,
                 true,
@@ -350,8 +350,8 @@ public class ExternalLoginApplicationService implements ExternalLoginService {
     }
 
     private String callbackUrl(final String providerId) {
-        return this.providers.publicBaseUrl() + "/api/auth/sso/" + ExternalLoginApplicationService.encode(providerId)
-                + "/callback";
+        return this.providers.publicBaseUrl() + "/api/system/auth/callbackSso/"
+                + ExternalLoginApplicationService.encode(providerId);
     }
 
     private String randomToken() {

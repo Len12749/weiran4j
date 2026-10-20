@@ -43,7 +43,7 @@ class AuthIT extends IntegrationTestSupport {
         final String token = loginData.path("accessToken").asText();
         assertThat(token).isNotBlank();
 
-        final ResponseEntity<JsonNode> me = this.get("/api/auth/me", token);
+        final ResponseEntity<JsonNode> me = this.get("/api/system/auth/getCurrentUser", token);
         IntegrationTestSupport.assertOk(me);
         final JsonNode data = IntegrationTestSupport.data(me);
         assertThat(data.path("id").asLong()).isEqualTo(1L);
@@ -62,7 +62,7 @@ class AuthIT extends IntegrationTestSupport {
     @Test
     @DisplayName("超管的 /auth/menus 返回全部启用的目录与菜单树，不含按钮，布尔字段为 boolean")
     void adminMenusTree() {
-        final ResponseEntity<JsonNode> response = this.get("/api/auth/menus", this.adminToken());
+        final ResponseEntity<JsonNode> response = this.get("/api/system/auth/listCurrentMenus", this.adminToken());
 
         IntegrationTestSupport.assertOk(response);
         final JsonNode roots = IntegrationTestSupport.data(response);
@@ -122,15 +122,17 @@ class AuthIT extends IntegrationTestSupport {
     @Test
     @DisplayName("无令牌、令牌无效返回 401 / 40100；公开接口不受影响")
     void rejectsMissingOrInvalidToken() {
-        IntegrationTestSupport.assertError(this.get("/api/auth/me", null), HttpStatus.UNAUTHORIZED, 40100);
-        IntegrationTestSupport.assertError(this.get("/api/users", "not-a-jwt"), HttpStatus.UNAUTHORIZED, 40100);
+        IntegrationTestSupport.assertError(
+                this.get("/api/system/auth/getCurrentUser", null), HttpStatus.UNAUTHORIZED, 40100);
+        IntegrationTestSupport.assertError(
+                this.get("/api/system/user/list", "not-a-jwt"), HttpStatus.UNAUTHORIZED, 40100);
         IntegrationTestSupport.assertOk(this.get("/api/health", "not-a-jwt"));
     }
 
     @Test
     @DisplayName("请求体校验失败返回 40000，提示语为「字段: 中文提示」")
     void validationMessage() {
-        final ResponseEntity<JsonNode> response = this.post("/api/auth/login", null, Map.of("password", "x"));
+        final ResponseEntity<JsonNode> response = this.post("/api/system/auth/login", null, Map.of("password", "x"));
 
         IntegrationTestSupport.assertError(response, HttpStatus.BAD_REQUEST, 40000);
         assertThat(IntegrationTestSupport.body(response).path("message").asText())
@@ -149,10 +151,10 @@ class AuthIT extends IntegrationTestSupport {
     void logoutAndLoginLogs() {
         final String token = this.adminToken();
 
-        IntegrationTestSupport.assertOk(this.post("/api/auth/logout", token, Map.of()));
+        IntegrationTestSupport.assertOk(this.post("/api/system/auth/logout", token, Map.of()));
 
         final ResponseEntity<JsonNode> page =
-                this.get("/api/login-logs?username=admin&eventType=logout&page=1&pageSize=5", token);
+                this.get("/api/system/loginLog/list?username=admin&eventType=logout&page=1&pageSize=5", token);
         IntegrationTestSupport.assertOk(page);
         final JsonNode data = IntegrationTestSupport.data(page);
         assertThat(data.path("page").asInt()).isEqualTo(1);
@@ -164,7 +166,8 @@ class AuthIT extends IntegrationTestSupport {
         assertThat(first.path("createdAt").asText()).matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}");
 
         final ResponseEntity<JsonNode> ranged = this.get(
-                "/api/login-logs?status=success&startTime=2000-01-01 00:00:00&endTime=2999-01-01 00:00:00", token);
+                "/api/system/loginLog/list?status=success&startTime=2000-01-01 00:00:00&endTime=2999-01-01 00:00:00",
+                token);
         IntegrationTestSupport.assertOk(ranged);
         assertThat(IntegrationTestSupport.data(ranged).path("total").asLong()).isPositive();
     }
@@ -175,20 +178,22 @@ class AuthIT extends IntegrationTestSupport {
         final String username = IntegrationTestSupport.unique("profile");
         final String admin = this.adminToken();
         this.create(
-                "/api/users",
+                "/api/system/user/create",
                 admin,
                 Map.of("username", username, "nickname", "旧昵称", "password", "Passw0rd1", "roleIds", List.of()));
         final String token = this.tokenOf(username, "Passw0rd1");
 
         IntegrationTestSupport.assertOk(this.put(
-                "/api/auth/profile", token, Map.of("nickname", "新昵称", "email", "me@example.com", "gender", "female")));
+                "/api/system/auth/updateProfile",
+                token,
+                Map.of("nickname", "新昵称", "email", "me@example.com", "gender", "female")));
 
-        final JsonNode me = IntegrationTestSupport.data(this.get("/api/auth/me", token));
+        final JsonNode me = IntegrationTestSupport.data(this.get("/api/system/auth/getCurrentUser", token));
         assertThat(me.path("nickname").asText()).isEqualTo("新昵称");
         assertThat(me.path("email").asText()).isEqualTo("me@example.com");
         assertThat(me.path("gender").asText()).isEqualTo("female");
         assertThat(AuthIT.texts(me.path("permissions"))).isEmpty();
-        assertThat(IntegrationTestSupport.data(this.get("/api/auth/menus", token))
+        assertThat(IntegrationTestSupport.data(this.get("/api/system/auth/listCurrentMenus", token))
                         .isEmpty())
                 .isTrue();
     }

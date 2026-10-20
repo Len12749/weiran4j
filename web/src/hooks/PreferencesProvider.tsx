@@ -4,7 +4,8 @@ import { http } from '@/utils/request';
 import { sessionUserId, useSession } from '@/utils/session';
 import { defaultPreferences, normalizePreferences, PreferencesContext, type UserPreferences } from './usePreferences';
 
-const PREFERENCES_API = '/api/auth/preferences';
+const PREFERENCES_GET_API = '/api/system/auth/getPreferences';
+const PREFERENCES_UPDATE_API = '/api/system/auth/updatePreferences';
 /** 连续修改（拖滑块、连点开关）合并成一次写入 */
 export const PREFERENCES_SYNC_DELAY = 500;
 
@@ -41,7 +42,7 @@ export function PreferencesProvider({ children }: Readonly<{ children: ReactNode
 
     const putPreferences = useCallback((next: UserPreferences) => {
         if (!sessionRef.current) return;
-        http.put<null>(PREFERENCES_API, next, { silent: true }).catch(() => {
+        http.put<null>(PREFERENCES_UPDATE_API, next, { silent: true }).catch(() => {
             // 同步失败不打扰用户：本地已生效，下次修改会再全量覆盖
         });
     }, []);
@@ -72,7 +73,7 @@ export function PreferencesProvider({ children }: Readonly<{ children: ReactNode
         }
         const userId = userIdRef.current;
         let cancelled = false;
-        http.get<unknown>(PREFERENCES_API, { silent: true })
+        http.get<unknown>(PREFERENCES_GET_API, { silent: true })
             .then((data) => {
                 if (cancelled) return;
                 if (data !== null && typeof data === 'object') {

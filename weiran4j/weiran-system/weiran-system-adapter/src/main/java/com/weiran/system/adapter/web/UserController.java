@@ -34,9 +34,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 用户管理接口 {@code /api/users}。 */
+/** 用户管理接口。 */
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/system/user")
 public class UserController {
 
     private static final String MODULE = "用户管理";
@@ -53,7 +53,7 @@ public class UserController {
 
     /** 分页查询：{@code keyword} 为三列模糊的快速搜索，其余为高级筛选的单字段条件（契约 §6.2）。 */
     @RequiresPermission("system:user:list")
-    @GetMapping
+    @GetMapping("/list")
     public PageResult<UserView> page(
             @RequestParam(required = false) final @Nullable String keyword,
             @RequestParam(required = false) final @Nullable String status,
@@ -88,14 +88,14 @@ public class UserController {
     }
 
     /** 启用用户下拉。 */
-    @GetMapping("/options")
+    @GetMapping("/listOptions")
     public List<UserOption> options() {
         return this.userService.options();
     }
 
     /** 详情。 */
     @RequiresPermission("system:user:list")
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     public UserView get(@PathVariable final long id) {
         return this.userService.get(id);
     }
@@ -103,7 +103,7 @@ public class UserController {
     /** 新增。 */
     @RequiresPermission("system:user:create")
     @OperationLog(module = UserController.MODULE, description = "新增用户")
-    @PostMapping
+    @PostMapping("/create")
     public IdResult create(@Valid @RequestBody final CreateUserRequest request) {
         return new IdResult(this.userService.create(new CreateUserCommand(
                 request.username(),
@@ -120,7 +120,7 @@ public class UserController {
     /** 修改。 */
     @RequiresPermission("system:user:update")
     @OperationLog(module = UserController.MODULE, description = "修改用户")
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ApiResponse<Void> update(@PathVariable final long id, @Valid @RequestBody final UpdateUserRequest request) {
         this.userService.update(
                 id,
@@ -138,7 +138,7 @@ public class UserController {
     /** 删除。 */
     @RequiresPermission("system:user:delete")
     @OperationLog(module = UserController.MODULE, description = "删除用户")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ApiResponse<Void> delete(@PathVariable final long id) {
         this.userService.delete(id, CurrentUser.require().id());
         return ApiResponse.ok();
@@ -147,7 +147,7 @@ public class UserController {
     /** 重置密码。 */
     @RequiresPermission("system:user:reset-password")
     @OperationLog(module = UserController.MODULE, description = "重置密码")
-    @PutMapping("/{id}/password")
+    @PutMapping("/updatePassword/{id}")
     public ApiResponse<Void> resetPassword(
             @PathVariable final long id, @Valid @RequestBody final ResetPasswordRequest request) {
         this.userService.resetPassword(id, request.password());
@@ -156,7 +156,7 @@ public class UserController {
 
     /** 用户的外部身份。 */
     @RequiresPermission("system:user:identity")
-    @GetMapping("/{id}/identities")
+    @GetMapping("/listIdentities/{id}")
     public List<UserIdentityView> identities(@PathVariable final long id) {
         return this.externalLoginService.identitiesOf(id);
     }
@@ -164,7 +164,7 @@ public class UserController {
     /** 手工绑定外部身份。 */
     @RequiresPermission("system:user:identity")
     @OperationLog(module = UserController.MODULE, description = "绑定外部身份")
-    @PostMapping("/{id}/identities")
+    @PostMapping("/createIdentity/{id}")
     public IdResult bindIdentity(@PathVariable final long id, @Valid @RequestBody final BindIdentityRequest request) {
         return new IdResult(this.externalLoginService.bind(
                 id, new BindIdentityCommand(request.provider(), request.externalId(), request.displayName())));
@@ -173,7 +173,7 @@ public class UserController {
     /** 解绑外部身份。 */
     @RequiresPermission("system:user:identity")
     @OperationLog(module = UserController.MODULE, description = "解绑外部身份")
-    @DeleteMapping("/{id}/identities/{identityId}")
+    @DeleteMapping("/deleteIdentity/{id}/{identityId}")
     public ApiResponse<Void> unbindIdentity(@PathVariable final long id, @PathVariable final long identityId) {
         this.externalLoginService.unbind(id, identityId);
         return ApiResponse.ok();

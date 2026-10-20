@@ -13,7 +13,7 @@ type Notice = { type: 'success' | 'danger'; text: string };
 
 /**
  * 个人中心「外部账号」卡片（D-015）：列出本人已绑定的外部身份并可解绑；每个尚未绑定的提供方一个「绑定」按钮，
- * 整页跳到 `/api/auth/sso/{id}/authorize?mode=bind`。读 URL 上的 `bound` / `ssoError` 给出结果提示后清掉参数。
+ * 整页跳到 `/api/system/auth/authorizeSso/{id}?mode=bind`。读 URL 上的 `bound` / `ssoError` 给出结果提示后清掉参数。
  * 没有启用任何提供方时整张卡片不渲染。
  */
 export function ExternalAccountsCard() {

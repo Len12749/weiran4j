@@ -44,10 +44,10 @@ function SearchProbe() {
 
 function routes(overrides: Record<string, unknown> = {}) {
     return {
-        'GET /api/auth/me': me,
-        'GET /api/dicts/code/sys_user_gender/items': [],
-        'GET /api/auth/providers': providers,
-        'GET /api/auth/identities': [keycloakIdentity],
+        'GET /api/system/auth/getCurrentUser': me,
+        'GET /api/system/dict/listItemsByCode/sys_user_gender': [],
+        'GET /api/system/auth/listProviders': providers,
+        'GET /api/system/auth/listCurrentIdentities': [keycloakIdentity],
         ...overrides,
     };
 }
@@ -86,21 +86,21 @@ describe('ProfilePage 外部账号', () => {
 
     it('点「绑定」整页跳到 authorize，mode=bind、回到 /profile', async () => {
         const assign = stubLocationAssign();
-        mockFetch(routes({ 'GET /api/auth/identities': [] }));
+        mockFetch(routes({ 'GET /api/system/auth/listCurrentIdentities': [] }));
         renderProfile();
 
         fireEvent.click(await screen.findByRole('button', { name: '绑定 统一身份' }));
-        expect(assign).toHaveBeenCalledWith('/api/auth/sso/keycloak/authorize?redirect=%2Fprofile&mode=bind');
+        expect(assign).toHaveBeenCalledWith('/api/system/auth/authorizeSso/keycloak?redirect=%2Fprofile&mode=bind');
     });
 
-    it('解绑：确认后调 DELETE /api/auth/identities/{id}', async () => {
-        const { calls } = mockFetch(routes({ 'DELETE /api/auth/identities/11': null }));
+    it('解绑：确认后调 DELETE /api/system/auth/deleteCurrentIdentity/{id}', async () => {
+        const { calls } = mockFetch(routes({ 'DELETE /api/system/auth/deleteCurrentIdentity/11': null }));
         renderProfile();
 
         fireEvent.click(await screen.findByRole('button', { name: '解绑' }));
         const pop = await screen.findByText('确定解绑该外部账号？');
         fireEvent.click(within(pop.closest('.semi-popconfirm') as HTMLElement).getByRole('button', { name: '确定' }));
-        await waitFor(() => expect(calls.some((c) => c.method === 'DELETE' && c.path === '/api/auth/identities/11')).toBe(true));
+        await waitFor(() => expect(calls.some((c) => c.method === 'DELETE' && c.path === '/api/system/auth/deleteCurrentIdentity/11')).toBe(true));
     });
 
     it('?bound=<id> 显示成功提示并清掉参数', async () => {
@@ -118,14 +118,14 @@ describe('ProfilePage 外部账号', () => {
     });
 
     it('没有启用的提供方时不显示卡片', async () => {
-        mockFetch(routes({ 'GET /api/auth/providers': { passwordLoginEnabled: true, providers: [] } }));
+        mockFetch(routes({ 'GET /api/system/auth/listProviders': { passwordLoginEnabled: true, providers: [] } }));
         renderProfile();
         expect(await screen.findByText('修改密码', { selector: '.page-container__title' })).toBeInTheDocument();
         expect(screen.queryByText('外部账号')).not.toBeInTheDocument();
     });
 
     it('hasPassword=false：修改密码区只显示提示，没有密码表单', async () => {
-        mockFetch(routes({ 'GET /api/auth/me': { ...me, hasPassword: false } }));
+        mockFetch(routes({ 'GET /api/system/auth/getCurrentUser': { ...me, hasPassword: false } }));
         renderProfile();
         expect(await screen.findByText('未设置本地密码，可请管理员重置后再使用密码登录')).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: '修改密码' })).not.toBeInTheDocument();

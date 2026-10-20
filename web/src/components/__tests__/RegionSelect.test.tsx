@@ -70,11 +70,11 @@ describe('RegionSelect', () => {
     });
 
     it('选择县级地区时回调完整区划代码路径，且不显示停用地区', async () => {
-        const { calls } = mockFetch({ 'GET /api/regions/lookup': regionTree });
+        const { calls } = mockFetch({ 'GET /api/region/area/getEnabledTree': regionTree });
         const onChange = vi.fn();
         renderWithProviders(<RegionSelect onChange={onChange} />);
 
-        await waitFor(() => expect(calls.some((call) => call.path === '/api/regions/lookup')).toBe(true));
+        await waitFor(() => expect(calls.some((call) => call.path === '/api/region/area/getEnabledTree')).toBe(true));
         const cascader = screen.getByRole('combobox', { name: 'Cascader' });
         fireEvent.click(cascader);
         fireEvent.click(await screen.findByRole('menuitem', { name: /北京市/ }));
@@ -85,7 +85,7 @@ describe('RegionSelect', () => {
     });
 
     it('受控 code path 按 lookup 树显示对应的地区名称', async () => {
-        mockFetch({ 'GET /api/regions/lookup': regionTree });
+        mockFetch({ 'GET /api/region/area/getEnabledTree': regionTree });
         renderWithProviders(<RegionSelect value={['110000', '110100', '110101']} />);
 
         await waitFor(() =>

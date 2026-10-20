@@ -27,9 +27,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 字典管理接口 {@code /api/dicts}。 */
+/** 字典管理接口。 */
 @RestController
-@RequestMapping("/api/dicts")
+@RequestMapping("/api/system/dict")
 public class DictController {
 
     private static final String MODULE = "字典管理";
@@ -43,7 +43,7 @@ public class DictController {
 
     /** 分页查询。 */
     @RequiresPermission("system:dict:list")
-    @GetMapping
+    @GetMapping("/list")
     public PageResult<DictView> page(
             @RequestParam(required = false) final @Nullable String keyword,
             @RequestParam(required = false) final @Nullable String status,
@@ -53,14 +53,14 @@ public class DictController {
     }
 
     /** 按编码取启用的字典项，供前端下拉与标签。 */
-    @GetMapping("/code/{code}/items")
+    @GetMapping("/listItemsByCode/{code}")
     public List<DictItemView> itemsByCode(@PathVariable final String code) {
         return this.dictService.enabledItemsByCode(code);
     }
 
     /** 详情。 */
     @RequiresPermission("system:dict:list")
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     public DictView get(@PathVariable final long id) {
         return this.dictService.get(id);
     }
@@ -68,7 +68,7 @@ public class DictController {
     /** 新增。 */
     @RequiresPermission("system:dict:create")
     @OperationLog(module = DictController.MODULE, description = "新增字典")
-    @PostMapping
+    @PostMapping("/create")
     public IdResult create(@Valid @RequestBody final SaveDictRequest request) {
         return new IdResult(this.dictService.create(DictController.toCommand(request)));
     }
@@ -76,7 +76,7 @@ public class DictController {
     /** 修改。 */
     @RequiresPermission("system:dict:update")
     @OperationLog(module = DictController.MODULE, description = "修改字典")
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ApiResponse<Void> update(@PathVariable final long id, @Valid @RequestBody final SaveDictRequest request) {
         this.dictService.update(id, DictController.toCommand(request));
         return ApiResponse.ok();
@@ -85,7 +85,7 @@ public class DictController {
     /** 删除（级联删除字典项）。 */
     @RequiresPermission("system:dict:delete")
     @OperationLog(module = DictController.MODULE, description = "删除字典")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ApiResponse<Void> delete(@PathVariable final long id) {
         this.dictService.delete(id);
         return ApiResponse.ok();
@@ -93,7 +93,7 @@ public class DictController {
 
     /** 字典项列表。 */
     @RequiresPermission("system:dict:list")
-    @GetMapping("/{id}/items")
+    @GetMapping("/listItems/{id}")
     public List<DictItemView> items(@PathVariable final long id) {
         return this.dictService.items(id);
     }
@@ -101,7 +101,7 @@ public class DictController {
     /** 新增字典项。 */
     @RequiresPermission("system:dict:update")
     @OperationLog(module = DictController.MODULE, description = "新增字典项")
-    @PostMapping("/{id}/items")
+    @PostMapping("/createItem/{id}")
     public IdResult createItem(@PathVariable final long id, @Valid @RequestBody final SaveDictItemRequest request) {
         return new IdResult(this.dictService.createItem(id, DictController.toCommand(request)));
     }
@@ -109,7 +109,7 @@ public class DictController {
     /** 修改字典项。 */
     @RequiresPermission("system:dict:update")
     @OperationLog(module = DictController.MODULE, description = "修改字典项")
-    @PutMapping("/{id}/items/{itemId}")
+    @PutMapping("/updateItem/{id}/{itemId}")
     public ApiResponse<Void> updateItem(
             @PathVariable final long id,
             @PathVariable final long itemId,
@@ -121,7 +121,7 @@ public class DictController {
     /** 删除字典项。 */
     @RequiresPermission("system:dict:update")
     @OperationLog(module = DictController.MODULE, description = "删除字典项")
-    @DeleteMapping("/{id}/items/{itemId}")
+    @DeleteMapping("/deleteItem/{id}/{itemId}")
     public ApiResponse<Void> deleteItem(@PathVariable final long id, @PathVariable final long itemId) {
         this.dictService.deleteItem(id, itemId);
         return ApiResponse.ok();

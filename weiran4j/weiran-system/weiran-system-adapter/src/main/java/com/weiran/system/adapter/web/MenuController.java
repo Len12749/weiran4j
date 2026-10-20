@@ -19,9 +19,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 菜单管理接口 {@code /api/menus}。 */
+/** 菜单管理接口。 */
 @RestController
-@RequestMapping("/api/menus")
+@RequestMapping("/api/system/menu")
 public class MenuController {
 
     private static final String MODULE = "菜单管理";
@@ -35,14 +35,14 @@ public class MenuController {
 
     /** 全量菜单树。 */
     @RequiresPermission("system:menu:list")
-    @GetMapping
+    @GetMapping("/list")
     public List<MenuNode> tree() {
         return this.menuService.tree();
     }
 
     /** 详情。 */
     @RequiresPermission("system:menu:list")
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     public MenuNode get(@PathVariable final long id) {
         return this.menuService.get(id);
     }
@@ -50,7 +50,7 @@ public class MenuController {
     /** 新增。 */
     @RequiresPermission("system:menu:create")
     @OperationLog(module = MenuController.MODULE, description = "新增菜单")
-    @PostMapping
+    @PostMapping("/create")
     public IdResult create(@Valid @RequestBody final SaveMenuRequest request) {
         return new IdResult(this.menuService.create(MenuController.toCommand(request)));
     }
@@ -58,7 +58,7 @@ public class MenuController {
     /** 修改。 */
     @RequiresPermission("system:menu:update")
     @OperationLog(module = MenuController.MODULE, description = "修改菜单")
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ApiResponse<Void> update(@PathVariable final long id, @Valid @RequestBody final SaveMenuRequest request) {
         this.menuService.update(id, MenuController.toCommand(request));
         return ApiResponse.ok();
@@ -67,7 +67,7 @@ public class MenuController {
     /** 删除。 */
     @RequiresPermission("system:menu:delete")
     @OperationLog(module = MenuController.MODULE, description = "删除菜单")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ApiResponse<Void> delete(@PathVariable final long id) {
         this.menuService.delete(id);
         return ApiResponse.ok();

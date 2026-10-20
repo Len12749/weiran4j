@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** 行政区划管理与登录态 lookup API。 */
 @RestController
-@RequestMapping("/api/regions")
+@RequestMapping("/api/region/area")
 public class RegionController {
 
     private static final String MODULE = "行政区划管理";
@@ -44,7 +44,7 @@ public class RegionController {
 
     /** 管理树。 */
     @RequiresPermission("region:list")
-    @GetMapping("/tree")
+    @GetMapping("/listTree")
     public List<RegionNode> tree(
             @RequestParam(required = false) final @Nullable String keyword,
             @RequestParam(required = false) final @Nullable String level,
@@ -54,7 +54,7 @@ public class RegionController {
 
     /** 管理平铺列表。 */
     @RequiresPermission("region:list")
-    @GetMapping("/flat")
+    @GetMapping("/list")
     public List<RegionView> flat(
             @RequestParam(required = false) final @Nullable String keyword,
             @RequestParam(required = false) final @Nullable String level,
@@ -63,14 +63,14 @@ public class RegionController {
     }
 
     /** 启用地区树；仅要求登录，不要求管理权限。 */
-    @GetMapping("/lookup")
+    @GetMapping("/getEnabledTree")
     public List<RegionNode> lookup() {
         return this.regionService.enabledTree();
     }
 
     /** 地区详情。 */
     @RequiresPermission("region:list")
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     public RegionView get(@PathVariable final long id) {
         return this.regionService.get(id);
     }
@@ -78,7 +78,7 @@ public class RegionController {
     /** 新增地区。 */
     @RequiresPermission("region:create")
     @OperationLog(module = RegionController.MODULE, description = "新增地区")
-    @PostMapping
+    @PostMapping("/create")
     public RegionView create(@jakarta.validation.Valid @RequestBody final CreateRegionRequest request) {
         return this.regionService.create(request.toCommand());
     }
@@ -86,7 +86,7 @@ public class RegionController {
     /** 修改地区。 */
     @RequiresPermission("region:update")
     @OperationLog(module = RegionController.MODULE, description = "修改地区")
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public RegionView update(
             @PathVariable final long id, @jakarta.validation.Valid @RequestBody final UpdateRegionRequest request) {
         return this.regionService.update(id, request.toCommand());
@@ -95,7 +95,7 @@ public class RegionController {
     /** 删除地区。 */
     @RequiresPermission("region:delete")
     @OperationLog(module = RegionController.MODULE, description = "删除地区")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ApiResponse<Void> delete(@PathVariable final long id) {
         this.regionService.delete(id);
         return ApiResponse.ok();

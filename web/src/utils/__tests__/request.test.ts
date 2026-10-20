@@ -37,7 +37,7 @@ describe('request', () => {
 
     it('非 0 抛 ApiError 并 Toast message', async () => {
         respond({ code: 40900, message: '用户名已存在', data: null }, 409);
-        const err = await request('/api/users', { method: 'POST', body: {} }).catch((e: unknown) => e);
+        const err = await request('/api/system/user/list', { method: 'POST', body: {} }).catch((e: unknown) => e);
         expect(err).toBeInstanceOf(ApiError);
         expect((err as ApiError).code).toBe(40900);
         expect((err as ApiError).message).toBe('用户名已存在');
@@ -53,9 +53,9 @@ describe('request', () => {
     it('写请求带 X-CSRF-Token（值等于会话 Cookie）与 JSON 请求体，Cookie 由浏览器同源携带', async () => {
         const session = signIn(7, 'abc');
         respond({ code: 0, message: 'ok', data: null });
-        await http.put('/api/roles/1/menus', { menuIds: [1, 2] });
+        await http.put('/api/system/role/assignMenus/1', { menuIds: [1, 2] });
         const [url, init] = vi.mocked(fetch).mock.calls[0]!;
-        expect(url).toBe('/api/roles/1/menus');
+        expect(url).toBe('/api/system/role/assignMenus/1');
         expect(init?.method).toBe('PUT');
         expect(init?.credentials).toBe('same-origin');
         const headers = init?.headers as Record<string, string>;
@@ -69,9 +69,9 @@ describe('request', () => {
         respond({ code: 0, message: 'ok', data: { url: '/system-uploads/image.png' } });
         const body = new FormData();
         body.append('file', new File(['image'], 'image.png', { type: 'image/png' }));
-        await http.post('/api/system/media/images', body);
+        await http.post('/api/system/media/uploadImage', body);
         const [url, init] = vi.mocked(fetch).mock.calls[0]!;
-        expect(url).toBe('/api/system/media/images');
+        expect(url).toBe('/api/system/media/uploadImage');
         expect((init?.headers as Record<string, string>)['X-CSRF-Token']).toBe(session);
         expect((init?.headers as Record<string, string>)['Content-Type']).toBeUndefined();
         expect(init?.body).toBe(body);
@@ -98,7 +98,7 @@ describe('request', () => {
 
     it('未登录时写请求不带 X-CSRF-Token（如登录接口）', async () => {
         respond({ code: 0, message: 'ok', data: null });
-        await http.post('/api/auth/login', { username: 'a', password: 'b' });
+        await http.post('/api/system/auth/login', { username: 'a', password: 'b' });
         const init = vi.mocked(fetch).mock.calls[0]![1];
         const headers = init?.headers as Record<string, string>;
         expect(headers['X-CSRF-Token']).toBeUndefined();
@@ -108,7 +108,7 @@ describe('request', () => {
     it('40100 清除会话', async () => {
         signIn();
         respond({ code: 40100, message: '登录已失效，请重新登录', data: null }, 401);
-        await expect(request('/api/auth/me')).rejects.toMatchObject({ code: 40100 });
+        await expect(request('/api/system/auth/getCurrentUser')).rejects.toMatchObject({ code: 40100 });
         expect(getSession()).toBeNull();
     });
 
@@ -122,14 +122,14 @@ describe('request', () => {
     it('40101（密码错误）不清会话', async () => {
         const session = signIn();
         respond({ code: 40101, message: '用户名或密码错误', data: null }, 401);
-        await expect(request('/api/auth/password', { method: 'PUT', body: {} })).rejects.toMatchObject({ code: 40101 });
+        await expect(request('/api/system/auth/updatePassword', { method: 'PUT', body: {} })).rejects.toMatchObject({ code: 40101 });
         expect(getSession()).toBe(session);
     });
 
     it('40302（CSRF 校验失败）按普通业务错误 Toast，不清会话', async () => {
         const session = signIn();
         respond({ code: 40302, message: '请求校验失败，请刷新页面后重试', data: null }, 403);
-        await expect(request('/api/users', { method: 'POST', body: {} })).rejects.toMatchObject({ code: 40302, status: 403 });
+        await expect(request('/api/system/user/list', { method: 'POST', body: {} })).rejects.toMatchObject({ code: 40302, status: 403 });
         expect(Toast.error).toHaveBeenCalledWith('请求校验失败，请刷新页面后重试');
         expect(getSession()).toBe(session);
     });

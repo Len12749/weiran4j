@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 手机号验证码认证接口 {@code /api/system/auth/phone}。 */
+/** 手机号验证码认证接口。 */
 @RestController
-@RequestMapping("/api/system/auth/phone")
+@RequestMapping("/api/system/auth")
 public class PhoneAuthController {
 
     private final PhoneLoginApplicationService phoneLoginService;
@@ -37,7 +37,7 @@ public class PhoneAuthController {
 
     /** 发送手机号验证码；未知或禁用账号也返回相同响应，避免账号枚举。 */
     @PublicApi
-    @PostMapping("/sendCode")
+    @PostMapping("/sendPhoneCode")
     public ApiResponse<Void> sendCode(
             @Valid @RequestBody final PhoneLoginCodeRequest request, final HttpServletRequest http) {
         this.phoneLoginService.sendCode(request.phone(), AuthController.clientOf(http));
@@ -46,7 +46,7 @@ public class PhoneAuthController {
 
     /** 手机号验证码登录；令牌交付方式与密码登录保持一致。 */
     @PublicApi
-    @PostMapping("/login")
+    @PostMapping("/loginWithPhoneCode")
     public LoginResponse login(
             @Valid @RequestBody final PhoneLoginRequest request,
             final HttpServletRequest http,

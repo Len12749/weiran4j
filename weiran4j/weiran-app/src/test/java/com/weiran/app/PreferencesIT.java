@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-/** 个人偏好、收藏菜单与锁屏密码校验：{@code /api/auth/preferences}、{@code /favorite-menus}、{@code /verify-password}。 */
+/** 个人偏好、收藏菜单与锁屏密码校验：系统认证控制器中的对应 action 路由。 */
 class PreferencesIT extends IntegrationTestSupport {
 
     private static final String PASSWORD = "Passw0rd1";
@@ -30,14 +30,15 @@ class PreferencesIT extends IntegrationTestSupport {
         body.put("nickname", "测试" + username);
         body.put("password", PreferencesIT.PASSWORD);
         body.put("roleIds", roleIds);
-        this.create("/api/users", this.adminToken(), body);
+        this.create("/api/system/user/create", this.adminToken(), body);
         return this.tokenOf(username, PreferencesIT.PASSWORD);
     }
 
     private long createRole(final String admin, final List<Long> menuIds) {
         final String code = IntegrationTestSupport.unique("fav");
-        final long roleId = this.create("/api/roles", admin, Map.of("name", "角色" + code, "code", code));
-        IntegrationTestSupport.assertOk(this.put("/api/roles/" + roleId + "/menus", admin, Map.of("menuIds", menuIds)));
+        final long roleId = this.create("/api/system/role/create", admin, Map.of("name", "角色" + code, "code", code));
+        IntegrationTestSupport.assertOk(
+                this.put("/api/system/role/assignMenus/" + roleId, admin, Map.of("menuIds", menuIds)));
         return roleId;
     }
 
@@ -53,19 +54,19 @@ class PreferencesIT extends IntegrationTestSupport {
         final String username = IntegrationTestSupport.unique("pref");
         final String token = this.newUserToken(username, List.of());
 
-        final ResponseEntity<JsonNode> initial = this.get("/api/auth/preferences", token);
+        final ResponseEntity<JsonNode> initial = this.get("/api/system/auth/getPreferences", token);
         IntegrationTestSupport.assertOk(initial);
         assertThat(IntegrationTestSupport.data(initial).isNull()).isTrue();
 
         final JsonNode first = PreferencesIT.JSON.readTree(
                 "{\"theme\":\"dark\",\"sidebar\":{\"collapsed\":true,\"width\":240},\"tabs\":[\"a\",\"b\"],\"font\":null}");
-        IntegrationTestSupport.assertOk(this.put("/api/auth/preferences", token, first));
-        assertThat(IntegrationTestSupport.data(this.get("/api/auth/preferences", token)))
+        IntegrationTestSupport.assertOk(this.put("/api/system/auth/updatePreferences", token, first));
+        assertThat(IntegrationTestSupport.data(this.get("/api/system/auth/getPreferences", token)))
                 .isEqualTo(first);
 
         final JsonNode second = PreferencesIT.JSON.readTree("{\"locale\":\"zh-CN\"}");
-        IntegrationTestSupport.assertOk(this.put("/api/auth/preferences", token, second));
-        assertThat(IntegrationTestSupport.data(this.get("/api/auth/preferences", token)))
+        IntegrationTestSupport.assertOk(this.put("/api/system/auth/updatePreferences", token, second));
+        assertThat(IntegrationTestSupport.data(this.get("/api/system/auth/getPreferences", token)))
                 .isEqualTo(second);
     }
 
@@ -74,19 +75,22 @@ class PreferencesIT extends IntegrationTestSupport {
     void preferencesRejectsNonObjectAndOversize() {
         final String token = this.newUserToken(IntegrationTestSupport.unique("pref"), List.of());
         final Map<String, Object> kept = Map.of("theme", "light");
-        IntegrationTestSupport.assertOk(this.put("/api/auth/preferences", token, kept));
+        IntegrationTestSupport.assertOk(this.put("/api/system/auth/updatePreferences", token, kept));
 
         IntegrationTestSupport.assertError(
-                this.put("/api/auth/preferences", token, List.of(1, 2)), HttpStatus.BAD_REQUEST, 40000);
-        IntegrationTestSupport.assertError(this.put("/api/auth/preferences", token, 42), HttpStatus.BAD_REQUEST, 40000);
+                this.put("/api/system/auth/updatePreferences", token, List.of(1, 2)), HttpStatus.BAD_REQUEST, 40000);
         IntegrationTestSupport.assertError(
-                this.put("/api/auth/preferences", token, PreferencesIT.JSON.nullNode()), HttpStatus.BAD_REQUEST, 40000);
+                this.put("/api/system/auth/updatePreferences", token, 42), HttpStatus.BAD_REQUEST, 40000);
         IntegrationTestSupport.assertError(
-                this.put("/api/auth/preferences", token, Map.of("blob", "x".repeat(16 * 1024))),
+                this.put("/api/system/auth/updatePreferences", token, PreferencesIT.JSON.nullNode()),
+                HttpStatus.BAD_REQUEST,
+                40000);
+        IntegrationTestSupport.assertError(
+                this.put("/api/system/auth/updatePreferences", token, Map.of("blob", "x".repeat(16 * 1024))),
                 HttpStatus.BAD_REQUEST,
                 40000);
 
-        assertThat(IntegrationTestSupport.data(this.get("/api/auth/preferences", token))
+        assertThat(IntegrationTestSupport.data(this.get("/api/system/auth/getPreferences", token))
                         .path("theme")
                         .asText())
                 .isEqualTo("light");
@@ -100,36 +104,41 @@ class PreferencesIT extends IntegrationTestSupport {
         final long roleId = this.createRole(admin, List.of(1L, 3L));
         final String token = this.newUserToken(IntegrationTestSupport.unique("fav"), List.of(roleId));
 
-        final ResponseEntity<JsonNode> initial = this.get("/api/auth/favorite-menus", token);
+        final ResponseEntity<JsonNode> initial = this.get("/api/system/auth/listFavoriteMenus", token);
         IntegrationTestSupport.assertOk(initial);
         assertThat(IntegrationTestSupport.data(initial).isArray()).isTrue();
         assertThat(IntegrationTestSupport.data(initial)).isEmpty();
 
         IntegrationTestSupport.assertOk(
-                this.put("/api/auth/favorite-menus", token, Map.of("menuIds", List.of(3L, 1L, 3L))));
-        assertThat(PreferencesIT.ids(IntegrationTestSupport.data(this.get("/api/auth/favorite-menus", token))))
+                this.put("/api/system/auth/updateFavoriteMenus", token, Map.of("menuIds", List.of(3L, 1L, 3L))));
+        assertThat(PreferencesIT.ids(
+                        IntegrationTestSupport.data(this.get("/api/system/auth/listFavoriteMenus", token))))
                 .containsExactly(3L, 1L);
 
         // 未授权的菜单页面、目录、按钮、不存在的 ID
         for (final long menuId : List.of(4L, 2L, 100L, 999_999L)) {
             IntegrationTestSupport.assertError(
-                    this.put("/api/auth/favorite-menus", token, Map.of("menuIds", List.of(1L, menuId))),
+                    this.put("/api/system/auth/updateFavoriteMenus", token, Map.of("menuIds", List.of(1L, menuId))),
                     HttpStatus.BAD_REQUEST,
                     40000);
         }
         final List<Long> tooMany = LongStream.rangeClosed(1, 51).boxed().toList();
         IntegrationTestSupport.assertError(
-                this.put("/api/auth/favorite-menus", token, Map.of("menuIds", tooMany)), HttpStatus.BAD_REQUEST, 40000);
+                this.put("/api/system/auth/updateFavoriteMenus", token, Map.of("menuIds", tooMany)),
+                HttpStatus.BAD_REQUEST,
+                40000);
         IntegrationTestSupport.assertError(
-                this.put("/api/auth/favorite-menus", token, Map.of()), HttpStatus.BAD_REQUEST, 40000);
+                this.put("/api/system/auth/updateFavoriteMenus", token, Map.of()), HttpStatus.BAD_REQUEST, 40000);
         // 失败的请求不改动已保存的收藏
-        assertThat(PreferencesIT.ids(IntegrationTestSupport.data(this.get("/api/auth/favorite-menus", token))))
+        assertThat(PreferencesIT.ids(
+                        IntegrationTestSupport.data(this.get("/api/system/auth/listFavoriteMenus", token))))
                 .containsExactly(3L, 1L);
 
         // 角色撤掉「用户管理」后，GET 过滤掉它
         IntegrationTestSupport.assertOk(
-                this.put("/api/roles/" + roleId + "/menus", admin, Map.of("menuIds", List.of(1L))));
-        assertThat(PreferencesIT.ids(IntegrationTestSupport.data(this.get("/api/auth/favorite-menus", token))))
+                this.put("/api/system/role/assignMenus/" + roleId, admin, Map.of("menuIds", List.of(1L))));
+        assertThat(PreferencesIT.ids(
+                        IntegrationTestSupport.data(this.get("/api/system/auth/listFavoriteMenus", token))))
                 .containsExactly(1L);
     }
 
@@ -144,17 +153,19 @@ class PreferencesIT extends IntegrationTestSupport {
         page.put("type", "menu");
         page.put("path", "/it/" + suffix);
         page.put("component", "it/" + suffix);
-        final long pageId = this.create("/api/menus", admin, page);
+        final long pageId = this.create("/api/system/menu/create", admin, page);
         // 种子角色 1 = super_admin
         final String token = this.newUserToken(IntegrationTestSupport.unique("sup"), List.of(1L));
 
         IntegrationTestSupport.assertOk(
-                this.put("/api/auth/favorite-menus", token, Map.of("menuIds", List.of(10L, pageId, 1L))));
-        assertThat(PreferencesIT.ids(IntegrationTestSupport.data(this.get("/api/auth/favorite-menus", token))))
+                this.put("/api/system/auth/updateFavoriteMenus", token, Map.of("menuIds", List.of(10L, pageId, 1L))));
+        assertThat(PreferencesIT.ids(
+                        IntegrationTestSupport.data(this.get("/api/system/auth/listFavoriteMenus", token))))
                 .containsExactly(10L, pageId, 1L);
 
-        IntegrationTestSupport.assertOk(this.delete("/api/menus/" + pageId, admin));
-        assertThat(PreferencesIT.ids(IntegrationTestSupport.data(this.get("/api/auth/favorite-menus", token))))
+        IntegrationTestSupport.assertOk(this.delete("/api/system/menu/delete/" + pageId, admin));
+        assertThat(PreferencesIT.ids(
+                        IntegrationTestSupport.data(this.get("/api/system/auth/listFavoriteMenus", token))))
                 .containsExactly(10L, 1L);
     }
 
@@ -169,13 +180,14 @@ class PreferencesIT extends IntegrationTestSupport {
 
         final String token = this.tokenOf(username, PreferencesIT.PASSWORD);
         assertThat(this.updatedAtOf(username)).isEqualTo(past);
-        IntegrationTestSupport.assertOk(this.put("/api/auth/preferences", token, Map.of("theme", "dark")));
+        IntegrationTestSupport.assertOk(this.put("/api/system/auth/updatePreferences", token, Map.of("theme", "dark")));
         assertThat(this.updatedAtOf(username)).isEqualTo(past);
-        IntegrationTestSupport.assertOk(this.put("/api/auth/favorite-menus", token, Map.of("menuIds", List.of())));
+        IntegrationTestSupport.assertOk(
+                this.put("/api/system/auth/updateFavoriteMenus", token, Map.of("menuIds", List.of())));
         assertThat(this.updatedAtOf(username)).isEqualTo(past);
 
         IntegrationTestSupport.assertOk(this.put(
-                "/api/auth/password",
+                "/api/system/auth/updatePassword",
                 token,
                 Map.of("oldPassword", PreferencesIT.PASSWORD, "newPassword", "N3wPassw0rd")));
         assertThat(this.updatedAtOf(username)).isAfter(past);
@@ -197,15 +209,15 @@ class PreferencesIT extends IntegrationTestSupport {
                 "SELECT COUNT(*) FROM sys_login_log WHERE username = ?", Integer.class, username);
 
         final ResponseEntity<JsonNode> ok =
-                this.post("/api/auth/verify-password", token, Map.of("password", PreferencesIT.PASSWORD));
+                this.post("/api/system/auth/verifyPassword", token, Map.of("password", PreferencesIT.PASSWORD));
         IntegrationTestSupport.assertOk(ok);
         assertThat(IntegrationTestSupport.data(ok).isNull()).isTrue();
         IntegrationTestSupport.assertError(
-                this.post("/api/auth/verify-password", token, Map.of("password", "wrong-pass1")),
+                this.post("/api/system/auth/verifyPassword", token, Map.of("password", "wrong-pass1")),
                 HttpStatus.UNAUTHORIZED,
                 40101);
 
-        IntegrationTestSupport.assertOk(this.get("/api/auth/me", token));
+        IntegrationTestSupport.assertOk(this.get("/api/system/auth/getCurrentUser", token));
         assertThat(this.jdbc.queryForObject(
                         "SELECT token_version FROM sys_user WHERE username = ?", Integer.class, username))
                 .isEqualTo(versionBefore);
@@ -217,15 +229,21 @@ class PreferencesIT extends IntegrationTestSupport {
     @Test
     @DisplayName("五个接口未登录都返回 401 / 40100")
     void requiresLogin() {
-        IntegrationTestSupport.assertError(this.get("/api/auth/preferences", null), HttpStatus.UNAUTHORIZED, 40100);
         IntegrationTestSupport.assertError(
-                this.put("/api/auth/preferences", null, Map.of("theme", "dark")), HttpStatus.UNAUTHORIZED, 40100);
-        IntegrationTestSupport.assertError(this.get("/api/auth/favorite-menus", null), HttpStatus.UNAUTHORIZED, 40100);
+                this.get("/api/system/auth/getPreferences", null), HttpStatus.UNAUTHORIZED, 40100);
         IntegrationTestSupport.assertError(
-                this.put("/api/auth/favorite-menus", null, Map.of("menuIds", List.of(1L))),
+                this.put("/api/system/auth/updatePreferences", null, Map.of("theme", "dark")),
                 HttpStatus.UNAUTHORIZED,
                 40100);
         IntegrationTestSupport.assertError(
-                this.post("/api/auth/verify-password", null, Map.of("password", "x")), HttpStatus.UNAUTHORIZED, 40100);
+                this.get("/api/system/auth/listFavoriteMenus", null), HttpStatus.UNAUTHORIZED, 40100);
+        IntegrationTestSupport.assertError(
+                this.put("/api/system/auth/updateFavoriteMenus", null, Map.of("menuIds", List.of(1L))),
+                HttpStatus.UNAUTHORIZED,
+                40100);
+        IntegrationTestSupport.assertError(
+                this.post("/api/system/auth/verifyPassword", null, Map.of("password", "x")),
+                HttpStatus.UNAUTHORIZED,
+                40100);
     }
 }

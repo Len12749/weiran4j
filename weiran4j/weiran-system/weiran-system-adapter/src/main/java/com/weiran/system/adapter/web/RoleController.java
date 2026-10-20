@@ -27,9 +27,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 角色管理接口 {@code /api/roles}。 */
+/** 角色管理接口。 */
 @RestController
-@RequestMapping("/api/roles")
+@RequestMapping("/api/system/role")
 public class RoleController {
 
     private static final String MODULE = "角色管理";
@@ -43,7 +43,7 @@ public class RoleController {
 
     /** 分页查询。 */
     @RequiresPermission("system:role:list")
-    @GetMapping
+    @GetMapping("/list")
     public PageResult<RoleView> page(
             @RequestParam(required = false) final @Nullable String keyword,
             @RequestParam(required = false) final @Nullable String status,
@@ -53,14 +53,14 @@ public class RoleController {
     }
 
     /** 启用角色下拉。 */
-    @GetMapping("/options")
+    @GetMapping("/listOptions")
     public List<RoleOption> options() {
         return this.roleService.options();
     }
 
     /** 详情（含菜单 ID）。 */
     @RequiresPermission("system:role:list")
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     public RoleDetailView get(@PathVariable final long id) {
         return this.roleService.get(id);
     }
@@ -68,7 +68,7 @@ public class RoleController {
     /** 新增。 */
     @RequiresPermission("system:role:create")
     @OperationLog(module = RoleController.MODULE, description = "新增角色")
-    @PostMapping
+    @PostMapping("/create")
     public IdResult create(@Valid @RequestBody final SaveRoleRequest request) {
         return new IdResult(this.roleService.create(RoleController.toCommand(request)));
     }
@@ -76,7 +76,7 @@ public class RoleController {
     /** 修改。 */
     @RequiresPermission("system:role:update")
     @OperationLog(module = RoleController.MODULE, description = "修改角色")
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ApiResponse<Void> update(@PathVariable final long id, @Valid @RequestBody final SaveRoleRequest request) {
         this.roleService.update(id, RoleController.toCommand(request));
         return ApiResponse.ok();
@@ -85,7 +85,7 @@ public class RoleController {
     /** 删除。 */
     @RequiresPermission("system:role:delete")
     @OperationLog(module = RoleController.MODULE, description = "删除角色")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ApiResponse<Void> delete(@PathVariable final long id) {
         this.roleService.delete(id);
         return ApiResponse.ok();
@@ -94,7 +94,7 @@ public class RoleController {
     /** 分配菜单（全量覆盖）。 */
     @RequiresPermission("system:role:assign-menu")
     @OperationLog(module = RoleController.MODULE, description = "分配菜单")
-    @PutMapping("/{id}/menus")
+    @PutMapping("/assignMenus/{id}")
     public ApiResponse<Void> assignMenus(
             @PathVariable final long id, @Valid @RequestBody final AssignMenusRequest request) {
         this.roleService.assignMenus(id, request.menuIds());
