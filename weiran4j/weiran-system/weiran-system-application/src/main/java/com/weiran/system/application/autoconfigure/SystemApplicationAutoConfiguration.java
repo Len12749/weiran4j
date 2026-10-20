@@ -12,6 +12,7 @@ import com.weiran.system.application.department.DepartmentApplicationService;
 import com.weiran.system.application.loginlog.LoginLogApplicationService;
 import com.weiran.system.application.menu.MenuApplicationService;
 import com.weiran.system.application.role.RoleApplicationService;
+import com.weiran.system.application.sms.SmsApplicationService;
 import com.weiran.system.application.user.UserApplicationService;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Import;
@@ -36,6 +37,7 @@ import org.springframework.context.annotation.Import;
     RoleApplicationService.class,
     MenuApplicationService.class,
     DepartmentApplicationService.class,
-    LoginLogApplicationService.class
+    LoginLogApplicationService.class,
+    SmsApplicationService.class
 })
 public class SystemApplicationAutoConfiguration {}

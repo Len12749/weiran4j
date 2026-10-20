@@ -15,6 +15,7 @@ import org.jspecify.annotations.NullUnmarked;
 @TableName("sys_dict_item")
 public class SysDictItemDO extends AuditableDO {
 
+    @TableField("group_id")
     private Long dictId;
 
     private String label;

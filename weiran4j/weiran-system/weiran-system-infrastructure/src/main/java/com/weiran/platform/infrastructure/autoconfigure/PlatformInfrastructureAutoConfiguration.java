@@ -1,6 +1,7 @@
 package com.weiran.platform.infrastructure.autoconfigure;
 
 import com.weiran.platform.infrastructure.json.JacksonJsonSyntax;
+import com.weiran.platform.infrastructure.persistence.MybatisConfigGroupRepository;
 import com.weiran.platform.infrastructure.persistence.MybatisConfigRepository;
 import com.weiran.platform.infrastructure.persistence.MybatisDictRepository;
 import com.weiran.platform.infrastructure.persistence.MybatisOperationLogRepository;
@@ -18,6 +19,7 @@ import org.springframework.context.annotation.Import;
 @Import({
     MybatisDictRepository.class,
     MybatisConfigRepository.class,
+    MybatisConfigGroupRepository.class,
     MybatisOperationLogRepository.class,
     JacksonJsonSyntax.class
 })

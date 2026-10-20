@@ -1,12 +1,10 @@
 package com.weiran.cqt.infrastructure.autoconfigure;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weiran.cqt.domain.account.PasswordHasher;
 import com.weiran.cqt.domain.file.FileStorage;
 import com.weiran.cqt.domain.portal.PortalTokenCodec;
 import com.weiran.cqt.domain.sms.SmsCodeStore;
 import com.weiran.cqt.domain.sms.SmsIpCounter;
-import com.weiran.cqt.domain.sms.SmsSender;
 import com.weiran.cqt.infrastructure.file.LocalFileStorage;
 import com.weiran.cqt.infrastructure.file.OssFileStorage;
 import com.weiran.cqt.infrastructure.persistence.JdbcRegionRepository;
@@ -22,10 +20,8 @@ import com.weiran.cqt.infrastructure.persistence.MybatisSettingRepository;
 import com.weiran.cqt.infrastructure.persistence.MybatisShowcaseRepository;
 import com.weiran.cqt.infrastructure.security.BCryptPasswordHasher;
 import com.weiran.cqt.infrastructure.security.JjwtPortalTokenCodec;
-import com.weiran.cqt.infrastructure.sms.AliyunSmsSender;
 import com.weiran.cqt.infrastructure.sms.CaffeineSmsCodeStore;
 import com.weiran.cqt.infrastructure.sms.CaffeineSmsIpCounter;
-import com.weiran.cqt.infrastructure.sms.DevSmsSender;
 import java.nio.file.Path;
 import java.time.Clock;
 import org.mybatis.spring.annotation.MapperScan;
@@ -90,22 +86,6 @@ public class CqtInfrastructureAutoConfiguration {
     @ConditionalOnMissingBean
     public SmsIpCounter smsIpCounter(final Clock clock) {
         return new CaffeineSmsIpCounter(clock);
-    }
-
-    /** 开发模式短信，只在 {@code weiran.cqt.sms.mode=dev} 时注册；没有任何 {@link SmsSender} 即「短信服务未配置」。 */
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "weiran.cqt.sms", name = "mode", havingValue = "dev")
-    public SmsSender devSmsSender(final CqtProperties properties) {
-        return new DevSmsSender(properties.sms().exposeCode());
-    }
-
-    /** 阿里云短信，只在 {@code weiran.cqt.sms.mode=aliyun} 时注册；配置不全时启动失败。 */
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "weiran.cqt.sms", name = "mode", havingValue = "aliyun")
-    public SmsSender aliyunSmsSender(final CqtProperties properties, final ObjectMapper objectMapper) {
-        return AliyunSmsSender.create(properties.sms().aliyun(), objectMapper);
     }
 
     /** 阿里云 OSS 文件存储，只在 {@code weiran.cqt.storage.mode=oss} 时注册；配置不全时启动失败，关闭时释放客户端。 */

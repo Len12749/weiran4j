@@ -3,6 +3,7 @@ package com.weiran.app;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.weiran.cqt.domain.sms.SmsCodeStore;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -29,6 +30,17 @@ abstract class CqtIntegrationTestSupport extends IntegrationTestSupport {
 
     private static final String ID_CHECK_CODES = "10X98765432";
 
+    @org.springframework.beans.factory.annotation.Autowired
+    SmsCodeStore smsCodeStore;
+
+    @org.junit.jupiter.api.BeforeEach
+    void configureSmsTemplate() {
+        this.jdbc.update(
+                "UPDATE sys_config SET config_value = ? WHERE config_key = ?",
+                "TEST_SMS_TEMPLATE",
+                "system.user.cqt_sms_template_code");
+    }
+
     /** 本次运行内唯一的手机号（139 开头）。 */
     static String uniquePhone() {
         return String.format(Locale.ROOT, "139%08d", CqtIntegrationTestSupport.PHONE_SEQUENCE.incrementAndGet());
@@ -46,11 +58,11 @@ abstract class CqtIntegrationTestSupport extends IntegrationTestSupport {
         return body + CqtIntegrationTestSupport.ID_CHECK_CODES.charAt(sum % 11);
     }
 
-    /** 发送验证码并取回（测试 profile 开启了开发模式回显）。 */
+    /** 发送验证码并从测试用例的验证码存储中读取。 */
     String smsCode(final String phone) {
         final ResponseEntity<JsonNode> response = this.get("/api-web/auth/sendSms?phone=" + phone, null);
         CqtIntegrationTestSupport.assertPortalOk(response);
-        return IntegrationTestSupport.data(response).path("code").asText();
+        return this.smsCodeStore.get(phone).orElseThrow().code();
     }
 
     /** 注册请求体（个人）。 */

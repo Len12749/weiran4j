@@ -12,7 +12,7 @@ import org.jspecify.annotations.Nullable;
 public final class SystemConfig {
 
     /** 允许匿名读取的配置键前缀。 */
-    public static final String PUBLIC_PREFIX = "sys.site.";
+    public static final String PUBLIC_PREFIX = "system.site.";
 
     private final @Nullable Long id;
 
@@ -21,6 +21,14 @@ public final class SystemConfig {
     private final String configValue;
 
     private final ConfigType configType;
+
+    private final String groupKey;
+
+    private final String fieldType;
+
+    private final @Nullable String fieldOptions;
+
+    private final boolean required;
 
     private final @Nullable String description;
 
@@ -46,6 +54,34 @@ public final class SystemConfig {
     /** 按类型校验当前值。 */
     public SystemConfig validated(final JsonSyntax jsonSyntax) {
         this.configType.validate(this.configValue, jsonSyntax);
+        if (!this.configKey.startsWith("system.")) {
+            throw BizException.badRequest("configKey: 必须使用 system. 前缀");
+        }
+        if (this.required && this.configValue.isBlank()) {
+            throw BizException.badRequest("该配置项不能为空");
+        }
+        final boolean fieldMatches =
+                switch (this.fieldType) {
+                    case "input", "textarea", "select" -> this.configType == ConfigType.STRING;
+                    case "number" -> this.configType == ConfigType.NUMBER;
+                    case "switch" -> this.configType == ConfigType.BOOLEAN;
+                    case "json" -> this.configType == ConfigType.JSON;
+                    default -> false;
+                };
+        if (!fieldMatches) {
+            throw BizException.badRequest("表单字段类型与配置值类型不匹配");
+        }
+        if (this.fieldOptions != null && !jsonSyntax.isValid(this.fieldOptions)) {
+            throw BizException.badRequest("fieldOptions: 必须是合法 JSON");
+        }
+        if ("select".equals(this.fieldType)) {
+            if (this.fieldOptions == null || !jsonSyntax.hasOptions(this.fieldOptions)) {
+                throw BizException.badRequest("下拉选择必须配置 JSON 选项");
+            }
+            if (!this.configValue.isEmpty() && !jsonSyntax.hasChoice(this.fieldOptions, this.configValue)) {
+                throw BizException.badRequest("配置值必须属于下拉选项");
+            }
+        }
         return this;
     }
 
@@ -54,6 +90,10 @@ public final class SystemConfig {
             final String configKey,
             final String configValue,
             final ConfigType configType,
+            final String groupKey,
+            final String fieldType,
+            final @Nullable String fieldOptions,
+            final boolean required,
             final @Nullable String description,
             final JsonSyntax jsonSyntax) {
         if (this.builtin && !this.configKey.equals(configKey)) {
@@ -63,6 +103,10 @@ public final class SystemConfig {
                 .configKey(configKey)
                 .configValue(configValue)
                 .configType(configType)
+                .groupKey(groupKey)
+                .fieldType(fieldType)
+                .fieldOptions(fieldOptions)
+                .required(required)
                 .description(description)
                 .build()
                 .validated(jsonSyntax);

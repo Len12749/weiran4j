@@ -27,35 +27,25 @@
 | 路由 | `/system/configs` |
 | 页面组件 | `system/configs/ConfigsPage`（同文件内的 `ConfigFormModal`） |
 | 后端模块 | `weiran-system`；`ConfigController` → `ConfigApplicationService` → `MybatisConfigRepository` |
-| 接口前缀 | `/api/configs` |
-| 权限码 | `system:config:list` · `system:config:create` · `system:config:update` · `system:config:delete`；`GET /public/{key}` 为 `@PublicApi`（免登录） |
-| 种子 | `sys.site.title` = `Weiran Admin`（string，内置） |
+| 接口前缀 | `/api/system/config` |
+| 权限码 | `system:config:list` · `system:config:create` · `system:config:update` · `system:config:delete`；`GET /getPublic/{key}` 为 `@PublicApi`（免登录） |
+| 种子 | `system.site.title` = `Weiran Admin`（string，内置）；`general`、`user` 为配置组（`sys_group.type=config`） |
 
-## 1. 列表
+## 1. 列表与分组表单
 
-接口 `GET /api/configs`，按 `id` 升序；无排序参数。
-
-| # | 列表列 | 来源 | 渲染 |
-| --- | --- | --- | --- |
-| 1 | 配置键 | `config_key` | 可复制文本；内置项追加蓝色「内置」`Tag` |
-| 2 | 配置值 | `config_value` | 单行省略，悬停显示全文 |
-| 3 | 类型 | `config_type` | 原值（`string/number/boolean/json`） |
-| 4 | 描述 | `description` | 空值 `—` |
-| 5 | 更新时间 | `updated_at` | 原值 |
-| 6 | 操作 | — | 有 `update` / `delete` 任一权限才出现 |
-
-**筛选项**：输入框「配置键 / 描述」→ `keyword`（`config_key`、`description` 两列 `LIKE`），「查询」/ 回车生效，「重置」清空。
-
-**分页**：`page` 默认 1、`pageSize` 默认 20（上限 200）；前端可切换条数、显示总数。
+页面通过 `GET /api/system/config/listAll` 读取全部配置项、`GET /listGroups` 读取分组；左侧分组导航按配置组展示动态表单。每个配置项使用 `field_type` 决定输入、文本、多行、开关、选择或 JSON 控件；保存时提交组内有变化的配置项。
+配置项维护列表通过「配置项管理」入口使用分页查询 `GET /list`，按 `id` 升序，支持键 / 描述关键词搜索。分页默认 1 / 20，最大 200。
 
 ## 2. 字段与表单
 
-| 字段 | 前端控件 | 前端校验 | 后端校验 | DB 列 / 类型 |
-| --- | --- | --- | --- | --- |
-| 配置键 | `Form.Input`，内置项 `disabled`；提交前 `trim` | 必填；`maxLength=128` | `@NotBlank` `@Size(max=128)`；去空白后查重 40900「配置键已存在」；内置项改键 40901；无格式规则 | `config_key varchar(128)` 唯一 |
-| 类型 | `Form.Select`（字符串 / 数字 / 布尔 / JSON），默认 `string` | 无 | `@NotBlank`；只能 `string/number/boolean/json`（40000）；内置项也可改类型 | `config_type varchar(16)` 默认 `string` |
-| 配置值 ❌ | `Form.TextArea`（4 行） | `maxLength=4096`；`validateConfigValue` 按类型校验（见下） | `@NotNull` `@Size(max=4096)`（可为空串）；领域 `ConfigType.validate` 按类型校验，不合法 40000 `configValue: 不是合法的 <type> 值` | `config_value varchar(4096)` 默认 `''` |
-| 描述 | `Form.TextArea`（2 行） | `maxLength=256` | `@Size(max=256)`；空白存 `null` | `description varchar(256) null` |
+| 字段 | 控件 / 规则 | DB 列 |
+| --- | --- | --- |
+| 配置键 | `system.` 前缀；内置项不可改键；格式 `^system\.[\w.-]+$` | `config_key varchar(128)` 唯一 |
+| 配置值 | 按 `field_type` 渲染；必填由 `required` 控制，按 `config_type` 做后端校验 | `config_value varchar(4096)` |
+| 类型 / 控件 | `config_type` 为 `string/number/boolean/json`；`field_type` 为 `input/textarea/number/switch/select/json` | `config_type varchar(16)`、`field_type varchar(16)` |
+| 分组 | 分组 key 与标签由 `sys_group`（`type=config`）管理；系统内置组不可删 | `group_key varchar(64)` |
+| 下拉选项 | `field_type=select` 时为 `{label,value}[]` JSON | `field_options varchar(2048) null` |
+| 描述 / 必填 | 描述最多 256 字；`required` 控制表单校验 | `description varchar(256) null`、`required tinyint(1)` |
 
 **按类型校验的口径**：
 
@@ -70,13 +60,13 @@
 
 ## 3. 动作
 
-| 按钮 | 接口 | 权限码 | `@OperationLog` | 业务规则 / 错误码 |
-| --- | --- | --- | --- | --- |
-| 新增配置（工具栏最左） | `POST /api/configs` → `{id}` | `system:config:create` | ✅ 系统配置 / 新增配置 | 见 §2 |
-| 编辑（行） | `PUT /api/configs/{id}` | `system:config:update` | ✅ 修改配置 | 404 配置不存在；内置项改键 40901；新值按新类型校验 |
-| 删除（行「操作」列，确认后执行；窄屏（< 992px）收在「…」菜单里） | `DELETE /api/configs/{id}` | `system:config:delete` | ✅ 删除配置 | 内置 40901「内置配置不可删除」（前端按钮 disabled） |
-| —（公开读取） | `GET /api/configs/public/{key}` | 免登录 | — | 键不以 `sys.site.` 开头 40300「该配置不允许公开读取」；查不到 40400；因库排序规则大小写不敏感，查回后用库里的真实键再判一次前缀 |
-| —（详情） | `GET /api/configs/{id}` | `system:config:list` | — | 前端页面未调用 |
+| 动作 | 接口 | 权限 / 规则 |
+| --- | --- | --- |
+| 读配置 / 分组 | `GET /listAll`、`GET /listGroups` | `system:config:list` |
+| 新增 / 更新 / 删除配置 | `POST /create`、`PUT /update/{id}`、`DELETE /delete/{id}` | `system:config:create/update/delete`；内置 key 不可改、不可删 |
+| 分页与详情 | `GET /list`、`GET /get/{id}` | `system:config:list` |
+| 管理分组 | `POST /createGroup`、`PUT /updateGroup/{key}`、`DELETE /deleteGroup/{key}` | `system:config:create/update/delete`；只允许删除空的自定义组 |
+| 公开读取 | `GET /getPublic/{key}` | 免登录；仅允许 `system.site.*` |
 
 ## 4. 用到的公共组件
 
@@ -104,6 +94,9 @@
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-21**
+- 系统配置升级为分组表单，配置字段支持自定义控件；新增统一 `SmsService` 配置项，常青藤验证码模板由 `system.user.cqt_sms_template_code` 维护。
 
 **2026-09-27**
 - **#04 ✅ P3 系统配置列表按 `rules/advisory/list-view.md` 约定改造**

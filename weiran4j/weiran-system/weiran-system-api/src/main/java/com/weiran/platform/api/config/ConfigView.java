@@ -10,6 +10,10 @@ import org.jspecify.annotations.Nullable;
  * @param configKey 键
  * @param configValue 值
  * @param configType 类型
+ * @param groupKey 分组编码
+ * @param fieldType 表单字段类型
+ * @param fieldOptions 表单选项 JSON
+ * @param required 是否必填
  * @param description 描述
  * @param isBuiltin 是否内置
  * @param createdAt 创建时间
@@ -20,6 +24,10 @@ public record ConfigView(
         String configKey,
         String configValue,
         String configType,
+        String groupKey,
+        String fieldType,
+        @Nullable String fieldOptions,
+        boolean required,
         @Nullable String description,
         boolean isBuiltin,
         @Nullable LocalDateTime createdAt,

@@ -19,19 +19,8 @@ weiran:
       secret: ${WEIRAN_CQT_JWT_SECRET:}
       ttl: ${WEIRAN_CQT_JWT_TTL:7d}
     sms:
-      # disabled：发送接口返回「短信服务未配置」；dev：验证码只写 warn 日志（生产禁止）；aliyun：阿里云短信。
-      mode: ${WEIRAN_CQT_SMS_MODE:disabled}
-      # 仅开发模式：把验证码回显在 sendSms 的响应里。
-      expose-code: ${WEIRAN_CQT_SMS_EXPOSE_CODE:false}
-      # 同一客户端 IP 每小时最多成功发送的条数，0 表示不限。
+      # 验证码按客户端 IP 限流；发送方式和短信服务凭据由 system 短信服务统一管理。
       ip-hourly-limit: ${WEIRAN_CQT_SMS_IP_HOURLY_LIMIT:10}
-      aliyun:
-        access-key-id: ${WEIRAN_CQT_SMS_ALIYUN_ACCESS_KEY_ID:}
-        access-key-secret: ${WEIRAN_CQT_SMS_ALIYUN_ACCESS_KEY_SECRET:}
-        sign-name: ${WEIRAN_CQT_SMS_ALIYUN_SIGN_NAME:}
-        template-code: ${WEIRAN_CQT_SMS_ALIYUN_TEMPLATE_CODE:}
-        # 模板正文里的验证码变量名（模板形如「您的验证码为${code}，10分钟内有效」）。
-        template-param-name: code
     # 学校注册的承诺书模板下载链接（getlinkinfo）。
     commitment-template-url: ${WEIRAN_CQT_COMMITMENT_TEMPLATE_URL:}
     bcrypt-strength: 10

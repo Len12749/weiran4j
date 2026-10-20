@@ -7,17 +7,16 @@ import com.weiran.cqt.domain.account.Phones;
 import com.weiran.cqt.domain.sms.SmsCodePolicy;
 import com.weiran.cqt.domain.sms.SmsCodeStore;
 import com.weiran.cqt.domain.sms.SmsIpCounter;
-import com.weiran.cqt.domain.sms.SmsSendOutcome;
-import com.weiran.cqt.domain.sms.SmsSender;
 import com.weiran.framework.error.BizException;
 import com.weiran.framework.error.CommonErrors;
+import com.weiran.platform.api.config.ConfigService;
+import com.weiran.platform.api.config.ConfigView;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 
 /**
@@ -31,9 +30,13 @@ public class SmsApplicationService implements SmsService {
 
     private static final int CODE_BOUND = 1_000_000;
 
+    private static final String TEMPLATE_CONFIG_KEY = "system.user.cqt_sms_template_code";
+
     private final SmsCodeStore codeStore;
 
-    private final ObjectProvider<SmsSender> senders;
+    private final ConfigService configService;
+
+    private final com.weiran.system.api.sms.SmsService systemSmsService;
 
     private final SmsIpCounter ipCounter;
 
@@ -44,18 +47,20 @@ public class SmsApplicationService implements SmsService {
     private final SecureRandom random = new SecureRandom();
 
     /**
-     * 构造服务；没有任何 {@link SmsSender} 时发送一律返回「短信服务未配置」。
+     * 构造服务；短信模板来自系统配置，发送交由 system 短信服务。
      *
      * @param ipHourlyLimit 同一客户端 IP 每小时最多成功发送的条数，0 表示不限
      */
     public SmsApplicationService(
             final SmsCodeStore codeStore,
-            final ObjectProvider<SmsSender> senders,
+            final ConfigService configService,
+            final com.weiran.system.api.sms.SmsService systemSmsService,
             final SmsIpCounter ipCounter,
             final Clock clock,
-            @Value("${weiran.cqt.sms.ip-hourly-limit:10}") final int ipHourlyLimit) {
+            final @Value("${weiran.cqt.sms.ip-hourly-limit:10}") int ipHourlyLimit) {
         this.codeStore = codeStore;
-        this.senders = senders;
+        this.configService = configService;
+        this.systemSmsService = systemSmsService;
         this.ipCounter = ipCounter;
         this.clock = clock;
         this.ipHourlyLimit = ipHourlyLimit;
@@ -64,10 +69,15 @@ public class SmsApplicationService implements SmsService {
     @Override
     public synchronized SmsSendResult send(final @Nullable String rawPhone, final String clientIp) {
         final String phone = Phones.require(rawPhone);
-        final SmsSender sender = this.senders.getIfAvailable();
-        if (sender == null) {
+        if (!this.systemSmsService.isAvailable()) {
             throw new BizException(CqtErrors.SMS_NOT_CONFIGURED);
         }
+        final String templateCode = this.configService.all().stream()
+                .filter(config -> SmsApplicationService.TEMPLATE_CONFIG_KEY.equals(config.configKey()))
+                .map(ConfigView::configValue)
+                .filter(value -> !value.isBlank())
+                .findFirst()
+                .orElseThrow(() -> new BizException(CqtErrors.SMS_NOT_CONFIGURED));
         final Instant now = this.clock.instant();
         if (SmsCodePolicy.inCooldown(this.codeStore.get(phone).orElse(null), now)) {
             throw new BizException(CqtErrors.SMS_TOO_FREQUENT);
@@ -78,18 +88,21 @@ public class SmsApplicationService implements SmsService {
         }
         final String code = String.format(Locale.ROOT, "%06d", this.random.nextInt(SmsApplicationService.CODE_BOUND));
         this.codeStore.put(phone, SmsCodePolicy.issue(code, now));
-        final SmsSendOutcome outcome = sender.send(phone, code);
-        if (outcome != SmsSendOutcome.SENT) {
+        final com.weiran.system.api.sms.SmsSendResult outcome = this.systemSmsService.send(
+                new com.weiran.system.api.sms.SmsSendCommand(phone, templateCode, java.util.Map.of("code", code)));
+        if (outcome != com.weiran.system.api.sms.SmsSendResult.SENT
+                && outcome != com.weiran.system.api.sms.SmsSendResult.LOGGED) {
             this.codeStore.remove(phone);
             throw switch (outcome) {
                 case RATE_LIMITED -> new BizException(CqtErrors.SMS_TOO_FREQUENT);
                 case INVALID_NUMBER -> new BizException(CommonErrors.BAD_REQUEST, "手机号格式不正确");
+                case NOT_CONFIGURED -> new BizException(CqtErrors.SMS_NOT_CONFIGURED);
                 default -> new BizException(CqtErrors.SMS_SEND_FAILED);
             };
         }
         this.ipCounter.recordSent(clientIp);
         SmsApplicationService.log.info("已发送短信验证码 phone={} ip={}", Phones.mask(phone), clientIp);
-        return new SmsSendResult(true, sender.exposesCode() ? code : null);
+        return new SmsSendResult(true, null);
     }
 
     @Override

@@ -18,7 +18,7 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
     private static final String LEGACY_HASH = "$2y$10$8i0rknbNSqH58osQwTv7iuUUZD0rXMS5moCMQX5FfWijAoZ9Wt07u";
 
     @Test
-    @DisplayName("sendSms：格式错误 400；开发模式回显 6 位验证码；60 秒内重发 429")
+    @DisplayName("sendSms：格式错误 400；验证码不回显；60 秒内重发 429")
     void sendSms() {
         CqtAccountIT.assertPortalError(this.get("/api-web/auth/sendSms?phone=1234", null), 400, "手机号格式不正确");
 
@@ -26,7 +26,9 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
         final ResponseEntity<JsonNode> first = this.get("/api-web/auth/sendSms?phone=" + phone, null);
         CqtAccountIT.assertPortalOk(first);
         assertThat(IntegrationTestSupport.data(first).path("sent").asBoolean()).isTrue();
-        assertThat(IntegrationTestSupport.data(first).path("code").asText()).matches("\\d{6}");
+        assertThat(IntegrationTestSupport.data(first).has("code")
+                        && !IntegrationTestSupport.data(first).path("code").isNull())
+                .isFalse();
 
         CqtAccountIT.assertPortalError(this.get("/api-web/auth/sendSms?phone=" + phone, null), 429, "发送过于频繁，请稍后再试");
     }

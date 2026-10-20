@@ -21,6 +21,14 @@ public class SysConfigDO extends AuditableDO {
 
     private String configType;
 
+    private String groupKey;
+
+    private String fieldType;
+
+    private String fieldOptions;
+
+    private Boolean required;
+
     @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private String description;
 

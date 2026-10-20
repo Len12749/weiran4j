@@ -11,6 +11,7 @@ import com.weiran.platform.domain.config.ConfigType;
 import com.weiran.platform.domain.config.SystemConfig;
 import com.weiran.platform.infrastructure.persistence.entity.SysConfigDO;
 import com.weiran.platform.infrastructure.persistence.mapper.SysConfigMapper;
+import java.util.List;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 
@@ -43,12 +44,21 @@ public class MybatisConfigRepository implements ConfigRepository {
     }
 
     @Override
+    public boolean existsByGroupKey(final String groupKey) {
+        return this.configMapper.exists(Wrappers.lambdaQuery(SysConfigDO.class).eq(SysConfigDO::getGroupKey, groupKey));
+    }
+
+    @Override
     public long save(final SystemConfig config) {
         final SysConfigDO row = new SysConfigDO();
         row.setId(config.getId());
         row.setConfigKey(config.getConfigKey());
         row.setConfigValue(config.getConfigValue());
         row.setConfigType(config.getConfigType().value());
+        row.setGroupKey(config.getGroupKey());
+        row.setFieldType(config.getFieldType());
+        row.setFieldOptions(config.getFieldOptions());
+        row.setRequired(config.isRequired());
         row.setDescription(config.getDescription());
         row.setIsBuiltin(config.isBuiltin());
         if (row.getId() == null) {
@@ -72,11 +82,22 @@ public class MybatisConfigRepository implements ConfigRepository {
                         w -> w.like(SysConfigDO::getConfigKey, Likes.escape(keyword))
                                 .or()
                                 .like(SysConfigDO::getDescription, Likes.escape(keyword)))
-                .orderByAsc(SysConfigDO::getId);
+                .orderByDesc(SysConfigDO::getId);
         return MybatisPages.toResult(
                 this.configMapper.selectPage(MybatisPages.of(pageQuery), wrapper),
                 pageQuery,
                 MybatisConfigRepository::toDomain);
+    }
+
+    @Override
+    public List<SystemConfig> findAll() {
+        return this.configMapper
+                .selectList(Wrappers.lambdaQuery(SysConfigDO.class)
+                        .orderByAsc(SysConfigDO::getGroupKey)
+                        .orderByAsc(SysConfigDO::getId))
+                .stream()
+                .map(MybatisConfigRepository::toDomain)
+                .toList();
     }
 
     private static SystemConfig toDomain(final SysConfigDO row) {
@@ -85,6 +106,10 @@ public class MybatisConfigRepository implements ConfigRepository {
                 .configKey(row.getConfigKey())
                 .configValue(row.getConfigValue() == null ? "" : row.getConfigValue())
                 .configType(ConfigType.of(row.getConfigType()))
+                .groupKey(row.getGroupKey())
+                .fieldType(row.getFieldType())
+                .fieldOptions(row.getFieldOptions())
+                .required(Boolean.TRUE.equals(row.getRequired()))
                 .description(row.getDescription())
                 .builtin(Boolean.TRUE.equals(row.getIsBuiltin()))
                 .createdAt(row.getCreatedAt())

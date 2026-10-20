@@ -371,12 +371,34 @@ export interface DictItemSaveRequest {
 /* ---------- 系统配置 ---------- */
 
 export type ConfigType = 'string' | 'number' | 'boolean' | 'json';
+export type ConfigFieldType = 'input' | 'textarea' | 'number' | 'switch' | 'select' | 'json';
+
+export interface ConfigGroupView {
+    key: string;
+    label: string;
+    isBuiltin: boolean;
+    canDelete: boolean;
+    createdAt: string | null;
+}
+
+export interface ConfigGroupSaveRequest {
+    key: string;
+    label: string;
+}
+
+export interface ConfigGroupUpdateRequest {
+    label: string;
+}
 
 export interface ConfigView {
     id: number;
     configKey: string;
     configValue: string;
     configType: ConfigType;
+    groupKey: string;
+    fieldType: ConfigFieldType;
+    fieldOptions: string | null;
+    required: boolean;
     description: string | null;
     isBuiltin: boolean;
     createdAt: string;
@@ -391,6 +413,10 @@ export interface ConfigSaveRequest {
     configKey: string;
     configValue: string;
     configType: ConfigType;
+    groupKey: string;
+    fieldType: ConfigFieldType;
+    fieldOptions?: string | null;
+    required: boolean;
     description?: string | null;
 }
 

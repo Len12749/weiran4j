@@ -72,11 +72,9 @@ pnpm dev:uniapp
 ## 部署与数据迁移
 
 - 环境变量：`WEIRAN_CQT_JWT_SECRET`（前台令牌密钥，≥ 32 字节，**必填**，缺失启动失败）、`WEIRAN_CQT_JWT_TTL`（可选，默认 `7d`）、
-  `WEIRAN_CQT_SMS_MODE`（默认 `disabled`；`dev` 只把验证码写进 warn 日志，**生产禁止**；`aliyun` 阿里云短信）、`WEIRAN_CQT_SMS_EXPOSE_CODE`（仅开发，回显验证码）、
   `WEIRAN_CQT_SMS_IP_HOURLY_LIMIT`（同一客户端 IP 每小时最多成功发送条数，默认 10，0 不限）、`WEIRAN_CQT_COMMITMENT_TEMPLATE_URL`（学校承诺书模板链接）。
-- 阿里云短信（`WEIRAN_CQT_SMS_MODE=aliyun`，change `cqt-sms-aliyun`）：必填 `WEIRAN_CQT_SMS_ALIYUN_ACCESS_KEY_ID`、`WEIRAN_CQT_SMS_ALIYUN_ACCESS_KEY_SECRET`、
-  `WEIRAN_CQT_SMS_ALIYUN_SIGN_NAME`、`WEIRAN_CQT_SMS_ALIYUN_TEMPLATE_CODE`，缺一项启动失败。控制台准备：签名与验证码模板审核通过（变量 `${code}`、正文写 10 分钟有效）、
-  只授短信发送权限的 RAM 子账号 AccessKey、余额告警。紧急止血：`WEIRAN_CQT_SMS_MODE=disabled` 重启。
+- 短信发送由 system `SmsService` 统一处理：`WEIRAN_SYSTEM_SMS_MODE` 选择 `disabled`、`log` 或 `aliyun`；阿里云凭据和签名使用 `WEIRAN_SYSTEM_SMS_ACCESS_KEY_ID`、
+  `WEIRAN_SYSTEM_SMS_ACCESS_KEY_SECRET`、`WEIRAN_SYSTEM_SMS_SIGN_NAME`。验证码模板 CODE 在后台「系统配置 → 用户」组的 `system.user.cqt_sms_template_code` 配置项维护；模板变量为 `code`，正文应注明 10 分钟有效。
 - 文件存储（change `cqt-file-upload`）：`WEIRAN_CQT_STORAGE_MODE`（默认 `disabled`，上传返回 503；`oss` 阿里云 OSS；`local` 本地目录，**仅开发 / 测试**，
   经 `/uploads/**` 提供）。`oss` 必填 `WEIRAN_CQT_OSS_ACCESS_KEY_ID`、`WEIRAN_CQT_OSS_ACCESS_KEY_SECRET`、`WEIRAN_CQT_OSS_BUCKET`、
   `WEIRAN_CQT_OSS_ENDPOINT`（如 `oss-cn-beijing.aliyuncs.com`）、`WEIRAN_CQT_OSS_PUBLIC_BASE_URL`（Bucket 公网地址或自定义域名），缺一项启动失败。
@@ -87,7 +85,7 @@ pnpm dev:uniapp
 - 第三方依赖版本登记在 `weiran4j/weiran-dependencies/biz-dependencies.gradle.kts`（D-013，下游独占）；业务模块引用时不写版本；
   不得约束框架已管理的依赖，传递依赖拉偏框架版本时 `:weiran-app:verifyFrameworkVersions` 会失败。
 - 验证码与短信 IP 计数都存在进程内，只支持单实例部署；多实例前要把 `SmsCodeStore`、`SmsIpCounter` 换成共享存储。
-  本地开发写进 gitignore 掉的 `weiran4j/config/application-local.yml`（`weiran.cqt.jwt.secret`）。
+  本地开发写进 gitignore 掉的 `weiran4j/config/application-local.yml`（`weiran.cqt.jwt.secret`、`weiran.system.sms.*`）。
 - 数据：Flyway 建表；原统一库 `cqtxj2026` 的业务数据用 `scripts/biz/import/<表>.sql` 在切换时导入（源库与目标库同实例，可重复执行）。旧地区表不导入，旧账号与作品地区不迁移；用户在新地区树中重新选择，旧地区范围评委权限需重新配置。
   导入前先看 `openspec/state/bizs/cqt_setting.md#01`：`cqtxj2026.sql` 导出文件的中文是双重编码乱码，生产库是否同样乱码未确认。
   导入顺序：`cqt_setting.sql`、`cqt_portal_accounts.sql`、`cqt_competitions.sql`、`cqt_entries.sql`。旧账号和作品地区不迁移，需由用户在新地区树中重新选择。

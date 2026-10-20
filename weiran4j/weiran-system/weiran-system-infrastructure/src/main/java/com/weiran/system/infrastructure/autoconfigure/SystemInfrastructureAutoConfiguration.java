@@ -6,6 +6,7 @@ import com.weiran.system.domain.auth.TokenIssuerReader;
 import com.weiran.system.domain.auth.TokenVerifier;
 import com.weiran.system.domain.identity.ExternalIdentityProviders;
 import com.weiran.system.domain.identity.SsoStateSigner;
+import com.weiran.system.domain.sms.SmsSender;
 import com.weiran.system.domain.user.PasswordHasher;
 import com.weiran.system.infrastructure.identity.AuthProvidersProperties;
 import com.weiran.system.infrastructure.identity.ConfiguredExternalIdentityProviders;
@@ -21,6 +22,10 @@ import com.weiran.system.infrastructure.security.BCryptPasswordHasher;
 import com.weiran.system.infrastructure.security.JwtIssuerReader;
 import com.weiran.system.infrastructure.security.JwtTokenCodec;
 import com.weiran.system.infrastructure.security.SystemSecurityProperties;
+import com.weiran.system.infrastructure.sms.AliyunSmsSender;
+import com.weiran.system.infrastructure.sms.DisabledSmsSender;
+import com.weiran.system.infrastructure.sms.LogSmsSender;
+import com.weiran.system.infrastructure.sms.SystemSmsProperties;
 import java.time.Clock;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -37,7 +42,12 @@ import org.springframework.context.annotation.Import;
  */
 @AutoConfiguration
 @MapperScan("com.weiran.system.infrastructure.persistence.mapper")
-@EnableConfigurationProperties({SystemSecurityProperties.class, AuthJwtProperties.class, AuthProvidersProperties.class})
+@EnableConfigurationProperties({
+    SystemSecurityProperties.class,
+    AuthJwtProperties.class,
+    AuthProvidersProperties.class,
+    SystemSmsProperties.class
+})
 @Import({
     MybatisUserRepository.class,
     MybatisRoleRepository.class,
@@ -47,6 +57,18 @@ import org.springframework.context.annotation.Import;
     MybatisUserIdentityRepository.class
 })
 public class SystemInfrastructureAutoConfiguration {
+
+    /** 统一系统短信发送器。 */
+    @Bean
+    @ConditionalOnMissingBean(SmsSender.class)
+    public SmsSender systemSmsSender(final SystemSmsProperties properties, final ObjectMapper objectMapper) {
+        return switch (properties.mode()) {
+            case "disabled" -> new DisabledSmsSender();
+            case "log" -> new LogSmsSender(objectMapper);
+            case "aliyun" -> AliyunSmsSender.create(properties, objectMapper);
+            default -> throw new IllegalStateException("短信模式无效，请检查 WEIRAN_SYSTEM_SMS_MODE（允许值：disabled、log、aliyun）");
+        };
+    }
 
     /**
      * 本地 JWT：同一个 Bean 既是签发端口 {@link TokenCodec}，也是本地签发方的 {@link TokenVerifier}

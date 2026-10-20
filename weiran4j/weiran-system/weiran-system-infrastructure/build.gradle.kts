@@ -17,6 +17,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("org.springframework.security:spring-security-crypto")
     implementation("io.jsonwebtoken:jjwt-api")
+    implementation("com.aliyun:dysmsapi20170525")
     // JJWT 的时间入参只接受 java.util.Date，而 Forbidden APIs 全局禁用它。
     // 这个依赖只为在那一处边界打 @SuppressForbidden，不放宽规则本身。
     compileOnly("de.thetaphi:forbiddenapis")
