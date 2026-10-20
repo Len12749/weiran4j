@@ -246,10 +246,10 @@ describe('页签风格与动画、路由动画', () => {
 });
 
 describe('enablePageCache', () => {
-    const keyword = () => screen.getByPlaceholderText<HTMLInputElement>('分组名称 / 编码');
+    const keyword = () => screen.getByPlaceholderText<HTMLInputElement>('名称 / 编码');
 
     async function typeAndSwitchBack() {
-        fireEvent.change(await screen.findByPlaceholderText('分组名称 / 编码'), { target: { value: 'site' } });
+        fireEvent.change(await screen.findByPlaceholderText('名称 / 编码'), { target: { value: 'site' } });
         expect(keyword().value).toBe('site');
         fireEvent.click(screen.getByRole('tab', { name: /首页/ }));
         await titleIs('首页');
@@ -273,7 +273,7 @@ describe('enablePageCache', () => {
 
     it('滚动位置在离开前按页记下（不在旧页已隐藏后再读），切回时恢复', async () => {
         renderAuthed('/system/configs', { enablePageCache: true, tabAnimation: 'none' });
-        await screen.findByPlaceholderText('分组名称 / 编码');
+        await screen.findByPlaceholderText('名称 / 编码');
         const content = document.querySelector('.admin-content') as HTMLElement;
         // 模拟浏览器：缓存页被隐藏（display:none）后内容变矮，scrollTop 被钳到 0
         let raw = 0;
@@ -304,7 +304,7 @@ describe('enablePageCache', () => {
 
     it('enableTabs=false 时不缓存', async () => {
         renderAuthed('/system/configs', { enablePageCache: true, enableTabs: false });
-        fireEvent.change(await screen.findByPlaceholderText('分组名称 / 编码'), { target: { value: 'site' } });
+        fireEvent.change(await screen.findByPlaceholderText('名称 / 编码'), { target: { value: 'site' } });
         fireEvent.click(within(document.querySelector('.admin-sidebar') as HTMLElement).getByText('用户管理'));
         await titleIs('用户管理');
         fireEvent.click(within(document.querySelector('.admin-sidebar') as HTMLElement).getByText('参数配置'));

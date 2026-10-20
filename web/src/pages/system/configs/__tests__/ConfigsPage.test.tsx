@@ -36,7 +36,7 @@ const editableConfig: ConfigView = {
 };
 
 function setup() {
-    const groups = [...initialGroups];
+    const groups = initialGroups.map((group) => ({ ...group }));
     const fetch = mockFetch({
         'GET /api/system/config/listAll': [builtinConfig, editableConfig],
         'GET /api/system/config/listGroups': () => groups,
@@ -68,7 +68,7 @@ describe('ConfigsPage 配置分组侧栏', () => {
         fireEvent.click(await screen.findByText('用户'));
         fireEvent.click(screen.getByRole('button', { name: '新增配置项' }));
 
-        expect(screen.getByText('用户', { selector: '.config-group-heading > span:first-child' })).toBeInTheDocument();
+        expect(screen.getByText('用户', { selector: '.page-container__title' })).toBeInTheDocument();
         const userLabels = await screen.findAllByText('用户');
         expect(userLabels).toHaveLength(3);
         expect(screen.getAllByText('配置分组')).toHaveLength(2);
@@ -146,7 +146,7 @@ describe('ConfigsPage 配置分组侧栏', () => {
         setup();
         expect(await screen.findByText('系统标题')).toBeInTheDocument();
         expect(screen.queryByText('system.site.title')).not.toBeInTheDocument();
-        expect(screen.getAllByText('内置')).toHaveLength(4);
+        expect(screen.getAllByText('内置')).toHaveLength(3);
 
         expect(screen.queryByRole('button', { name: '字段设置：页脚信息' })).not.toBeInTheDocument();
         await user.click(screen.getByRole('button', { name: '显示设置' }));

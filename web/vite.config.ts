@@ -44,6 +44,8 @@ export default defineConfig(({ mode }) => {
             globals: true,
             setupFiles: ['./src/test-setup.ts'],
             css: false,
+            pool: 'threads',
+            maxWorkers: 2,
             // Semi 组件首次转换较慢，并行跑全量时 5s 默认值偶尔不够
             testTimeout: 20_000,
         },
