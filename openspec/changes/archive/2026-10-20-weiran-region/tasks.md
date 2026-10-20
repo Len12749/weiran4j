@@ -45,11 +45,11 @@ updated_at: "2026-10-19"
 
 - [x] 7.1 覆盖快照数量与层级完整性、领域父级约束、循环/非叶删除拒绝、筛选保留祖先及排序(FR-001, FR-002, FR-003)
 - [x] 7.2 覆盖权限拒绝、登录 lookup、审计、CSV 筛选完整性和前端权限/选择行为(FR-004, FR-005, FR-006)
-- [ ] 7.3 运行 JDK 21 下 Spotless、Gradle 全量 check、前端 test/lint/build 与 OpenSpec 检查(FR-007)
+- [x] 7.3 运行 JDK 21 下 Spotless、Gradle 全量 check、前端 test/lint/build 与 OpenSpec 检查(FR-007)
 
 ## 8. 发布
 
-- [ ] 8.1 部署前核验 Flyway 执行、3351 条数据、菜单页面路径及管理员权限，并在浏览器验收地区树、级联选择和 CSV(FR-001, FR-004, FR-005, FR-006)
+- [x] 8.1 部署前核验 Flyway 执行、3351 条数据、菜单页面路径及管理员权限，并在浏览器验收地区树、级联选择和 CSV(FR-001, FR-004, FR-005, FR-006)
 
 ## 9. 上线后
 
