@@ -198,7 +198,7 @@ export default function LoginPage() {
                                 size="large"
                                 onChange={(value) => setPhone(String(value ?? ''))}
                             />
-                            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                            <div style={{ display: 'flex', gap: 8 }}>
                                 <Form.Input
                                     field="code"
                                     noLabel
