@@ -117,7 +117,7 @@
   症状:按它配置部署环境的人会拿到旧库名与已不存在的 PHP / `pam_*` 说明,且缺 `WEIRAN_JWT_TTL`。
   权限规则禁止 agent 读写 `.env*` 文件,需要人工更新。应列出:`WEIRAN_DB_URL`(库名 `weiran4j`)、
   `WEIRAN_DB_USERNAME`、`WEIRAN_DB_PASSWORD`、`WEIRAN_JWT_SECRET`(至少 32 字节)、`WEIRAN_JWT_TTL=12h`、
-  `WEIRAN_PORT=3310`、`WEIRAN_LOG_LEVEL`。
+  `WEIRAN_PORT=5200`、`WEIRAN_LOG_LEVEL`。
   **由 `deploy-observability` 关闭**:整份重写,覆盖 `application.yml` 全部 `${WEIRAN_*}` 占位符(含 Cookie / 日志 / 停机)和 Compose 专用的 `WEIRAN_WEB_PORT`;`EnvExampleTest` 守住两边一致,漏改会让 `check` 失败。
 - **#10 ✅ P1 日志体系缺失:无 requestId、无日志配置、关键节点不打日志**
   症状:线上出问题时运维和开发拿不到现场——无法用一个 ID 串起一次请求的全部日志,

@@ -16,14 +16,14 @@ function queryString(query: CqtNewsQuery): string {
 export function useCqtNews(query: CqtNewsQuery) {
     return useQuery({
         queryKey: cqtNewsKeys.page(query),
-        queryFn: () => http.get<CqtNewsPage>(`/api/cqt/news?${queryString(query)}`),
+        queryFn: () => http.get<CqtNewsPage>(`/api-backend/cqt/news/list?${queryString(query)}`),
     });
 }
 
 export function useCreateCqtNews() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (body: CqtNewsSaveRequest) => http.post<number>('/api/cqt/news', body),
+        mutationFn: (body: CqtNewsSaveRequest) => http.post<number>('/api-backend/cqt/news/create', body),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: cqtNewsKeys.all }),
     });
 }
@@ -31,7 +31,7 @@ export function useCreateCqtNews() {
 export function useUpdateCqtNews() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, body }: { id: number; body: CqtNewsSaveRequest }) => http.put<void>(`/api/cqt/news/${id}`, body),
+        mutationFn: ({ id, body }: { id: number; body: CqtNewsSaveRequest }) => http.put<void>(`/api-backend/cqt/news/update/${id}`, body),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: cqtNewsKeys.all }),
     });
 }
@@ -39,7 +39,7 @@ export function useUpdateCqtNews() {
 export function useDeleteCqtNews() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => http.delete<void>(`/api/cqt/news/${id}`),
+        mutationFn: (id: number) => http.delete<void>(`/api-backend/cqt/news/delete/${id}`),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: cqtNewsKeys.all }),
     });
 }
@@ -49,7 +49,7 @@ export function useUploadCqtNewsImage() {
         mutationFn: (file: File) => {
             const body = new FormData();
             body.append('file', file);
-            return http.post<CqtNewsImageUpload>('/api/cqt/news/images', body);
+            return http.post<CqtNewsImageUpload>('/api-backend/cqt/news/uploadImage', body);
         },
     });
 }
@@ -57,7 +57,7 @@ export function useUploadCqtNewsImage() {
 export function useCqtNewsDetail(id: number | undefined) {
     return useQuery({
         queryKey: [...cqtNewsKeys.all, 'detail', id] as const,
-        queryFn: () => http.get<CqtNewsView>(`/api/cqt/news/${id}`),
+        queryFn: () => http.get<CqtNewsView>(`/api-backend/cqt/news/get/${id}`),
         enabled: id !== undefined,
     });
 }

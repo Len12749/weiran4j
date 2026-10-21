@@ -8,7 +8,7 @@ describe('作品Excel下载', () => {
     it('POST携带同源Cookie与CSRF并读取二进制', async () => {
         const fetch = vi.fn().mockResolvedValue(new Response('excel', { headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' } })); vi.stubGlobal('fetch', fetch);
         expect(await (await fetchEntryExport(query)).text()).toBe('excel');
-        expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/cqt/review/entries/export'), expect.objectContaining({ method: 'POST', credentials: 'same-origin', headers: expect.objectContaining({ 'X-CSRF-Token': 'csrf' }), body: JSON.stringify(query) }));
+        expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api-backend/cqt/review/exportEntries'), expect.objectContaining({ method: 'POST', credentials: 'same-origin', headers: expect.objectContaining({ 'X-CSRF-Token': 'csrf' }), body: JSON.stringify(query) }));
     });
     it.each([[401, 40100, true], [403, 40302, false], [200, 40000, false]])('错误HTTP%s/code%s不返回下载且正确处理会话', async (status, code, clear) => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ code, message: '失败' }, { status })));

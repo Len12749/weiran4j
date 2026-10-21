@@ -136,7 +136,7 @@
 | —（本人，收藏菜单读） | `GET /api/auth/favorite-menus` | 仅登录 | — | `number[]`，按收藏顺序；已删除 / 已禁用 / 已无权访问的 ID 过滤掉；从未保存返回 `[]` |
 | —（本人，收藏菜单写） | `PUT /api/auth/favorite-menus` | 仅登录 | ❌ 不记 | `{menuIds}`（`@NotNull`）；规则见 §2；定向 `UPDATE favorite_menus`（`updateFavoriteMenuIds`），不刷新 `updated_at` |
 | —（本人，锁屏解锁） | `POST /api/auth/verify-password` | 仅登录 | ❌ 不记 | `{password}`（`@NotBlank` ≤ 64）；BCrypt 比对当前用户密码，正确返回 `null`，错误 110101「密码错误」；**不签发令牌、不改 `token_version`、不写登录日志**；无失败次数限制 |
-| —（登录页，短信验证码） | `POST /api/system/auth/sendPhoneCode`、`POST /api/system/auth/loginWithPhoneCode` | 免登录 | 登录写 `sys_login_log` | 仅在手机号登录开关、短信发送器及模板均就绪时开放；6 位验证码 5 分钟有效、一次使用，按手机号/IP 限流；手机号不存在返回 110106，账号已禁用返回 110107，发送失败也返回错误；错误登录统一返回 110101，日志手机号脱敏 |
+| —（登录页，短信验证码） | `POST /api-nbackend/system/auth/sendPhoneCode`、`POST /api-nbackend/system/auth/loginWithPhoneCode` | 免登录 | 登录写 `sys_login_log` | 仅在手机号登录开关、短信发送器及模板均就绪时开放；6 位验证码 5 分钟有效、一次使用，按手机号/IP 限流；手机号不存在返回 110106，账号已禁用返回 110107，发送失败也返回错误；错误登录统一返回 110101，日志手机号脱敏 |
 
 按钮显隐：无对应权限时 `Permission` 不渲染（非 disabled）；「删除」对内置用户为 disabled。
 
@@ -190,6 +190,10 @@
   可选的改法：把「重置密码」「外部身份」收进「…」菜单（需要给 `TableActions` 加「部分收起」能力），或者压窄其它列。
 
 ## 7. changelog
+
+**2026-10-21**（API 入口分离）
+
+- 手机验证码发送与登录迁到 `/api-nbackend/`；用户资料、权限与管理接口迁到 `/api-backend/`。
 
 新条目插在本节最上方（按日期倒序，新在上）。
 

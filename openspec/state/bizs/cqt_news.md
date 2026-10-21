@@ -8,7 +8,7 @@
 |---|---|
 | 表 | `cqt_news` |
 | 菜单 / 页面 | 后台「大赛动态」`/cqt/news`；uniapp 首页与「大赛动态」页 |
-| 接口 | 后台 `/api/cqt/news`；公开 `/api-web/product/news`、`/api-web/product/newsdetail` |
+| 接口 | 后台 `/api-backend/cqt/news`；公开 `/api-web/product/news`、`/api-web/product/newsdetail` |
 | 排序 | `sort`、`id` 升序 |
 
 ## 1. 列表

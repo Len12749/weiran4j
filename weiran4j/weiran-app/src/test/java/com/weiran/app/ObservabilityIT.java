@@ -51,28 +51,31 @@ class ObservabilityIT extends IntegrationTestSupport {
     @DisplayName("失败体带 requestId 且与响应头一致：400 / 401 / 403 / 404")
     void errorBodiesCarryRequestId() {
         ObservabilityIT.assertErrorCarriesRequestId(
-                this.post("/api/system/auth/login", null, Map.of("username", "", "password", "x")),
+                this.post("/api-nbackend/system/auth/login", null, Map.of("username", "", "password", "x")),
                 HttpStatus.BAD_REQUEST,
                 100001);
         ObservabilityIT.assertErrorCarriesRequestId(
-                this.get("/api/system/auth/getCurrentUser", null), HttpStatus.UNAUTHORIZED, 100101);
+                this.get("/api-backend/system/auth/getCurrentUser", null), HttpStatus.UNAUTHORIZED, 100101);
 
         final String username = IntegrationTestSupport.unique("norole");
         this.create(
-                "/api/system/user/create",
+                "/api-backend/system/user/create",
                 this.adminToken(),
                 Map.of("username", username, "nickname", "无角色", "password", "Passw0rd1", "roleIds", List.of()));
         ObservabilityIT.assertErrorCarriesRequestId(
-                this.get("/api/system/user/list", this.tokenOf(username, "Passw0rd1")), HttpStatus.FORBIDDEN, 100102);
+                this.get("/api-backend/system/user/list", this.tokenOf(username, "Passw0rd1")),
+                HttpStatus.FORBIDDEN,
+                100102);
 
         ObservabilityIT.assertErrorCarriesRequestId(
-                this.get("/api/no-such-endpoint", null), HttpStatus.NOT_FOUND, 100002);
+                this.get("/api-backend/no-such-endpoint", null), HttpStatus.NOT_FOUND, 100002);
     }
 
     @Test
     @DisplayName("成功体没有 requestId 键，但响应头有")
     void successBodyHasNoRequestId() {
-        final ResponseEntity<JsonNode> response = this.get("/api/system/auth/getCurrentUser", this.adminToken());
+        final ResponseEntity<JsonNode> response =
+                this.get("/api-backend/system/auth/getCurrentUser", this.adminToken());
         IntegrationTestSupport.assertOk(response);
         assertThat(IntegrationTestSupport.body(response).has("requestId")).isFalse();
         assertThat(ObservabilityIT.requestIdHeader(response)).matches("[0-9a-f]{32}");
@@ -83,12 +86,13 @@ class ObservabilityIT extends IntegrationTestSupport {
     void reusesValidInboundRequestId() {
         final HttpHeaders valid = new HttpHeaders();
         valid.set(RequestIdFilter.HEADER, "gw-123_abc");
-        assertThat(ObservabilityIT.requestIdHeader(this.exchange(HttpMethod.GET, "/api/health", valid, null)))
+        assertThat(ObservabilityIT.requestIdHeader(this.exchange(HttpMethod.GET, "/api-nbackend/health", valid, null)))
                 .isEqualTo("gw-123_abc");
 
         final HttpHeaders invalid = new HttpHeaders();
         invalid.set(RequestIdFilter.HEADER, "bad id!");
-        assertThat(ObservabilityIT.requestIdHeader(this.exchange(HttpMethod.GET, "/api/health", invalid, null)))
+        assertThat(ObservabilityIT.requestIdHeader(
+                        this.exchange(HttpMethod.GET, "/api-nbackend/health", invalid, null)))
                 .matches("[0-9a-f]{32}");
     }
 

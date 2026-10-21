@@ -62,7 +62,7 @@ public class CqtAdapterAutoConfiguration {
         return new PortalAuthInterceptor(authService);
     }
 
-    /** 只把前台拦截器挂在 {@code /api-web/**}；后台 {@code /api/**} 由框架拦截器负责，两者路径不相交。 */
+    /** 只把前台拦截器挂在 {@code /api-web/**}；后台 {@code /api-backend/**} 由框架拦截器负责。 */
     @Bean
     public WebMvcConfigurer cqtPortalWebMvcConfigurer(final PortalAuthInterceptor portalAuthInterceptor) {
         return new WebMvcConfigurer() {

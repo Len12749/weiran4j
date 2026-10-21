@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** 部门管理接口。部门树只需登录，供各处下拉共用。 */
 @RestController
-@RequestMapping("/api/system/department")
+@RequestMapping("/api-backend/system/department")
 public class DepartmentController {
 
     private static final String MODULE = "部门管理";

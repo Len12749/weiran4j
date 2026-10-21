@@ -38,7 +38,7 @@ function useInertSiblings(root: HTMLElement | null) {
 
 /**
  * 全屏锁屏遮罩（移植自 mono4ts `components/LockScreen.tsx`，去掉了农历）。
- * 输入登录密码后调 `POST /api/system/auth/verifyPassword`：正确解锁；110101 提示「密码错误」并抖动，
+ * 输入登录密码后调 `POST /api-backend/system/auth/verifyPassword`：正确解锁；110101 提示「密码错误」并抖动，
  * **不会**清会话（`utils/request.ts` 对 110101 不走会话失效分支）。
  */
 export function LockScreen({ user, onUnlocked, onReLogin }: LockScreenProps) {

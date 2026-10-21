@@ -2,7 +2,6 @@ package com.weiran.system.adapter.web;
 
 import com.weiran.framework.auth.AuthCookies;
 import com.weiran.framework.auth.CurrentUser;
-import com.weiran.framework.auth.LoginUser;
 import com.weiran.framework.auth.PublicApi;
 import com.weiran.system.api.auth.ExternalLoginService;
 import com.weiran.system.api.auth.LoginResult;
@@ -17,7 +16,6 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,7 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
  * 流程状态在签名的 {@value AuthCookies#SSO_COOKIE} Cookie 里；令牌只通过 HttpOnly Cookie 交付，不出现在任何 URL 里。
  */
 @RestController
-@RequestMapping("/api/system/auth")
 public class SsoController {
 
     private final ExternalLoginService externalLoginService;
@@ -41,16 +38,32 @@ public class SsoController {
         this.authCookies = authCookies;
     }
 
-    /** 发起外部登录 / 绑定。 */
+    /** 发起外部登录。 */
     @PublicApi
-    @GetMapping("/authorizeSso/{provider}")
-    public void authorize(
+    @GetMapping("/api-nbackend/system/auth/authorizeSso/{provider}")
+    public void authorizeLogin(
             @PathVariable final String provider,
             @RequestParam(required = false) final @Nullable String redirect,
-            @RequestParam(defaultValue = "login") final String mode,
             final HttpServletResponse response) {
-        final SsoRedirect result = this.externalLoginService.authorize(
-                provider, redirect, mode, CurrentUser.get().map(LoginUser::id).orElse(null));
+        this.authorize(provider, redirect, "login", null, response);
+    }
+
+    /** 发起外部身份绑定；必须已登录。 */
+    @GetMapping("/api-backend/system/auth/authorizeSso/{provider}")
+    public void authorizeBind(
+            @PathVariable final String provider,
+            @RequestParam(required = false) final @Nullable String redirect,
+            final HttpServletResponse response) {
+        this.authorize(provider, redirect, "bind", CurrentUser.require().id(), response);
+    }
+
+    private void authorize(
+            final String provider,
+            final @Nullable String redirect,
+            final String mode,
+            final @Nullable Long userId,
+            final HttpServletResponse response) {
+        final SsoRedirect result = this.externalLoginService.authorize(provider, redirect, mode, userId);
         final String flowCookie = result.flowCookie();
         if (flowCookie != null) {
             SsoController.addCookie(response, this.authCookies.ssoState(flowCookie));
@@ -60,7 +73,7 @@ public class SsoController {
 
     /** 提供方回调。 */
     @PublicApi
-    @GetMapping("/callbackSso/{provider}")
+    @GetMapping("/api-nbackend/system/auth/callbackSso/{provider}")
     public void callback(
             @PathVariable final String provider,
             @RequestParam final Map<String, String> params,

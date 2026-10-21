@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** 后台评审与评分入口。输入敏感文字由专用输入DTO阻止操作日志序列化。 */
 @RestController
-@RequestMapping("/api/cqt/review")
+@RequestMapping("/api-backend/cqt/review")
 public class ReviewAdminController {
     private final ReviewApplicationService service;
 

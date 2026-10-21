@@ -11,20 +11,20 @@ status: "active"
 
 ### Requirement: [FR-001] 统一响应包络
 
-所有 `/api/**` 接口 **MUST** 以统一包络返回。成功时 **MUST** 为 `{code, message, data}`,`code` 为数字 `0`,**MUST NOT** 带其它键。失败时 **MUST** 为 `{code, message, data, requestId}`:`code` 为六位数字错误码，依次表示服务、资源、错误各两位，HTTP 状态由错误定义独立指定;`data` 为 `null`;`requestId` 与该响应的 `X-Request-Id` 头相同。
+所有 `/api-backend/**` 接口 **MUST** 以统一包络返回。成功时 **MUST** 为 `{code, message, data}`,`code` 为数字 `0`,**MUST NOT** 带其它键。失败时 **MUST** 为 `{code, message, data, requestId}`:`code` 为六位数字错误码，依次表示服务、资源、错误各两位，HTTP 状态由错误定义独立指定;`data` 为 `null`;`requestId` 与该响应的 `X-Request-Id` 头相同。
 
 #### Scenario: 成功响应的业务码是数字 0
-- **WHEN** 已登录用户调用 `GET /api/auth/me`
+- **WHEN** 已登录用户调用 `GET /api-backend/auth/me`
 - **THEN** 响应体 `code` 为数字 `0`,`data.username` 为当前用户名,且响应体没有 `requestId` 键
 - **判据**:集成测试断言 `$.code` 的 JSON 类型为 number 且值为 0,`$.requestId` 不存在
 
 #### Scenario: 参数校验失败
-- **WHEN** 调用 `POST /api/auth/login` 且 `username` 为空
+- **WHEN** 调用 `POST /api-nbackend/auth/login` 且 `username` 为空
 - **THEN** 返回 HTTP 400,`code` 为 `100001`,`requestId` 等于响应头 `X-Request-Id`
 - **判据**:响应状态 400、`$.code == 100001`,且 `$.requestId` 与响应头相等
 
 #### Scenario: 拦截器拒绝时的失败体也带请求号
-- **WHEN** 不带令牌调用 `GET /api/auth/me`,以及无权限用户调用 `GET /api/users`
+- **WHEN** 不带令牌调用 `GET /api-backend/auth/me`,以及无权限用户调用 `GET /api-backend/users`
 - **THEN** 分别返回 100101 与 100102,两个响应体都带非空的 `requestId`,且与各自的响应头一致
 - **判据**:集成测试断言两次响应的 `$.requestId` 都等于各自的 `X-Request-Id` 头
 
@@ -40,7 +40,7 @@ status: "active"
 
 #### Scenario: 内置管理员可登录
 - **WHEN** 在全新库上以 `admin` / `admin123` 调用登录(带 `X-Auth-Mode: token`)
-- **THEN** 返回 `accessToken`,用它以 Bearer 头调用 `/api/auth/me`,`permissions` 为 `["*"]`
+- **THEN** 返回 `accessToken`,用它以 Bearer 头调用 `/api-backend/auth/me`,`permissions` 为 `["*"]`
 - **判据**:集成测试依次断言登录 `code == 0`、`$.data.accessToken` 非空与 `$.data.permissions[0] == "*"`
 
 ### Requirement: [FR-003] 令牌吊销
@@ -50,12 +50,12 @@ status: "active"
 角色与权限的变更允许最多 30 秒的生效延迟。
 
 #### Scenario: 改密后旧令牌失效
-- **WHEN** 用户调用 `PUT /api/auth/password` 成功后,再用旧令牌调用 `GET /api/auth/me`
+- **WHEN** 用户调用 `PUT /api-backend/auth/password` 成功后,再用旧令牌调用 `GET /api-backend/auth/me`
 - **THEN** 返回 HTTP 401、`code` 为 `100101`
 - **判据**:集成测试断言旧令牌请求 `$.code == 100101`
 
 #### Scenario: 其他实例的吊销在本实例立即生效
-- **WHEN** 用户持有有效令牌并成功调用一次 `GET /api/auth/me`(本实例已缓存其快照),随后**绕过应用服务**直接在库中把该用户的 `token_version` 加 1(或把 `status` 改为 `disabled`)
+- **WHEN** 用户持有有效令牌并成功调用一次 `GET /api-backend/auth/me`(本实例已缓存其快照),随后**绕过应用服务**直接在库中把该用户的 `token_version` 加 1(或把 `status` 改为 `disabled`)
 - **THEN** 该用户的下一次请求返回 HTTP 401、`code` 为 `100101`
 - **判据**:集成测试用 `JdbcTemplate` 直接改库,不调用任何缓存失效方法,断言下一次请求 `$.code == 100101`
 
@@ -64,18 +64,18 @@ status: "active"
 标注 `@RequiresPermission` 的接口 **MUST** 拒绝未持有对应权限码的已登录用户（HTTP 403、`code` 为 `100102`），未登录请求 **MUST** 返回 HTTP 401；持有 `super_admin` 角色者放行一切。
 
 #### Scenario: 无权限用户访问用户列表
-- **WHEN** 一个未绑定任何角色的用户调用 `GET /api/users`
+- **WHEN** 一个未绑定任何角色的用户调用 `GET /api-backend/users`
 - **THEN** 返回 HTTP 403、`code` 为 `100102`
 - **判据**:集成测试断言 `$.code == 100102`
 
 #### Scenario: 未登录访问受保护接口
-- **WHEN** 不带 `Authorization` 头调用 `GET /api/auth/me`
+- **WHEN** 不带 `Authorization` 头调用 `GET /api-backend/auth/me`
 - **THEN** 返回 HTTP 401、`code` 为 `100101`
 - **判据**:响应状态 401 且 `$.code == 100101`
 
 ### Requirement: [FR-005] 菜单驱动路由
 
-`GET /api/auth/menus` **MUST** 返回当前用户可访问的 directory/menu 类型启用菜单树；前端 **MUST** 仅为其中 `type=menu` 且组件文件存在的节点注册路由，组件缺失时渲染占位而不崩溃。
+`GET /api-backend/auth/menus` **MUST** 返回当前用户可访问的 directory/menu 类型启用菜单树；前端 **MUST** 仅为其中 `type=menu` 且组件文件存在的节点注册路由，组件缺失时渲染占位而不崩溃。
 
 #### Scenario: 种子菜单的组件全部存在
 - **WHEN** 读取种子迁移中全部 `type=menu` 菜单的 `component`
@@ -96,17 +96,17 @@ status: "active"
 内置用户、角色、字典、配置（`is_builtin`）**MUST NOT** 被删除；内置管理员 **MUST** 始终保留 `super_admin` 角色。
 
 #### Scenario: 删除内置角色被拒绝
-- **WHEN** 调用 `DELETE /api/roles/{super_admin 的 id}`
+- **WHEN** 调用 `DELETE /api-backend/roles/{super_admin 的 id}`
 - **THEN** 返回 `code` 为 `100004`，角色仍存在
-- **判据**:集成测试断言 `$.code == 100004` 且随后 `GET /api/roles/{id}` 的 `code == 0`
+- **判据**:集成测试断言 `$.code == 100004` 且随后 `GET /api-backend/roles/{id}` 的 `code == 0`
 
 ### Requirement: [FR-008] 操作审计
 
 标注 `@OperationLog` 的写接口 **MUST** 在 `sys_operation_log` 留下记录（含用户、路径、耗时、成功与否），请求体中的密码与令牌字段 **MUST** 以 `******` 代替；日志落库失败 **MUST NOT** 影响业务响应。
 
 #### Scenario: 新增用户后可查到脱敏的操作日志
-- **WHEN** 管理员调用 `POST /api/users`（请求体含 `password`）
-- **THEN** 稍后 `GET /api/operation-logs` 可查到该记录，其 `requestBody` 不含明文密码
+- **WHEN** 管理员调用 `POST /api-backend/users`（请求体含 `password`）
+- **THEN** 稍后 `GET /api-backend/operation-logs` 可查到该记录，其 `requestBody` 不含明文密码
 - **判据**:集成测试轮询等待记录出现，并断言 `requestBody` 包含 `******` 且不含明文密码
 
 ### Requirement: [FR-009] 令牌签发方与受众校验
@@ -120,7 +120,7 @@ status: "active"
 - **判据**:单测或集成测试解码载荷断言两个字段的值
 
 #### Scenario: 签发方或受众不符的令牌被拒
-- **WHEN** 用同一密钥签发 `iss` 缺失、`iss = "other"`、`aud = "other"` 的三个令牌,分别以 Bearer 头调用 `GET /api/auth/me`
+- **WHEN** 用同一密钥签发 `iss` 缺失、`iss = "other"`、`aud = "other"` 的三个令牌,分别以 Bearer 头调用 `GET /api-backend/auth/me`
 - **THEN** 三次均返回 HTTP 401、`code` 为 `100101`
 - **判据**:测试断言三次响应的 `$.code == 100101`
 
@@ -141,7 +141,7 @@ status: "active"
 - **判据**:集成测试解析响应头逐项断言属性,并断言 `$.data.accessToken` 不存在
 
 #### Scenario: 只凭 Cookie 即可访问受保护接口
-- **WHEN** 用上一步拿到的两个 Cookie、不带 `Authorization` 头调用 `GET /api/auth/me`
+- **WHEN** 用上一步拿到的两个 Cookie、不带 `Authorization` 头调用 `GET /api-backend/auth/me`
 - **THEN** 返回 `code == 0`
 - **判据**:集成测试断言 `$.code == 0`
 
@@ -151,7 +151,7 @@ status: "active"
 - **判据**:集成测试断言 `$.data.accessToken` 非空且 `Set-Cookie` 头不存在
 
 #### Scenario: 登出清除 Cookie
-- **WHEN** 以 Cookie 方式登录后调用 `POST /api/auth/logout`(带正确的 CSRF 头)
+- **WHEN** 以 Cookie 方式登录后调用 `POST /api-backend/auth/logout`(带正确的 CSRF 头)
 - **THEN** 响应的 `Set-Cookie` 把 `weiran_token` 与 `weiran_csrf` 都设为 `Max-Age=0`
 - **判据**:集成测试断言两个 Cookie 的 `Max-Age=0`
 
@@ -167,17 +167,17 @@ status: "active"
 前端 **MUST** 在每个写请求上自动带上该头。
 
 #### Scenario: Cookie 认证的写请求缺少 CSRF 头
-- **WHEN** 只带两个 Cookie、不带 `X-CSRF-Token` 调用 `PUT /api/auth/profile`
-- **THEN** 返回 HTTP 403、`code` 为 `100103`,随后 `/api/auth/me` 的昵称未变
+- **WHEN** 只带两个 Cookie、不带 `X-CSRF-Token` 调用 `PUT /api-backend/auth/profile`
+- **THEN** 返回 HTTP 403、`code` 为 `100103`,随后 `/api-backend/auth/me` 的昵称未变
 - **判据**:集成测试断言 `$.code == 100103` 并复查资料未变
 
 #### Scenario: CSRF 头与 Cookie 不一致
-- **WHEN** 带两个 Cookie,`X-CSRF-Token` 填一个不同的值,调用 `PUT /api/auth/profile`
+- **WHEN** 带两个 Cookie,`X-CSRF-Token` 填一个不同的值,调用 `PUT /api-backend/auth/profile`
 - **THEN** 返回 HTTP 403、`code` 为 `100103`
 - **判据**:集成测试断言 `$.code == 100103`
 
 #### Scenario: Bearer 头认证的写请求不查 CSRF
-- **WHEN** 以 `X-Auth-Mode: token` 登录,用 Bearer 头、不带 CSRF 头调用 `PUT /api/auth/profile`
+- **WHEN** 以 `X-Auth-Mode: token` 登录,用 Bearer 头、不带 CSRF 头调用 `PUT /api-backend/auth/profile`
 - **THEN** 返回 `code == 0`
 - **判据**:集成测试断言 `$.code == 0`
 
@@ -206,13 +206,13 @@ status: "active"
 
 #### Scenario: 配置 API 统一使用 system 路径
 - **WHEN** 客户端访问配置列表、分组、全量、详情、写入或公开读取接口
-- **THEN** 请求通过 `/api/system/config/{action}[/{id}]` 路由处理
-- **判据**:所有 ConfigController 路由均为 `/api/system/config/{action}[/{id}]` 结构，前端不再请求 `/api/configs/**`；不存在挂在 `/api/system/config` 根路径的接口
+- **THEN** 请求通过 `/api-backend/system/config/{action}[/{id}]` 路由处理
+- **判据**:所有 ConfigController 路由均为 `/api-backend/system/config/{action}[/{id}]` 结构，前端不再请求 `/api-backend/configs/**`；不存在挂在 `/api-backend/system/config` 根路径的接口
 
 #### Scenario: 按类型查询配置组并显示双栏页面
 - **WHEN** 管理员打开系统配置页面
 - **THEN** 左侧显示启用的系统配置组，右侧显示当前分组的非短信配置项，并按配置元数据渲染字段控件和必填/选项校验；`config_sms` 短信配置域不显示在此页面
-- **判据**:`GET /api/system/config/listGroups` 仍返回 `config` 类型启用组；页面隐藏短信模板专用组与 `sms.` 配置项
+- **判据**:`GET /api-backend/system/config/listGroups` 仍返回 `config` 类型启用组；页面隐藏短信模板专用组与 `sms.` 配置项
 
 #### Scenario: 从配置侧栏新增分组
 - **WHEN** 有配置创建权限的管理员从分组侧栏新增一个分组
@@ -247,7 +247,7 @@ status: "active"
 #### Scenario: 删除空的自定义配置分组
 - **WHEN** 有删除权限的管理员删除一个非内置且没有配置项的分组
 - **THEN** 系统删除该分组并刷新分组列表
-- **判据**:`DELETE /api/system/config/deleteGroup/{key}` 成功；内置分组或含配置项的分组返回 100004；无删除权限返回 100102
+- **判据**:`DELETE /api-backend/system/config/deleteGroup/{key}` 成功；内置分组或含配置项的分组返回 100004；无删除权限返回 100102
 
 #### Scenario: 配置项使用共享分组
 - **WHEN** 管理员新增带 `system.` 键前缀的配置项并选择一个启用的 `config` 分组

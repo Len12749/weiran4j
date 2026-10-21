@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/cqt/competitions")
+@RequestMapping("/api-backend/cqt/competitions")
 public class CompetitionAdminController {
     private static final Set<String> IMAGE_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".gif");
     private static final long MAX_IMAGE_SIZE = 10L * 1024 * 1024;
@@ -38,7 +38,7 @@ public class CompetitionAdminController {
         this.fileUploadService = fileUploadService;
     }
 
-    @PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/uploadImage", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @RequiresPermission({"cqt:competition:create", "cqt:competition:update"})
     @OperationLog(module = "赛事管理", description = "上传赛事模板图片")
     public UploadedFileView uploadImage(@RequestParam("file") final MultipartFile file) {
@@ -58,7 +58,7 @@ public class CompetitionAdminController {
                 CurrentUser.require().id(), originalName, file.getSize(), file::getInputStream, file.getContentType());
     }
 
-    @GetMapping
+    @GetMapping("/list")
     @RequiresPermission("cqt:competition:list")
     public PageResult<CompetitionAdminView> page(
             @RequestParam(defaultValue = "1") final int page,
@@ -69,13 +69,13 @@ public class CompetitionAdminController {
         return this.service.page(new PageQuery(page, pageSize), keyword, year, status);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     @RequiresPermission("cqt:competition:list")
     public CompetitionAdminView get(@PathVariable final long id) {
         return this.service.get(id);
     }
 
-    @PostMapping
+    @PostMapping("/create")
     @RequiresPermission("cqt:competition:create")
     @OperationLog(module = "赛事管理", description = "新增赛事")
     public CompetitionAdminService.Result create(
@@ -86,7 +86,7 @@ public class CompetitionAdminController {
         return this.service.create(command.command());
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     @RequiresPermission("cqt:competition:update")
     @OperationLog(module = "赛事管理", description = "编辑赛事")
     public CompetitionAdminService.Result update(
@@ -101,7 +101,7 @@ public class CompetitionAdminController {
     public record StatusRequest(
             @Nullable Integer status, @Nullable Long expectedVersion) {}
 
-    @PostMapping("/{id}/status")
+    @PostMapping("/updateStatus/{id}")
     @RequiresPermission("cqt:competition:status")
     @OperationLog(module = "赛事管理", description = "变更赛事状态")
     public CompetitionAdminService.Result status(

@@ -20,7 +20,7 @@ public class EntryExportAdminController {
         this.service = service;
     }
 
-    @PostMapping("/api/cqt/review/entries/export")
+    @PostMapping("/api-backend/cqt/review/exportEntries")
     @SkipApiResponse
     @RequiresPermission("cqt:entry-review:export")
     @OperationLog(module = "作品初审", description = "导出作品清单")

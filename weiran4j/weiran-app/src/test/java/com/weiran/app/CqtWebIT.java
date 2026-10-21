@@ -128,16 +128,20 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     @Test
     @DisplayName("站点配置管理受权限保护并保留原始内容且独立映射")
     void managesRawSiteConfig() {
-        CqtIntegrationTestSupport.assertError(this.get("/api/cqt/site-config", null), HttpStatus.UNAUTHORIZED, 100101);
+        CqtIntegrationTestSupport.assertError(
+                this.get("/api-backend/cqt/site-config/get", null), HttpStatus.UNAUTHORIZED, 100101);
 
         final String admin = this.adminToken();
         CqtIntegrationTestSupport.assertError(
-                this.put("/api/cqt/site-config", admin, Map.of()), HttpStatus.BAD_REQUEST, 100001);
+                this.put("/api-backend/cqt/site-config/update", admin, Map.of()), HttpStatus.BAD_REQUEST, 100001);
         CqtIntegrationTestSupport.assertError(
-                this.put("/api/cqt/site-config", admin, Map.of("items", java.util.Collections.singletonList(null))),
+                this.put(
+                        "/api-backend/cqt/site-config/update",
+                        admin,
+                        Map.of("items", java.util.Collections.singletonList(null))),
                 HttpStatus.BAD_REQUEST,
                 100001);
-        final ResponseEntity<JsonNode> getResponse = this.get("/api/cqt/site-config", admin);
+        final ResponseEntity<JsonNode> getResponse = this.get("/api-backend/cqt/site-config/get", admin);
         IntegrationTestSupport.assertOk(getResponse);
         final JsonNode initialItems = IntegrationTestSupport.data(getResponse).path("items");
         assertThat(initialItems).hasSize(22);
@@ -159,7 +163,8 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                     });
             updatedItems.add(value);
         });
-        IntegrationTestSupport.assertOk(this.put("/api/cqt/site-config", admin, Map.of("items", updatedItems)));
+        IntegrationTestSupport.assertOk(
+                this.put("/api-backend/cqt/site-config/update", admin, Map.of("items", updatedItems)));
 
         final ResponseEntity<JsonNode> publicResponse = this.get("/api-web/product/getconfig", null);
         CqtWebIT.assertPortalOk(publicResponse);
@@ -167,7 +172,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
         assertThat(publicConfig.path("guanyuwomen").asText()).isEqualTo("<div>更新后的介绍</div>");
         assertThat(publicConfig.path("user_agreement").asText()).isEqualTo("<p>更新后的协议</p>");
 
-        final ResponseEntity<JsonNode> rawResponse = this.get("/api/cqt/site-config", admin);
+        final ResponseEntity<JsonNode> rawResponse = this.get("/api-backend/cqt/site-config/get", admin);
         IntegrationTestSupport.assertOk(rawResponse);
         final JsonNode items = IntegrationTestSupport.data(rawResponse).path("items");
         assertThat(CqtWebIT.rawContent(items, "guanyuwomen")).isEqualTo("<div>更新后的介绍</div>");
@@ -180,7 +185,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
         final String admin = this.adminToken();
         final Map<String, Object> expert =
                 Map.of("name", "评审甲", "image", "/uploads/expert.png", "content", "<p>介绍</p>", "sort", 2);
-        final ResponseEntity<JsonNode> created = this.post("/api/cqt/experts", admin, expert);
+        final ResponseEntity<JsonNode> created = this.post("/api-backend/cqt/experts/create", admin, expert);
         IntegrationTestSupport.assertOk(created);
         final long id = IntegrationTestSupport.data(created).asLong();
         final ResponseEntity<JsonNode> publicDetail = this.get("/api-web/content/experts/" + id, null);
@@ -202,7 +207,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                 .isEqualTo(404);
         final Map<String, Object> disabled = new LinkedHashMap<>(expert);
         disabled.put("enabled", false);
-        IntegrationTestSupport.assertOk(this.put("/api/cqt/experts/" + id, admin, disabled));
+        IntegrationTestSupport.assertOk(this.put("/api-backend/cqt/experts/update/" + id, admin, disabled));
         assertThat(IntegrationTestSupport.body(this.get("/api-web/content/experts/" + id, null))
                         .path("code")
                         .asInt())
@@ -211,9 +216,9 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                         .path("list"))
                 .isEmpty();
         CqtIntegrationTestSupport.assertError(
-                this.post("/api/cqt/experts", null, expert), HttpStatus.UNAUTHORIZED, 100101);
+                this.post("/api-backend/cqt/experts/create", null, expert), HttpStatus.UNAUTHORIZED, 100101);
         final ResponseEntity<JsonNode> showcase = this.post(
-                "/api/cqt/showcases",
+                "/api-backend/cqt/showcases/create",
                 admin,
                 Map.of("title", "剧本甲", "image", "/uploads/showcase.png", "category", "SCRIPT"));
         IntegrationTestSupport.assertOk(showcase);
@@ -223,7 +228,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                         .asText())
                 .isEqualTo("剧本甲");
         final ResponseEntity<JsonNode> resource = this.post(
-                "/api/cqt/resources",
+                "/api-backend/cqt/resources/create",
                 admin,
                 Map.of(
                         "title",
@@ -245,21 +250,24 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     void rejectsInvalidContent() {
         final String admin = this.adminToken();
         CqtIntegrationTestSupport.assertError(
-                this.post("/api/cqt/experts", admin, Map.of()), HttpStatus.BAD_REQUEST, 100001);
+                this.post("/api-backend/cqt/experts/create", admin, Map.of()), HttpStatus.BAD_REQUEST, 100001);
         CqtIntegrationTestSupport.assertError(
                 this.post(
-                        "/api/cqt/experts",
+                        "/api-backend/cqt/experts/create",
                         admin,
                         Map.of("name", "甲", "image", "javascript:alert(1)", "content", "简介")),
                 HttpStatus.BAD_REQUEST,
                 100001);
         CqtIntegrationTestSupport.assertError(
-                this.post("/api/cqt/showcases", admin, Map.of("title", "甲", "image", "/a.png", "category", "UNKNOWN")),
+                this.post(
+                        "/api-backend/cqt/showcases/create",
+                        admin,
+                        Map.of("title", "甲", "image", "/a.png", "category", "UNKNOWN")),
                 HttpStatus.BAD_REQUEST,
                 100001);
         CqtIntegrationTestSupport.assertError(
                 this.post(
-                        "/api/cqt/resources",
+                        "/api-backend/cqt/resources/create",
                         admin,
                         Map.of("title", "甲", "category", "SCRIPT_PAPER", "fileUrl", "//evil.test/a", "fileName", "a")),
                 HttpStatus.BAD_REQUEST,
@@ -287,14 +295,15 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                 "sort", 1,
                 "content", "<p>不在首页</p>");
 
-        final ResponseEntity<JsonNode> firstCreated = this.post("/api/cqt/news", admin, first);
+        final ResponseEntity<JsonNode> firstCreated = this.post("/api-backend/cqt/news/create", admin, first);
         IntegrationTestSupport.assertOk(firstCreated);
         final long firstId = IntegrationTestSupport.data(firstCreated).asLong();
-        final ResponseEntity<JsonNode> secondCreated = this.post("/api/cqt/news", admin, second);
+        final ResponseEntity<JsonNode> secondCreated = this.post("/api-backend/cqt/news/create", admin, second);
         IntegrationTestSupport.assertOk(secondCreated);
         final long secondId = IntegrationTestSupport.data(secondCreated).asLong();
 
-        final ResponseEntity<JsonNode> adminPage = this.get("/api/cqt/news?page=1&pageSize=10&keyword=动态", admin);
+        final ResponseEntity<JsonNode> adminPage =
+                this.get("/api-backend/cqt/news/list?page=1&pageSize=10&keyword=动态", admin);
         IntegrationTestSupport.assertOk(adminPage);
         assertThat(IntegrationTestSupport.data(adminPage).path("total").asLong())
                 .isEqualTo(2);
@@ -315,20 +324,21 @@ class CqtWebIT extends CqtIntegrationTestSupport {
 
         final Map<String, Object> updated =
                 Map.of("title", "更新后动态", "image", "", "showOnHome", false, "sort", 0, "content", "<p>已更新</p>");
-        IntegrationTestSupport.assertOk(this.put("/api/cqt/news/" + firstId, admin, updated));
+        IntegrationTestSupport.assertOk(this.put("/api-backend/cqt/news/update/" + firstId, admin, updated));
         final ResponseEntity<JsonNode> emptyHome =
                 this.get("/api-web/product/news?page=1&pageSize=3&homeOnly=true", null);
         CqtWebIT.assertPortalOk(emptyHome);
         assertThat(IntegrationTestSupport.data(emptyHome).path("total").asLong())
                 .isZero();
 
-        IntegrationTestSupport.assertOk(this.delete("/api/cqt/news/" + secondId, admin));
+        IntegrationTestSupport.assertOk(this.delete("/api-backend/cqt/news/delete/" + secondId, admin));
         CqtIntegrationTestSupport.assertError(
-                this.get("/api/cqt/news/" + secondId, admin), HttpStatus.NOT_FOUND, 100002);
-        CqtIntegrationTestSupport.assertError(this.post("/api/cqt/news", null, first), HttpStatus.UNAUTHORIZED, 100101);
+                this.get("/api-backend/cqt/news/get/" + secondId, admin), HttpStatus.NOT_FOUND, 100002);
+        CqtIntegrationTestSupport.assertError(
+                this.post("/api-backend/cqt/news/create", null, first), HttpStatus.UNAUTHORIZED, 100101);
         CqtIntegrationTestSupport.assertError(
                 this.post(
-                        "/api/cqt/news",
+                        "/api-backend/cqt/news/create",
                         admin,
                         Map.of("title", " ", "image", "", "showOnHome", false, "sort", 0, "content", "x")),
                 HttpStatus.BAD_REQUEST,
@@ -736,12 +746,12 @@ class CqtWebIT extends CqtIntegrationTestSupport {
 
     private ResponseEntity<JsonNode> uploadSiteConfigImage(
             final @org.jspecify.annotations.Nullable String token, final String fileName) {
-        return this.uploadImage("/api/cqt/site-config/images", token, fileName);
+        return this.uploadImage("/api-backend/cqt/site-config/uploadImage", token, fileName);
     }
 
     private ResponseEntity<JsonNode> uploadNewsImage(
             final @org.jspecify.annotations.Nullable String token, final String fileName) {
-        return this.uploadImage("/api/cqt/news/images", token, fileName);
+        return this.uploadImage("/api-backend/cqt/news/uploadImage", token, fileName);
     }
 
     private ResponseEntity<JsonNode> uploadImage(
@@ -820,7 +830,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     void portalAndAdminTokensAreSeparate() {
         final String portalToken = this.portalToken(this.registerPersonal(), CqtIntegrationTestSupport.PASSWORD);
         IntegrationTestSupport.assertError(
-                this.get("/api/system/auth/getCurrentUser", portalToken), HttpStatus.UNAUTHORIZED, 100101);
+                this.get("/api-backend/system/auth/getCurrentUser", portalToken), HttpStatus.UNAUTHORIZED, 100101);
 
         CqtWebIT.assertPortalError(this.get("/api-web/__test/me", this.adminToken()), 401, "登录失效,请重新登录");
     }
@@ -829,7 +839,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     @DisplayName("后台接口错误语义不变：无令牌 → HTTP 401 + 100101")
     void adminErrorsUnchanged() {
         IntegrationTestSupport.assertError(
-                this.get("/api/system/auth/getCurrentUser", null), HttpStatus.UNAUTHORIZED, 100101);
+                this.get("/api-backend/system/auth/getCurrentUser", null), HttpStatus.UNAUTHORIZED, 100101);
     }
 
     @Test

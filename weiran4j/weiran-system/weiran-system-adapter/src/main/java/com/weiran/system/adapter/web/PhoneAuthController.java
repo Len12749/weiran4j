@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** 手机号验证码认证接口。 */
 @RestController
-@RequestMapping("/api/system/auth")
+@RequestMapping("/api-nbackend/system/auth")
 public class PhoneAuthController {
 
     private final PhoneLoginApplicationService phoneLoginService;

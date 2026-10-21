@@ -7,7 +7,7 @@ export async function fetchEntryExport(query: EntryExportQuery, signal?: AbortSi
     const headers: Record<string, string> = { 'Content-Type': 'application/json', Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' };
     const session = getSession();
     if (session) headers[CSRF_HEADER] = session;
-    const response = await fetch(`${config.apiBaseUrl}/api/cqt/review/entries/export`, { method: 'POST', credentials: 'same-origin', headers, body: JSON.stringify(query), ...(signal ? { signal } : {}) });
+    const response = await fetch(`${config.apiBaseUrl}/api-backend/cqt/review/exportEntries`, { method: 'POST', credentials: 'same-origin', headers, body: JSON.stringify(query), ...(signal ? { signal } : {}) });
     if (!response.ok || response.headers.get('Content-Type')?.includes('json')) {
         const payload = await response.json().catch(() => null) as { code?: number; message?: string; requestId?: string } | null;
         const code = payload?.code ?? response.status * 100;

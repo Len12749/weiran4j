@@ -43,7 +43,7 @@ class CqtEntryExportIT extends CqtIntegrationTestSupport {
         headers.setBearerAuth(this.tokenOf("admin", "admin123"));
         headers.setContentType(MediaType.APPLICATION_JSON);
         final var response = this.rest.exchange(
-                "/api/cqt/review/entries/export",
+                "/api-backend/cqt/review/exportEntries",
                 HttpMethod.POST,
                 new HttpEntity<>(Map.of("competitionId", competition, "phaseId", phase), headers),
                 byte[].class);
@@ -56,7 +56,7 @@ class CqtEntryExportIT extends CqtIntegrationTestSupport {
                 .contains("cqt-entries-" + competition + "-" + phase + ".xlsx");
         assertThat(Objects.requireNonNull(response.getBody())).startsWith((byte) 'P', (byte) 'K');
         final var invalid = this.post(
-                "/api/cqt/review/entries/export",
+                "/api-backend/cqt/review/exportEntries",
                 this.tokenOf("admin", "admin123"),
                 Map.of("competitionId", competition + 1, "phaseId", phase));
         assertThat(invalid.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);

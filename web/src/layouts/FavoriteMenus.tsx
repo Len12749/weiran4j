@@ -9,7 +9,7 @@ import type { FlatMenu } from '@/utils/menu';
 export const MAX_FAVORITES = 50;
 
 /**
- * 收藏菜单（偏好 showFavorites）：数据走 `GET/PUT /api/system/auth/listFavoriteMenus`，
+ * 收藏菜单（偏好 showFavorites）：数据走 `GET/PUT /api-backend/system/auth/listFavoriteMenus`，
  * 保存是乐观更新，失败回滚并提示（见 `hooks/queries/auth.ts` 的 `useSaveFavoriteMenus`）。
  */
 export function useFavorites(pages: readonly FlatMenu[], enabled: boolean) {

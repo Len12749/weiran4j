@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** 菜单管理接口。 */
 @RestController
-@RequestMapping("/api/system/menu")
+@RequestMapping("/api-backend/system/menu")
 public class MenuController {
 
     private static final String MODULE = "菜单管理";

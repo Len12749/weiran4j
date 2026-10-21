@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo } from 'react';
 
-/** 当前用户权限码；由 App 在拿到 /api/system/auth/getCurrentUser 后注入 */
+/** 当前用户权限码；由 App 在拿到 /api-backend/system/auth/getCurrentUser 后注入 */
 export const PermissionContext = createContext<readonly string[]>([]);
 
 /** 权限码列表含 `*`（超级管理员）视为拥有全部权限 */

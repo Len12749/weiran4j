@@ -1498,7 +1498,7 @@ import { schoolRequest, createImportPoller, importRows, importStateLabel, import
 			this.getzipinfo()
 			this.GET({
 				name: '行政区划',
-				url: '/api/regions/lookup',
+				url: '/api-nbackend/region/area/getEnabledTree',
 				data: {}
 			}).then((res) => {
 				this.regionTree = res.data.data
@@ -1652,7 +1652,7 @@ import { schoolRequest, createImportPoller, importRows, importStateLabel, import
 			getsaiQ() {
 				this.GET({
 					name: '行政区划',
-					url: '/api/regions/lookup',
+					url: '/api-nbackend/region/area/getEnabledTree',
 					data: {}
 				}).then((res) => {
 					this.regionTree = res.data.data

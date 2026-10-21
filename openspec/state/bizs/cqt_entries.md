@@ -49,7 +49,7 @@
 | 报名 | 赛事不存在 404；未启用 / 未开始 / 已结束 409；赛项 / 附件 / 组别 / 成员 400；同一证件同一赛事同一一级赛项阶段冲突 409（提示已有报名号）；同阶段并发由唯一键兜底 409；全部写入一个事务 |
 | 我的报名 | 见 §1 |
 | 报名详情 | 非本人 403；`msg` / `step` 按 `legacy_status`；`shengAward` / `guoAward` 为 null |
-| 后台导出作品清单 | `POST /api/cqt/review/entries/export`，独立 `cqt:entry-review:export` 权限；选择赛事及省/国审阶段，按已生效筛选导出全部匹配数据，不受分页限制；10000行超限拒绝 |
+| 后台导出作品清单 | `POST /api-backend/cqt/review/exportEntries`，独立 `cqt:entry-review:export` 权限；选择赛事及省/国审阶段，按已生效筛选导出全部匹配数据，不受分页限制；10000行超限拒绝 |
 
 ## 4. 用到的公共组件
 

@@ -23,7 +23,7 @@
 | 表 | `sys_user_identity`：`(provider, external_id)` 唯一，`user_id` 有索引，不建外键 |
 | 菜单 | 没有独立页面；入口在「用户管理」行操作（按钮 `sys_menu.id = 120`）与「个人中心 → 外部账号」 |
 | 后端模块 | `weiran-system`（包 `com.weiran.system`，domain 子包 `identity`） |
-| 接口 | `GET /api/auth/providers`（公开）、`GET /api/auth/sso/{id}/authorize`、`GET /api/auth/sso/{id}/callback`、`GET/DELETE /api/auth/identities[/{id}]`、`GET/POST/DELETE /api/users/{id}/identities[/{identityId}]` |
+| 接口 | 公开：`GET /api-nbackend/system/auth/listProviders`、`GET /api-nbackend/system/auth/authorizeSso/{provider}`、`GET /api-nbackend/system/auth/callbackSso/{provider}`；需登录：`GET /api-backend/system/auth/authorizeSso/{provider}`（绑定）、本人身份与管理员用户身份接口 |
 | 权限码 | `system:user:identity`（管理员查看、绑定、解绑他人）；本人操作只需登录 |
 
 ## 1. 列表
@@ -48,10 +48,10 @@
 | --- | --- | --- |
 | 外部登录 | authorize → callback | 只认 `(provider, external_id)`;未绑定时,提供方开了 `auto-provision` 就自动开通,否则返回 110104;**本地同名用户不会被自动关联**(110104) |
 | 自助绑定 | authorize `mode=bind` → callback | 必须已登录;已绑给自己时视为成功;绑给了别人返回 100004;写一条操作日志 |
-| 自助解绑 | `DELETE /api/auth/identities/{id}` | 没有本地密码且只剩这一个外部身份时 100004(防锁死) |
-| 管理员绑定 | `POST /api/users/{id}/identities` | 提供方未配置 100001;外部身份已被绑定 100004 |
-| 管理员解绑 | `DELETE /api/users/{id}/identities/{identityId}` | 可以解绑最后一个(前端会提示「解绑后该用户可能无法登录」) |
-| 删除用户 | `DELETE /api/users/{id}` | 连带删除该用户的全部绑定 |
+| 自助解绑 | `DELETE /api-backend/system/auth/deleteCurrentIdentity/{id}` | 没有本地密码且只剩这一个外部身份时 100004(防锁死) |
+| 管理员绑定 | `POST /api-backend/system/user/createIdentity/{id}` | 提供方未配置 100001;外部身份已被绑定 100004 |
+| 管理员解绑 | `DELETE /api-backend/system/user/deleteIdentity/{id}/{identityId}` | 可以解绑最后一个(前端会提示「解绑后该用户可能无法登录」) |
+| 删除用户 | `DELETE /api-backend/system/user/delete/{id}` | 连带删除该用户的全部绑定 |
 
 ## 4. 用到的公共组件
 
@@ -59,7 +59,7 @@
 
 ## 5. 说明与建议
 
-- **流程状态**放在签名 Cookie `weiran_sso` 里(Lax、10 分钟、`Path=/api/auth/sso`)。回调结束后,无论成功与否都会清除它。
+- **流程状态**放在签名 Cookie `weiran_sso` 里(Lax、10 分钟、`Path=/api-nbackend/system/auth/callbackSso`)。回调结束后,无论成功与否都会清除它。
 - **对外地址** `WEIRAN_PUBLIC_BASE_URL` 必须与浏览器地址完全一致,否则提供方会拒绝回调地址,或者回调后带不上 Cookie。
 - **OIDC 缓存**:discovery 与 JWKS 都缓存在进程内,按 `kid` 找不到公钥时刷新一次;提供方的地址变了需要重启。
 
@@ -73,6 +73,10 @@
 ## 7. changelog
 
 新条目插在本节最上方(按日期倒序,新在上)。
+
+**2026-10-21**（API 入口分离）
+
+- 外部登录发起与回调迁到 `/api-nbackend/`，本人绑定发起与身份管理迁到 `/api-backend/`；令牌 Cookie 只发往授权前缀。
 
 **2026-10-06**(`external-identity-login`)
 

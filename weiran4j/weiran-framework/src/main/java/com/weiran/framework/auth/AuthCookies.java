@@ -12,7 +12,7 @@ import org.springframework.http.ResponseCookie;
  * 浏览器认证 Cookie 的唯一定义处：名称、属性、生成与清除（契约 §4）。
  *
  * <ul>
- *   <li>{@value #TOKEN_COOKIE}：访问令牌，{@code HttpOnly; SameSite=Strict; Path=/api}，页面脚本读不到；
+ *   <li>{@value #TOKEN_COOKIE}：访问令牌，{@code HttpOnly; SameSite=Strict; Path=/api-backend}，页面脚本读不到；
  *   <li>{@value #CSRF_COOKIE}：双提交 CSRF 值 {@code <userId>.<随机串>}，{@code SameSite=Strict; Path=/}，
  *       前端读它判断登录态并回填到 {@value #CSRF_HEADER} 请求头。它不是凭据，单独拿到无法通过认证。
  * </ul>
@@ -35,7 +35,7 @@ public class AuthCookies {
     public static final String SSO_COOKIE = "weiran_sso";
 
     /** 流程 Cookie 只在 authorize 与 callback 之间用。 */
-    public static final String SSO_PATH = "/api/system/auth/callbackSso";
+    public static final String SSO_PATH = "/api-nbackend/system/auth/callbackSso";
 
     /** 流程 Cookie 有效期：IdP 登录页上停留超过 10 分钟就重新发起。 */
     public static final Duration SSO_TTL = Duration.ofMinutes(10);
@@ -46,7 +46,7 @@ public class AuthCookies {
     /** {@link #AUTH_MODE_HEADER} 的取值：令牌放进响应体、不写 Cookie（非浏览器调用方）。 */
     public static final String AUTH_MODE_TOKEN = "token";
 
-    private static final String TOKEN_PATH = "/api";
+    private static final String TOKEN_PATH = "/api-backend";
 
     private static final String CSRF_PATH = "/";
 

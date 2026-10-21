@@ -38,10 +38,10 @@ describe('useTableDefaults', () => {
 
     it('列表页的初始每页条数读偏好 tablePageSize', async () => {
         savePrefs({ tablePageSize: 50 });
-        const { calls } = mockFetch({ 'GET /api/system/role/list': page([]), 'GET /api/system/dict/listItemsByCode/sys_common_status': [] });
+        const { calls } = mockFetch({ 'GET /api-backend/system/role/list': page([]), 'GET /api-backend/system/dict/listItemsByCode/sys_common_status': [] });
         renderWithProviders(<RolesPage />);
-        await waitFor(() => expect(calls.some((c) => c.path === '/api/system/role/list')).toBe(true));
-        expect(calls.find((c) => c.path === '/api/system/role/list')?.search).toContain('pageSize=50');
+        await waitFor(() => expect(calls.some((c) => c.path === '/api-backend/system/role/list')).toBe(true));
+        expect(calls.find((c) => c.path === '/api-backend/system/role/list')?.search).toContain('pageSize=50');
         expect(await screen.findByText('暂无数据')).toBeInTheDocument();
     });
 });

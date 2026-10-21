@@ -28,7 +28,7 @@ weiran:
       secure: false
 
 server:
-  port: 3310
+  port: 5200
 
 logging:
   level:

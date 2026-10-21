@@ -137,7 +137,7 @@ public class WeiranFrameworkAutoConfiguration {
             return new WebMvcConfigurer() {
                 @Override
                 public void addInterceptors(final InterceptorRegistry registry) {
-                    registry.addInterceptor(authInterceptor).addPathPatterns("/api/**");
+                    registry.addInterceptor(authInterceptor).addPathPatterns("/api-backend/**");
                 }
 
                 @Override

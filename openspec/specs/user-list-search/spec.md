@@ -5,24 +5,24 @@ status: "active"
 # user-list-search Specification
 
 ## Purpose
-本能力长期负责后台用户列表的检索口径:`GET /api/users` 接受哪些查询条件、每个条件如何匹配、多个条件如何组合、非法取值如何拒绝,
+本能力长期负责后台用户列表的检索口径:`GET /api-backend/users` 接受哪些查询条件、每个条件如何匹配、多个条件如何组合、非法取值如何拒绝,
 以及用户管理页的高级筛选面板与「已选条件」标签如何把这些条件交给接口并回显给管理员。
 
 ## Requirements
 
 ### Requirement: [FR-001] 单字段精确匹配
 
-`GET /api/users` **MUST** 接受 `username`、`userId`、`phone`、`email` 四个独立查询参数,各自只与对应列做等值比较
+`GET /api-backend/users` **MUST** 接受 `username`、`userId`、`phone`、`email` 四个独立查询参数,各自只与对应列做等值比较
 (字符串参数先去首尾空白;去空白后为空视为未传)。
 这四个参数 **MUST NOT** 做模糊匹配;既有 `keyword` 参数的口径(用户名 / 昵称 / 手机模糊)保持不变。
 
 #### Scenario: 用户名精确匹配不命中前缀
-- **WHEN** 库中有用户 `alice`,请求 `GET /api/users?username=ali`
+- **WHEN** 库中有用户 `alice`,请求 `GET /api-backend/users?username=ali`
 - **THEN** 结果不包含 `alice`;请求 `username=alice` 时结果恰好是 `alice` 一人
 - **判据**:集成测试断言两次请求的 `data.list[*].username` 分别为 `[]` 与 `["alice"]`
 
 #### Scenario: 用户 ID 不存在返回空页
-- **WHEN** 请求 `GET /api/users?userId=999999999`(不存在的 ID)
+- **WHEN** 请求 `GET /api-backend/users?userId=999999999`(不存在的 ID)
 - **THEN** 返回成功,列表为空
 - **判据**:响应 `code=0`、`data.total=0`、`data.list` 为空数组
 
@@ -33,7 +33,7 @@ status: "active"
 
 ### Requirement: [FR-002] 角色过滤
 
-`GET /api/users` **MUST** 接受 `roleId` 参数,只返回在用户-角色关联中拥有该角色的用户;一个用户无论拥有几个角色 **MUST** 只出现一次,
+`GET /api-backend/users` **MUST** 接受 `roleId` 参数,只返回在用户-角色关联中拥有该角色的用户;一个用户无论拥有几个角色 **MUST** 只出现一次,
 `total` **MUST** 等于去重后的用户数。
 
 #### Scenario: 多角色用户不重复
@@ -43,7 +43,7 @@ status: "active"
 
 ### Requirement: [FR-003] 性别过滤
 
-`GET /api/users` **MUST** 接受 `gender` 参数,取值只能是 `male`、`female`、`unknown`,只返回 `gender` 等于该值的用户;
+`GET /api-backend/users` **MUST** 接受 `gender` 参数,取值只能是 `male`、`female`、`unknown`,只返回 `gender` 等于该值的用户;
 未传或为空白时 **MUST NOT** 按性别过滤。非法取值 **MUST** 返回业务错误 `100001`。
 
 #### Scenario: 按性别过滤
@@ -63,7 +63,7 @@ status: "active"
 
 ### Requirement: [FR-004] 时间范围过滤
 
-`GET /api/users` **MUST** 接受 `createdStartTime` / `createdEndTime`(对 `created_at`)与 `lastLoginStartTime` / `lastLoginEndTime`
+`GET /api-backend/users` **MUST** 接受 `createdStartTime` / `createdEndTime`(对 `created_at`)与 `lastLoginStartTime` / `lastLoginEndTime`
 (对 `last_login_at`),格式 `yyyy-MM-dd HH:mm:ss`,按闭区间过滤;只传一端时按单边过滤。
 传了最后登录时间任一端时,从未登录(`last_login_at` 为空)的用户 **MUST NOT** 被返回。格式非法 **MUST** 返回 `100001`。
 
@@ -84,7 +84,7 @@ status: "active"
 
 ### Requirement: [FR-005] 条件组合与默认结果
 
-`GET /api/users` 的全部查询条件(`keyword`、`status`、`departmentId` 与本能力新增的各参数)**MUST** 取交集;
+`GET /api-backend/users` 的全部查询条件(`keyword`、`status`、`departmentId` 与本能力新增的各参数)**MUST** 取交集;
 未传任何新增参数时,结果 **MUST** 与仅支持 `keyword` / `status` / `departmentId` 时完全一致。
 
 #### Scenario: 多条件取交集
@@ -93,7 +93,7 @@ status: "active"
 - **判据**:集成测试断言结果为符合全部条件的那一个用户
 
 #### Scenario: 不传新参数行为不变
-- **WHEN** 请求 `GET /api/users?keyword=<name>&status=enabled&departmentId=1`
+- **WHEN** 请求 `GET /api-backend/users?keyword=<name>&status=enabled&departmentId=1`
 - **THEN** 结果与改造前相同
 - **判据**:既有集成用例 `UserRoleIT.userCrud` 不改断言仍通过
 
@@ -110,7 +110,7 @@ status: "active"
 #### Scenario: 搜索发出对应参数
 - **WHEN** 在面板填写用户名、选择角色与性别、选择创建时间 `2026-09-01 ~ 2026-09-27` 后点「搜索」
 - **THEN** 请求包含 `username`、`roleId`、`gender`、`createdStartTime=2026-09-01 00:00:00`、`createdEndTime=2026-09-27 23:59:59`
-- **判据**:前端测试断言最后一次 `/api/users` 请求的查询串;日期边界工具函数单测
+- **判据**:前端测试断言最后一次 `/api-backend/users` 请求的查询串;日期边界工具函数单测
 
 ### Requirement: [FR-007] 已选条件回显
 

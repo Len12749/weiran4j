@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** 角色管理接口。 */
 @RestController
-@RequestMapping("/api/system/role")
+@RequestMapping("/api-backend/system/role")
 public class RoleController {
 
     private static final String MODULE = "角色管理";

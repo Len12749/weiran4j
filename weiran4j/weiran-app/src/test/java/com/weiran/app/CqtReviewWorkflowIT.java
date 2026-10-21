@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 
 /** 真HTTP、隔离MySQL的评审主闭环回归；只生成本用例独有赛事数据。 */
 class CqtReviewWorkflowIT extends CqtIntegrationTestSupport {
-    private static final String BASE = "/api/cqt/review";
+    private static final String BASE = "/api-backend/cqt/review";
 
     @Test
     @DisplayName("作品和人员对象完成初审评分汇总评奖，缺评及替代批次撤销保持隔离")
@@ -117,7 +117,7 @@ class CqtReviewWorkflowIT extends CqtIntegrationTestSupport {
                 "SELECT id FROM cqt_review_assignments WHERE phase_id=? ORDER BY id", Long.class, phase);
         assertThat(tasks).hasSize(4);
         final long outsiderId = this.create(
-                "/api/system/user/create",
+                "/api-backend/system/user/create",
                 admin,
                 Map.of("username", name, "nickname", name, "password", "Passw0rd1", "roleIds", List.of(1)));
         assertThat(outsiderId).isNotEqualTo(1);
@@ -184,7 +184,7 @@ class CqtReviewWorkflowIT extends CqtIntegrationTestSupport {
                 .isEqualTo(3);
         for (final String type : List.of("ENTRY", "PARTICIPANT")) {
             this.okPost(
-                    "/api/cqt/award/rules",
+                    "/api-backend/cqt/award/rules",
                     admin,
                     Map.of(
                             "phaseId",
@@ -203,19 +203,19 @@ class CqtReviewWorkflowIT extends CqtIntegrationTestSupport {
                             true));
         }
         final JsonNode awardPreview = this.okPost(
-                "/api/cqt/award/preview",
+                "/api-backend/cqt/award/preview",
                 admin,
                 Map.of("competitionId", competition, "phaseId", phase, "targetIds", scored));
         final Map<String, Object> awardCommand = CqtReviewWorkflowIT.confirm(awardPreview, "award-first");
-        final long first = this.okPost("/api/cqt/award/batches", admin, awardCommand)
+        final long first = this.okPost("/api-backend/cqt/award/batches", admin, awardCommand)
                 .path("id")
                 .asLong();
-        assertThat(this.okPost("/api/cqt/award/batches", admin, awardCommand)
+        assertThat(this.okPost("/api-backend/cqt/award/batches", admin, awardCommand)
                         .path("id")
                         .asLong())
                 .isEqualTo(first);
         final JsonNode replacement = this.okPost(
-                "/api/cqt/award/preview",
+                "/api-backend/cqt/award/preview",
                 admin,
                 Map.of(
                         "competitionId",
@@ -227,7 +227,7 @@ class CqtReviewWorkflowIT extends CqtIntegrationTestSupport {
                         "supersedesBatchId",
                         first));
         final long second = this.okPost(
-                        "/api/cqt/award/batches",
+                        "/api-backend/cqt/award/batches",
                         admin,
                         Map.of(
                                 "previewToken",
@@ -240,7 +240,7 @@ class CqtReviewWorkflowIT extends CqtIntegrationTestSupport {
                 .asLong();
         final long oldVersion = this.number("SELECT version FROM cqt_award_batches WHERE id=?", first);
         this.okPost(
-                "/api/cqt/award/batches/" + first + "/revoke",
+                "/api-backend/cqt/award/batches/" + first + "/revoke",
                 admin,
                 Map.of("reason", "撤销旧批次", "expectedVersion", oldVersion, "requestKey", "revoke-old-" + first));
         assertThat(this.number("SELECT COUNT(*) FROM cqt_awards WHERE batch_id=? AND status='CONFIRMED'", second))

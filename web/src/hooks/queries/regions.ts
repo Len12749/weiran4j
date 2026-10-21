@@ -19,21 +19,21 @@ export const regionKeys = {
 export function useRegionTree(query: RegionQuery = {}) {
     return useQuery({
         queryKey: regionKeys.tree(query),
-        queryFn: () => http.get<RegionNode[]>(`/api/regions/tree${toQueryString(query)}`),
+        queryFn: () => http.get<RegionNode[]>(`/api-backend/region/area/listTree${toQueryString(query)}`),
     });
 }
 
 export function useRegionFlat(query: RegionQuery = {}) {
     return useQuery({
         queryKey: regionKeys.flat(query),
-        queryFn: () => http.get<RegionView[]>(`/api/regions/flat${toQueryString(query)}`),
+        queryFn: () => http.get<RegionView[]>(`/api-backend/region/area/list${toQueryString(query)}`),
     });
 }
 
 export function useRegionDetail(id: number | null) {
     return useQuery({
         queryKey: regionKeys.detail(id ?? 0),
-        queryFn: () => http.get<RegionView>(`/api/regions/${id}`),
+        queryFn: () => http.get<RegionView>(`/api-backend/region/area/get/${id}`),
         enabled: id !== null,
         staleTime: 0,
     });
@@ -42,7 +42,7 @@ export function useRegionDetail(id: number | null) {
 export function useRegionLookup() {
     return useQuery({
         queryKey: regionKeys.lookup,
-        queryFn: () => http.get<RegionNode[]>('/api/regions/lookup'),
+        queryFn: () => http.get<RegionNode[]>('/api-backend/region/area/getEnabledTree'),
         staleTime: LOOKUP_STALE_TIME,
     });
 }
@@ -52,8 +52,8 @@ export function useSaveRegion() {
     return useMutation({
         mutationFn: ({ id, body }: { id?: number; body: RegionSaveRequest }) =>
             id === undefined
-                ? http.post<RegionView>('/api/regions', body)
-                : http.put<RegionView>(`/api/regions/${id}`, body),
+                ? http.post<RegionView>('/api-backend/region/area/create', body)
+                : http.put<RegionView>(`/api-backend/region/area/update/${id}`, body),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: regionKeys.all }),
     });
 }
@@ -61,7 +61,7 @@ export function useSaveRegion() {
 export function useDeleteRegion() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => http.delete<null>(`/api/regions/${id}`),
+        mutationFn: (id: number) => http.delete<null>(`/api-backend/region/area/delete/${id}`),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: regionKeys.all }),
     });
 }
@@ -69,13 +69,13 @@ export function useDeleteRegion() {
 /** Download a UTF-8 CSV response while keeping the normal same-origin cookie session. */
 export async function downloadRegionCsv(query: RegionQuery): Promise<void> {
     try {
-        const response = await fetch(`${config.apiBaseUrl}/api/regions/export${toQueryString(query)}`, {
+        const response = await fetch(`${config.apiBaseUrl}/api-backend/region/area/export${toQueryString(query)}`, {
             credentials: 'same-origin',
             headers: { Accept: 'text/csv' },
         });
         if (!response.ok) {
             let message = `导出失败（HTTP ${response.status}）`;
-            let code = response.status * 100;
+            let code = -1;
             try {
                 const error = (await response.json()) as { code?: unknown; message?: unknown };
                 if (typeof error.message === 'string') message = error.message;

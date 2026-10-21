@@ -36,9 +36,9 @@ describe('CqtSiteConfigPage', () => {
     it('按 Tab 编辑配置，上传图片插入富文本并全量保存 HTML', async () => {
         const user = userEvent.setup();
         const fetch = mockFetch({
-            'GET /api/cqt/site-config': { items: config },
-            'PUT /api/cqt/site-config': null,
-            'POST /api/cqt/site-config/images': { url: '/uploads/site.png', name: 'site.png', path: 'site.png', size: 3 },
+            'GET /api-backend/cqt/site-config/get': { items: config },
+            'PUT /api-backend/cqt/site-config/update': null,
+            'POST /api-backend/cqt/site-config/uploadImage': { url: '/uploads/site.png', name: 'site.png', path: 'site.png', size: 3 },
         });
         renderWithProviders(<CqtSiteConfigPage />, { permissions: ['cqt:site-config:update'] });
 
@@ -67,8 +67,8 @@ describe('CqtSiteConfigPage', () => {
 
     it('粘贴剪贴板图片时先上传再插入图片 URL', async () => {
         const fetch = mockFetch({
-            'GET /api/cqt/site-config': { items: config },
-            'POST /api/cqt/site-config/images': { url: '/uploads/pasted.png', name: 'pasted.png', path: 'pasted.png', size: 3 },
+            'GET /api-backend/cqt/site-config/get': { items: config },
+            'POST /api-backend/cqt/site-config/uploadImage': { url: '/uploads/pasted.png', name: 'pasted.png', path: 'pasted.png', size: 3 },
         });
         renderWithProviders(<CqtSiteConfigPage />, { permissions: ['cqt:site-config:update'] });
 
@@ -81,10 +81,10 @@ describe('CqtSiteConfigPage', () => {
         fireEvent.paste(editor, { clipboardData });
 
         expect(await screen.findByRole('img', { name: 'pasted.png' })).toHaveAttribute('src', '/uploads/pasted.png');
-        expect(fetch.calls.some((call) => call.method === 'POST' && call.path === '/api/cqt/site-config/images')).toBe(true);
+        expect(fetch.calls.some((call) => call.method === 'POST' && call.path === '/api-backend/cqt/site-config/uploadImage')).toBe(true);
 
         fireEvent.paste(editor, { clipboardData: { items: [], getData: (type: string) => (type === 'text/plain' ? '普通文本' : '') } });
         await waitFor(() => expect(editor).toHaveTextContent('普通文本'));
-        expect(fetch.calls.filter((call) => call.method === 'POST' && call.path === '/api/cqt/site-config/images')).toHaveLength(1);
+        expect(fetch.calls.filter((call) => call.method === 'POST' && call.path === '/api-backend/cqt/site-config/uploadImage')).toHaveLength(1);
     });
 });

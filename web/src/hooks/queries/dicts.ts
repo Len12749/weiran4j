@@ -13,7 +13,7 @@ export const dictKeys = {
 export function useDictList(query: DictQuery) {
     return useQuery({
         queryKey: dictKeys.list(query),
-        queryFn: () => http.get<PageResult<DictView>>(`/api/system/dict/list${toQueryString(query)}`),
+        queryFn: () => http.get<PageResult<DictView>>(`/api-backend/system/dict/list${toQueryString(query)}`),
         placeholderData: keepPreviousData,
     });
 }
@@ -21,7 +21,7 @@ export function useDictList(query: DictQuery) {
 export function useDictItems(dictId: number | null) {
     return useQuery({
         queryKey: dictKeys.items(dictId ?? 0),
-        queryFn: () => http.get<DictItemView[]>(`/api/system/dict/listItems/${dictId}`),
+        queryFn: () => http.get<DictItemView[]>(`/api-backend/system/dict/listItems/${dictId}`),
         enabled: dictId !== null,
     });
 }
@@ -30,7 +30,7 @@ export function useDictItems(dictId: number | null) {
 export function useDictItemsByCode(code: string) {
     return useQuery({
         queryKey: dictKeys.byCode(code),
-        queryFn: () => http.get<DictItemView[]>(`/api/system/dict/listItemsByCode/${encodeURIComponent(code)}`, { silent: true }),
+        queryFn: () => http.get<DictItemView[]>(`/api-backend/system/dict/listItemsByCode/${encodeURIComponent(code)}`, { silent: true }),
         staleTime: LOOKUP_STALE_TIME,
     });
 }
@@ -45,7 +45,7 @@ export function useSaveDict() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ id, body }: { id?: number | undefined; body: DictSaveRequest }) =>
-            id === undefined ? http.post<IdResult>('/api/system/dict/create', body) : http.put<null>(`/api/system/dict/update/${id}`, body),
+            id === undefined ? http.post<IdResult>('/api-backend/system/dict/create', body) : http.put<null>(`/api-backend/system/dict/update/${id}`, body),
         onSuccess: () => qc.invalidateQueries({ queryKey: dictKeys.all }),
     });
 }
@@ -53,7 +53,7 @@ export function useSaveDict() {
 export function useDeleteDict() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => http.delete<null>(`/api/system/dict/delete/${id}`),
+        mutationFn: (id: number) => http.delete<null>(`/api-backend/system/dict/delete/${id}`),
         onSuccess: () => qc.invalidateQueries({ queryKey: dictKeys.all }),
     });
 }
@@ -63,8 +63,8 @@ export function useSaveDictItem() {
     return useMutation({
         mutationFn: ({ dictId, itemId, body }: { dictId: number; itemId?: number | undefined; body: DictItemSaveRequest }) =>
             itemId === undefined
-                ? http.post<IdResult>(`/api/system/dict/createItem/${dictId}`, body)
-                : http.put<null>(`/api/system/dict/updateItem/${dictId}/${itemId}`, body),
+                ? http.post<IdResult>(`/api-backend/system/dict/createItem/${dictId}`, body)
+                : http.put<null>(`/api-backend/system/dict/updateItem/${dictId}/${itemId}`, body),
         // 同时让按编码缓存的下拉/标签失效
         onSuccess: () => qc.invalidateQueries({ queryKey: dictKeys.all }),
     });
@@ -74,7 +74,7 @@ export function useDeleteDictItem() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ dictId, itemId }: { dictId: number; itemId: number }) =>
-            http.delete<null>(`/api/system/dict/deleteItem/${dictId}/${itemId}`),
+            http.delete<null>(`/api-backend/system/dict/deleteItem/${dictId}/${itemId}`),
         onSuccess: () => qc.invalidateQueries({ queryKey: dictKeys.all }),
     });
 }

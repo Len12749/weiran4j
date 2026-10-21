@@ -25,7 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 /** 常青藤站点配置管理接口。 */
 @RestController
-@RequestMapping("/api/cqt/site-config")
+@RequestMapping("/api-backend/cqt/site-config")
 public class SiteConfigAdminController {
 
     private static final Set<String> IMAGE_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".gif");
@@ -45,7 +45,7 @@ public class SiteConfigAdminController {
 
     /** 获取后台表单及其原始配置值。 */
     @RequiresPermission("cqt:site-config:list")
-    @GetMapping
+    @GetMapping("/get")
     public SiteConfigAdminResponse get() {
         return new SiteConfigAdminResponse(this.adminService.getEditableConfig());
     }
@@ -53,7 +53,7 @@ public class SiteConfigAdminController {
     /** 全量保存表单配置。 */
     @RequiresPermission("cqt:site-config:update")
     @OperationLog(module = "站点配置", description = "更新站点配置")
-    @PutMapping
+    @PutMapping("/update")
     public ApiResponse<Void> save(@RequestBody final @Nullable SaveSiteConfigRequest request) {
         if (request == null) {
             throw BizException.badRequest("必须提交全部站点配置项");
@@ -65,7 +65,7 @@ public class SiteConfigAdminController {
     /** 上传富文本图片；二进制文件不进入操作日志请求体。 */
     @RequiresPermission("cqt:site-config:update")
     @OperationLog(module = "站点配置", description = "上传站点配置图片")
-    @PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/uploadImage", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public UploadedFileView uploadImage(@RequestParam("file") final MultipartFile file) {
         final String originalName = file.getOriginalFilename();
         if (UploadedFiles.extensionOf(originalName)

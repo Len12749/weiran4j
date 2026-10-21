@@ -20,7 +20,7 @@ export default defineConfig({
 	},
 	server: {
 		host: '0.0.0.0',
-		port: 5174,
+		port: 5304,
 		headers: {
 			'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
 			'Pragma': 'no-cache',
@@ -29,13 +29,13 @@ export default defineConfig({
 		// 核心配置：代理
 		proxy: {
 			// weiran-region 的公开行政区划查询使用框架 API 路径，不经过 portal 路由改写。
-			'/api/regions/lookup': {
-				target: 'http://127.0.0.1:3300',
+			'/api-nbackend/region/area/getEnabledTree': {
+				target: 'http://127.0.0.1:5300',
 				changeOrigin: true,
 			},
-			// 后端 mono4j（weiran4j bootRun 默认端口 3300）；uniapp 接口统一走 /api-web/**
+			// 本地 Java 服务使用 5300；uniapp 接口统一走 /api-web/**
 			'/api-web': {
-				target: 'http://127.0.0.1:3300',
+				target: 'http://127.0.0.1:5300',
 				changeOrigin: true,
 			},
 		}

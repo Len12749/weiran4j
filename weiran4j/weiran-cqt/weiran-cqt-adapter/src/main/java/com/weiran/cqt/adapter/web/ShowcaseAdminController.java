@@ -28,7 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 /** 佳作欣赏后台管理接口。 */
 @RestController
-@RequestMapping("/api/cqt/showcases")
+@RequestMapping("/api-backend/cqt/showcases")
 public class ShowcaseAdminController {
 
     private static final Set<String> IMAGE_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".gif");
@@ -47,7 +47,7 @@ public class ShowcaseAdminController {
 
     /** 分页查询内容。 */
     @RequiresPermission("cqt:showcase:list")
-    @GetMapping
+    @GetMapping("/list")
     public PageResult<ShowcaseView> page(
             @RequestParam(defaultValue = "1") final int page,
             @RequestParam(defaultValue = "20") final int pageSize,
@@ -59,7 +59,7 @@ public class ShowcaseAdminController {
 
     /** 查询内容详情。 */
     @RequiresPermission("cqt:showcase:list")
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     public ShowcaseView get(@PathVariable("id") final long id) {
         return this.service.get(id);
     }
@@ -67,7 +67,7 @@ public class ShowcaseAdminController {
     /** 新增内容。 */
     @RequiresPermission("cqt:showcase:create")
     @OperationLog(module = "佳作欣赏", description = "新增内容")
-    @PostMapping
+    @PostMapping("/create")
     public long create(@RequestBody(required = false) final @Nullable ShowcaseCommand command) {
         if (command == null) {
             throw BizException.badRequest("内容内容不能为空");
@@ -78,7 +78,7 @@ public class ShowcaseAdminController {
     /** 更新内容。 */
     @RequiresPermission("cqt:showcase:update")
     @OperationLog(module = "佳作欣赏", description = "更新内容")
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ApiResponse<Void> update(
             @PathVariable("id") final long id, @RequestBody(required = false) final @Nullable ShowcaseCommand command) {
         if (command == null) {
@@ -91,7 +91,7 @@ public class ShowcaseAdminController {
     /** 删除内容。 */
     @RequiresPermission("cqt:showcase:delete")
     @OperationLog(module = "佳作欣赏", description = "删除内容")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ApiResponse<Void> delete(@PathVariable("id") final long id) {
         this.service.delete(id);
         return ApiResponse.ok();
@@ -100,7 +100,7 @@ public class ShowcaseAdminController {
     /** 上传内容首图；二进制内容不写入操作日志请求体。 */
     @RequiresPermission({"cqt:showcase:create", "cqt:showcase:update"})
     @OperationLog(module = "佳作欣赏", description = "上传内容首图")
-    @PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/uploadImage", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public UploadedFileView uploadImage(@RequestParam("file") final MultipartFile file) {
         final String originalName = file.getOriginalFilename();
         if (UploadedFiles.extensionOf(originalName)
@@ -124,7 +124,7 @@ public class ShowcaseAdminController {
     /** 上传附件，复用存储服务的白名单与大小上限。 */
     @RequiresPermission({"cqt:showcase:create", "cqt:showcase:update"})
     @OperationLog(module = "佳作欣赏", description = "上传附件")
-    @PostMapping(value = "/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/uploadFile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public UploadedFileView uploadFile(@RequestParam("file") final MultipartFile file) {
         if (file.isEmpty()
                 || file.getSize() > 1024L * 1024 * 1024

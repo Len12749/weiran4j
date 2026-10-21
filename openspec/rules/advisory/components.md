@@ -27,7 +27,7 @@
 
 | 组件 | 位置 | 什么时候用 | 坑 |
 | --- | --- | --- | --- |
-| **LockScreen** | `components/LockScreen.tsx` + `LockScreen.css` | 全屏锁屏遮罩(偏好 `enableLockScreen`,由 AdminLayout 在锁定时渲染):时钟 + 头像 + 密码框,调 `POST /api/auth/verify-password` 解锁,「重新登录」退出。`user.hasPassword === false`(外部身份自动开通、没有本地密码)时不渲染密码框与「解锁」,只剩一句说明和「重新登录」。锁定状态在 `hooks/useLockScreen.ts`(`lockScreen()` / `unlockScreen()` / `useIsLocked()`,存 `sessionStorage.weiran_locked`,刷新后仍锁定;登录、`clearSession` 时自动解除) | 用**登录密码**解锁,不像 mono4ts 另设本地锁屏密码。错误码 110101 在遮罩内提示「密码错误」,**不会**清令牌——依赖 `utils/request.ts` 对 110101 不走会话失效分支,改那里要回来看这里。回车在 `keydown` 提交,**不用 Semi Input 的 `onEnterPress`**(它挂在已废弃的 `keypress` 上,CDP 注入按键时不一定派发)。遮罩经 portal 挂在 body 下自己的容器里,锁定期间把 **body 其它子节点全部设 `inert`**(布局 + Semi 挂到 body 上的 Modal/SideSheet/Popover 浮层),解锁恢复;遮罩内另有 Tab 焦点陷阱。锁定后才出现的 body 子节点(Toast)不会被 inert |
+| **LockScreen** | `components/LockScreen.tsx` + `LockScreen.css` | 全屏锁屏遮罩(偏好 `enableLockScreen`,由 AdminLayout 在锁定时渲染):时钟 + 头像 + 密码框,调 `POST /api-backend/system/auth/verifyPassword` 解锁,「重新登录」退出。`user.hasPassword === false`(外部身份自动开通、没有本地密码)时不渲染密码框与「解锁」,只剩一句说明和「重新登录」。锁定状态在 `hooks/useLockScreen.ts`(`lockScreen()` / `unlockScreen()` / `useIsLocked()`,存 `sessionStorage.weiran_locked`,刷新后仍锁定;登录、`clearSession` 时自动解除) | 用**登录密码**解锁,不像 mono4ts 另设本地锁屏密码。错误码 110101 在遮罩内提示「密码错误」,**不会**清令牌——依赖 `utils/request.ts` 对 110101 不走会话失效分支,改那里要回来看这里。回车在 `keydown` 提交,**不用 Semi Input 的 `onEnterPress`**(它挂在已废弃的 `keypress` 上,CDP 注入按键时不一定派发)。遮罩经 portal 挂在 body 下自己的容器里,锁定期间把 **body 其它子节点全部设 `inert`**(布局 + Semi 挂到 body 上的 Modal/SideSheet/Popover 浮层),解锁恢复;遮罩内另有 Tab 焦点陷阱。锁定后才出现的 body 子节点(Toast)不会被 inert |
 
 ## 权限
 
@@ -45,7 +45,7 @@
 
 | 组件 | 位置 | 什么时候用 | 坑 |
 | --- | --- | --- | --- |
-| **DictSelect** | `components/DictSelect.tsx` | 按字典编码出下拉(如性别 `sys_user_gender`),数据来自 `GET /api/dicts/code/{code}/items`,带 TanStack Query 缓存 | 只返回 `enabled` 的字典项;被禁用的旧值在下拉里选不到,但 `DictTag` 仍能显示原值 |
+| **DictSelect** | `components/DictSelect.tsx` | 按字典编码出下拉(如性别 `sys_user_gender`),数据来自 `GET /api-backend/system/dict/listItemsByCode/{code}`,带 TanStack Query 缓存 | 只返回 `enabled` 的字典项;被禁用的旧值在下拉里选不到,但 `DictTag` 仍能显示原值 |
 | **DictTag** | `components/DictTag.tsx` | 列表里按字典项渲染带颜色的标签 | 字典未加载或没有该值时显示**原始值**而不是空 |
 | **StatusTag** | `components/StatusTag.tsx` | 通用状态标签:`enabled/disabled`、`success/fail`,或布尔成功与否;同文件导出 `STATUS_OPTIONS` 供筛选下拉 | 不走字典;新增状态值要改这个文件的映射表 |
 
@@ -54,7 +54,7 @@
 | 组件 | 位置 | 什么时候用 | 坑 |
 | --- | --- | --- | --- |
 | **DepartmentTreeSelect** | `components/DepartmentTreeSelect.tsx` | 筛选栏的部门树下拉;表单里用同文件导出的 `useDepartmentTreeData(disabledIds)` 喂给 `Form.TreeSelect` | 编辑部门时把「自己 + 后代」传进 `disabledIds`,否则前端能选、后端返回 `100004` |
-| **RegionSelect** | `components/RegionSelect.tsx` | 省市县级联选择器；受控值为字符串区划代码路径 `string[]`，数据取登录态 `/api/regions/lookup` | 只展示启用节点及启用祖先组成的路径；管理权限不是使用前提，lookup 失败遵循请求层提示 |
+| **RegionSelect** | `components/RegionSelect.tsx` | 省市县级联选择器；受控值为字符串区划代码路径 `string[]`，数据取登录态 `/api-backend/region/area/getEnabledTree` | 只展示启用节点及启用祖先组成的路径；管理权限不是使用前提，lookup 失败遵循请求层提示 |
 | **IconPicker** | `components/IconPicker.tsx` | 菜单图标选择:弹层网格 + 搜索,可配合 Semi `withField` 当表单项 | 只含 `utils/icons.tsx` 白名单里的 lucide 图标;新图标先加进 `MENU_ICONS` |
 | **ConfigImageUpload** | `components/ConfigImageUpload.tsx` | 系统配置的单图字段:上传后保存媒体库返回的 URL,支持预览、更换和移除；`onUpload` 可替换上传动作供本地演示使用 | 限 jpg/jpeg/png/gif,最大 10 MB;默认上传依赖系统媒体上传权限 |
 | **ConfigRichTextEditor** | `components/ConfigRichTextEditor.tsx` + `ConfigRichTextEditor.css` | 系统配置的富文本字段,保存 HTML 字符串 | 工具栏提供粗体、斜体、二级标题及列表;编辑器由配置表单负责回写字段值 |
@@ -64,7 +64,7 @@
 
 | 组件 | 位置 | 是什么 | 坑 |
 | --- | --- | --- | --- |
-| **AdminLayout** | `layouts/AdminLayout.tsx` + `AdminLayout.css` | 后台外壳(移植自 mono4ts 的「飞书风格」)。导航布局按偏好 `navLayout`:**vertical** 侧边菜单 + 顶栏面包屑;**horizontal** 顶部水平导航(`TopNav`),无侧边栏、无面包屑;**mixed** 顶部一级菜单 + 左侧当前一级下的子菜单(一级是页面时无侧边栏),无面包屑;**double** 左侧图标轨 + 子菜单栏 + 顶栏面包屑。菜单由 `/api/auth/menus` 的菜单树经 `toNavItems()` 生成;折叠状态存 `localStorage.weiran_sider_collapsed`(vertical / mixed);展开项受控,手风琴逻辑在同文件导出的 `nextOpenKeys()`。顶栏 / 顶部导航的操作区:全局搜索(`GlobalSearch`)、收藏入口、锁屏、全屏、主题、用户下拉(个人中心 / 偏好设置 / 退出登录)。内容区走 `KeepAliveOutlet`(页面缓存 + 路由动画)与回到顶部;锁定时渲染 `LockScreen`。外观与行为大多读偏好(见下「偏好」),偏好类样式挂在根节点的 `admin-layout--*` class(含 `admin-layout--nav-<布局>`)与行内 `--sidebar-width` / `--admin-section-dark-*` 变量上。**< md(768px)时任何布局都不渲染侧边栏 / 顶部导航**,改为移动端顶栏的菜单按钮 + 左侧 `SideSheet` 抽屉导航 | **任何交给 Semi 组件图标属性的 lucide 图标都必须用 `renderNavIcon(name, size?)`,不能用 `renderIcon()`**:Semi 的 `SubNav` 会 `cloneElement(icon, { size: 'large' })`、`Breadcrumb.Item` 会 `cloneElement(icon, { size: 'default' / 'small', className })`,lucide 会渲染成 `width="large"` 之类的无尺寸 SVG 撑满容器——侧边栏目录图标(2026-09-26)与顶栏面包屑图标(2026-09-27,默认配置就中招)都实测踩过。已查过:Button / Toast / Modal 只 clone Semi 自家图标,不受影响;放进自己的 `<span>` 里的图标(页签、收藏、搜索结果)也不受影响。四种布局(含 double 的图标轨、mixed 的顶部一级)都复用 `toNavItems()` 的图标。样式大量覆盖 Semi Nav 内部类名(`.semi-navigation-*`,含水平模式),升级 Semi 后要在真浏览器里把四种布局与折叠态都看一眼。mixed / double 点一级目录跳到它的**第一个内链页面**(`firstLeafKey()`),目录下全是外链时只切换不跳转 |
+| **AdminLayout** | `layouts/AdminLayout.tsx` + `AdminLayout.css` | 后台外壳(移植自 mono4ts 的「飞书风格」)。导航布局按偏好 `navLayout`:**vertical** 侧边菜单 + 顶栏面包屑;**horizontal** 顶部水平导航(`TopNav`),无侧边栏、无面包屑;**mixed** 顶部一级菜单 + 左侧当前一级下的子菜单(一级是页面时无侧边栏),无面包屑;**double** 左侧图标轨 + 子菜单栏 + 顶栏面包屑。菜单由 `/api-backend/system/auth/listCurrentMenus` 的菜单树经 `toNavItems()` 生成;折叠状态存 `localStorage.weiran_sider_collapsed`(vertical / mixed);展开项受控,手风琴逻辑在同文件导出的 `nextOpenKeys()`。顶栏 / 顶部导航的操作区:全局搜索(`GlobalSearch`)、收藏入口、锁屏、全屏、主题、用户下拉(个人中心 / 偏好设置 / 退出登录)。内容区走 `KeepAliveOutlet`(页面缓存 + 路由动画)与回到顶部;锁定时渲染 `LockScreen`。外观与行为大多读偏好(见下「偏好」),偏好类样式挂在根节点的 `admin-layout--*` class(含 `admin-layout--nav-<布局>`)与行内 `--sidebar-width` / `--admin-section-dark-*` 变量上。**< md(768px)时任何布局都不渲染侧边栏 / 顶部导航**,改为移动端顶栏的菜单按钮 + 左侧 `SideSheet` 抽屉导航 | **任何交给 Semi 组件图标属性的 lucide 图标都必须用 `renderNavIcon(name, size?)`,不能用 `renderIcon()`**:Semi 的 `SubNav` 会 `cloneElement(icon, { size: 'large' })`、`Breadcrumb.Item` 会 `cloneElement(icon, { size: 'default' / 'small', className })`,lucide 会渲染成 `width="large"` 之类的无尺寸 SVG 撑满容器——侧边栏目录图标(2026-09-26)与顶栏面包屑图标(2026-09-27,默认配置就中招)都实测踩过。已查过:Button / Toast / Modal 只 clone Semi 自家图标,不受影响;放进自己的 `<span>` 里的图标(页签、收藏、搜索结果)也不受影响。四种布局(含 double 的图标轨、mixed 的顶部一级)都复用 `toNavItems()` 的图标。样式大量覆盖 Semi Nav 内部类名(`.semi-navigation-*`,含水平模式),升级 Semi 后要在真浏览器里把四种布局与折叠态都看一眼。mixed / double 点一级目录跳到它的**第一个内链页面**(`firstLeafKey()`),目录下全是外链时只切换不跳转 |
 | **TopNav** | `layouts/TopNav.tsx` | horizontal / mixed 布局的顶部水平导航(移植自 mono4ts `TopNavWithOverflow`):Semi `Nav mode="horizontal"`,放不下的项收进末尾「更多」下拉 | 宽度靠一个隐藏的探测 Nav 量(同 class,`aria-hidden` + `inert`,不进 Tab 顺序),所以 DOM 里每个菜单文字出现**两次**——测试用 `getByRole('menuitem')` 而不是 `getByText`。量不到宽度(jsdom)时全部显示 |
 | **GlobalSearch** | `layouts/GlobalSearch.tsx` | 全局搜索(偏好 `showMenuSearch`,移植自 zenith-admin):顶栏操作区的触发按钮(< 992px 退化为图标)+ Ctrl/⌘+K 打开的命令面板(Semi `Modal`)。空关键字列最近访问(`useRecentMenus()`,localStorage `weiran_recent_menus`,最多 10 条,可单条移除 / 清除);输入后按标题 / 祖先目录过滤可见菜单页(`filterMenus()`,标题相等 > 前缀 > 包含 > 只命中目录),↑↓ 选择、回车或点击跳转、Esc 关闭 | 只搜菜单:本项目没有业务数据搜索接口,也不支持拼音。快捷键由触发器组件注册,偏好关掉后 Ctrl+K 一并失效。Modal 关了 `motion`,测试里关闭后 DOM 立即移除。侧边栏已没有搜索框 |
 | **FavoriteMenus** | `layouts/FavoriteMenus.tsx` | 收藏菜单(偏好 `showFavorites`):`useFavorites(pages, enabled)` + 面包屑旁的星标 `FavoriteToggle` + 顶栏「我的收藏」`FavoritesButton`(弹层列表,点击跳转、× 移除)。horizontal / mixed 没有面包屑,星标放进操作区 | 数据走 `hooks/queries/auth.ts` 的 `useFavoriteMenus` / `useSaveFavoriteMenus`:**乐观更新,失败回滚到修改前**并 Toast;同一 `scope` 串行发出(全量覆盖,乱序会让旧列表盖掉新列表),有后续保存排队时前一次失败不回滚、最后一次结束才重新拉取。**收藏列表加载成功前不显示星标与入口、toggle 直接跳过**——否则全量 PUT 会用单个 id 冲掉服务端已有收藏。上限 50(契约 §6.1),满了 Toast 拒绝而不是挤掉旧的 |
@@ -90,7 +90,7 @@
 
 ## 偏好(`hooks/usePreferences.tsx` + `hooks/PreferencesProvider.tsx`)
 
-- **字段定义与默认值的唯一事实源**是 `hooks/usePreferences.tsx`(44 个,43 个来自 mono4ts、`doubleRailStyle` 来自 zenith-admin;后端 `/api/auth/preferences` 只存不校验)。读用 `usePreferences().preferences`,写用 `setPreferences(partial)`;Provider 外调用直接抛错。
+- **字段定义与默认值的唯一事实源**是 `hooks/usePreferences.tsx`(44 个,43 个来自 mono4ts、`doubleRailStyle` 来自 zenith-admin;后端 `/api-backend/system/auth/getPreferences` 只存不校验)。读用 `usePreferences().preferences`,写用 `setPreferences(partial)`;Provider 外调用直接抛错。
 - `PreferencesProvider`:本地缓存 `localStorage.weiran_preferences`(读写容错,非法字段逐项回落默认),归属用户记在 `weiran_preferences_owner`(用户 id,取自 `weiran_csrf` Cookie 的前缀,`utils/session.ts` 的 `sessionUserId()`;该 Cookie 不是凭据,令牌本身在 HttpOnly Cookie 里,页面读不到);登录后 GET 服务端偏好合并覆盖本地,服务端为 `null` 时**只有本地缓存归属 = 当前用户才迁上去**;修改 500ms 防抖 PUT;「恢复默认」清本地并立即 PUT;**未登录(登录页)只写本地、不发请求**。
 - 除 `filesViewMode` 外 42 个字段都已接通行为并在抽屉里(2026-09-27 第二阶段补齐 C 组:导航布局、页签风格 / 动画、路由动画、页面缓存、菜单搜索(现为全局搜索)、收藏、锁屏、列设置、面包屑子菜单、分组标题吸顶)。各字段的消费处见上面布局表与 `ColumnSettings` / `LockScreen` 条目。
 - 坑:**`filesViewMode` 预留给文件模块,当前无消费方**——本项目没有文件模块,它只有类型与默认值,不在抽屉里。将来加文件模块时再接通并放进抽屉。

@@ -271,7 +271,7 @@
 
 				this.GET({
 					name: '行政区划',
-					url: '/api/regions/lookup',
+					url: '/api-nbackend/region/area/getEnabledTree',
 					data: {}
 				}).then((res) => {
 					this.regionTree = res.data.data

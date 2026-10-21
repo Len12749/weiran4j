@@ -5,10 +5,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 健康检查：{@code GET /api/health}，无需登录。 */
+/** 健康检查：{@code GET /api-nbackend/health}，无需登录。 */
 @PublicApi
 @RestController
-@RequestMapping("/api/health")
+@RequestMapping("/api-nbackend/health")
 public class HealthController {
 
     /** 健康状态。 */

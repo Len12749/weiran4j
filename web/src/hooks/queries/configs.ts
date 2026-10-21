@@ -20,7 +20,7 @@ export const configKeys = {
 export function useConfigList(query: ConfigQuery) {
     return useQuery({
         queryKey: configKeys.list(query),
-        queryFn: () => http.get<PageResult<ConfigView>>(`/api/system/config/list${toQueryString(query)}`),
+        queryFn: () => http.get<PageResult<ConfigView>>(`/api-backend/system/config/list${toQueryString(query)}`),
         placeholderData: keepPreviousData,
     });
 }
@@ -28,21 +28,21 @@ export function useConfigList(query: ConfigQuery) {
 export function useConfigAll() {
     return useQuery({
         queryKey: [...configKeys.all, 'all'] as const,
-        queryFn: () => http.get<ConfigView[]>('/api/system/config/listAll'),
+        queryFn: () => http.get<ConfigView[]>('/api-backend/system/config/listAll'),
     });
 }
 
 export function useConfigGroups() {
     return useQuery({
         queryKey: [...configKeys.all, 'groups'] as const,
-        queryFn: () => http.get<ConfigGroupView[]>('/api/system/config/listGroups'),
+        queryFn: () => http.get<ConfigGroupView[]>('/api-backend/system/config/listGroups'),
     });
 }
 
 export function useCreateConfigGroup() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (body: ConfigGroupSaveRequest) => http.post<IdResult>('/api/system/config/createGroup', body),
+        mutationFn: (body: ConfigGroupSaveRequest) => http.post<IdResult>('/api-backend/system/config/createGroup', body),
         onSuccess: () => qc.invalidateQueries({ queryKey: [...configKeys.all, 'groups'] }),
     });
 }
@@ -51,7 +51,7 @@ export function useUpdateConfigGroup() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ key, body, groupKey }: { key: string; body: ConfigGroupUpdateRequest; groupKey?: string }) =>
-            http.put<null>(`/api/system/config/updateGroup/${key}${groupKey === 'config_sms' ? '?groupKey=config_sms' : ''}`, body),
+            http.put<null>(`/api-backend/system/config/updateGroup/${key}${groupKey === 'config_sms' ? '?groupKey=config_sms' : ''}`, body),
         onSuccess: () => qc.invalidateQueries({ queryKey: [...configKeys.all, 'groups'] }),
     });
 }
@@ -60,7 +60,7 @@ export function useDeleteConfigGroup() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ key, groupKey }: { key: string; groupKey?: string }) =>
-            http.delete<null>(`/api/system/config/deleteGroup/${key}${groupKey === 'config_sms' ? '?groupKey=config_sms' : ''}`),
+            http.delete<null>(`/api-backend/system/config/deleteGroup/${key}${groupKey === 'config_sms' ? '?groupKey=config_sms' : ''}`),
         onSuccess: () => qc.invalidateQueries({ queryKey: configKeys.all }),
     });
 }
@@ -70,8 +70,8 @@ export function useSaveConfig() {
     return useMutation({
         mutationFn: ({ id, body }: { id?: number | undefined; body: ConfigSaveRequest }) =>
             id === undefined
-                ? http.post<IdResult>('/api/system/config/create', body)
-                : http.put<null>(`/api/system/config/update/${id}`, body),
+                ? http.post<IdResult>('/api-backend/system/config/create', body)
+                : http.put<null>(`/api-backend/system/config/update/${id}`, body),
         onSuccess: () => qc.invalidateQueries({ queryKey: configKeys.all }),
     });
 }
@@ -79,7 +79,7 @@ export function useSaveConfig() {
 export function useDeleteConfig() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => http.delete<null>(`/api/system/config/delete/${id}`),
+        mutationFn: (id: number) => http.delete<null>(`/api-backend/system/config/delete/${id}`),
         onSuccess: () => qc.invalidateQueries({ queryKey: configKeys.all }),
     });
 }

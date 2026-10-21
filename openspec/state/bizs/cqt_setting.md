@@ -20,7 +20,7 @@
 | 表 | `cqt_setting`（原统一库 `cqtxj2026.sc_setting`，只改表名，列不变） |
 | 菜单 / 页面 | 站点配置（`cqt/site-config`，独立后台表单） |
 | 后端模块 | `weiran-cqt`；前台 `ProductController`、后台 `SiteConfigAdminController` 共用站点配置仓储 |
-| 接口 | 前台 `GET /api-web/product/getconfig`；后台 `GET/PUT /api/cqt/site-config`、`POST /api/cqt/site-config/images` |
+| 接口 | 前台 `GET /api-web/product/getconfig`；后台 `GET /api-backend/cqt/site-config/get、PUT /api-backend/cqt/site-config/update`、`POST /api-backend/cqt/site-config/uploadImage` |
 | 权限码 | `cqt:site-config:list`、`cqt:site-config:update` |
 | 数据来源 | 原始数据由 `scripts/biz/import/cqt_setting.sql` 导入；Flyway 只追加 ident 71 的一次性拆分行及菜单权限种子 |
 
@@ -44,7 +44,7 @@
 | 动作 | 接口 | 规则 |
 | --- | --- | --- |
 | 前台读取 | `GET /api-web/product/getconfig` | 读 `ident` 1–100；返回 22 个键：`guanyuwomen`→2、`user_agreement`→71、`yinsixieyi`→3、`about_us`→4、`dizhi`→7、`shouji`→8、`weixin`→9、`youxiang`→10、`gongsijieshao`→15、`hezuohuoban`→16、`dasaijieshao`→17、`mianzexieyi`→18、`shouhoufuwu`→19、`shangwuhezuo`→20、`gongzuoshijian`→21、`dasaizhangcheng`→22、`gongzhonghao`→23、`shouyeimage`→66、`certificate_visibility`→67、`sheng_certificate_visibility`→68、`teacher_org_certificate_competition_id`→69、`guo_certificate_visibility`→70。富文本键 `guanyuwomen`、`user_agreement`、`yinsixieyi`、`about_us`、`gongsijieshao`、`hezuohuoban`、`dasaijieshao`、`mianzexieyi`、`shouhoufuwu`、`shangwuhezuo`、`dasaizhangcheng` 返回原始 HTML；其它字符串去 HTML 标签与首尾空白；`contents` 为 NULL 或缺行 → `null`；`gongzhonghao` 为数组（有值单元素原值、否则空数组）。同一 `ident` 多行时取 `id` 最大的一行 |
-| 后台管理 | `GET/PUT /api/cqt/site-config`、`POST /api/cqt/site-config/images` | 页面按四类 Tab 编辑；富文本支持 HTML 编辑和图片上传。GET 返回固定 22 项及原始 `contents`；PUT 全量提交键与内容，图片上传只接受 jpg/jpeg/png/gif；均需 `cqt:site-config:update`（GET 需 `cqt:site-config:list`）；保存操作记日志，图片二进制不记入请求体 |
+| 后台管理 | `GET /api-backend/cqt/site-config/get、PUT /api-backend/cqt/site-config/update`、`POST /api-backend/cqt/site-config/uploadImage` | 页面按四类 Tab 编辑；富文本支持 HTML 编辑和图片上传。GET 返回固定 22 项及原始 `contents`；PUT 全量提交键与内容，图片上传只接受 jpg/jpeg/png/gif；均需 `cqt:site-config:update`（GET 需 `cqt:site-config:list`）；保存操作记日志，图片二进制不记入请求体 |
 | 初始拆分 | Flyway / `scripts/biz/import/cqt_setting.sql` | `user_agreement` 使用 ident 71；从 ident 2 最大 id 行复制初值。重复导入时若 ident 71 已有值则不覆盖，避免抹掉独立编辑 |
 
 uniapp 实际读取的键：`dasaijieshao`、`dasaizhangcheng`、`dizhi`、`gongzhonghao`、`guo_certificate_visibility`、

@@ -12,7 +12,8 @@ import org.springframework.http.ResponseCookie;
 class AuthCookiesTest {
 
     @Test
-    @DisplayName("签发两个 Cookie：令牌 HttpOnly + Path=/api，CSRF 非 HttpOnly + Path=/，都是 SameSite=Strict 且 Max-Age 等于 TTL")
+    @DisplayName(
+            "签发两个 Cookie：令牌 HttpOnly + Path=/api-backend，CSRF 非 HttpOnly + Path=/，都是 SameSite=Strict 且 Max-Age 等于 TTL")
     void issuesCookiesWithContractAttributes() {
         final List<ResponseCookie> cookies =
                 new AuthCookies(new AuthCookieProperties(true)).issue("jwt", Duration.ofHours(12), 7L);
@@ -22,7 +23,7 @@ class AuthCookiesTest {
         assertThat(token.getName()).isEqualTo(AuthCookies.TOKEN_COOKIE);
         assertThat(token.getValue()).isEqualTo("jwt");
         assertThat(token.isHttpOnly()).isTrue();
-        assertThat(token.getPath()).isEqualTo("/api");
+        assertThat(token.getPath()).isEqualTo("/api-backend");
         assertThat(token.getSameSite()).isEqualTo("Strict");
         assertThat(token.isSecure()).isTrue();
         assertThat(token.getMaxAge()).isEqualTo(Duration.ofHours(12));
@@ -54,11 +55,11 @@ class AuthCookiesTest {
                 .extracting(ResponseCookie::getName)
                 .containsExactly(AuthCookies.TOKEN_COOKIE, AuthCookies.CSRF_COOKIE);
         assertThat(cleared).allMatch(cookie -> cookie.getMaxAge().isZero());
-        assertThat(cleared).extracting(ResponseCookie::getPath).containsExactly("/api", "/");
+        assertThat(cleared).extracting(ResponseCookie::getPath).containsExactly("/api-backend", "/");
     }
 
     @Test
-    @DisplayName("外部登录流程 Cookie：HttpOnly、SameSite=Lax、Path=/api/system/auth/callbackSso、10 分钟；清除时 Max-Age=0")
+    @DisplayName("外部登录流程 Cookie：HttpOnly、SameSite=Lax、Path=/api-nbackend/system/auth/callbackSso、10 分钟；清除时 Max-Age=0")
     void ssoStateCookie() {
         final AuthCookies cookies = new AuthCookies(new AuthCookieProperties(true));
         final ResponseCookie state = cookies.ssoState("signed");
@@ -66,11 +67,11 @@ class AuthCookiesTest {
         assertThat(state.getValue()).isEqualTo("signed");
         assertThat(state.isHttpOnly()).isTrue();
         assertThat(state.getSameSite()).isEqualTo("Lax");
-        assertThat(state.getPath()).isEqualTo("/api/system/auth/callbackSso");
+        assertThat(state.getPath()).isEqualTo("/api-nbackend/system/auth/callbackSso");
         assertThat(state.getMaxAge()).isEqualTo(Duration.ofMinutes(10));
         assertThat(state.isSecure()).isTrue();
         assertThat(cookies.clearSsoState().getMaxAge()).isZero();
-        assertThat(cookies.clearSsoState().getPath()).isEqualTo("/api/system/auth/callbackSso");
+        assertThat(cookies.clearSsoState().getPath()).isEqualTo("/api-nbackend/system/auth/callbackSso");
     }
 
     @Test

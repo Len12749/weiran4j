@@ -12,7 +12,7 @@ export const departmentKeys = {
 export function useDepartmentTree(status?: Status) {
     return useQuery({
         queryKey: departmentKeys.tree(status),
-        queryFn: () => http.get<DepartmentNode[]>(`/api/system/department/list${toQueryString({ status })}`),
+        queryFn: () => http.get<DepartmentNode[]>(`/api-backend/system/department/list${toQueryString({ status })}`),
         staleTime: LOOKUP_STALE_TIME,
     });
 }
@@ -22,8 +22,8 @@ export function useSaveDepartment() {
     return useMutation({
         mutationFn: ({ id, body }: { id?: number | undefined; body: DepartmentSaveRequest }) =>
             id === undefined
-                ? http.post<IdResult>('/api/system/department/create', body)
-                : http.put<null>(`/api/system/department/update/${id}`, body),
+                ? http.post<IdResult>('/api-backend/system/department/create', body)
+                : http.put<null>(`/api-backend/system/department/update/${id}`, body),
         onSuccess: () => qc.invalidateQueries({ queryKey: departmentKeys.all }),
     });
 }
@@ -31,7 +31,7 @@ export function useSaveDepartment() {
 export function useDeleteDepartment() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => http.delete<null>(`/api/system/department/delete/${id}`),
+        mutationFn: (id: number) => http.delete<null>(`/api-backend/system/department/delete/${id}`),
         onSuccess: () => qc.invalidateQueries({ queryKey: departmentKeys.all }),
     });
 }

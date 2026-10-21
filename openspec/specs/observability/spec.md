@@ -17,12 +17,12 @@ status: "active"
 请求结束后日志上下文 **MUST** 被清理。
 
 #### Scenario: 沿用合法的入站请求号
-- **WHEN** 带 `X-Request-Id: gw-123_abc` 调用 `GET /api/health`
+- **WHEN** 带 `X-Request-Id: gw-123_abc` 调用 `GET /api-nbackend/health`
 - **THEN** 响应头 `X-Request-Id` 为 `gw-123_abc`
 - **判据**:集成测试断言响应头
 
 #### Scenario: 不合法或缺失时生成新请求号
-- **WHEN** 分别不带该头、带 `X-Request-Id: bad id\n` 调用 `GET /api/health`
+- **WHEN** 分别不带该头、带 `X-Request-Id: bad id\n` 调用 `GET /api-nbackend/health`
 - **THEN** 两次响应头都是 32 位小写十六进制,且互不相同
 - **判据**:集成测试用正则 `^[0-9a-f]{32}$` 断言
 
@@ -42,16 +42,16 @@ status: "active"
 
 ### Requirement: [FR-003] 访问日志
 
-每个 `/api/**` 请求结束时 **MUST** 以 logger `com.weiran.access` 打一行 INFO 日志,包含方法、路径(不含查询串)、HTTP 状态码、耗时毫秒数、userId(未登录为 `-`)、客户端 IP。
-**MUST NOT** 包含请求体、响应体或查询参数的值。`/api/health` **MUST** 降为 DEBUG。
+每个 `/api-backend/**` 请求结束时 **MUST** 以 logger `com.weiran.access` 打一行 INFO 日志,包含方法、路径(不含查询串)、HTTP 状态码、耗时毫秒数、userId(未登录为 `-`)、客户端 IP。
+**MUST NOT** 包含请求体、响应体或查询参数的值。`/api-nbackend/health` **MUST** 降为 DEBUG。
 
 #### Scenario: 写接口的访问日志不含请求内容
-- **WHEN** 已登录用户调用 `PUT /api/auth/profile?x=secret`,请求体含昵称
-- **THEN** 产生一行 INFO,含 `PUT /api/auth/profile 200`、耗时、userId、IP;不含 `secret` 与请求体
+- **WHEN** 已登录用户调用 `PUT /api-backend/auth/profile?x=secret`,请求体含昵称
+- **THEN** 产生一行 INFO,含 `PUT /api-backend/auth/profile 200`、耗时、userId、IP;不含 `secret` 与请求体
 - **判据**:集成测试或过滤器单测捕获 `com.weiran.access` 日志并断言
 
 #### Scenario: 健康检查不出现在 INFO
-- **WHEN** 调用 `GET /api/health`
+- **WHEN** 调用 `GET /api-nbackend/health`
 - **THEN** `com.weiran.access` 没有 INFO 级别记录
 - **判据**:同上,断言 INFO 事件数为 0
 

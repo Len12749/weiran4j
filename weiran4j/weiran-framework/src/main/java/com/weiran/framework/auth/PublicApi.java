@@ -7,9 +7,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 标在 Controller 类或方法上：无需登录即可访问。
+ * 标识公开接口，供代码阅读使用；是否需要用户授权由 URL 前缀决定。
  *
- * <p>带了有效令牌时仍会解析出当前用户，方法内可以用 {@link CurrentUser#get()} 读取。
+ * <p>{@code /api-nbackend/**} 不经过认证拦截器；{@code /api-backend/**} 一律要求登录，即使标记了本注解。
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

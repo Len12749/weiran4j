@@ -59,16 +59,16 @@ class RequestIdFilterTest {
     @Test
     @DisplayName("合法的入站请求号原样沿用；不合法或缺失时生成 32 位小写十六进制")
     void resolvesRequestId() throws Exception {
-        final MockHttpServletRequest inbound = new MockHttpServletRequest("GET", "/api/x");
+        final MockHttpServletRequest inbound = new MockHttpServletRequest("GET", "/api-backend/x");
         inbound.addHeader(RequestIdFilter.HEADER, "gw-123_abc");
         assertThat(this.run(inbound, new ArrayList<>()).getHeader(RequestIdFilter.HEADER))
                 .isEqualTo("gw-123_abc");
 
-        final MockHttpServletRequest bad = new MockHttpServletRequest("GET", "/api/x");
+        final MockHttpServletRequest bad = new MockHttpServletRequest("GET", "/api-backend/x");
         bad.addHeader(RequestIdFilter.HEADER, "bad id\n");
         final String generated = this.run(bad, new ArrayList<>()).getHeader(RequestIdFilter.HEADER);
         assertThat(generated).matches("[0-9a-f]{32}");
-        assertThat(this.run(new MockHttpServletRequest("GET", "/api/x"), new ArrayList<>())
+        assertThat(this.run(new MockHttpServletRequest("GET", "/api-backend/x"), new ArrayList<>())
                         .getHeader(RequestIdFilter.HEADER))
                 .matches("[0-9a-f]{32}")
                 .isNotEqualTo(generated);
@@ -79,11 +79,11 @@ class RequestIdFilterTest {
     @DisplayName("链路内 MDC 是本请求的请求号，请求结束后清理，同一线程的下一个请求不串号")
     void scopesMdcToRequest() throws Exception {
         final List<String> seen = new ArrayList<>();
-        final MockHttpServletRequest first = new MockHttpServletRequest("GET", "/api/x");
+        final MockHttpServletRequest first = new MockHttpServletRequest("GET", "/api-backend/x");
         first.addHeader(RequestIdFilter.HEADER, "first");
         this.run(first, seen);
         assertThat(MDC.get(RequestIdFilter.MDC_KEY)).isNull();
-        final MockHttpServletRequest second = new MockHttpServletRequest("GET", "/api/x");
+        final MockHttpServletRequest second = new MockHttpServletRequest("GET", "/api-backend/x");
         second.addHeader(RequestIdFilter.HEADER, "second");
         this.run(second, seen);
         assertThat(seen).containsExactly("first", "second");
@@ -93,7 +93,8 @@ class RequestIdFilterTest {
     @Test
     @DisplayName("访问日志：一行 INFO，含方法、路径、状态、耗时、用户、IP，不含查询参数的值")
     void logsAccessWithoutQueryValues() throws Exception {
-        final MockHttpServletRequest request = new MockHttpServletRequest("PUT", "/api/system/auth/updateProfile");
+        final MockHttpServletRequest request =
+                new MockHttpServletRequest("PUT", "/api-backend/system/auth/updateProfile");
         request.setQueryString("x=secret");
         request.setParameter("x", "secret");
         request.setRemoteAddr("10.0.0.8");
@@ -104,7 +105,7 @@ class RequestIdFilterTest {
         final ILoggingEvent event = this.appender.list.get(0);
         assertThat(event.getLevel()).isEqualTo(Level.INFO);
         assertThat(event.getFormattedMessage())
-                .startsWith("PUT /api/system/auth/updateProfile 200 ")
+                .startsWith("PUT /api-backend/system/auth/updateProfile 200 ")
                 .contains("ms user=7 ip=10.0.0.8")
                 .doesNotContain("secret");
     }
@@ -112,14 +113,14 @@ class RequestIdFilterTest {
     @Test
     @DisplayName("未登录记 user=-；健康检查只打 DEBUG；非 /api 路径不打访问日志")
     void levelsAndScope() throws Exception {
-        this.run(new MockHttpServletRequest("GET", "/api/system/auth/getCurrentUser"), new ArrayList<>());
-        this.run(new MockHttpServletRequest("GET", "/api/health"), new ArrayList<>());
+        this.run(new MockHttpServletRequest("GET", "/api-backend/system/auth/getCurrentUser"), new ArrayList<>());
+        this.run(new MockHttpServletRequest("GET", "/api-nbackend/health"), new ArrayList<>());
         this.run(new MockHttpServletRequest("GET", "/index.html"), new ArrayList<>());
 
         assertThat(this.appender.list).hasSize(2);
         assertThat(this.appender.list.get(0).getFormattedMessage()).contains("user=-");
         assertThat(this.appender.list.get(0).getLevel()).isEqualTo(Level.INFO);
-        assertThat(this.appender.list.get(1).getFormattedMessage()).startsWith("GET /api/health ");
+        assertThat(this.appender.list.get(1).getFormattedMessage()).startsWith("GET /api-nbackend/health ");
         assertThat(this.appender.list.get(1).getLevel()).isEqualTo(Level.DEBUG);
     }
 }

@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 
 /** 独立赛事fixture、真实MySQL及HTTP的阶段和失效方向边界回归。 */
 class CqtReviewBoundaryIT extends CqtIntegrationTestSupport {
-    private static final String BASE = "/api/cqt/review";
+    private static final String BASE = "/api-backend/cqt/review";
 
     private record Fixture(long competition, long province, long national, long target, long other, long task) {}
 
@@ -88,7 +88,7 @@ class CqtReviewBoundaryIT extends CqtIntegrationTestSupport {
         final String admin = this.adminToken();
         final String username = IntegrationTestSupport.unique("boundary");
         final long reviewer = this.create(
-                "/api/system/user/create",
+                "/api-backend/system/user/create",
                 admin,
                 Map.of("username", username, "nickname", username, "password", "Passw0rd1", "roleIds", List.of(1)));
         final Fixture f = this.fixture(reviewer, "FROZEN");

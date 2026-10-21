@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** 管理员单字段修改用户账号标识。 */
 @RestController
-@RequestMapping("/api/system/user")
+@RequestMapping("/api-backend/system/user")
 public class UserAccountFieldController {
 
     private static final String MODULE = "用户管理";

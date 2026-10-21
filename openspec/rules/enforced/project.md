@@ -69,7 +69,7 @@
 
 ### SL-4 · Flyway 种子菜单（`weiran-*-infrastructure/.../db/migration/**`）
 
-**前端路由由后端 `sys_menu` 驱动**（`/api/auth/menus`），`web/src/App.tsx` 不再逐页登记 `<Route>`。
+**前端路由由后端 `sys_menu` 驱动**（`/api-backend/system/auth/listCurrentMenus`），`web/src/App.tsx` 不再逐页登记 `<Route>`。
 新增页面必须**追加一个 Flyway 迁移**往 `sys_menu` 插入菜单行（`component` = 相对 `web/src/pages` 的路径，无 `.tsx`），
 并按需插入按钮权限行与 `sys_role_menu` 绑定。菜单 id 是全局序号：并行的两个 change 各插一个 id，会撞主键。基座占 `1`–`999`，业务模块从 `1000` 起按 `weiran4j/docs/business-modules.md` 登记的段取（宪法 CP-15）。
 
@@ -177,7 +177,7 @@ Flyway 以 `out-of-order: true` 运行（D-012）：版本号早于已执行最�
 
 ### CC-2 · 菜单（后端 `sys_menu` 驱动）
 
-已实现。菜单树由 `/api/auth/menus` 下发并驱动前端动态路由；管理页 `/system/menus`。
+已实现。菜单树由 `/api-backend/system/auth/listCurrentMenus` 下发并驱动前端动态路由；管理页 `/system/menus`。
 新增页面按 §一 SL-4/SL-5 同时登记菜单行与页面文件。
 
 ### CC-3 · 数据范围（`data-scope`）

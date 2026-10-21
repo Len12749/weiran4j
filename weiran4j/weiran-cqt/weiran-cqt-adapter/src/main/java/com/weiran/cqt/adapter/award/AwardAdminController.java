@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** 管理端独立评奖：预览与确认严格分离。 */
 @RestController
-@RequestMapping("/api/cqt/award")
+@RequestMapping("/api-backend/cqt/award")
 public class AwardAdminController {
     private final AwardService service;
 

@@ -8,7 +8,7 @@ import { getSession } from '@/utils/session';
 import { PreferencesProvider } from '../PreferencesProvider';
 import { defaultPreferences, usePreferences, type UserPreferences } from '../usePreferences';
 
-const API = '/api/system/auth/getPreferences';
+const API = '/api-backend/system/auth/getPreferences';
 
 function Probe() {
     const { preferences, setPreferences, resetPreferences } = usePreferences();
@@ -133,14 +133,14 @@ describe('PreferencesProvider', () => {
         signIn(1);
         mockFetch({
             [`GET ${API}`]: { ...defaultPreferences, colorMode: 'dark' },
-            'GET /api/system/user/list': () => Response.json({ code: 100101, message: '登录已失效', data: null }, { status: 401 }),
+            'GET /api-backend/system/user/list': () => Response.json({ code: 100101, message: '登录已失效', data: null }, { status: 401 }),
         });
         renderProvider();
         await waitFor(() => expect(state()).toBe('dark|20|logo'));
         expect(stored()?.colorMode).toBe('dark');
 
         await act(async () => {
-            await request('/api/system/user/list', { silent: true }).catch(() => undefined);
+            await request('/api-backend/system/user/list', { silent: true }).catch(() => undefined);
         });
         expect(getSession()).toBeNull();
         expect(state()).toBe('light|20|logo');

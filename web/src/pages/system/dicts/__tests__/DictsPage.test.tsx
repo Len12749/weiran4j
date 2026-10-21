@@ -36,10 +36,10 @@ const item = (id: number, dictId: number, label: string): DictItemView => ({
 
 function setup(permissions = ['*']) {
     const fetch = mockFetch({
-        'GET /api/system/dict/list': page(dicts),
-        'GET /api/system/dict/listItems/1': [item(11, 1, '高级')],
-        'GET /api/system/dict/listItems/2': [item(21, 2, '党员')],
-        'GET /api/system/dict/listItems/3': [item(31, 3, '男')],
+        'GET /api-backend/system/dict/list': page(dicts),
+        'GET /api-backend/system/dict/listItems/1': [item(11, 1, '高级')],
+        'GET /api-backend/system/dict/listItems/2': [item(21, 2, '党员')],
+        'GET /api-backend/system/dict/listItems/3': [item(31, 3, '男')],
     });
     renderWithProviders(<DictsPage />, { permissions });
     return fetch;
@@ -104,20 +104,20 @@ describe('DictsPage 左侧字典列表（NavListPanel，同 mono4ts）', () => {
         fireEvent.change(input, { target: { value: ' 性别 ' } });
         fireEvent.keyDown(input, { key: 'Enter', keyCode: 13 });
         fireEvent.keyPress(input, { key: 'Enter', code: 'Enter', keyCode: 13, charCode: 13 });
-        await waitFor(() => expect(fetch.calls.some((c) => c.path === '/api/system/dict/list' && c.search.includes('keyword=%E6%80%A7%E5%88%AB'))).toBe(true));
+        await waitFor(() => expect(fetch.calls.some((c) => c.path === '/api-backend/system/dict/list' && c.search.includes('keyword=%E6%80%A7%E5%88%AB'))).toBe(true));
         expect(fetch.calls.at(-1)?.search).toContain('page=1');
     });
 
     it('编辑当前选中的字典后，右栏标题跟着列表刷新（sys_group.md#01）', async () => {
         let list = dicts;
         mockFetch({
-            'GET /api/system/dict/list': () => page(list),
-            'PUT /api/system/dict/update/1': (init?: RequestInit) => {
+            'GET /api-backend/system/dict/list': () => page(list),
+            'PUT /api-backend/system/dict/update/1': (init?: RequestInit) => {
                 const body = JSON.parse(init?.body as string) as Partial<DictView>;
                 list = list.map((d) => (d.id === 1 ? { ...d, ...body } : d));
                 return null;
             },
-            'GET /api/system/dict/listItems/1': [item(11, 1, '高级')],
+            'GET /api-backend/system/dict/listItems/1': [item(11, 1, '高级')],
         });
         renderWithProviders(<DictsPage />);
         expect(await screen.findByText('字典项：职称级别（professional_title_level）')).toBeInTheDocument();

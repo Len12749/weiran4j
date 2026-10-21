@@ -20,7 +20,7 @@
 | 表 | `cqt_competitions`（届）、`cqt_competition_categories`（赛项，全局）、`cqt_competition_groups`（组别，按赛事） |
 | 结构来源 | FastAPI 2026 库最终结构；`cqt_competitions` 另加 `national_entry_mode`（SHARED / SEPARATE） |
 | 菜单 / 页面 | 赛事评审 → 赛事管理（cqt/competition/CompetitionsPage），新增/编辑独立Tab；uniapp「作品提交」表单 |
-| 接口 | 后台 `/api/cqt/competitions` 分页、详情、新增、编辑、状态；公开 `competitionlists`、`getsecondcat`、`secondcategory`、`groups` |
+| 接口 | 后台 `/api-backend/cqt/competitions` 分页、详情、新增、编辑、状态；公开 `competitionlists`、`getsecondcat`、`secondcategory`、`groups` |
 | 数据来源 | 历史：`cqt_competitions.sql` 导入；新届：后台创建或 `competition_next.sql` 种子 |
 
 ## 1. 列表
@@ -43,10 +43,10 @@
 
 | 动作 | 接口 | 规则 |
 | --- | --- | --- |
-| 后台查询/详情 | GET `/api/cqt/competitions`、`/{id}` | list权限，完整管理字段 |
-| 新增 | POST `/api/cqt/competitions` | 草稿、legacyId=null、五通用组别同事务 |
-| 编辑 | PUT `/api/cqt/competitions/{id}` | 全量受管字段、expectedVersion；模式不可改变 |
-| 状态 | POST `/api/cqt/competitions/{id}/status` | 0/1/2、expectedVersion；不改变历史评审/成绩 |
+| 后台查询/详情 | GET `/api-backend/cqt/competitions/list`、`/get/{id}` | list权限，完整管理字段 |
+| 新增 | POST `/api-backend/cqt/competitions/create` | 草稿、legacyId=null、五通用组别同事务 |
+| 编辑 | PUT `/api-backend/cqt/competitions/update/{id}` | 全量受管字段、expectedVersion；模式不可改变 |
+| 状态 | POST `/api-backend/cqt/competitions/updateStatus/{id}` | 0/1/2、expectedVersion；不改变历史评审/成绩 |
 | 赛事列表 | `competitionlists` | 见 §1 |
 | 一级赛项 | `getsecondcat?id=<赛事>` | 赛事不存在或未启用为空；否则全局启用的一级赛项 |
 | 二级赛项 | `secondcategory?id=<一级>` | 启用的二级赛项；`competition_id` 参数忽略 |
@@ -73,7 +73,7 @@ PageContainer、SearchToolbar、ColumnSettings、TableActions、Permission、Sem
 
 **2026-10-18**
 - **#05 ✅ P2 三类证书模板统一单图上传（`cqt-competition-admin` 用户追加）**
-  复用存储；POST `/api/cqt/competitions/images`需create或update权限，图片≤10MB；兼容安全/uploads/本地路径，不存localhost origin。
+  复用存储；POST `/api-backend/cqt/competitions/uploadImage`需create或update权限，图片≤10MB；兼容安全/uploads/本地路径，不存localhost origin。
 - **#04 ✅ P2 change `cqt-competition-admin` 增加赛事管理**
   查询、新增、编辑、状态、全时间/模板配置与独立Tab；追加version和1130–1136菜单；默认五组别原子创建。赛项/自定义组别仍见#02。
 

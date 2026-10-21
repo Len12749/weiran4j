@@ -28,7 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 /** 大赛动态后台管理接口。 */
 @RestController
-@RequestMapping("/api/cqt/news")
+@RequestMapping("/api-backend/cqt/news")
 public class NewsAdminController {
 
     private static final Set<String> IMAGE_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".gif");
@@ -47,7 +47,7 @@ public class NewsAdminController {
 
     /** 分页查询动态。 */
     @RequiresPermission("cqt:news:list")
-    @GetMapping
+    @GetMapping("/list")
     public PageResult<NewsView> page(
             @RequestParam(defaultValue = "1") final int page,
             @RequestParam(defaultValue = "20") final int pageSize,
@@ -57,7 +57,7 @@ public class NewsAdminController {
 
     /** 查询动态详情。 */
     @RequiresPermission("cqt:news:list")
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     public NewsView get(@PathVariable("id") final long id) {
         return this.newsService.get(id);
     }
@@ -65,7 +65,7 @@ public class NewsAdminController {
     /** 新增动态。 */
     @RequiresPermission("cqt:news:create")
     @OperationLog(module = "大赛动态", description = "新增动态")
-    @PostMapping
+    @PostMapping("/create")
     public long create(@RequestBody final @Nullable NewsCommand command) {
         if (command == null) {
             throw BizException.badRequest("动态内容不能为空");
@@ -76,7 +76,7 @@ public class NewsAdminController {
     /** 更新动态。 */
     @RequiresPermission("cqt:news:update")
     @OperationLog(module = "大赛动态", description = "更新动态")
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ApiResponse<Void> update(
             @PathVariable("id") final long id, @RequestBody final @Nullable NewsCommand command) {
         if (command == null) {
@@ -89,7 +89,7 @@ public class NewsAdminController {
     /** 删除动态。 */
     @RequiresPermission("cqt:news:delete")
     @OperationLog(module = "大赛动态", description = "删除动态")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ApiResponse<Void> delete(@PathVariable("id") final long id) {
         this.newsService.delete(id);
         return ApiResponse.ok();
@@ -98,7 +98,7 @@ public class NewsAdminController {
     /** 上传动态首图；二进制内容不写入操作日志请求体。 */
     @RequiresPermission({"cqt:news:create", "cqt:news:update"})
     @OperationLog(module = "大赛动态", description = "上传动态首图")
-    @PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/uploadImage", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public UploadedFileView uploadImage(@RequestParam("file") final MultipartFile file) {
         final String originalName = file.getOriginalFilename();
         if (UploadedFiles.extensionOf(originalName)
