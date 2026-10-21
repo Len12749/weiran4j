@@ -36,6 +36,8 @@ dependencies {
     implementation("org.flywaydb:flyway-mysql")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui")
     runtimeOnly("com.mysql:mysql-connector-j")
+    developmentOnly(platform(project(":weiran-dependencies")))
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
 
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:junit-jupiter")
