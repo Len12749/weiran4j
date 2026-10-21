@@ -36,16 +36,16 @@ describe('request', () => {
     });
 
     it('非 0 抛 ApiError 并 Toast message', async () => {
-        respond({ code: 40900, message: '用户名已存在', data: null }, 409);
+        respond({ code: 100003, message: '用户名已存在', data: null }, 409);
         const err = await request('/api/system/user/list', { method: 'POST', body: {} }).catch((e: unknown) => e);
         expect(err).toBeInstanceOf(ApiError);
-        expect((err as ApiError).code).toBe(40900);
+        expect((err as ApiError).code).toBe(100003);
         expect((err as ApiError).message).toBe('用户名已存在');
         expect(Toast.error).toHaveBeenCalledWith('用户名已存在');
     });
 
     it('silent 时不 Toast', async () => {
-        respond({ code: 50000, message: '服务器内部错误', data: null }, 500);
+        respond({ code: 100005, message: '服务器内部错误', data: null }, 500);
         await expect(request('/api/x', { silent: true })).rejects.toThrow('服务器内部错误');
         expect(Toast.error).not.toHaveBeenCalled();
     });
@@ -105,31 +105,31 @@ describe('request', () => {
         expect(headers.Authorization).toBeUndefined();
     });
 
-    it('40100 清除会话', async () => {
+    it('100101 清除会话', async () => {
         signIn();
-        respond({ code: 40100, message: '登录已失效，请重新登录', data: null }, 401);
-        await expect(request('/api/system/auth/getCurrentUser')).rejects.toMatchObject({ code: 40100 });
+        respond({ code: 100101, message: '登录已失效，请重新登录', data: null }, 401);
+        await expect(request('/api/system/auth/getCurrentUser')).rejects.toMatchObject({ code: 100101 });
         expect(getSession()).toBeNull();
     });
 
     it('HTTP 401 且响应体不是 JSON 也视为会话失效', async () => {
         signIn();
         respond('<html>401</html>', 401);
-        await expect(request('/api/x')).rejects.toMatchObject({ code: 40100 });
+        await expect(request('/api/x')).rejects.toMatchObject({ code: 100101 });
         expect(getSession()).toBeNull();
     });
 
-    it('40101（密码错误）不清会话', async () => {
+    it('110101（密码错误）不清会话', async () => {
         const session = signIn();
-        respond({ code: 40101, message: '用户名或密码错误', data: null }, 401);
-        await expect(request('/api/system/auth/updatePassword', { method: 'PUT', body: {} })).rejects.toMatchObject({ code: 40101 });
+        respond({ code: 110101, message: '用户名或密码错误', data: null }, 401);
+        await expect(request('/api/system/auth/updatePassword', { method: 'PUT', body: {} })).rejects.toMatchObject({ code: 110101 });
         expect(getSession()).toBe(session);
     });
 
-    it('40302（CSRF 校验失败）按普通业务错误 Toast，不清会话', async () => {
+    it('100103（CSRF 校验失败）按普通业务错误 Toast，不清会话', async () => {
         const session = signIn();
-        respond({ code: 40302, message: '请求校验失败，请刷新页面后重试', data: null }, 403);
-        await expect(request('/api/system/user/list', { method: 'POST', body: {} })).rejects.toMatchObject({ code: 40302, status: 403 });
+        respond({ code: 100103, message: '请求校验失败，请刷新页面后重试', data: null }, 403);
+        await expect(request('/api/system/user/list', { method: 'POST', body: {} })).rejects.toMatchObject({ code: 100103, status: 403 });
         expect(Toast.error).toHaveBeenCalledWith('请求校验失败，请刷新页面后重试');
         expect(getSession()).toBe(session);
     });
@@ -144,26 +144,26 @@ describe('request', () => {
         const RID = '0123456789abcdef0123456789abcdef';
 
         it('失败体带 requestId：Toast 含前 8 位，ApiError 带完整值', async () => {
-            respond({ code: 50000, message: '服务器内部错误', data: null, requestId: RID }, 500);
+            respond({ code: 100005, message: '服务器内部错误', data: null, requestId: RID }, 500);
             const err = await request('/api/x').catch((e: unknown) => e);
             expect((err as ApiError).requestId).toBe(RID);
             expect(Toast.error).toHaveBeenCalledWith('服务器内部错误（请求号 01234567）');
         });
 
         it('失败体没有 requestId 时退回响应头 X-Request-Id', async () => {
-            respond({ code: 40900, message: '用户名已存在', data: null }, 409, { 'X-Request-Id': RID });
+            respond({ code: 100003, message: '用户名已存在', data: null }, 409, { 'X-Request-Id': RID });
             const err = await request('/api/x').catch((e: unknown) => e);
             expect((err as ApiError).requestId).toBe(RID);
             expect(Toast.error).toHaveBeenCalledWith('用户名已存在（请求号 01234567）');
         });
 
         it('会话失效分支也带 requestId', async () => {
-            respond({ code: 40100, message: '登录已失效，请重新登录', data: null, requestId: RID }, 401);
-            await expect(request('/api/x')).rejects.toMatchObject({ code: 40100, requestId: RID });
+            respond({ code: 100101, message: '登录已失效，请重新登录', data: null, requestId: RID }, 401);
+            await expect(request('/api/x')).rejects.toMatchObject({ code: 100101, requestId: RID });
         });
 
         it('两处都没有时文案不变，requestId 为空', async () => {
-            respond({ code: 40900, message: '用户名已存在', data: null }, 409);
+            respond({ code: 100003, message: '用户名已存在', data: null }, 409);
             const err = await request('/api/x').catch((e: unknown) => e);
             expect((err as ApiError).requestId).toBeUndefined();
             expect(Toast.error).toHaveBeenCalledWith('用户名已存在');
@@ -176,7 +176,7 @@ describe('request', () => {
         });
 
         it('silent 时不 Toast，但 ApiError 带 requestId', async () => {
-            respond({ code: 50000, message: '服务器内部错误', data: null, requestId: RID }, 500);
+            respond({ code: 100005, message: '服务器内部错误', data: null, requestId: RID }, 500);
             await expect(request('/api/x', { silent: true })).rejects.toMatchObject({ requestId: RID });
             expect(Toast.error).not.toHaveBeenCalled();
         });

@@ -2,17 +2,21 @@
 
 系统配置页面按分组展示动态表单；配置项及其渲染和校验元数据保存在 `sys_config` 中。各模块可基于同一配置底子接入自己的字段定义，之后再扩展为低代码配置。
 
-系统配置的内置分组：`general`（通用设置）、`user`（用户）、`site`（站点）。`site` 分组包含 `system.site.title`；`user` 分组包含 `system.user.enable_phone_login`，以开关控制，默认关闭。短信配置使用独立的 `general`（通用）与 `system_tpl`（系统模板）分组。
+系统配置的内置分组：`general`（通用设置）、`user`（用户）。`general` 分组包含 `system.general.title`；`user` 分组包含 `system.user.enable_phone_login`，以开关控制，默认关闭。短信配置使用独立的 `general`（通用）与 `system_tpl`（系统模板）分组。
 
 ## 配置项字段
 
 - **内置分组**：相同分组编码的项目显示在同一 Tab。新增项目只能选择已有分组；扩充分组需由模块提供代码定义。
 - **表单字段**：单行输入、多行文本、数字、开关、下拉选择、JSON、单图上传或富文本。单图上传到系统媒体库并保存图片 URL；富文本保存 HTML。两者均使用 string 配置类型。
 - **必填 / 下拉选项**：提交时前端校验，后端也按值类型、必填规则和选项元数据拒绝非法值。
-- **配置键**：遵循 `{range}.{group}.{value}`，例如 `system.site.title`、`sms.general.sign_name`、`sms.system_tpl.captcha_local`。`range` 为 `system` 或 `sms`；`group` 必须等于所属分组编码；`value` 是组内配置项编码。三段只用小写字母、数字、下划线、连字符，分组和配置项编码以小写字母开头。新建或调整键、分组时校验此约定；内置配置不能删除，内置键不能改名。
+- **配置键**：遵循 `{range}.{group}.{value}`，例如 `system.general.title`、`sms.general.sign_name`、`sms.system_tpl.captcha_local`。`range` 为 `system` 或 `sms`；`group` 必须等于所属分组编码；`value` 是组内配置项编码。三段只用小写字母、数字、下划线、连字符，分组和配置项编码以小写字母开头。新建或调整键、分组时校验此约定；内置配置不能删除，内置键不能改名。
 
 使用“字段设置”修改控件、分组归属与校验配置；改值后点“保存本组”。配置项可增删，左侧按配置域显示分组。
 
-匿名接口 `/api/system/config/getPublic/{key}` 只允许 `system.site.*`，用于需要公开读取的少量站点级值。它不会自动改变前端显示；例如标题仍由构建变量 `VITE_APP_TITLE` 提供。
+本地短信模式需要把 `sms.system_tpl.captcha_local` 配置为包含 `${code}` 的短信正文，例如 `你的验证码是 ${code} , 5 分钟有效, 请不要告知他人`。发送时会将占位符替换为验证码，并把完整正文写入应用日志供联调。开启 `system.user.enable_phone_login` 后，登录页才会在发送器和模板均就绪时显示手机号登录。
+
+组件演示的「配置表单」页面使用同一套表单展示八种字段类型各一条；示例值只保存在当前页面，图片在浏览器内预览。
+
+匿名接口 `/api/system/config/getPublic/{key}` 只允许 `system.general.title`。它不会自动改变前端显示；标题仍由构建变量 `VITE_APP_TITLE` 提供。
 
 站点内容配置已从页面、接口与数据库移除。表结构和跨接口业务约束见 `weiran4j/docs/01-架构与接口契约.md`；接口路径与字段 schema 以本地 OpenAPI 为准。

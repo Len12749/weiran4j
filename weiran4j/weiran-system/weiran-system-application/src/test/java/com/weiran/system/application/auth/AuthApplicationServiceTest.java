@@ -19,6 +19,7 @@ import com.weiran.system.api.auth.ChangePasswordCommand;
 import com.weiran.system.api.auth.ClientContext;
 import com.weiran.system.api.auth.LoginCommand;
 import com.weiran.system.api.auth.LoginResult;
+import com.weiran.system.api.auth.SystemAuthErrors;
 import com.weiran.system.domain.auth.Authorization;
 import com.weiran.system.domain.auth.TokenClaims;
 import com.weiran.system.domain.auth.TokenCodec;
@@ -119,20 +120,20 @@ class AuthApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("authenticate：用户名不存在与密码错误都抛 40101，且都跑一次 BCrypt、都写失败日志")
+    @DisplayName("authenticate：用户名不存在与密码错误都抛 110101，且都跑一次 BCrypt、都写失败日志")
     void authenticateRejectsBadCredentialsIndistinguishably() {
         when(this.users.findByUsername("ghost")).thenReturn(Optional.empty());
         assertThatThrownBy(() -> this.service.authenticate("ghost", "pwd", AuthApplicationServiceTest.CLIENT))
                 .isInstanceOfSatisfying(
                         BizException.class,
-                        ex -> assertThat(ex.getErrorCode()).isEqualTo(CommonErrors.BAD_CREDENTIALS));
+                        ex -> assertThat(ex.getErrorCode()).isEqualTo(SystemAuthErrors.BAD_CREDENTIALS));
         verify(this.hasher, times(1)).matches(eq("pwd"), anyString());
         assertThat(this.loggedStatus()).isEqualTo(LoginLog.STATUS_FAIL);
         verify(this.tokenCodec, never()).issue(any());
     }
 
     @Test
-    @DisplayName("authenticate：密码错误抛 40101 并写失败日志")
+    @DisplayName("authenticate：密码错误抛 110101 并写失败日志")
     void authenticateRejectsWrongPassword() {
         when(this.users.findByUsername("zhangsan"))
                 .thenReturn(Optional.of(AuthApplicationServiceTest.user(EnableStatus.ENABLED)));
@@ -140,12 +141,12 @@ class AuthApplicationServiceTest {
         assertThatThrownBy(() -> this.service.authenticate("zhangsan", "bad", AuthApplicationServiceTest.CLIENT))
                 .isInstanceOfSatisfying(
                         BizException.class,
-                        ex -> assertThat(ex.getErrorCode()).isEqualTo(CommonErrors.BAD_CREDENTIALS));
+                        ex -> assertThat(ex.getErrorCode()).isEqualTo(SystemAuthErrors.BAD_CREDENTIALS));
         assertThat(this.loggedStatus()).isEqualTo(LoginLog.STATUS_FAIL);
     }
 
     @Test
-    @DisplayName("authenticate：账号禁用抛 40301 并写失败日志")
+    @DisplayName("authenticate：账号禁用抛 110103 并写失败日志")
     void authenticateRejectsDisabledAccount() {
         when(this.users.findByUsername("zhangsan"))
                 .thenReturn(Optional.of(AuthApplicationServiceTest.user(EnableStatus.DISABLED)));
@@ -153,7 +154,7 @@ class AuthApplicationServiceTest {
         assertThatThrownBy(() -> this.service.authenticate("zhangsan", "pwd", AuthApplicationServiceTest.CLIENT))
                 .isInstanceOfSatisfying(
                         BizException.class,
-                        ex -> assertThat(ex.getErrorCode()).isEqualTo(CommonErrors.ACCOUNT_DISABLED));
+                        ex -> assertThat(ex.getErrorCode()).isEqualTo(SystemAuthErrors.ACCOUNT_DISABLED));
         assertThat(this.loggedStatus()).isEqualTo(LoginLog.STATUS_FAIL);
     }
 
@@ -181,7 +182,7 @@ class AuthApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("没有本地密码的用户：authenticate 返回 40101，仍对 DUMMY_HASH 跑一次 BCrypt，不拿空哈希去比")
+    @DisplayName("没有本地密码的用户：authenticate 返回 110101，仍对 DUMMY_HASH 跑一次 BCrypt，不拿空哈希去比")
     void passwordlessUserCannotUsePassword() {
         when(this.users.findByUsername("zhangsan")).thenReturn(Optional.of(AuthApplicationServiceTest.passwordless()));
         when(this.hasher.matches(eq("pwd"), anyString())).thenReturn(true);
@@ -189,27 +190,27 @@ class AuthApplicationServiceTest {
         assertThatThrownBy(() -> this.service.authenticate("zhangsan", "pwd", AuthApplicationServiceTest.CLIENT))
                 .isInstanceOfSatisfying(
                         BizException.class,
-                        ex -> assertThat(ex.getErrorCode()).isEqualTo(CommonErrors.BAD_CREDENTIALS));
+                        ex -> assertThat(ex.getErrorCode()).isEqualTo(SystemAuthErrors.BAD_CREDENTIALS));
         verify(this.hasher, never()).matches("pwd", "");
         verify(this.hasher, times(1)).matches(eq("pwd"), anyString());
     }
 
     @Test
-    @DisplayName("没有本地密码的用户：verify-password 40101，修改密码 40000")
+    @DisplayName("没有本地密码的用户：verify-password 110101，修改密码 100001")
     void passwordlessUserPasswordOperations() {
         when(this.users.findById(7L)).thenReturn(Optional.of(AuthApplicationServiceTest.passwordless()));
 
         assertThatThrownBy(() -> this.service.verifyPassword(7L, "x"))
                 .isInstanceOfSatisfying(
                         BizException.class,
-                        ex -> assertThat(ex.getErrorCode()).isEqualTo(CommonErrors.BAD_CREDENTIALS));
+                        ex -> assertThat(ex.getErrorCode()).isEqualTo(SystemAuthErrors.BAD_CREDENTIALS));
         assertThatThrownBy(() -> this.service.changePassword(7L, new ChangePasswordCommand("x", "Passw0rd1")))
                 .isInstanceOfSatisfying(
                         BizException.class, ex -> assertThat(ex.getErrorCode()).isEqualTo(CommonErrors.BAD_REQUEST));
     }
 
     @Test
-    @DisplayName("密码登录关闭：普通用户在校验密码之前就得到 40304，并写失败日志")
+    @DisplayName("密码登录关闭：普通用户在校验密码之前就得到 110105，并写失败日志")
     void passwordLoginDisabledRejectsRegularUser() {
         when(this.providers.passwordLoginEnabled()).thenReturn(false);
         when(this.users.findByUsername("zhangsan"))
@@ -219,7 +220,7 @@ class AuthApplicationServiceTest {
                         this.service.login(new LoginCommand("zhangsan", "pwd"), AuthApplicationServiceTest.CLIENT))
                 .isInstanceOfSatisfying(
                         BizException.class,
-                        ex -> assertThat(ex.getErrorCode()).isEqualTo(CommonErrors.PASSWORD_LOGIN_DISABLED));
+                        ex -> assertThat(ex.getErrorCode()).isEqualTo(SystemAuthErrors.PASSWORD_LOGIN_DISABLED));
         verify(this.hasher, never()).matches(anyString(), anyString());
         assertThat(this.loggedStatus()).isEqualTo(LoginLog.STATUS_FAIL);
     }

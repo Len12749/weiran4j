@@ -32,7 +32,7 @@ export function mockFetch(routes: Record<string, MockHandler>) {
         calls.push({ method, path: url.pathname, search: url.search, body });
         const key = `${method} ${url.pathname}`;
         if (!(key in routes)) {
-            return Promise.resolve(Response.json({ code: 40400, message: `未模拟的接口 ${key}`, data: null }, { status: 404 }));
+            return Promise.resolve(Response.json({ code: 100002, message: `未模拟的接口 ${key}`, data: null }, { status: 404 }));
         }
         const handler = routes[key];
         const result: unknown = typeof handler === 'function' ? (handler as (i?: RequestInit, u?: URL) => unknown)(init, url) : handler;

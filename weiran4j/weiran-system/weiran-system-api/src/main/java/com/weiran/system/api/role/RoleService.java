@@ -13,7 +13,7 @@ public interface RoleService {
     /** 启用角色下拉。 */
     List<RoleOption> options();
 
-    /** 详情（含菜单 ID）；不存在抛 40400。 */
+    /** 详情（含菜单 ID）；不存在抛 100002。 */
     RoleDetailView get(long id);
 
     /** 新增，返回 ID。 */
@@ -22,7 +22,7 @@ public interface RoleService {
     /** 修改；内置角色编码不可改。 */
     void update(long id, SaveRoleCommand command);
 
-    /** 删除；内置角色或仍有用户时 40901。 */
+    /** 删除；内置角色或仍有用户时 100004。 */
     void delete(long id);
 
     /** 全量覆盖角色的菜单。 */

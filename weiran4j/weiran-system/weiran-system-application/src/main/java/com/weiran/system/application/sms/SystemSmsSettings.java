@@ -36,6 +36,12 @@ public class SystemSmsSettings implements SmsSettings {
         return this.values().getOrDefault(this.templateCodeKey(), "").strip();
     }
 
+    @Override
+    public boolean verificationTemplateReady() {
+        final String template = this.verificationTemplateCode();
+        return !template.isBlank() && (!"local".equals(this.mode) || template.contains("${code}"));
+    }
+
     private Map<String, String> values() {
         return this.configService.all().stream()
                 .filter(config -> config.configKey().startsWith("sms."))

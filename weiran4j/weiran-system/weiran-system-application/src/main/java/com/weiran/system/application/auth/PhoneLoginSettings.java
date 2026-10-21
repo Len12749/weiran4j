@@ -30,7 +30,7 @@ public class PhoneLoginSettings {
         final Map<String, String> values = this.values();
         return this.smsService.isAvailable()
                 && Boolean.parseBoolean(values.getOrDefault(PhoneLoginSettings.ENABLED_KEY, "false"))
-                && !this.smsSettings.verificationTemplateCode().isBlank();
+                && this.smsSettings.verificationTemplateReady();
     }
 
     /** 已配置的验证码短信模板 CODE。 */

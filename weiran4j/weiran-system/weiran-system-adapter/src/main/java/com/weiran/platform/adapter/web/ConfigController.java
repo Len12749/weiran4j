@@ -99,7 +99,7 @@ public class ConfigController {
         return ApiResponse.ok();
     }
 
-    /** 公开配置（仅 {@code system.site.*}），无需登录。 */
+    /** 公开配置（仅 {@code system.general.title}），无需登录。 */
     @PublicApi
     @GetMapping("/getPublic/{key}")
     public PublicConfigView getPublic(@PathVariable final String key) {

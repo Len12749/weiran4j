@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class EnableStatusTest {
 
     @Test
-    @DisplayName("按小写字符串解析状态，非法值抛 40000，空值走默认或不过滤")
+    @DisplayName("按小写字符串解析状态，非法值抛 100001，空值走默认或不过滤")
     void parsesStatus() {
         assertThat(EnableStatus.of("enabled")).isEqualTo(EnableStatus.ENABLED);
         assertThat(EnableStatus.DISABLED.value()).isEqualTo("disabled");

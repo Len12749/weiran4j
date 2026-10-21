@@ -3,12 +3,12 @@ package com.weiran.framework.error;
 /**
  * 错误码契约。
  *
- * <p>{@link #code()} 为五位数字，前三位与 {@link #httpStatus()} 一致（如 40101 → 401），
- * 前端只认 {@code code}，网关与监控可以只看 HTTP 状态码。
+ * <p>{@link #code()} 为六位数字，按「服务两位、资源两位、错误两位」编码。
+ * {@link #httpStatus()} 独立决定 HTTP 状态，前端按 {@code code} 处理具体错误。
  */
 public interface ErrorCode {
 
-    /** 五位业务错误码。 */
+    /** 六位业务错误码。 */
     int code();
 
     /** 对应的 HTTP 状态码。 */

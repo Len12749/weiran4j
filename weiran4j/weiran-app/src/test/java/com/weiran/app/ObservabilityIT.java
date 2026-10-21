@@ -53,9 +53,9 @@ class ObservabilityIT extends IntegrationTestSupport {
         ObservabilityIT.assertErrorCarriesRequestId(
                 this.post("/api/system/auth/login", null, Map.of("username", "", "password", "x")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         ObservabilityIT.assertErrorCarriesRequestId(
-                this.get("/api/system/auth/getCurrentUser", null), HttpStatus.UNAUTHORIZED, 40100);
+                this.get("/api/system/auth/getCurrentUser", null), HttpStatus.UNAUTHORIZED, 100101);
 
         final String username = IntegrationTestSupport.unique("norole");
         this.create(
@@ -63,10 +63,10 @@ class ObservabilityIT extends IntegrationTestSupport {
                 this.adminToken(),
                 Map.of("username", username, "nickname", "无角色", "password", "Passw0rd1", "roleIds", List.of()));
         ObservabilityIT.assertErrorCarriesRequestId(
-                this.get("/api/system/user/list", this.tokenOf(username, "Passw0rd1")), HttpStatus.FORBIDDEN, 40300);
+                this.get("/api/system/user/list", this.tokenOf(username, "Passw0rd1")), HttpStatus.FORBIDDEN, 100102);
 
         ObservabilityIT.assertErrorCarriesRequestId(
-                this.get("/api/no-such-endpoint", null), HttpStatus.NOT_FOUND, 40400);
+                this.get("/api/no-such-endpoint", null), HttpStatus.NOT_FOUND, 100002);
     }
 
     @Test

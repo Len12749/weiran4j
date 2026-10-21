@@ -198,7 +198,7 @@ public class ConfigApplicationService implements ConfigService {
         if (!SystemConfig.isPublicKey(configKey)) {
             throw new BizException(CommonErrors.FORBIDDEN, "该配置不允许公开读取");
         }
-        // 库的排序规则大小写不敏感，查回来的键可能与请求的大小写不同：以库里的真实键再判一次前缀。
+        // 库的排序规则大小写不敏感，查回来的键可能与请求的大小写不同：以库里的真实键再判一次。
         final SystemConfig config = this.configRepository
                 .findByKey(configKey)
                 .filter(found -> SystemConfig.isPublicKey(found.getConfigKey()))

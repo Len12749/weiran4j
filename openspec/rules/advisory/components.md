@@ -27,7 +27,7 @@
 
 | 组件 | 位置 | 什么时候用 | 坑 |
 | --- | --- | --- | --- |
-| **LockScreen** | `components/LockScreen.tsx` + `LockScreen.css` | 全屏锁屏遮罩(偏好 `enableLockScreen`,由 AdminLayout 在锁定时渲染):时钟 + 头像 + 密码框,调 `POST /api/auth/verify-password` 解锁,「重新登录」退出。`user.hasPassword === false`(外部身份自动开通、没有本地密码)时不渲染密码框与「解锁」,只剩一句说明和「重新登录」。锁定状态在 `hooks/useLockScreen.ts`(`lockScreen()` / `unlockScreen()` / `useIsLocked()`,存 `sessionStorage.weiran_locked`,刷新后仍锁定;登录、`clearSession` 时自动解除) | 用**登录密码**解锁,不像 mono4ts 另设本地锁屏密码。错误码 40101 在遮罩内提示「密码错误」,**不会**清令牌——依赖 `utils/request.ts` 对 40101 不走会话失效分支,改那里要回来看这里。回车在 `keydown` 提交,**不用 Semi Input 的 `onEnterPress`**(它挂在已废弃的 `keypress` 上,CDP 注入按键时不一定派发)。遮罩经 portal 挂在 body 下自己的容器里,锁定期间把 **body 其它子节点全部设 `inert`**(布局 + Semi 挂到 body 上的 Modal/SideSheet/Popover 浮层),解锁恢复;遮罩内另有 Tab 焦点陷阱。锁定后才出现的 body 子节点(Toast)不会被 inert |
+| **LockScreen** | `components/LockScreen.tsx` + `LockScreen.css` | 全屏锁屏遮罩(偏好 `enableLockScreen`,由 AdminLayout 在锁定时渲染):时钟 + 头像 + 密码框,调 `POST /api/auth/verify-password` 解锁,「重新登录」退出。`user.hasPassword === false`(外部身份自动开通、没有本地密码)时不渲染密码框与「解锁」,只剩一句说明和「重新登录」。锁定状态在 `hooks/useLockScreen.ts`(`lockScreen()` / `unlockScreen()` / `useIsLocked()`,存 `sessionStorage.weiran_locked`,刷新后仍锁定;登录、`clearSession` 时自动解除) | 用**登录密码**解锁,不像 mono4ts 另设本地锁屏密码。错误码 110101 在遮罩内提示「密码错误」,**不会**清令牌——依赖 `utils/request.ts` 对 110101 不走会话失效分支,改那里要回来看这里。回车在 `keydown` 提交,**不用 Semi Input 的 `onEnterPress`**(它挂在已废弃的 `keypress` 上,CDP 注入按键时不一定派发)。遮罩经 portal 挂在 body 下自己的容器里,锁定期间把 **body 其它子节点全部设 `inert`**(布局 + Semi 挂到 body 上的 Modal/SideSheet/Popover 浮层),解锁恢复;遮罩内另有 Tab 焦点陷阱。锁定后才出现的 body 子节点(Toast)不会被 inert |
 
 ## 权限
 
@@ -39,7 +39,7 @@
 
 | 组件 | 位置 | 什么时候用 | 坑 |
 | --- | --- | --- | --- |
-| **ExternalAccountsCard** | `components/ExternalAccountsCard.tsx` | 个人中心的「外部账号」卡片(无 props):列出本人已绑定的外部身份(提供方、外部标识、显示名、绑定时间)并可解绑(Popconfirm);每个**尚未绑定**的提供方一个「绑定 {name}」按钮,`location.assign(ssoAuthorizeUrl(id, {redirect: '/profile', mode: 'bind'}))` 整页跳转;挂载时读 URL 的 `?bound=<id>` / `?ssoError=<code>` 显示 Banner 后清掉这两个参数。没有启用任何提供方时整张卡片不渲染 | 发起绑定 / 登录必须**整页跳转**(后端 302 到提供方),不能用 `http` / fetch。结果参数在**挂载时**读一次(回跳是整页加载);页面被 `KeepAliveOutlet` 缓存后再从站内跳到 `/profile?bound=…` 不会再提示。本人解绑最后一个且无本地密码时后端 40901,提示由 `utils/request.ts` 统一 Toast。管理员视角的同类功能是用户管理页的 `pages/system/users/UserIdentitiesModal.tsx`(列表 + 解绑二次确认,只剩一个时提示「解绑后该用户可能无法登录」+ 手工绑定表单,行操作受 `system:user:identity` 控制),两者共用 `hooks/queries/identities.ts` |
+| **ExternalAccountsCard** | `components/ExternalAccountsCard.tsx` | 个人中心的「外部账号」卡片(无 props):列出本人已绑定的外部身份(提供方、外部标识、显示名、绑定时间)并可解绑(Popconfirm);每个**尚未绑定**的提供方一个「绑定 {name}」按钮,`location.assign(ssoAuthorizeUrl(id, {redirect: '/profile', mode: 'bind'}))` 整页跳转;挂载时读 URL 的 `?bound=<id>` / `?ssoError=<code>` 显示 Banner 后清掉这两个参数。没有启用任何提供方时整张卡片不渲染 | 发起绑定 / 登录必须**整页跳转**(后端 302 到提供方),不能用 `http` / fetch。结果参数在**挂载时**读一次(回跳是整页加载);页面被 `KeepAliveOutlet` 缓存后再从站内跳到 `/profile?bound=…` 不会再提示。本人解绑最后一个且无本地密码时后端 100004,提示由 `utils/request.ts` 统一 Toast。管理员视角的同类功能是用户管理页的 `pages/system/users/UserIdentitiesModal.tsx`(列表 + 解绑二次确认,只剩一个时提示「解绑后该用户可能无法登录」+ 手工绑定表单,行操作受 `system:user:identity` 控制),两者共用 `hooks/queries/identities.ts` |
 
 ## 字典与状态
 
@@ -53,12 +53,12 @@
 
 | 组件 | 位置 | 什么时候用 | 坑 |
 | --- | --- | --- | --- |
-| **DepartmentTreeSelect** | `components/DepartmentTreeSelect.tsx` | 筛选栏的部门树下拉;表单里用同文件导出的 `useDepartmentTreeData(disabledIds)` 喂给 `Form.TreeSelect` | 编辑部门时把「自己 + 后代」传进 `disabledIds`,否则前端能选、后端返回 `40901` |
+| **DepartmentTreeSelect** | `components/DepartmentTreeSelect.tsx` | 筛选栏的部门树下拉;表单里用同文件导出的 `useDepartmentTreeData(disabledIds)` 喂给 `Form.TreeSelect` | 编辑部门时把「自己 + 后代」传进 `disabledIds`,否则前端能选、后端返回 `100004` |
 | **RegionSelect** | `components/RegionSelect.tsx` | 省市县级联选择器；受控值为字符串区划代码路径 `string[]`，数据取登录态 `/api/regions/lookup` | 只展示启用节点及启用祖先组成的路径；管理权限不是使用前提，lookup 失败遵循请求层提示 |
 | **IconPicker** | `components/IconPicker.tsx` | 菜单图标选择:弹层网格 + 搜索,可配合 Semi `withField` 当表单项 | 只含 `utils/icons.tsx` 白名单里的 lucide 图标;新图标先加进 `MENU_ICONS` |
-| **ConfigImageUpload** | `components/ConfigImageUpload.tsx` | 系统配置的单图字段:上传后保存媒体库返回的 URL,支持预览、更换和移除 | 限 jpg/jpeg/png/gif,最大 10 MB;依赖系统媒体上传权限 |
+| **ConfigImageUpload** | `components/ConfigImageUpload.tsx` | 系统配置的单图字段:上传后保存媒体库返回的 URL,支持预览、更换和移除；`onUpload` 可替换上传动作供本地演示使用 | 限 jpg/jpeg/png/gif,最大 10 MB;默认上传依赖系统媒体上传权限 |
 | **ConfigRichTextEditor** | `components/ConfigRichTextEditor.tsx` + `ConfigRichTextEditor.css` | 系统配置的富文本字段,保存 HTML 字符串 | 工具栏提供粗体、斜体、二级标题及列表;编辑器由配置表单负责回写字段值 |
-| **SystemConfigGroupForm** | `components/SystemConfigGroupForm.tsx` | 系统配置分组的动态字段编辑器，按字段类型渲染控件、校验并保存分组配置；可在系统管理页面或其它管理入口复用 | 调用方传 `ConfigView[]`、编辑权限与字段设置回调；保存后由系统配置 Query hooks 刷新数据 |
+| **SystemConfigGroupForm** | `components/SystemConfigGroupForm.tsx` | 系统配置分组的动态字段编辑器，按字段类型渲染控件、校验并保存分组配置；组件演示页也直接复用 | 调用方传 `ConfigView[]`、编辑权限与字段设置回调；默认用系统配置 Query hooks 保存，`onSave` / `onUploadImage` 可替换为本地演示动作 |
 
 ## 布局(`web/src/layouts/`)
 
@@ -83,7 +83,7 @@
 - `hooks/useTableDefaults.ts` 的 `tableScrollX(columns, flexMin = 120)`:表格 `scroll.x` **用它算,不要手写估值**——数字 width 列按 width、弹性列按 `flexMin` 求和。Semi 在内容区更宽时把表格拉满(多出的宽度主要给弹性列),更窄才横向滚动。手写值写小了弹性列被挤到几十像素(用户页「角色」标签溢出到「手机」列),写大了 double 布局下无谓滚动、固定操作列压住内容(2026-09-27 实测)。传列设置之后的列。8 个列表页的列宽已按「1440 宽下四种导航布局都不滚动」收紧,改列宽后在 double 布局下看一眼。
 - `hooks/useTableDefaults.ts`:`useTableDefaults()` 返回 `tableProps`(展开到 Semi `<Table>`:尺寸、边框、斑马纹 class)、`pageSize`(分页表格 `useState` 的**初值**)、`pageSizeOpts`。**新列表页的 `<Table>` 都要 `{...tableProps}`**,否则偏好里的表格设置对它不生效。
 - `hooks/useMediaQuery.ts`:`useMediaQuery(query)` / `useIsMobile()`(< 768px)/ `usePrefersDark()`。断点常量在 `lib/breakpoints.ts`,CSS 侧写 `@media (--md-down)`(`styles/breakpoints.css` 经 postcss-custom-media 注入所有 CSS,**不要硬编码 px 断点**,两边改一处必须同步另一处)。jsdom 的 `matchMedia` 恒为 false,测试里默认是桌面布局;测窄屏用 `vi.stubGlobal('matchMedia', …)`。
-- `utils/request.ts`:请求封装。**`code === 0`(数字)才算成功**;`40100` 清令牌跳登录,`40101` 不清。不要在页面里再写 `fetch`。
+- `utils/request.ts`:请求封装。**`code === 0`(数字)才算成功**;`100101` 清令牌跳登录,`110101` 不清。不要在页面里再写 `fetch`。
 - `utils/page-registry.ts`:菜单 `component` 字符串 → 页面懒加载。**路由不在 `App.tsx` 里登记**。
 - `hooks/queries/*`:每个资源一份 TanStack Query hooks,新接口先在这里加,再在页面里用。收藏菜单与锁屏校验在 `hooks/queries/auth.ts`(`useFavoriteMenus` / `useSaveFavoriteMenus` / `useVerifyPassword`)。外部身份在 `hooks/queries/identities.ts`:`useProviders()`(公开接口,登录页未登录也调;静默,失败按「无提供方、密码登录开启」降级)、`useMyIdentities` / `useUnbindMyIdentity`、`useUserIdentities` / `useBindUserIdentity` / `useUnbindUserIdentity`,以及 `ssoAuthorizeUrl(id, {redirect, mode})`(拼 authorize 地址,带 `config.apiBaseUrl` 前缀)与 `ssoErrorMessage(code)`(`ssoError` 的提示文案)。
 - `utils/menu.ts` 的 `flattenMenuPages()`:菜单树 → 可跳转的菜单页平铺列表(带祖先标题、可见性、keepAlive),全局搜索、收藏、页面缓存白名单共用。

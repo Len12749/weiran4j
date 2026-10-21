@@ -46,7 +46,7 @@ system **MUST** 支持 `disabled`、`local` 与 `aliyun` 三种短信模式，�
 
 `aliyun` 模式 **MUST** 使用阿里云 `SendSms` API 发送调用方提供的模板消息；请求 **MUST** 使用系统配置中的签名名称与固定端点，并将调用方模板参数序列化为模板参数 JSON。
 
-短信配置 **MUST** 通过独立的「短信配置」菜单进入与系统配置共用的页面实现，并复用 `sys_config` 存储。配置键遵循 `{range}.{group}.{value}`，短信的 `range=sms`；`sys_group.group_key=config_sms` 是独立短信配置域，其中 `sms.general.sign_name` 位于 `general`（通用）配置组，`sms.system_tpl.captcha_local` 和 `sms.system_tpl.captcha_aliyun` 位于 `system_tpl`（系统模板）配置组。页面必须复用系统配置的分组导航、配置项表单和管理操作，并按配置域隔离数据；手机号登录按当前发送模式读取对应验证码模板，阿里云发送读取短信签名。
+短信配置 **MUST** 通过独立的「短信配置」菜单进入与系统配置共用的页面实现，并复用 `sys_config` 存储。配置键遵循 `{range}.{group}.{value}`，短信的 `range=sms`；`sys_group.group_key=config_sms` 是独立短信配置域，其中 `sms.general.sign_name` 位于 `general`（通用）配置组，`sms.system_tpl.captcha_local` 和 `sms.system_tpl.captcha_aliyun` 位于 `system_tpl`（系统模板）配置组。页面必须复用系统配置的分组导航、配置项表单和管理操作，并按配置域隔离数据；手机号登录按当前发送模式读取对应验证码模板，阿里云发送读取短信签名。`local` 验证码模板 **MUST** 包含 `${code}`，发送时以实际验证码替换占位符。
 
 #### Scenario: 成功发送短信
 - **WHEN** 已配置阿里云凭据与系统配置签名，调用方提交有效手机号、模板 CODE 与参数
@@ -65,11 +65,11 @@ system **MUST** 支持 `disabled`、`local` 与 `aliyun` 三种短信模式，�
 
 ### Requirement: [FR-004] 短信发送安全日志
 
-短信日志 **MUST** 对手机号脱敏，且 **MUST NOT** 记录 AccessKey 或原始 SDK 异常消息。`aliyun` 模式 **MUST NOT** 记录短信模板参数、验证码或完整请求体；显式启用的 `local` 模式 **MUST** 记录模板代码与模板参数以供开发联调，并 **MUST NOT** 调用外部供应商。`local` 模式可能将验证码或个人信息写入应用日志，只应用于受控的开发/测试环境，并由部署方限制日志访问与保留时间。
+短信日志 **MUST** 对手机号脱敏，且 **MUST NOT** 记录 AccessKey 或原始 SDK 异常消息。`aliyun` 模式 **MUST NOT** 记录短信模板参数、验证码或完整请求体；显式启用的 `local` 模式 **MUST** 记录替换变量后的短信正文与模板参数以供开发联调，并 **MUST NOT** 调用外部供应商。`local` 模式可能将验证码或个人信息写入应用日志，只应用于受控的开发/测试环境，并由部署方限制日志访问与保留时间。
 
 #### Scenario: 成功和失败发送日志
 - **WHEN** 发送成功或收到服务商错误
-- **THEN** `aliyun` 日志只包含掩码手机号、必要的厂商返回码/请求号和安全摘要；`local` 日志包含模板代码与参数并对手机号脱敏
+- **THEN** `aliyun` 日志只包含掩码手机号、必要的厂商返回码/请求号和安全摘要；`local` 日志包含渲染后的短信正文与参数并对手机号脱敏
 - **判据**:分别捕获两种模式日志，断言 aliyun 不含测试参数、local 包含测试参数，二者都不含完整手机号或测试密钥。
 
 #### Scenario: SDK 调用抛出异常

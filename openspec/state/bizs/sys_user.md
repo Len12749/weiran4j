@@ -72,14 +72,14 @@
 | 控件 | 参数 | 后端口径 |
 | --- | --- | --- |
 | 输入框「用户名 / 昵称 / 手机」 | `keyword` | 三列 `LIKE` 模糊（`OR`），前后空白去除 |
-| `DictSelect`（字典 `sys_common_status`） | `status` | 等值；非 `enabled/disabled` 返回 40000 |
+| `DictSelect`（字典 `sys_common_status`） | `status` | 等值；非 `enabled/disabled` 返回 100001 |
 | `DepartmentTreeSelect` | `departmentId` | **含全部子部门**（`Hierarchy.selfAndDescendantsOf`） |
 | 高级筛选「用户名」 | `username` | 等值（去首尾空白），不模糊 |
-| 高级筛选「用户 ID」（整数输入） | `userId` | 等值；非数字 40000 |
+| 高级筛选「用户 ID」（整数输入） | `userId` | 等值；非数字 100001 |
 | 高级筛选「手机号」「邮箱」 | `phone` / `email` | 等值（去首尾空白），不模糊 |
 | 高级筛选「角色」（`useRoleOptions`，只列启用角色） | `roleId` | 拥有该角色（子查询，一人只出一行）；已禁用角色在下拉里选不到，但接口参数对其照常生效 |
-| 高级筛选「性别」（字典 `sys_user_gender`） | `gender` | 等值；非 `male/female/unknown` 返回 40000（`Gender.filterOf`，空白不过滤） |
-| 高级筛选「创建时间」「最后登录时间」（按天） | `createdStartTime` / `createdEndTime`、`lastLoginStartTime` / `lastLoginEndTime` | 闭区间，前端补成当天 `00:00:00` / `23:59:59`；可单边；传登录时间任一端即排除从未登录；格式错 40000 |
+| 高级筛选「性别」（字典 `sys_user_gender`） | `gender` | 等值；非 `male/female/unknown` 返回 100001（`Gender.filterOf`，空白不过滤） |
+| 高级筛选「创建时间」「最后登录时间」（按天） | `createdStartTime` / `createdEndTime`、`lastLoginStartTime` / `lastLoginEndTime` | 闭区间，前端补成当天 `00:00:00` / `23:59:59`；可单边；传登录时间任一端即排除从未登录；格式错 100001 |
 
 全部条件（含 `keyword`）取交集；开始晚于结束返回空页。
 
@@ -91,15 +91,15 @@
 
 | 字段 | 前端控件 | 前端校验 | 后端校验 | DB 列 / 类型 |
 | --- | --- | --- | --- | --- |
-| 用户名 ❌ | `Form.Input`，编辑态 `disabled`；行操作「设置账号信息」中单独修改 | 必填；`maxLength=32`；修改入口校验 2–32 位、字母开头且仅含字母数字 `_ . -` | 创建与单独修改均去首尾空白后查重，重复 40900「用户名已存在」 | `username varchar(32)` 唯一 |
+| 用户名 ❌ | `Form.Input`，编辑态 `disabled`；行操作「设置账号信息」中单独修改 | 必填；`maxLength=32`；修改入口校验 2–32 位、字母开头且仅含字母数字 `_ . -` | 创建与单独修改均去首尾空白后查重，重复 100003「用户名已存在」 | `username varchar(32)` 唯一 |
 | 昵称 | `Form.Input` | 必填；`maxLength=32` | `@NotBlank` `@Size(max=32)` | `nickname varchar(32)` |
-| 初始密码 | `Form.Input mode=password`，**仅新增** | 必填；`/^(?=.*[A-Za-z])(?=.*\d).{8,64}$/` | `@NotBlank` + 领域 `PasswordPolicy`：8–64 位且同时含字母与数字，否则 40000 `password: …` | `password varchar(100)`（BCrypt） |
-| 部门 | `Form.TreeSelect`（全量部门树，含禁用部门） | 无 | 可空；非空时部门必须存在，否则 40000 `departmentId: 部门不存在`；**不校验部门是否启用** | `department_id bigint null` |
-| 角色 ❓ | `Form.Select multiple`，选项来自 `GET /api/roles/options`（仅启用角色，见 #04） | 无（可不选） | `@NotNull`（可为空数组）；每个 ID 必须存在，否则 40000；授予/移除 `super_admin` 需操作人本身是超管，否则 40300；内置用户必须保留 `super_admin`，否则 40901 | `sys_user_role`（全量覆盖） |
-| 性别 | `Form.Select`（字典 `sys_user_gender`），可清空 | 无 | 可空；新增空值落 `unknown`，编辑空值**保持原值**；非法值 40000 | `gender varchar(16)` 默认 `unknown` |
-| 邮箱 | `Form.Input`；行操作「设置账号信息」中单独修改 | `type: email`；`maxLength=128`；单独设置时留空可清除 | `@Email` `@Size(max=128)`；trim 后的非空值全局唯一，冲突 40900「邮箱已存在」 | `email varchar(128) null`，唯一索引 |
-| 手机 | `Form.Input`；行操作「设置账号信息」中单独修改 | `maxLength=20`；单独设置时留空可清除 | `@Size(max=20)`，无格式校验；trim 后的非空值全局唯一，冲突 40900「手机号已存在」 | `phone varchar(20) null`，唯一索引 |
-| 状态 | `Form.RadioGroup`（启用/禁用），内置用户 `disabled` | 无 | 新增空值落 `enabled`，编辑空值保持原值；内置用户禁用 40901「内置用户不可禁用」 | `status varchar(16)` 默认 `enabled` |
+| 初始密码 | `Form.Input mode=password`，**仅新增** | 必填；`/^(?=.*[A-Za-z])(?=.*\d).{8,64}$/` | `@NotBlank` + 领域 `PasswordPolicy`：8–64 位且同时含字母与数字，否则 100001 `password: …` | `password varchar(100)`（BCrypt） |
+| 部门 | `Form.TreeSelect`（全量部门树，含禁用部门） | 无 | 可空；非空时部门必须存在，否则 100001 `departmentId: 部门不存在`；**不校验部门是否启用** | `department_id bigint null` |
+| 角色 ❓ | `Form.Select multiple`，选项来自 `GET /api/roles/options`（仅启用角色，见 #04） | 无（可不选） | `@NotNull`（可为空数组）；每个 ID 必须存在，否则 100001；授予/移除 `super_admin` 需操作人本身是超管，否则 100102；内置用户必须保留 `super_admin`，否则 100004 | `sys_user_role`（全量覆盖） |
+| 性别 | `Form.Select`（字典 `sys_user_gender`），可清空 | 无 | 可空；新增空值落 `unknown`，编辑空值**保持原值**；非法值 100001 | `gender varchar(16)` 默认 `unknown` |
+| 邮箱 | `Form.Input`；行操作「设置账号信息」中单独修改 | `type: email`；`maxLength=128`；单独设置时留空可清除 | `@Email` `@Size(max=128)`；trim 后的非空值全局唯一，冲突 100003「邮箱已存在」 | `email varchar(128) null`，唯一索引 |
+| 手机 | `Form.Input`；行操作「设置账号信息」中单独修改 | `maxLength=20`；单独设置时留空可清除 | `@Size(max=20)`，无格式校验；trim 后的非空值全局唯一，冲突 100003「手机号已存在」 | `phone varchar(20) null`，唯一索引 |
+| 状态 | `Form.RadioGroup`（启用/禁用），内置用户 `disabled` | 无 | 新增空值落 `enabled`，编辑空值保持原值；内置用户禁用 100004「内置用户不可禁用」 | `status varchar(16)` 默认 `enabled` |
 
 表单外的列：`avatar` 只能由本人在个人中心改（`PUT /api/auth/profile`），管理员编辑时原值保留；
 `token_version` / `last_login_at` / `last_login_ip` / `password_updated_at` 由各自用例定向更新（见 §3）；
@@ -113,8 +113,8 @@
 
 | 列 | 类型 | 写入口径 |
 | --- | --- | --- |
-| `preferences` | `json null` | 任意 JSON **对象**，序列化后 ≤ 16KB（`UserPreferences.MAX_BYTES`，按 UTF-8 字节计）；非对象或超限 40000；全量覆盖；后端不解析字段含义（事实源为前端 `usePreferences.tsx`）。MySQL JSON 列会规整键顺序，读回的对象键序可能与写入时不同 |
-| `favorite_menus` | `json null` | 菜单 ID 数组，按收藏顺序；PUT 去重（保留首次位置）后 ≤ 50 个（`FavoriteMenus.MAX_SIZE`），每个 ID 必须在 `Authorization.accessiblePageIds` 内（可见菜单中 `type=menu` 的节点：自身与祖先均启用、本人有权限，超管为全部启用菜单），否则 40000；读取时按同一口径过滤，不回写库 |
+| `preferences` | `json null` | 任意 JSON **对象**，序列化后 ≤ 16KB（`UserPreferences.MAX_BYTES`，按 UTF-8 字节计）；非对象或超限 100001；全量覆盖；后端不解析字段含义（事实源为前端 `usePreferences.tsx`）。MySQL JSON 列会规整键顺序，读回的对象键序可能与写入时不同 |
+| `favorite_menus` | `json null` | 菜单 ID 数组，按收藏顺序；PUT 去重（保留首次位置）后 ≤ 50 个（`FavoriteMenus.MAX_SIZE`），每个 ID 必须在 `Authorization.accessiblePageIds` 内（可见菜单中 `type=menu` 的节点：自身与祖先均启用、本人有权限，超管为全部启用菜单），否则 100001；读取时按同一口径过滤，不回写库 |
 
 `SysUserDO` 上这两列标 `select = false` + `insertStrategy/updateStrategy = NEVER`：用户行的常规查询不带出它们，只由仓储专用方法显式 `select` 与定向 `UPDATE`。
 
@@ -126,17 +126,17 @@
 | --- | --- | --- | --- | --- |
 | 新增用户（工具栏） | `POST /api/users` → `{id}` | `system:user:create` | ✅ 用户管理 / 新增用户 | 见 §2；`token_version=0`，`password_updated_at=now` |
 | 编辑（行） | `PUT /api/users/{id}` | `system:user:update` | ✅ 修改用户 | 404 用户不存在；定向更新昵称/邮箱/手机/性别/部门/状态六列（`updateAccount`），再全量覆盖角色；启用 → 禁用时 `token_version + 1`（原子加一），该用户已签发令牌立即失效；授权快照缓存按用户失效 |
-| 设置账号信息（行） | `PUT /api/system/user/updateAccountField/{id}` | `system:user:update` | ✅ 设置用户账号信息 | 每次请求只更新用户名、手机号、邮箱中的一项；用户名不允许清空，手机号/邮箱传空值清为 `NULL`；重复值返回 40900；更新后失效该用户授权快照缓存 |
+| 设置账号信息（行） | `PUT /api/system/user/updateAccountField/{id}` | `system:user:update` | ✅ 设置用户账号信息 | 每次请求只更新用户名、手机号、邮箱中的一项；用户名不允许清空，手机号/邮箱传空值清为 `NULL`；重复值返回 100003；更新后失效该用户授权快照缓存 |
 | 重置密码（行） | `PUT /api/users/{id}/password` | `system:user:reset-password` | ✅ 重置密码（请求体 `password` 被脱敏为 `******`） | 定向更新密码与 `password_updated_at`，`token_version + 1` |
-| 删除（行「操作」列，确认后执行；窄屏（< 992px）收在「…」菜单里） | `DELETE /api/users/{id}` | `system:user:delete` | ✅ 删除用户 | 内置用户 40901「内置用户不可删除」；删除自己 40901「不能删除当前登录用户」；同时删 `sys_user_role`。前端只对内置用户禁用按钮，删自己靠后端拦 |
+| 删除（行「操作」列，确认后执行；窄屏（< 992px）收在「…」菜单里） | `DELETE /api/users/{id}` | `system:user:delete` | ✅ 删除用户 | 内置用户 100004「内置用户不可删除」；删除自己 100004「不能删除当前登录用户」；同时删 `sys_user_role`。前端只对内置用户禁用按钮，删自己靠后端拦 |
 | —（下拉数据源） | `GET /api/users/options` | 仅登录 | — | 启用用户 `[{id, username, nickname}]`，部门负责人下拉在用 |
 | —（详情） | `GET /api/users/{id}` | `system:user:list` | — | 前端页面未调用 |
 | —（本人，界面偏好读） | `GET /api/auth/preferences` | 仅登录 | — | 原样返回存储的对象；从未保存返回 `null` |
 | —（本人，界面偏好写） | `PUT /api/auth/preferences` | 仅登录 | ❌ 刻意不记（前端 500ms 防抖高频写） | 见 §2「本人数据列」；定向 `UPDATE preferences`（`updatePreferences`），不刷新 `updated_at`、不填 `updated_by` |
 | —（本人，收藏菜单读） | `GET /api/auth/favorite-menus` | 仅登录 | — | `number[]`，按收藏顺序；已删除 / 已禁用 / 已无权访问的 ID 过滤掉；从未保存返回 `[]` |
 | —（本人，收藏菜单写） | `PUT /api/auth/favorite-menus` | 仅登录 | ❌ 不记 | `{menuIds}`（`@NotNull`）；规则见 §2；定向 `UPDATE favorite_menus`（`updateFavoriteMenuIds`），不刷新 `updated_at` |
-| —（本人，锁屏解锁） | `POST /api/auth/verify-password` | 仅登录 | ❌ 不记 | `{password}`（`@NotBlank` ≤ 64）；BCrypt 比对当前用户密码，正确返回 `null`，错误 40101「密码错误」；**不签发令牌、不改 `token_version`、不写登录日志**；无失败次数限制 |
-| —（登录页，短信验证码） | `POST /api/system/auth/phone/sendCode`、`POST /api/system/auth/phone/login` | 免登录 | 登录写 `sys_login_log` | 仅在手机号登录开关、短信发送器及模板 CODE 均就绪时开放；6 位验证码 5 分钟有效、一次使用，按手机号/IP 限流；未知手机号发码也返回接受响应；错误登录统一返回 40101，日志手机号脱敏 |
+| —（本人，锁屏解锁） | `POST /api/auth/verify-password` | 仅登录 | ❌ 不记 | `{password}`（`@NotBlank` ≤ 64）；BCrypt 比对当前用户密码，正确返回 `null`，错误 110101「密码错误」；**不签发令牌、不改 `token_version`、不写登录日志**；无失败次数限制 |
+| —（登录页，短信验证码） | `POST /api/system/auth/sendPhoneCode`、`POST /api/system/auth/loginWithPhoneCode` | 免登录 | 登录写 `sys_login_log` | 仅在手机号登录开关、短信发送器及模板均就绪时开放；6 位验证码 5 分钟有效、一次使用，按手机号/IP 限流；手机号不存在返回 110106，账号已禁用返回 110107，发送失败也返回错误；错误登录统一返回 110101，日志手机号脱敏 |
 
 按钮显隐：无对应权限时 `Permission` 不渲染（非 disabled）；「删除」对内置用户为 disabled。
 
@@ -169,21 +169,21 @@
   敏感列（密码、令牌版本、登录信息）走独立定向更新，不受此影响。已由后端声明为知情接受。
 - **#02 🔴 P3 前端用户名校验比后端宽，不合法用户名要提交后才被拒**
   `UserFormModal` 的用户名只有「必填」与 `maxLength=32`；后端 `CreateUserRequest` 还要求至少 2 位、字母开头、
-  只含字母数字 `_ . -`。症状：输入 `1abc` 或单个字符，表单通过，提交后 Toast 显示 40000
+  只含字母数字 `_ . -`。症状：输入 `1abc` 或单个字符，表单通过，提交后 Toast 显示 100001
   「username: 需以字母开头，只能包含字母、数字、下划线、点或横线」（或长度提示）。
 - **#03 🔴 P3 删除用户不清理 `sys_department.leader_id`，之后编辑该部门会被后端拒绝**
   `MybatisUserRepository.deleteById` 只删 `sys_user_role` 与 `sys_user`，不处理把该用户设为负责人的部门。
   症状：部门列表「负责人」列显示 `—`（`leaderName` 查不到）；打开该部门的编辑弹窗，负责人下拉回填的是已删除用户的 ID
-  （选项里没有），原样提交时 `DepartmentApplicationService.ensureLeaderExists` 返回 40000「leaderId: 负责人不存在」，
+  （选项里没有），原样提交时 `DepartmentApplicationService.ensureLeaderExists` 返回 100001「leaderId: 负责人不存在」，
   必须先清空负责人才能保存。
 - **#04 ❓ P3 编辑绑定了禁用角色的用户时，角色下拉没有该角色的选项**
   角色选项来自 `GET /api/roles/options`（只含启用角色），而 `initValues.roleIds` 含用户的全部角色 ID。
   禁用角色的 ID 在下拉里找不到对应选项，实际显示形态取决于 Semi `Select` 对未匹配值的处理（未实测）；
   保存时该 ID 会原样随 `roleIds` 提交并保留绑定。
 - **#05 ❓ P3 契约 §6.2 未记载的后端规则（与代码不符，以代码为准）**
-  契约只写了「内置用户与自己不能删（40901）」与重置密码 `token_version+1`。代码另有：用户名 2–32 位且字母开头；
-  新增与重置密码同样执行 8–64 位含字母数字的密码策略；内置用户不可禁用（40901）且必须保留 `super_admin`（40901）；
-  只有超管能授予或移除 `super_admin`（40300）；编辑时省略的 `gender` / `status` 保持原值。契约需补记。
+  契约只写了「内置用户与自己不能删（100004）」与重置密码 `token_version+1`。代码另有：用户名 2–32 位且字母开头；
+  新增与重置密码同样执行 8–64 位含字母数字的密码策略；内置用户不可禁用（100004）且必须保留 `super_admin`（100004）；
+  只有超管能授予或移除 `super_admin`（100102）；编辑时省略的 `gender` / `status` 保持原值。契约需补记。
 
 - **#10 ⚠️ P3 启用外部身份后，用户列表在部分布局下横向滚动**
   症状：配置了外部身份提供方后，操作列多出「外部身份」（宽度 300 → 372），列宽合计 1467。1440 宽屏幕下，双列（可用 1115）与侧边 / 混合（1135）布局会出现横向滚动；顶部菜单布局不受影响，没配置提供方的部署也不受影响。
@@ -192,6 +192,10 @@
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-21**（手机号验证码发码反馈）
+
+- 未绑定或禁用账号的手机号请求验证码分别返回 110106「手机号不存在」或 110107「手机号已禁用」；短信发送失败也返回错误。登录页仅在发码成功后显示查收提示和重发倒计时。
 
 **2026-10-20**（用户列表账号信息设置）
 
@@ -205,7 +209,7 @@
 **2026-10-06**（`external-identity-login`）
 
 - 外部身份登录（D-015）：
-  - 外部身份自动开通的用户没有本地密码（`password` 存空串，`/me.hasPassword=false`），用密码登录、锁屏解锁都返回 40101，修改密码返回 40000；管理员重置密码后恢复本地密码。
+  - 外部身份自动开通的用户没有本地密码（`password` 存空串，`/me.hasPassword=false`），用密码登录、锁屏解锁都返回 110101，修改密码返回 100001；管理员重置密码后恢复本地密码。
   - 删除用户时连带删除其外部身份绑定。
   - 行操作新增「外部身份」（`system:user:identity`），只在配置了提供方时显示。
   - 关闭密码登录（`WEIRAN_PASSWORD_LOGIN_ENABLED=false`）后，只有内置超管还能用密码登录。

@@ -89,7 +89,7 @@ export default function ProfilePage() {
             <ExternalAccountsCard />
             <PageContainer title="修改密码">
                 {user.hasPassword === false ? (
-                    // 外部身份自动开通的用户没有本地密码，后端对改密码返回 40000
+                    // 外部身份自动开通的用户没有本地密码，后端对改密码返回 100001
                     <Banner type="info" description="未设置本地密码，可请管理员重置后再使用密码登录" closeIcon={null} />
                 ) : (
                     <Form<PasswordForm>

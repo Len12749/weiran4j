@@ -6,4 +6,9 @@ public interface SmsSettings {
     String signName();
 
     String verificationTemplateCode();
+
+    /** 当前模式的验证码模板是否可用于登录。 */
+    default boolean verificationTemplateReady() {
+        return !this.verificationTemplateCode().isBlank();
+    }
 }

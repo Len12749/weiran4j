@@ -71,24 +71,24 @@ class PreferencesIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("偏好：数组、数字、null 等非对象与序列化后超过 16KB 的对象返回 40000，原值不变")
+    @DisplayName("偏好：数组、数字、null 等非对象与序列化后超过 16KB 的对象返回 100001，原值不变")
     void preferencesRejectsNonObjectAndOversize() {
         final String token = this.newUserToken(IntegrationTestSupport.unique("pref"), List.of());
         final Map<String, Object> kept = Map.of("theme", "light");
         IntegrationTestSupport.assertOk(this.put("/api/system/auth/updatePreferences", token, kept));
 
         IntegrationTestSupport.assertError(
-                this.put("/api/system/auth/updatePreferences", token, List.of(1, 2)), HttpStatus.BAD_REQUEST, 40000);
+                this.put("/api/system/auth/updatePreferences", token, List.of(1, 2)), HttpStatus.BAD_REQUEST, 100001);
         IntegrationTestSupport.assertError(
-                this.put("/api/system/auth/updatePreferences", token, 42), HttpStatus.BAD_REQUEST, 40000);
+                this.put("/api/system/auth/updatePreferences", token, 42), HttpStatus.BAD_REQUEST, 100001);
         IntegrationTestSupport.assertError(
                 this.put("/api/system/auth/updatePreferences", token, PreferencesIT.JSON.nullNode()),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         IntegrationTestSupport.assertError(
                 this.put("/api/system/auth/updatePreferences", token, Map.of("blob", "x".repeat(16 * 1024))),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
 
         assertThat(IntegrationTestSupport.data(this.get("/api/system/auth/getPreferences", token))
                         .path("theme")
@@ -97,7 +97,7 @@ class PreferencesIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("收藏：从未保存返回空数组；去重并保持顺序；目录、按钮、未授权菜单与超过 50 个返回 40000；撤销授权后 GET 自动过滤")
+    @DisplayName("收藏：从未保存返回空数组；去重并保持顺序；目录、按钮、未授权菜单与超过 50 个返回 100001；撤销授权后 GET 自动过滤")
     void favoriteMenusValidation() {
         final String admin = this.adminToken();
         // 授予「首页」(1) 与「用户管理」(3)；3 的父目录 2 会自动可见，但目录不能收藏。
@@ -120,15 +120,15 @@ class PreferencesIT extends IntegrationTestSupport {
             IntegrationTestSupport.assertError(
                     this.put("/api/system/auth/updateFavoriteMenus", token, Map.of("menuIds", List.of(1L, menuId))),
                     HttpStatus.BAD_REQUEST,
-                    40000);
+                    100001);
         }
         final List<Long> tooMany = LongStream.rangeClosed(1, 51).boxed().toList();
         IntegrationTestSupport.assertError(
                 this.put("/api/system/auth/updateFavoriteMenus", token, Map.of("menuIds", tooMany)),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         IntegrationTestSupport.assertError(
-                this.put("/api/system/auth/updateFavoriteMenus", token, Map.of()), HttpStatus.BAD_REQUEST, 40000);
+                this.put("/api/system/auth/updateFavoriteMenus", token, Map.of()), HttpStatus.BAD_REQUEST, 100001);
         // 失败的请求不改动已保存的收藏
         assertThat(PreferencesIT.ids(
                         IntegrationTestSupport.data(this.get("/api/system/auth/listFavoriteMenus", token))))
@@ -199,7 +199,7 @@ class PreferencesIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("锁屏校验密码：正确返回 null，错误返回 40101；令牌照常可用，token_version 不变，不写登录日志")
+    @DisplayName("锁屏校验密码：正确返回 null，错误返回 110101；令牌照常可用，token_version 不变，不写登录日志")
     void verifyPassword() {
         final String username = IntegrationTestSupport.unique("lock");
         final String token = this.newUserToken(username, List.of());
@@ -215,7 +215,7 @@ class PreferencesIT extends IntegrationTestSupport {
         IntegrationTestSupport.assertError(
                 this.post("/api/system/auth/verifyPassword", token, Map.of("password", "wrong-pass1")),
                 HttpStatus.UNAUTHORIZED,
-                40101);
+                110101);
 
         IntegrationTestSupport.assertOk(this.get("/api/system/auth/getCurrentUser", token));
         assertThat(this.jdbc.queryForObject(
@@ -227,23 +227,23 @@ class PreferencesIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("五个接口未登录都返回 401 / 40100")
+    @DisplayName("五个接口未登录都返回 401 / 100101")
     void requiresLogin() {
         IntegrationTestSupport.assertError(
-                this.get("/api/system/auth/getPreferences", null), HttpStatus.UNAUTHORIZED, 40100);
+                this.get("/api/system/auth/getPreferences", null), HttpStatus.UNAUTHORIZED, 100101);
         IntegrationTestSupport.assertError(
                 this.put("/api/system/auth/updatePreferences", null, Map.of("theme", "dark")),
                 HttpStatus.UNAUTHORIZED,
-                40100);
+                100101);
         IntegrationTestSupport.assertError(
-                this.get("/api/system/auth/listFavoriteMenus", null), HttpStatus.UNAUTHORIZED, 40100);
+                this.get("/api/system/auth/listFavoriteMenus", null), HttpStatus.UNAUTHORIZED, 100101);
         IntegrationTestSupport.assertError(
                 this.put("/api/system/auth/updateFavoriteMenus", null, Map.of("menuIds", List.of(1L))),
                 HttpStatus.UNAUTHORIZED,
-                40100);
+                100101);
         IntegrationTestSupport.assertError(
                 this.post("/api/system/auth/verifyPassword", null, Map.of("password", "x")),
                 HttpStatus.UNAUTHORIZED,
-                40100);
+                100101);
     }
 }

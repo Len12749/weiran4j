@@ -428,7 +428,7 @@ describe('showFavorites', () => {
             '/system/a',
             { showFavorites: true },
             {
-                'GET /api/system/auth/listFavoriteMenus': () => Response.json({ code: 50000, message: '服务异常', data: null }, { status: 500 }),
+                'GET /api/system/auth/listFavoriteMenus': () => Response.json({ code: 100005, message: '服务异常', data: null }, { status: 500 }),
                 'PUT /api/system/auth/updateFavoriteMenus': null,
             },
         );
@@ -444,7 +444,7 @@ describe('showFavorites', () => {
         renderAuthed(
             '/system/a',
             { showFavorites: true },
-            { 'PUT /api/system/auth/updateFavoriteMenus': () => Response.json({ code: 40000, message: '菜单不可收藏', data: null }, { status: 400 }) },
+            { 'PUT /api/system/auth/updateFavoriteMenus': () => Response.json({ code: 100001, message: '菜单不可收藏', data: null }, { status: 400 }) },
         );
         fireEvent.click(await screen.findByRole('button', { name: '收藏此页' }));
         await waitFor(() => expect(screen.getByRole('button', { name: '收藏此页' })).toHaveAttribute('aria-pressed', 'false'));
@@ -462,7 +462,7 @@ describe('showFavorites', () => {
 describe('enableLockScreen', () => {
     const verifyRoute = (ok: boolean) => ({
         'POST /api/system/auth/verifyPassword': () =>
-            ok ? Response.json({ code: 0, message: 'ok', data: null }) : Response.json({ code: 40101, message: '密码错误', data: null }, { status: 401 }),
+            ok ? Response.json({ code: 0, message: 'ok', data: null }) : Response.json({ code: 110101, message: '密码错误', data: null }, { status: 401 }),
     });
 
     it('关闭时没有锁屏按钮，Alt+L 无效', async () => {

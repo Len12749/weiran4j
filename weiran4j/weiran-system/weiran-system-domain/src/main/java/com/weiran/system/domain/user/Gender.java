@@ -27,7 +27,7 @@ public enum Gender {
         return this.value;
     }
 
-    /** 解析字符串值；空值为 {@link #UNKNOWN}，非法值抛 40000。 */
+    /** 解析字符串值；空值为 {@link #UNKNOWN}，非法值抛 100001。 */
     public static Gender of(final @Nullable String value) {
         if (value == null || value.isBlank()) {
             return Gender.UNKNOWN;
@@ -39,7 +39,7 @@ public enum Gender {
     }
 
     /**
-     * 解析查询条件：空或空白表示不过滤（返回 null），非法值抛 40000。
+     * 解析查询条件：空或空白表示不过滤（返回 null），非法值抛 100001。
      *
      * <p>不能用 {@link #of}：它把空值解析成 {@link #UNKNOWN}，拿来过滤会让「不传」变成「只查未知性别」。
      */

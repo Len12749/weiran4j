@@ -16,6 +16,7 @@ import com.weiran.system.api.auth.LoginResult;
 import com.weiran.system.api.auth.ProviderView;
 import com.weiran.system.api.auth.ProvidersView;
 import com.weiran.system.api.auth.SsoRedirect;
+import com.weiran.system.api.auth.SystemAuthErrors;
 import com.weiran.system.api.auth.UserIdentityView;
 import com.weiran.system.domain.identity.ExternalIdentity;
 import com.weiran.system.domain.identity.ExternalIdentityProvider;
@@ -117,7 +118,7 @@ public class ExternalLoginApplicationService implements ExternalLoginService {
         final SsoMode ssoMode = SsoMode.parse(mode);
         final Optional<ExternalIdentityProvider> provider = this.providers.find(providerId);
         if (provider.isEmpty()) {
-            return ExternalLoginApplicationService.failure(ssoMode, CommonErrors.EXTERNAL_AUTH_FAILED);
+            return ExternalLoginApplicationService.failure(ssoMode, SystemAuthErrors.EXTERNAL_AUTH_FAILED);
         }
         if (ssoMode == SsoMode.BIND && currentUserId == null) {
             return ExternalLoginApplicationService.failure(SsoMode.LOGIN, CommonErrors.UNAUTHORIZED);
@@ -147,16 +148,16 @@ public class ExternalLoginApplicationService implements ExternalLoginService {
         try {
             final SsoState state = verified.filter(s -> s.provider().equals(providerId))
                     .filter(s -> s.state().equals(params.get("state")))
-                    .orElseThrow(() -> new BizException(CommonErrors.EXTERNAL_AUTH_FAILED, "流程状态无效或已过期"));
+                    .orElseThrow(() -> new BizException(SystemAuthErrors.EXTERNAL_AUTH_FAILED, "流程状态无效或已过期"));
             final ExternalIdentityProvider provider = this.providers
                     .find(providerId)
-                    .orElseThrow(() -> new BizException(CommonErrors.EXTERNAL_AUTH_FAILED, "提供方未配置"));
+                    .orElseThrow(() -> new BizException(SystemAuthErrors.EXTERNAL_AUTH_FAILED, "提供方未配置"));
             final ExternalIdentity identity = provider.complete(params, state, this.callbackUrl(providerId))
-                    .orElseThrow(() -> new BizException(CommonErrors.EXTERNAL_AUTH_FAILED, "外部身份校验失败"));
+                    .orElseThrow(() -> new BizException(SystemAuthErrors.EXTERNAL_AUTH_FAILED, "外部身份校验失败"));
             if (state.mode() == SsoMode.BIND) {
                 final Long bindUserId = state.bindUserId();
                 if (bindUserId == null) {
-                    throw new BizException(CommonErrors.EXTERNAL_AUTH_FAILED, "绑定流程缺少当前用户");
+                    throw new BizException(SystemAuthErrors.EXTERNAL_AUTH_FAILED, "绑定流程缺少当前用户");
                 }
                 this.bindTo(bindUserId, identity, bindUserId, client);
                 return new SsoRedirect(
@@ -185,13 +186,13 @@ public class ExternalLoginApplicationService implements ExternalLoginService {
         if (binding.isPresent()) {
             user = this.userRepository
                     .findById(binding.get().userId())
-                    .orElseThrow(() -> new BizException(CommonErrors.ACCOUNT_NOT_PROVISIONED));
+                    .orElseThrow(() -> new BizException(SystemAuthErrors.ACCOUNT_NOT_PROVISIONED));
         } else {
             user = this.provision(provider, identity);
         }
         if (!user.isEnabled()) {
             this.authService.recordExternalFailure(user.getId(), user.getUsername(), client, "账号已禁用");
-            throw new BizException(CommonErrors.ACCOUNT_DISABLED);
+            throw new BizException(SystemAuthErrors.ACCOUNT_DISABLED);
         }
         final String message = provider.type().toUpperCase(Locale.ROOT) + " 登录成功（" + provider.id() + "）";
         return this.authService.completeLogin(user, client, provider.id(), message);
@@ -199,12 +200,12 @@ public class ExternalLoginApplicationService implements ExternalLoginService {
 
     private User provision(final ExternalIdentityProvider provider, final ExternalIdentity identity) {
         if (!provider.autoProvision()) {
-            throw new BizException(CommonErrors.ACCOUNT_NOT_PROVISIONED);
+            throw new BizException(SystemAuthErrors.ACCOUNT_NOT_PROVISIONED);
         }
         final String username = ProvisionedUsername.of(provider.id(), identity.externalId(), identity.username());
         if (this.userRepository.existsByUsername(username)) {
             // 本地已有同名用户却没绑定这个外部身份：不自动关联，防冒名接管（D-015），由管理员手工绑定。
-            throw new BizException(CommonErrors.ACCOUNT_NOT_PROVISIONED);
+            throw new BizException(SystemAuthErrors.ACCOUNT_NOT_PROVISIONED);
         }
         long userId;
         try {
@@ -214,12 +215,12 @@ public class ExternalLoginApplicationService implements ExternalLoginService {
             userId = this.identityRepository
                     .findByProviderAndExternalId(provider.id(), identity.externalId())
                     .map(UserIdentity::userId)
-                    .orElseThrow(() -> new BizException(CommonErrors.ACCOUNT_NOT_PROVISIONED));
+                    .orElseThrow(() -> new BizException(SystemAuthErrors.ACCOUNT_NOT_PROVISIONED));
         }
         final long id = userId;
         return this.userRepository
                 .findById(id)
-                .orElseThrow(() -> new BizException(CommonErrors.ACCOUNT_NOT_PROVISIONED));
+                .orElseThrow(() -> new BizException(SystemAuthErrors.ACCOUNT_NOT_PROVISIONED));
     }
 
     private void bindTo(

@@ -40,7 +40,7 @@ describe('useAuth.logout', () => {
 
     it('登出接口失败：照样清本地，不跳转', async () => {
         const assign = stubLocationAssign();
-        mockFetch({ 'POST /api/system/auth/logout': () => Response.json({ code: 50000, message: '服务异常', data: null }, { status: 500 }), 'GET /api/system/auth/getCurrentUser': null });
+        mockFetch({ 'POST /api/system/auth/logout': () => Response.json({ code: 100005, message: '服务异常', data: null }, { status: 500 }), 'GET /api/system/auth/getCurrentUser': null });
         await clickLogout();
         expect(assign).not.toHaveBeenCalled();
     });

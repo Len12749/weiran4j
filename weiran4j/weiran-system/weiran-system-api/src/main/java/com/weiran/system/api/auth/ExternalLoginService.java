@@ -40,16 +40,16 @@ public interface ExternalLoginService {
     List<UserIdentityView> identitiesOf(long userId);
 
     /**
-     * 本人解绑；没有本地密码且只剩这一个外部身份时拒绝（40901）。
+     * 本人解绑；没有本地密码且只剩这一个外部身份时拒绝（100004）。
      *
-     * @throws com.weiran.framework.error.BizException 不存在或不属于本人（40400）、会锁死账号（40901）
+     * @throws com.weiran.framework.error.BizException 不存在或不属于本人（100002）、会锁死账号（100004）
      */
     void unbindOwn(long userId, long identityId);
 
     /**
      * 管理员手工绑定。
      *
-     * @throws com.weiran.framework.error.BizException 用户不存在（40400）、提供方未配置（40000）、外部身份已被绑定（40901）
+     * @throws com.weiran.framework.error.BizException 用户不存在（100002）、提供方未配置（100001）、外部身份已被绑定（100004）
      */
     long bind(long userId, BindIdentityCommand command);
 

@@ -9,15 +9,15 @@ public interface DepartmentService {
     /** 部门树，可按状态过滤。 */
     List<DepartmentNode> tree(@Nullable String status);
 
-    /** 详情（children 为空）；不存在抛 40400。 */
+    /** 详情（children 为空）；不存在抛 100002。 */
     DepartmentNode get(long id);
 
     /** 新增，返回 ID。 */
     long create(SaveDepartmentCommand command);
 
-    /** 修改；父节点不能是自己或后代（40901）。 */
+    /** 修改；父节点不能是自己或后代（100004）。 */
     void update(long id, SaveDepartmentCommand command);
 
-    /** 删除；有子部门或有用户时 40901。 */
+    /** 删除；有子部门或有用户时 100004。 */
     void delete(long id);
 }

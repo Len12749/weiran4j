@@ -37,7 +37,7 @@
 | 权限码 | `system:dict:list` · `system:dict:create` · `system:dict:update`（**字典项的增删改也用它**）· `system:dict:delete`；`GET /code/{code}/items` 仅需登录 |
 | 种子 | 内置字典 `sys_user_gender`（male 男 / female 女 / unknown 未知）、`sys_common_status`（enabled 启用 / disabled 禁用），均带颜色 |
 
-系统配置域 `config_system` 包含 `general`（通用）、`user`（用户）、`site`（站点）；短信配置域 `config_sms` 单独包含 `general`（通用）、`system_tpl`（系统模板）。配置键的第二段与所属分组编码一致。短信签名位于短信域的 `general`，本地/阿里云验证码模板位于短信域的 `system_tpl`；由独立的「短信配置」页面维护。
+系统配置域 `config_system` 包含 `general`（通用）、`user`（用户）；标题 `system.general.title` 位于 `general`。短信配置域 `config_sms` 单独包含 `general`（通用）、`system_tpl`（系统模板）。配置键的第二段与所属分组编码一致；原 `site` 组中的其他已有配置已迁入 `general`，其原键按已有不合规自定义键规则保留。短信签名位于短信域的 `general`，本地/阿里云验证码模板位于短信域的 `system_tpl`；由独立的「短信配置」页面维护。
 
 ## 1. 列表
 
@@ -82,16 +82,16 @@
 | 字段 | 前端控件 | 前端校验 | 后端校验 | DB 列 / 类型 |
 | --- | --- | --- | --- | --- |
 | 字典名称 | `Form.Input` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)` | `name varchar(64)` |
-| 字典编码 | `Form.Input`，内置字典 `disabled`；提交前 `trim` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)`；去空白后在字典类型内查重 40900「字典编码已存在」；内置字典改编码 40901；无格式规则 | `code varchar(64)`，唯一 `(type, code)` |
+| 字典编码 | `Form.Input`，内置字典 `disabled`；提交前 `trim` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)`；去空白后在字典类型内查重 100003「字典编码已存在」；内置字典改编码 100004；无格式规则 | `code varchar(64)`，唯一 `(type, code)` |
 | 描述 | `Form.TextArea` | `maxLength=256` | `@Size(max=256)`；空白存 `null` | `description varchar(256) null` |
-| 状态 ❌ | `Form.RadioGroup`，**内置字典也可选禁用** | 无 | 新增 `enabled`，编辑保持原值；内置字典禁用 40901「内置字典不可禁用」 | `status varchar(16)` 默认 `enabled` |
+| 状态 ❌ | `Form.RadioGroup`，**内置字典也可选禁用** | 无 | 新增 `enabled`，编辑保持原值；内置字典禁用 100004「内置字典不可禁用」 | `status varchar(16)` 默认 `enabled` |
 
 ### 2.2 字典项（`DictItemFormModal`）
 
 | 字段 | 前端控件 | 前端校验 | 后端校验 | DB 列 / 类型 |
 | --- | --- | --- | --- | --- |
 | 标签 | `Form.Input` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)` | `label varchar(64)` |
-| 值 | `Form.Input` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)`；去空白后在同一字典内查重 40900「字典项值已存在」 | `value varchar(64)`，唯一 `(group_id, value)` |
+| 值 | `Form.Input` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)`；去空白后在同一字典内查重 100003「字典项值已存在」 | `value varchar(64)`，唯一 `(group_id, value)` |
 | 颜色 | `Form.Select`（15 个 Semi `Tag` 预置色），可清空 | 无 | `@Size(max=32)`；不限定取值 | `color varchar(32) null` |
 | 排序 | `Form.InputNumber` | `min=0` | 可空；新增 0，编辑保持原值 | `sort int` 默认 0 |
 | 状态 | `Form.RadioGroup` | 无 | 新增 `enabled`，编辑保持原值 | `status varchar(16)` 默认 `enabled` |
@@ -102,9 +102,9 @@
 | 按钮 | 接口 | 权限码 | `@OperationLog` | 业务规则 / 错误码 |
 | --- | --- | --- | --- | --- |
 | 新增（左栏标题栏「…」→ 新增字典） | `POST /api/dicts` → `{id}` | `system:dict:create` | ✅ 字典管理 / 新增字典 | 见 §2.1 |
-| 编辑（字典条目「…」） | `PUT /api/dicts/{id}` | `system:dict:update` | ✅ 修改字典 | 404 字典不存在；内置字典改编码 / 禁用 40901 |
-| 删除（字典条目「…」，`Modal.confirm`） | `DELETE /api/dicts/{id}` | `system:dict:delete` | ✅ 删除字典 | 内置 40901「内置字典不可删除」（前端菜单项 disabled）；**级联删除全部字典项**；删的是当前选中字典时改选当前页第一项 |
-| 新增字典项（右栏） | `POST /api/dicts/{id}/items` → `{id}` | `system:dict:update` | ✅ 新增字典项 | 字典不存在 404；值重复 40900 |
+| 编辑（字典条目「…」） | `PUT /api/dicts/{id}` | `system:dict:update` | ✅ 修改字典 | 404 字典不存在；内置字典改编码 / 禁用 100004 |
+| 删除（字典条目「…」，`Modal.confirm`） | `DELETE /api/dicts/{id}` | `system:dict:delete` | ✅ 删除字典 | 内置 100004「内置字典不可删除」（前端菜单项 disabled）；**级联删除全部字典项**；删的是当前选中字典时改选当前页第一项 |
+| 新增字典项（右栏） | `POST /api/dicts/{id}/items` → `{id}` | `system:dict:update` | ✅ 新增字典项 | 字典不存在 404；值重复 100003 |
 | 编辑（字典项行） | `PUT /api/dicts/{id}/items/{itemId}` | `system:dict:update` | ✅ 修改字典项 | 字典项不存在或不属于该字典 404 |
 | 删除（字典项行「操作」列，确认后执行；窄屏（< 992px）收在「…」菜单里） | `DELETE /api/dicts/{id}/items/{itemId}` | `system:dict:update` | ✅ 删除字典项 | 同上 404；无内置保护 |
 | —（下拉 / 标签数据源） | `GET /api/dicts/code/{code}/items` | 仅登录 | — | 编码不存在 404；**字典禁用时返回空数组**；只返回启用项 |
@@ -128,20 +128,21 @@
 ## 6. 已知问题汇总
 
 - **#02 🔴 P3 内置字典编辑弹窗仍可选「禁用」，提交后才被拒**
-  `DictFormModal` 只对内置字典禁用了「字典编码」，状态单选可改；后端 `Dict.withDetails` 返回 40901「内置字典不可禁用」。
+  `DictFormModal` 只对内置字典禁用了「字典编码」，状态单选可改；后端 `Dict.withDetails` 返回 100004「内置字典不可禁用」。
 - **#03 ❓ P3 内置字典的字典项可被任意修改或删除**
   `DictApplicationService.updateItem` / `deleteItem` 不检查所属字典是否内置。拥有 `system:dict:update` 的用户可以删掉
   `sys_common_status` 的 `enabled` 项或改掉其 `value`，此后用户 / 角色 / 部门页的状态筛选下拉缺项，`DictTag`
   显示原始值。是否需要保护待定。
 - **#04 ❓ P3 契约 §6.7 未记载的后端规则（与代码不符，以代码为准）**
   契约写「内置字典 code 不可改」「内置不可删；级联删字典项」「`/code/{code}/items` 仅 enabled 项」。代码另有：
-  内置字典不可禁用（40901）；字典本身禁用时 `/code/{code}/items` 返回空数组；编码不存在返回 40400。契约需补记。
+  内置字典不可禁用（100004）；字典本身禁用时 `/code/{code}/items` 返回空数组；编码不存在返回 100002。契约需补记。
 
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
 
 **2026-10-21**
+- 移除 `config_system/site` 组；内置标题移入 `general` 并改键为 `system.general.title`，原组其他配置保留并移入 `general`。
 - 新增 `config_system/site` 内置组，承载 `system.site.title`，使配置键中的分组编码与实际归属一致。
 - 为 `sys_group` 增加 `group_key`，拆出独立 `config_sms` 配置域及其内置 `general`、`system_tpl` 组；短信配置项使用 `sms.` 键前缀。
 

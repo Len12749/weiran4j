@@ -120,25 +120,25 @@ class ExternalLoginApplicationServiceTest {
                         eq("https://admin.example.com/api/system/auth/callbackSso/kc"));
 
         assertThat(this.service.authorize("kc", "/profile", "bind", null).location())
-                .isEqualTo("/login?ssoError=40100");
+                .isEqualTo("/login?ssoError=100101");
         assertThat(this.service.authorize("nope", "/", "login", null).location())
-                .isEqualTo("/login?ssoError=40102");
+                .isEqualTo("/login?ssoError=110102");
     }
 
     @Test
-    @DisplayName("callback：流程 Cookie 无效或 state 不符时 40102，并写失败日志")
+    @DisplayName("callback：流程 Cookie 无效或 state 不符时 110102，并写失败日志")
     void callbackRejectsBadState() {
         assertThat(this.service
                         .callback("kc", Map.of("state", "st"), null, CLIENT)
                         .location())
-                .isEqualTo("/login?ssoError=40102");
+                .isEqualTo("/login?ssoError=110102");
         when(this.signer.verify("cookie", NOW))
                 .thenReturn(
                         Optional.of(new SsoState("kc", "st", "n", "v", "/", SsoMode.LOGIN, null, NOW.plusSeconds(60))));
         assertThat(this.service
                         .callback("kc", Map.of("state", "other"), "cookie", CLIENT)
                         .location())
-                .isEqualTo("/login?ssoError=40102");
+                .isEqualTo("/login?ssoError=110102");
         verify(this.auth, org.mockito.Mockito.times(2))
                 .recordExternalFailure(any(), anyString(), eq(CLIENT), anyString());
     }
@@ -161,19 +161,19 @@ class ExternalLoginApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("未绑定且未开启自动开通：40303；本地同名用户存在时即使开了自动开通也不关联")
+    @DisplayName("未绑定且未开启自动开通：110104；本地同名用户存在时即使开了自动开通也不关联")
     void refusesUnprovisioned() {
         when(this.identities.findByProviderAndExternalId("kc", "sub-1")).thenReturn(Optional.empty());
         when(this.provider.autoProvision()).thenReturn(false);
         assertThat(this.callback(SsoMode.LOGIN, ExternalLoginApplicationServiceTest.identity("sub-1"))
                         .location())
-                .isEqualTo("/login?ssoError=40303");
+                .isEqualTo("/login?ssoError=110104");
 
         when(this.provider.autoProvision()).thenReturn(true);
         when(this.users.existsByUsername("zhangsan")).thenReturn(true);
         assertThat(this.callback(SsoMode.LOGIN, ExternalLoginApplicationServiceTest.identity("sub-1"))
                         .location())
-                .isEqualTo("/login?ssoError=40303");
+                .isEqualTo("/login?ssoError=110104");
         verify(this.provisioner, never()).provision(any(), any(), anyString());
     }
 
@@ -196,7 +196,7 @@ class ExternalLoginApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("绑定到被禁用的用户：40301")
+    @DisplayName("绑定到被禁用的用户：110103")
     void refusesDisabledUser() {
         when(this.identities.findByProviderAndExternalId("kc", "sub-1"))
                 .thenReturn(Optional.of(new UserIdentity(1L, 7L, "kc", "sub-1", null, null, null)));
@@ -204,17 +204,17 @@ class ExternalLoginApplicationServiceTest {
                 .thenReturn(Optional.of(ExternalLoginApplicationServiceTest.user(7L, "hash", EnableStatus.DISABLED)));
         assertThat(this.callback(SsoMode.LOGIN, ExternalLoginApplicationServiceTest.identity("sub-1"))
                         .location())
-                .isEqualTo("/login?ssoError=40301");
+                .isEqualTo("/login?ssoError=110103");
     }
 
     @Test
-    @DisplayName("bind 模式：已绑定给别人 40901（回个人中心）；成功则回 /profile?bound=kc")
+    @DisplayName("bind 模式：已绑定给别人 100004（回个人中心）；成功则回 /profile?bound=kc")
     void bindsToCurrentUser() {
         when(this.identities.findByProviderAndExternalId("kc", "sub-1"))
                 .thenReturn(Optional.of(new UserIdentity(1L, 8L, "kc", "sub-1", null, null, null)));
         assertThat(this.callback(SsoMode.BIND, ExternalLoginApplicationServiceTest.identity("sub-1"))
                         .location())
-                .isEqualTo("/profile?ssoError=40901");
+                .isEqualTo("/profile?ssoError=100004");
 
         when(this.identities.findByProviderAndExternalId("kc", "sub-2")).thenReturn(Optional.empty());
         when(this.users.findById(7L))
@@ -228,7 +228,7 @@ class ExternalLoginApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("本人解绑：没有本地密码且只剩一个时拒绝；不属于本人时 40400")
+    @DisplayName("本人解绑：没有本地密码且只剩一个时拒绝；不属于本人时 100002")
     void unbindOwnGuardsLockout() {
         final UserIdentity only = new UserIdentity(1L, 7L, "kc", "sub-1", null, null, null);
         when(this.identities.findById(1L)).thenReturn(Optional.of(only));
@@ -251,7 +251,7 @@ class ExternalLoginApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("管理员绑定：提供方未配置 40000；外部身份已被绑定 40901")
+    @DisplayName("管理员绑定：提供方未配置 100001；外部身份已被绑定 100004")
     void adminBindValidates() {
         when(this.users.findById(7L))
                 .thenReturn(Optional.of(ExternalLoginApplicationServiceTest.user(7L, "hash", EnableStatus.ENABLED)));

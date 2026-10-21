@@ -112,7 +112,7 @@ describe('ProfilePage 外部账号', () => {
 
     it('?ssoError=<code> 显示错误提示并清掉参数', async () => {
         mockFetch(routes());
-        renderProfile('/profile?ssoError=40901');
+        renderProfile('/profile?ssoError=100004');
         expect(await screen.findByText('该外部账号已绑定其他用户')).toBeInTheDocument();
         await waitFor(() => expect(screen.getByTestId('search')).toHaveTextContent(/^$/));
     });

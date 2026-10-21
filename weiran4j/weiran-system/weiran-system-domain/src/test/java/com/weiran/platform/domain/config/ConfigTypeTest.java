@@ -40,7 +40,7 @@ class ConfigTypeTest {
     @CsvSource(
             delimiter = '|',
             value = {"number|abc", "number|1,5", "boolean|TRUE", "boolean|1", "json|not-json"})
-    @DisplayName("按类型拒绝非法值并返回 40000")
+    @DisplayName("按类型拒绝非法值并返回 100001")
     void rejectsInvalidValues(final String type, final String value) {
         assertThatThrownBy(() -> ConfigType.of(type).validate(value, ConfigTypeTest.JSON))
                 .isInstanceOfSatisfying(
@@ -62,7 +62,7 @@ class ConfigTypeTest {
     void protectsBuiltinConfig() {
         final SystemConfig builtin = SystemConfig.builder()
                 .id(1L)
-                .configKey("system.site.title")
+                .configKey("system.general.title")
                 .configValue("Weiran Admin")
                 .configType(ConfigType.STRING)
                 .groupKey("general")
@@ -77,7 +77,7 @@ class ConfigTypeTest {
                         BizException.class, ex -> assertThat(ex.getErrorCode()).isEqualTo(CommonErrors.CONFLICT));
         assertThatThrownBy(builtin::ensureDeletable).hasMessage("内置配置不可删除");
         assertThatThrownBy(() -> builtin.withDetails(
-                        "system.site.title",
+                        "system.general.title",
                         "abc",
                         ConfigType.NUMBER,
                         "general",
@@ -88,7 +88,7 @@ class ConfigTypeTest {
                         ConfigTypeTest.JSON))
                 .hasMessageStartingWith("configValue");
         final SystemConfig updated = builtin.withDetails(
-                "system.site.title",
+                "system.general.title",
                 "新标题",
                 ConfigType.STRING,
                 "general",
@@ -99,7 +99,9 @@ class ConfigTypeTest {
                 ConfigTypeTest.JSON);
         assertThat(updated.getConfigValue()).isEqualTo("新标题");
         assertThat(updated.requireId()).isEqualTo(1L);
-        assertThat(SystemConfig.isPublicKey("system.site.title")).isTrue();
+        assertThat(SystemConfig.isPublicKey("system.general.title")).isTrue();
+        assertThat(SystemConfig.isPublicKey("system.general.other")).isFalse();
+        assertThat(SystemConfig.isPublicKey("system.site.title")).isFalse();
         assertThat(SystemConfig.isPublicKey("sys.secret")).isFalse();
         assertThatCode(() -> SystemConfig.builder()
                         .configKey("sms.general.sign_name")

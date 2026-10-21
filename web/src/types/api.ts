@@ -67,7 +67,7 @@ export interface CurrentUserView {
     departmentName: string | null;
     roles: string[];
     permissions: string[];
-    /** false = 没有本地密码（外部身份自动开通的用户）：密码登录、锁屏校验一律 40101，不能改密码 */
+    /** false = 没有本地密码（外部身份自动开通的用户）：密码登录、锁屏校验一律 110101，不能改密码 */
     hasPassword: boolean;
 }
 
@@ -89,7 +89,7 @@ export interface FavoriteMenusSaveRequest {
     menuIds: number[];
 }
 
-/** POST /api/system/auth/verifyPassword：锁屏解锁；错误返回 40101，不影响会话 */
+/** POST /api/system/auth/verifyPassword：锁屏解锁；错误返回 110101，不影响会话 */
 export interface VerifyPasswordRequest {
     password: string;
 }

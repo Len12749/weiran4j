@@ -6,7 +6,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * 统一响应体：{@code {code, message, data}}。
  *
- * <p>成功时 {@code code} 恒为数字 0；失败时为五位错误码、{@code data} 为 null。
+ * <p>成功时 {@code code} 恒为数字 0；失败时为六位错误码、{@code data} 为 null。
  *
  * @param code 0 表示成功，否则为错误码
  * @param message 提示语

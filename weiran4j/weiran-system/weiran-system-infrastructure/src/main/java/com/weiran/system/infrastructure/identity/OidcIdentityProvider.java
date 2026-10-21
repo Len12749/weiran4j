@@ -33,7 +33,7 @@ import org.jspecify.annotations.Nullable;
  * OIDC 提供方：授权码流程 + PKCE（S256）+ state + nonce；id_token 用提供方 JWKS 验签。
  *
  * <p>端点从 {@code <issuer>/.well-known/openid-configuration} 取，首次使用时加载并缓存；JWKS 也缓存，
- * 按 {@code kid} 找不到时刷新一次（提供方轮换密钥）。任何失败都返回空，由调用方统一按 40102 处理；
+ * 按 {@code kid} 找不到时刷新一次（提供方轮换密钥）。任何失败都返回空，由调用方统一按 110102 处理；
  * 日志只记提供方与原因，不记授权码、令牌与密钥（宪法 CP-9）。
  */
 @Slf4j

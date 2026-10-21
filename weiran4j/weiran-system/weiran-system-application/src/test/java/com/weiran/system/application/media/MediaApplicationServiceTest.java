@@ -36,6 +36,6 @@ class MediaApplicationServiceTest {
                 .isInstanceOf(BizException.class)
                 .satisfies(exception -> assertThat(
                                 ((BizException) exception).getErrorCode().code())
-                        .isEqualTo(50300));
+                        .isEqualTo(100006));
     }
 }

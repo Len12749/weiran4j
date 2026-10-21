@@ -65,7 +65,7 @@ describe('LoginPage', () => {
     it('密码错误时展示后端 message，不建立会话', async () => {
         mockFetch({
             'POST /api/system/auth/login': () =>
-                Response.json({ code: 40101, message: '用户名或密码错误', data: null }, { status: 401 }),
+                Response.json({ code: 110101, message: '用户名或密码错误', data: null }, { status: 401 }),
         });
         renderLogin();
         fill('admin', 'wrong');
@@ -81,6 +81,29 @@ describe('LoginPage', () => {
         fireEvent.click(screen.getByRole('button', { name: '登录' }));
         expect(await screen.findByText('请输入用户名')).toBeInTheDocument();
         expect(calls.some((c) => c.path === '/api/system/auth/login')).toBe(false);
+    });
+
+    it.each([
+        { message: '手机号不存在', code: 110106 },
+        { message: '手机号已禁用', code: 110107 },
+    ])('$message 时显示错误，不提示发送成功或启动倒计时', async ({ message, code }) => {
+        const { calls } = mockFetch({
+            'GET /api/system/auth/listProviders': { passwordLoginEnabled: true, phoneLoginEnabled: true, providers: [] },
+            'POST /api/system/auth/sendPhoneCode': () =>
+                Response.json({ code, message, data: null }, { status: 400 }),
+        });
+        renderLogin();
+        fireEvent.click(await screen.findByRole('button', { name: '手机验证码登录' }));
+        fireEvent.change(screen.getByPlaceholderText('请输入手机号'), { target: { value: '13800000000' } });
+        fireEvent.click(screen.getByRole('button', { name: '发送验证码' }));
+
+        expect(await screen.findByText(message)).toBeInTheDocument();
+        expect(screen.queryByText('验证码已发送，请查收短信')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '发送验证码' })).toBeEnabled();
+        expect(calls.find((call) => call.path === '/api/system/auth/sendPhoneCode')).toMatchObject({
+            method: 'POST',
+            body: { phone: '13800000000' },
+        });
     });
 
     describe('外部身份登录', () => {
@@ -129,11 +152,11 @@ describe('LoginPage', () => {
         });
 
         it.each([
-            ['40102', '外部身份校验失败，请重新登录'],
-            ['40303', '账号未开通，请联系管理员'],
-            ['40301', '账号已禁用'],
-            ['40100', '请先登录'],
-            ['50000', '外部登录失败（错误码 50000）'],
+            ['110102', '外部身份校验失败，请重新登录'],
+            ['110104', '账号未开通，请联系管理员'],
+            ['110103', '账号已禁用'],
+            ['100101', '请先登录'],
+            ['100005', '外部登录失败（错误码 100005）'],
         ])('ssoError=%s 显示「%s」，并从地址栏清掉该参数（保留 redirect）', async (code, text) => {
             mockFetch({ 'GET /api/system/auth/listProviders': { passwordLoginEnabled: true, providers: [keycloak] } });
             renderLogin(`/login?redirect=%2Fdashboard&ssoError=${code}`);

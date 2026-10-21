@@ -112,10 +112,10 @@ describe('App 路由', () => {
         expect(await screen.findByText('404 页面不存在')).toBeInTheDocument();
     });
 
-    it('/api/system/auth/getCurrentUser 返回 40100 时清会话回登录页', async () => {
+    it('/api/system/auth/getCurrentUser 返回 100101 时清会话回登录页', async () => {
         signIn();
         mockFetch({
-            'GET /api/system/auth/getCurrentUser': () => Response.json({ code: 40100, message: '登录已失效', data: null }, { status: 401 }),
+            'GET /api/system/auth/getCurrentUser': () => Response.json({ code: 100101, message: '登录已失效', data: null }, { status: 401 }),
             'GET /api/system/auth/listCurrentMenus': menus,
         });
         renderWithProviders(<App />, { route: '/dashboard' });

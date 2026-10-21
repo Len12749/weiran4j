@@ -9,6 +9,6 @@ public interface OperationLogService {
     /** 分页查询，按 ID 倒序。 */
     PageResult<OperationLogView> page(OperationLogQuery query, PageQuery pageQuery);
 
-    /** 详情；不存在抛 40400。 */
+    /** 详情；不存在抛 100002。 */
     OperationLogView get(long id);
 }

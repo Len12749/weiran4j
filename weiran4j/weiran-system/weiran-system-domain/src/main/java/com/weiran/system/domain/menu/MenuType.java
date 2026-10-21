@@ -26,7 +26,7 @@ public enum MenuType {
         return this.value;
     }
 
-    /** 解析字符串值，非法值抛 40000。 */
+    /** 解析字符串值，非法值抛 100001。 */
     public static MenuType of(final String value) {
         return Arrays.stream(MenuType.values())
                 .filter(type -> type.value.equals(value))

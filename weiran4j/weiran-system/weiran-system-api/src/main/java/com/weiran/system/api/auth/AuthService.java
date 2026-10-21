@@ -10,7 +10,7 @@ public interface AuthService {
     /**
      * 用户名密码登录；成功与失败都会写登录日志。
      *
-     * @throws com.weiran.framework.error.BizException 用户名或密码错误（40101）、账号已禁用（40301）
+     * @throws com.weiran.framework.error.BizException 用户名或密码错误（110101）、账号已禁用（110103）
      */
     LoginResult login(LoginCommand command, ClientContext client);
 
@@ -18,7 +18,7 @@ public interface AuthService {
      * 只校验用户名密码，不签发令牌、不写成功日志；失败照样写登录日志。登录接口复用它，
      * 将来的外部身份登录在本地兜底时也走这里。
      *
-     * @throws com.weiran.framework.error.BizException 用户名或密码错误（40101，不区分用户名是否存在）、账号已禁用（40301）
+     * @throws com.weiran.framework.error.BizException 用户名或密码错误（110101，不区分用户名是否存在）、账号已禁用（110103）
      */
     AuthenticatedUser authenticate(String username, String password, ClientContext client);
 
@@ -49,7 +49,7 @@ public interface AuthService {
      * 全量覆盖界面偏好。「必须是 JSON 对象」由调用方在解析请求体时保证。
      *
      * @param preferencesJson 序列化后的 JSON 对象文本
-     * @throws com.weiran.framework.error.BizException 超过 16KB（40000）
+     * @throws com.weiran.framework.error.BizException 超过 16KB（100001）
      */
     void updatePreferences(long userId, String preferencesJson);
 
@@ -59,14 +59,14 @@ public interface AuthService {
     /**
      * 全量覆盖收藏菜单：去重后最多 50 个，每个都必须是当前用户可访问的菜单页面。
      *
-     * @throws com.weiran.framework.error.BizException 超过上限或包含不可访问的菜单（40000）
+     * @throws com.weiran.framework.error.BizException 超过上限或包含不可访问的菜单（100001）
      */
     void updateFavoriteMenus(long userId, List<Long> menuIds);
 
     /**
      * 校验当前用户的密码（锁屏解锁用）。不签发令牌、不改令牌版本、不写登录日志。
      *
-     * @throws com.weiran.framework.error.BizException 密码错误（40101）
+     * @throws com.weiran.framework.error.BizException 密码错误（110101）
      */
     void verifyPassword(long userId, String password);
 }

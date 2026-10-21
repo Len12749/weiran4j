@@ -20,7 +20,7 @@ public final class PasswordPolicy {
 
     private PasswordPolicy() {}
 
-    /** 校验明文密码，不满足时抛 40000。 */
+    /** 校验明文密码，不满足时抛 100001。 */
     public static void validate(final String field, final String rawPassword) {
         if (!PasswordPolicy.isAcceptable(rawPassword)) {
             throw BizException.badRequest(field + ": " + PasswordPolicy.MESSAGE);

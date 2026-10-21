@@ -9,10 +9,12 @@ import org.junit.jupiter.api.Test;
 class BizExceptionTest {
 
     @Test
-    @DisplayName("错误码前三位与 HTTP 状态码一致")
-    void codePrefixMatchesHttpStatus() {
+    @DisplayName("框架错误码按服务、资源、错误各两位编码，HTTP 状态独立定义")
+    void codeHasSixDigitsAndFrameworkService() {
         for (final CommonErrors error : CommonErrors.values()) {
-            assertThat(error.code() / 100).isEqualTo(error.httpStatus());
+            assertThat(error.code()).isBetween(100_000, 999_999);
+            assertThat(error.code() / 10_000).isEqualTo(10);
+            assertThat(error.httpStatus()).isBetween(400, 599);
         }
     }
 
@@ -34,7 +36,7 @@ class BizExceptionTest {
         assertThat(ApiResponse.ok("x").code()).isZero();
         assertThat(ApiResponse.ok().data()).isNull();
         final ApiResponse<Void> fail = ApiResponse.fail(CommonErrors.UNAUTHORIZED);
-        assertThat(fail.code()).isEqualTo(40100);
+        assertThat(fail.code()).isEqualTo(100101);
         assertThat(fail.message()).isEqualTo("登录已失效，请重新登录");
     }
 }

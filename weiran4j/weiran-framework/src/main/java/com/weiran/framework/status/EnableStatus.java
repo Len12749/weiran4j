@@ -24,7 +24,7 @@ public enum EnableStatus {
         return this.value;
     }
 
-    /** 解析字符串值；非法值抛 40000。 */
+    /** 解析字符串值；非法值抛 100001。 */
     public static EnableStatus of(final String value) {
         return Arrays.stream(EnableStatus.values())
                 .filter(status -> status.value.equals(value))

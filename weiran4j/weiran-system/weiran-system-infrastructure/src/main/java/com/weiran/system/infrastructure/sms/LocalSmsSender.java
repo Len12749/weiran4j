@@ -21,10 +21,14 @@ public final class LocalSmsSender implements SmsSender {
     public SmsSendOutcome send(final String phone, final String templateCode, final Map<String, String> parameters) {
         try {
             final String templateParameters = this.objectMapper.writeValueAsString(parameters);
+            String content = templateCode;
+            for (final Map.Entry<String, String> parameter : parameters.entrySet()) {
+                content = content.replace("${" + parameter.getKey() + "}", parameter.getValue());
+            }
             LocalSmsSender.log.info(
-                    "短信 local 模式 phone={} templateCode={} templateParameters={}",
+                    "短信 local 模式 phone={} content={} templateParameters={}",
                     LocalSmsSender.maskPhone(phone),
-                    templateCode,
+                    content,
                     templateParameters);
             return SmsSendOutcome.LOGGED;
         } catch (final Exception exception) {

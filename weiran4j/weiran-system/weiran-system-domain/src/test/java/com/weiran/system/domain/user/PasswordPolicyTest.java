@@ -34,7 +34,7 @@ class PasswordPolicyTest {
     }
 
     @Test
-    @DisplayName("校验失败抛 40000，message 带字段名")
+    @DisplayName("校验失败抛 100001，message 带字段名")
     void validateThrowsBadRequest() {
         assertThatThrownBy(() -> PasswordPolicy.validate("newPassword", "short"))
                 .isInstanceOfSatisfying(

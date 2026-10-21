@@ -4,6 +4,7 @@ import com.weiran.framework.error.BizException;
 import com.weiran.framework.error.CommonErrors;
 import com.weiran.system.api.auth.ClientContext;
 import com.weiran.system.api.auth.LoginResult;
+import com.weiran.system.api.auth.SystemAuthErrors;
 import com.weiran.system.api.sms.SmsSendCommand;
 import com.weiran.system.api.sms.SmsSendResult;
 import com.weiran.system.api.sms.SmsService;
@@ -84,19 +85,22 @@ public class PhoneLoginApplicationService {
         this.clock = clock;
     }
 
-    /** 发送登录验证码。未知或禁用账号也返回相同结果，不泄露手机号是否已登记。 */
+    /** 仅向已绑定启用账号的手机号发送登录验证码。 */
     public void sendCode(final String rawPhone, final ClientContext client) {
         this.ensureEnabled();
         final String phone = PhoneLoginApplicationService.normalizePhone(rawPhone);
-        final LocalDateTime now = LocalDateTime.now(this.clock);
-        this.reserveSend(phone, client.ip(), now);
-
-        final Optional<User> found = this.userRepository.findByPhone(phone).filter(User::isEnabled);
+        final Optional<User> found = this.userRepository.findByPhone(phone);
         if (found.isEmpty()) {
             this.challenges.remove(phone);
-            return;
+            throw new BizException(SystemAuthErrors.PHONE_NOT_FOUND);
+        }
+        if (!found.orElseThrow().isEnabled()) {
+            this.challenges.remove(phone);
+            throw new BizException(SystemAuthErrors.PHONE_DISABLED);
         }
 
+        final LocalDateTime now = LocalDateTime.now(this.clock);
+        this.reserveSend(phone, client.ip(), now);
         final String code = this.newCode();
         final SmsSendResult result = this.smsService.send(new SmsSendCommand(
                 phone, this.settings.templateCode(), Map.of(PhoneLoginApplicationService.TEMPLATE_PARAMETER, code)));
@@ -106,8 +110,16 @@ public class PhoneLoginApplicationService {
                     new Challenge(
                             PhoneLoginApplicationService.digest(phone, code),
                             now.plus(PhoneLoginApplicationService.CODE_TTL)));
+            return;
         }
-        // 各类发送失败也返回统一接受响应，避免利用供应商结果判断该手机号是否已登记。
+        this.challenges.remove(phone);
+        if (result == SmsSendResult.RATE_LIMITED) {
+            throw BizException.conflict("短信发送过于频繁，请稍后重试");
+        }
+        if (result == SmsSendResult.INVALID_NUMBER) {
+            throw BizException.badRequest("手机号格式不正确");
+        }
+        throw new BizException(CommonErrors.SERVICE_UNAVAILABLE, "短信发送失败，请稍后重试");
     }
 
     /** 校验验证码并完成与密码登录相同的令牌签发、登录记录和账号状态检查。 */
@@ -118,12 +130,12 @@ public class PhoneLoginApplicationService {
         final Optional<User> found = this.userRepository.findByPhone(phone);
         if (!this.consumeCode(phone, code, LocalDateTime.now(this.clock)) || found.isEmpty()) {
             this.authService.recordPhoneLoginFailure(found.map(User::getId).orElse(null), phone, client, "手机号或验证码错误");
-            throw new BizException(CommonErrors.BAD_CREDENTIALS, "手机号或验证码错误");
+            throw new BizException(SystemAuthErrors.BAD_CREDENTIALS, "手机号或验证码错误");
         }
         final User user = found.orElseThrow();
         if (!user.isEnabled()) {
             this.authService.recordPhoneLoginFailure(user.getId(), phone, client, "账号已禁用");
-            throw new BizException(CommonErrors.ACCOUNT_DISABLED);
+            throw new BizException(SystemAuthErrors.ACCOUNT_DISABLED);
         }
         return this.authService.completeLogin(user, client, null, "短信验证码登录成功");
     }
@@ -138,7 +150,7 @@ public class PhoneLoginApplicationService {
         this.cleanup(now);
         final LocalDateTime lastSent = this.lastSendByPhone.get(phone);
         if (lastSent != null && now.isBefore(lastSent.plus(PhoneLoginApplicationService.PHONE_SEND_INTERVAL))) {
-            throw BizException.conflict("验证码已发送，请稍后重试");
+            throw BizException.conflict("验证码请求过于频繁，请稍后重试");
         }
         final List<LocalDateTime> recentSends = this.sendsByIp.computeIfAbsent(ip, ignored -> new ArrayList<>());
         if (recentSends.size() >= PhoneLoginApplicationService.MAX_SENDS_PER_IP_PER_HOUR) {

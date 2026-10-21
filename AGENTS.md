@@ -18,7 +18,7 @@
    所有 Gradle 命令前置 `JAVA_HOME=$(/usr/libexec/java_home -v 21)`，或用 `mise` 自动切换。
 3. **改代码后先 `./gradlew spotlessApply` 再 `check`。** 格式由 palantir-java-format 强制，
    手写的换行几乎一定会被判违规——那不是代码问题，别去猜。
-4. **统一响应的 `code` 是数字 `0`**（`{code, message, data}`，失败为五位错误码，前三位即 HTTP 状态）。
+4. **统一响应的 `code` 是数字 `0`**（`{code, message, data}`，失败为六位数字错误码，服务 / 资源 / 错误各两位；HTTP 状态由错误定义单独指定）。
    旧版 weiran4j 是字符串 `"0"`，从旧代码或别处搬前端代码时判断会静默出错。
 
 > **仓库根存在 `AGENTS.biz.md` 时必读。** 以 git fork 跟随本仓的下游项目把自己的业务规范写在那里，
@@ -254,8 +254,8 @@ vitest + jsdom + @testing-library/react。**断言 Semi `Form.*` 受控控件时
 - 认证三段式（D-014）：按 JWT `iss` 选 `TokenVerifier` → `IdentityResolver` 认身份并判吊销 → `PermissionSource` 取权限。
 - 令牌吊销只靠 `sys_user.token_version`（JWT 的 `ver` claim）：改密码 / 重置密码 / 禁用账号时递增，且每次请求查库、不走缓存（宪法 CP-8）。
 - 浏览器令牌在 HttpOnly Cookie `weiran_token` 里，页面脚本读不到；前端靠非 HttpOnly 的 `weiran_csrf` 判断登录态，
-  写请求带 `X-CSRF-Token`（缺了 403 / `40302`）。脚本调用登录时带 `X-Auth-Mode: token` 拿令牌，再用 Bearer 头（契约 §4）。**前后端必须同源部署**。
-- 登录失败不区分「用户不存在」与「密码错误」，统一 `40101`（宪法 CP-10）。前端对 `40100` 清会话跳登录，对 `40101` 不清。
+  写请求带 `X-CSRF-Token`（缺了 403 / `100103`）。脚本调用登录时带 `X-Auth-Mode: token` 拿令牌，再用 Bearer 头（契约 §4）。**前后端必须同源部署**。
+- 登录失败不区分「用户不存在」与「密码错误」，统一 `110101`（宪法 CP-10）。前端对 `100101` 清会话跳登录，对 `110101` 不清。
 - 外部身份登录（CAS / OIDC，D-015）：浏览器整页跳 `/api/auth/sso/{id}/authorize`，回调由后端换码或验票后下发同一套本地 Cookie。
   外部身份只按 `sys_user_identity(provider, external_id)` 映射，**不按用户名关联**；自动开通的用户没有本地密码（`password` 为空串，`/me.hasPassword=false`）。
   提供方用环境变量 `WEIRAN_AUTH_PROVIDERS_<ID>_*` 配置，见 `weiran4j/docs/02-部署.md` §5a。

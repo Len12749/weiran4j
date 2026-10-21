@@ -304,8 +304,8 @@ class ExternalLoginIT extends IntegrationTestSupport {
         assertThat(new String(Base64.getUrlDecoder().decode(jwt.split("\\.", -1)[1]), StandardCharsets.UTF_8))
                 .contains("\"idp\":\"kc\"");
 
-        // 本上下文关闭了密码登录：普通用户 40304（不论密码对错），内置超管照常
-        IntegrationTestSupport.assertError(this.login(username, "Passw0rd1"), HttpStatus.FORBIDDEN, 40304);
+        // 本上下文关闭了密码登录：普通用户 110105（不论密码对错），内置超管照常
+        IntegrationTestSupport.assertError(this.login(username, "Passw0rd1"), HttpStatus.FORBIDDEN, 110105);
         IntegrationTestSupport.assertOk(
                 this.login(IntegrationTestSupport.ADMIN, IntegrationTestSupport.ADMIN_PASSWORD));
 
@@ -328,9 +328,9 @@ class ExternalLoginIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("OIDC：未绑定且未开启自动开通 40303；篡改 state 40102 且不下发认证 Cookie")
+    @DisplayName("OIDC：未绑定且未开启自动开通 110104；篡改 state 110102 且不下发认证 Cookie")
     void oidcRejectsUnboundAndTampered() throws Exception {
-        assertThat(new Browser().keycloak("kc", "login", "bob", "bob-pass")).isEqualTo("/login?ssoError=40303");
+        assertThat(new Browser().keycloak("kc", "login", "bob", "bob-pass")).isEqualTo("/login?ssoError=110104");
 
         final Browser browser = new Browser();
         final HttpResponse<String> authorize = browser.app("/api/system/auth/authorizeSso/kc?redirect=%2F");
@@ -340,7 +340,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
                 "state");
         assertThat(state).isNotBlank();
         assertThat(browser.callback(PUBLIC_BASE + "/api/system/auth/callbackSso/kc?code=x&state=forged"))
-                .isEqualTo("/login?ssoError=40102");
+                .isEqualTo("/login?ssoError=110102");
         assertThat(browser.appCookies).doesNotContainKey(AuthCookies.TOKEN_COOKIE);
     }
 
@@ -372,11 +372,11 @@ class ExternalLoginIT extends IntegrationTestSupport {
                         second.authHeaders(),
                         null),
                 HttpStatus.CONFLICT,
-                40901);
+                100004);
     }
 
     @Test
-    @DisplayName("CAS：模拟 CAS 验票成功则登录（service 与跳转时一致）；验票失败 40102 并写失败日志")
+    @DisplayName("CAS：模拟 CAS 验票成功则登录（service 与跳转时一致）；验票失败 110102 并写失败日志")
     void casLogin() throws Exception {
         final String username = IntegrationTestSupport.unique("casuser");
         final long userId = this.createLocalUser(username);
@@ -404,7 +404,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
                 .orElseThrow();
         final String failedService =
                 ExternalLoginIT.queryParam(URI.create(failedAuthorize).getRawQuery(), "service");
-        assertThat(failed.callback(failedService + "&ticket=ST-bad")).isEqualTo("/login?ssoError=40102");
+        assertThat(failed.callback(failedService + "&ticket=ST-bad")).isEqualTo("/login?ssoError=110102");
         final Integer fails = this.jdbc.queryForObject(
                 "SELECT COUNT(*) FROM sys_login_log WHERE status = 'fail' AND message LIKE '%cas%' AND message NOT LIKE '%ST-%'",
                 Integer.class);
@@ -412,7 +412,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("本人绑定：已登录用户以 bind 模式完成 CAS 登录后，该外部身份绑定到自己；已绑给别人时 40901")
+    @DisplayName("本人绑定：已登录用户以 bind 模式完成 CAS 登录后，该外部身份绑定到自己；已绑给别人时 100004")
     void bindsOwnIdentity() throws Exception {
         final String username = IntegrationTestSupport.unique("binder");
         final long userId = this.createLocalUser(username);
@@ -461,11 +461,11 @@ class ExternalLoginIT extends IntegrationTestSupport {
                                 .orElseThrow())
                         .getRawQuery(),
                 "service");
-        assertThat(browser.callback(conflictService + "&ticket=ST-ok-" + other)).isEqualTo("/profile?ssoError=40901");
+        assertThat(browser.callback(conflictService + "&ticket=ST-ok-" + other)).isEqualTo("/profile?ssoError=100004");
     }
 
     @Test
-    @DisplayName("管理员接口：无权限 40300；同一外部身份重复绑定 40901；删除用户连带删除绑定")
+    @DisplayName("管理员接口：无权限 100102；同一外部身份重复绑定 100004；删除用户连带删除绑定")
     void adminIdentityEndpoints() throws Exception {
         final String username = IntegrationTestSupport.unique("victim");
         final long userId = this.createLocalUser(username);
@@ -479,14 +479,14 @@ class ExternalLoginIT extends IntegrationTestSupport {
                         this.adminToken(),
                         Map.of("provider", "cas", "externalId", username)),
                 HttpStatus.CONFLICT,
-                40901);
+                100004);
         IntegrationTestSupport.assertError(
                 this.post(
                         "/api/system/user/createIdentity/" + userId,
                         this.adminToken(),
                         Map.of("provider", "nope", "externalId", "x")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
 
         // 无权限用户（经 CAS 登录，没有任何角色）
         final Browser browser = new Browser();
@@ -501,7 +501,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
         IntegrationTestSupport.assertError(
                 this.exchange(HttpMethod.GET, "/api/system/user/listIdentities/" + userId, browser.authHeaders(), null),
                 HttpStatus.FORBIDDEN,
-                40300);
+                100102);
 
         IntegrationTestSupport.assertOk(this.delete("/api/system/user/delete/" + userId, this.adminToken()));
         final Integer left = this.jdbc.queryForObject(

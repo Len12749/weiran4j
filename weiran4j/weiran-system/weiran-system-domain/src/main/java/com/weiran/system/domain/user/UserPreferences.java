@@ -15,7 +15,7 @@ public final class UserPreferences {
 
     private UserPreferences() {}
 
-    /** 校验序列化后的偏好 JSON 体积，超限抛 40000。 */
+    /** 校验序列化后的偏好 JSON 体积，超限抛 100001。 */
     public static void validateSize(final String json) {
         if (json.getBytes(StandardCharsets.UTF_8).length > UserPreferences.MAX_BYTES) {
             throw BizException.badRequest("preferences: 偏好数据不能超过 16KB");

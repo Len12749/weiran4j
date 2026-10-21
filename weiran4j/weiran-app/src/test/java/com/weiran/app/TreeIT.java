@@ -32,7 +32,7 @@ class TreeIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("部门：挂到自己或后代下返回 40901，有子部门或有用户时不可删，按部门查用户包含子部门")
+    @DisplayName("部门：挂到自己或后代下返回 100004，有子部门或有用户时不可删，按部门查用户包含子部门")
     void departmentTree() {
         final String admin = this.adminToken();
         final long parent = this.create(
@@ -48,13 +48,13 @@ class TreeIT extends IntegrationTestSupport {
         final Map<String, Object> toDescendant = TreeIT.department(child, "ignored_" + parent);
         toDescendant.put("code", node.path("code").asText() + "_p");
         IntegrationTestSupport.assertError(
-                this.put("/api/system/department/update/" + parent, admin, toDescendant), HttpStatus.CONFLICT, 40901);
+                this.put("/api/system/department/update/" + parent, admin, toDescendant), HttpStatus.CONFLICT, 100004);
         IntegrationTestSupport.assertError(
                 this.put("/api/system/department/update/" + parent, admin, TreeIT.department(parent, "self_" + parent)),
                 HttpStatus.CONFLICT,
-                40901);
+                100004);
         IntegrationTestSupport.assertError(
-                this.delete("/api/system/department/delete/" + parent, admin), HttpStatus.CONFLICT, 40901);
+                this.delete("/api/system/department/delete/" + parent, admin), HttpStatus.CONFLICT, 100004);
 
         final String username = IntegrationTestSupport.unique("deptuser");
         final Map<String, Object> user = new HashMap<>();
@@ -68,7 +68,7 @@ class TreeIT extends IntegrationTestSupport {
                 IntegrationTestSupport.data(this.get("/api/system/user/list?departmentId=" + parent, admin));
         assertThat(byParent.path("list").findValuesAsText("username")).containsExactly(username);
         IntegrationTestSupport.assertError(
-                this.delete("/api/system/department/delete/" + child, admin), HttpStatus.CONFLICT, 40901);
+                this.delete("/api/system/department/delete/" + child, admin), HttpStatus.CONFLICT, 100004);
 
         final JsonNode tree =
                 IntegrationTestSupport.data(this.get("/api/system/department/list?status=enabled", admin));
@@ -79,11 +79,11 @@ class TreeIT extends IntegrationTestSupport {
         IntegrationTestSupport.assertError(
                 this.post("/api/system/department/create", admin, TreeIT.department(1, "HQ")),
                 HttpStatus.CONFLICT,
-                40900);
+                100003);
     }
 
     @Test
-    @DisplayName("菜单：成环返回 40901，有子节点不可删，类型必填字段校验 40000，删除时清理角色关联")
+    @DisplayName("菜单：成环返回 100004，有子节点不可删，类型必填字段校验 100001，删除时清理角色关联")
     void menuTree() {
         final String admin = this.adminToken();
         final Map<String, Object> directory = TreeIT.menu(0, "directory", "测试目录");
@@ -104,22 +104,22 @@ class TreeIT extends IntegrationTestSupport {
 
         directory.put("parentId", pageId);
         IntegrationTestSupport.assertError(
-                this.put("/api/system/menu/update/" + dirId, admin, directory), HttpStatus.CONFLICT, 40901);
+                this.put("/api/system/menu/update/" + dirId, admin, directory), HttpStatus.CONFLICT, 100004);
         IntegrationTestSupport.assertError(
-                this.delete("/api/system/menu/delete/" + dirId, admin), HttpStatus.CONFLICT, 40901);
+                this.delete("/api/system/menu/delete/" + dirId, admin), HttpStatus.CONFLICT, 100004);
 
         IntegrationTestSupport.assertError(
                 this.post("/api/system/menu/create", admin, TreeIT.menu(dirId, "menu", "缺路径")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         IntegrationTestSupport.assertError(
                 this.post("/api/system/menu/create", admin, TreeIT.menu(pageId, "button", "缺权限码")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         IntegrationTestSupport.assertError(
                 this.post("/api/system/menu/create", admin, TreeIT.menu(0, "page", "非法类型")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
 
         final Map<String, Object> button = TreeIT.menu(pageId, "button", "测试按钮");
         button.put("permission", "it:page:do");
@@ -128,7 +128,7 @@ class TreeIT extends IntegrationTestSupport {
         pageAsButton.put("type", "button");
         pageAsButton.put("permission", "it:page:view");
         IntegrationTestSupport.assertError(
-                this.put("/api/system/menu/update/" + pageId, admin, pageAsButton), HttpStatus.BAD_REQUEST, 40000);
+                this.put("/api/system/menu/update/" + pageId, admin, pageAsButton), HttpStatus.BAD_REQUEST, 100001);
 
         final JsonNode all = IntegrationTestSupport.data(this.get("/api/system/menu/list", admin));
         final JsonNode itDir = TreeIT.findById(all, dirId);
@@ -157,7 +157,7 @@ class TreeIT extends IntegrationTestSupport {
                 "SELECT COUNT(*) FROM sys_role_menu WHERE menu_id = ?", Integer.class, buttonId);
         assertThat(links).isZero();
         IntegrationTestSupport.assertError(
-                this.get("/api/system/menu/get/" + buttonId, admin), HttpStatus.NOT_FOUND, 40400);
+                this.get("/api/system/menu/get/" + buttonId, admin), HttpStatus.NOT_FOUND, 100002);
     }
 
     private static JsonNode findById(final JsonNode nodes, final long id) {

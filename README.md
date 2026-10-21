@@ -2,6 +2,10 @@
 
 Java 21 + Spring Boot 与 React 的模块化后台管理框架。
 
+## 文档
+
+https://weiran-tech.github.io/weiran4j/
+
 ## 开始使用
 
 准备 JDK 21、Node.js 22+、pnpm 和 MySQL 8。创建空库并准备本地配置：

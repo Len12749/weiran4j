@@ -36,7 +36,7 @@ export function useMyIdentities() {
     });
 }
 
-/** 本人解绑；没有本地密码且只剩这一个时后端返回 40901，由 request 层 Toast */
+/** 本人解绑；没有本地密码且只剩这一个时后端返回 100004，由 request 层 Toast */
 export function useUnbindMyIdentity() {
     const qc = useQueryClient();
     return useMutation({
@@ -80,15 +80,15 @@ export function ssoAuthorizeUrl(providerId: string, { redirect, mode }: { redire
 /** 回调失败时 URL 上 `ssoError=<code>` 的提示文案（契约 §4、§6.1） */
 export function ssoErrorMessage(code: string): string {
     switch (code) {
-        case '40102':
+        case '110102':
             return '外部身份校验失败，请重新登录';
-        case '40303':
+        case '110104':
             return '账号未开通，请联系管理员';
-        case '40301':
+        case '110103':
             return '账号已禁用';
-        case '40100':
+        case '100101':
             return '请先登录';
-        case '40901':
+        case '100004':
             return '该外部账号已绑定其他用户';
         default:
             return `外部登录失败（错误码 ${code}）`;

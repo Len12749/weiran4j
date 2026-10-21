@@ -33,7 +33,7 @@
 | 后端模块 | `weiran-system`；`MenuController` → `MenuApplicationService` → `MybatisMenuRepository` |
 | 接口前缀 | `/api/menus`（管理）；`/api/auth/menus`（当前用户可见菜单树，`AuthController`） |
 | 权限码 | `system:menu:list` · `system:menu:create` · `system:menu:update` · `system:menu:delete` |
-| 种子 | 菜单 id 1–18 固定（首页、系统管理 8 项、日志审计 2 项、组件演示目录与 4 个子页），按钮 id 100–125；前端与测试按 ID 引用 |
+| 种子 | 菜单 id 1–19 固定（首页、系统管理 8 项、日志审计 2 项、组件演示目录与 5 个子页），按钮 id 100–125；前端与测试按 ID 引用 |
 
 ## 1. 列表
 
@@ -59,13 +59,13 @@
 
 | 字段 | 前端控件 | 显示条件 | 前端校验 | 后端校验 | DB 列 / 类型 |
 | --- | --- | --- | --- | --- | --- |
-| 上级 | `Form.TreeSelect`（「顶级」+ 非按钮节点；编辑时禁选自己与后代） | 恒显示 | 无 | `@NotNull` `@PositiveOrZero`；非 0 时须存在（40000）；不能是自己或后代（40901）；父节点为按钮 40000 | `parent_id bigint` 默认 0 |
-| 类型 | `Form.RadioGroup` 按钮式 | 恒显示 | 无 | `@NotBlank`；只能 `directory/menu/button`（40000）；有子节点的菜单改为按钮 40000 | `type varchar(16)` |
+| 上级 | `Form.TreeSelect`（「顶级」+ 非按钮节点；编辑时禁选自己与后代） | 恒显示 | 无 | `@NotNull` `@PositiveOrZero`；非 0 时须存在（100001）；不能是自己或后代（100004）；父节点为按钮 100001 | `parent_id bigint` 默认 0 |
+| 类型 | `Form.RadioGroup` 按钮式 | 恒显示 | 无 | `@NotBlank`；只能 `directory/menu/button`（100001）；有子节点的菜单改为按钮 100001 | `type varchar(16)` |
 | 名称 | `Form.Input` | 恒显示 | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)` | `title varchar(64)` |
 | 图标 | `IconPicker`（`withField`） | 非按钮 | 无 | `@Size(max=64)`；空白存 `null` | `icon varchar(64) null` |
-| 路由路径 / 外链地址 | `Form.Input` | 非按钮 | `type=menu` 必填；`maxLength=256` | `@Size(max=256)`；`type=menu` 时必填（40000）；外链不校验 URL 格式 | `path varchar(256) null` |
+| 路由路径 / 外链地址 | `Form.Input` | 非按钮 | `type=menu` 必填；`maxLength=256` | `@Size(max=256)`；`type=menu` 时必填（100001）；外链不校验 URL 格式 | `path varchar(256) null` |
 | 组件 | `Form.Input` | `type=menu` 且非外链 | `maxLength=256` | `@Size(max=256)` | `component varchar(256) null` |
-| 权限码 | `Form.Input` | 非目录 | `type=button` 必填；`maxLength=128` | `@Size(max=128)`；`type=button` 时必填（40000） | `permission varchar(128) null` |
+| 权限码 | `Form.Input` | 非目录 | `type=button` 必填；`maxLength=128` | `@Size(max=128)`；`type=button` 时必填（100001） | `permission varchar(128) null` |
 | 排序 | `Form.InputNumber` | 恒显示 | `min=0` | 可空；新增 0，编辑保持原值 | `sort int` 默认 0 |
 | 显示 | `Form.Switch` | 非按钮 | 无 | 可空；新增 `true`，编辑保持原值 | `visible tinyint(1)` 默认 1 |
 | 外链 | `Form.Switch` | `type=menu` | 无 | 可空；新增 `false`，编辑保持原值 | `is_external tinyint(1)` 默认 0 |
@@ -82,7 +82,7 @@
 | --- | --- | --- | --- | --- |
 | 新增菜单（工具栏最左）/ 新增子项（行，按钮行不显示） | `POST /api/menus` → `{id}` | `system:menu:create` | ✅ 菜单管理 / 新增菜单 | 见 §2；成功后全部授权快照失效 |
 | 编辑（行） | `PUT /api/menus/{id}` | `system:menu:update` | ✅ 修改菜单 | 404 菜单不存在；上级合法性、类型组合同 §2；成功后全部授权快照失效 |
-| 删除（行「操作」列，确认后执行；窄屏（< 992px）收在「…」菜单里） | `DELETE /api/menus/{id}` | `system:menu:delete` | ✅ 删除菜单 | 有子节点 40901「请先删除子菜单」；同时删 `sys_role_menu` 里该菜单的授权 |
+| 删除（行「操作」列，确认后执行；窄屏（< 992px）收在「…」菜单里） | `DELETE /api/menus/{id}` | `system:menu:delete` | ✅ 删除菜单 | 有子节点 100004「请先删除子菜单」；同时删 `sys_role_menu` 里该菜单的授权 |
 | —（详情） | `GET /api/menus/{id}` | `system:menu:list` | — | 单节点、`children` 为空；前端页面未调用 |
 
 保存 / 删除成功后前端让 `menuKeys.all` 与 `authKeys.menus`（侧边栏）失效，但不让 `authKeys.me` 失效（见 #02）。
@@ -114,13 +114,16 @@
   `me.permissions` 是 `staleTime: Infinity`。症状：改掉或禁用一个按钮节点后，侧边栏已更新，页面上 `Permission`
   控制的按钮仍按旧权限码显示/隐藏，直到刷新页面或重新登录。
 - **#03 ❓ P3 契约 §6.1 / §6.4 未记载的后端规则（与代码不符，以代码为准）**
-  契约 §6.4 只写了「type=menu 时 path 必填；type=button 时 permission 必填」「parentId 不能是自己或后代（40901）」
-  「有子节点 40901」。代码另有：父节点是按钮时 40000「按钮下不能再添加子节点」；有子节点的菜单改为按钮 40000；
-  上级不存在 40000。契约 §6.1 写 `/api/auth/menus` 返回「status=enabled」的节点，代码实际要求**自身及全部祖先**都启用。契约需补记。
+  契约 §6.4 只写了「type=menu 时 path 必填；type=button 时 permission 必填」「parentId 不能是自己或后代（100004）」
+  「有子节点 100004」。代码另有：父节点是按钮时 100001「按钮下不能再添加子节点」；有子节点的菜单改为按钮 100001；
+  上级不存在 100001。契约 §6.1 写 `/api/auth/menus` 返回「status=enabled」的节点，代码实际要求**自身及全部祖先**都启用。契约需补记。
 
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-21**
+- 组件演示新增「配置表单」子页（id 19，`/demo/config`），用本地数据展示系统配置的八种字段类型。
 
 **2026-10-18**
 - 将「组件演示」提升为顶层目录（id 14，`/demo`），分成列表与筛选、导航列表、字段与标签、权限与入口 4 个子页（id 15–18）；不新增业务接口或权限码。通过后续 Flyway 迁移兼容已应用旧菜单的数据库。

@@ -5,10 +5,21 @@ import { useUploadSystemImage } from '@/hooks/queries/system-media';
 
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif']);
 
-export function ConfigImageUpload({ value, disabled, onChange }: { value: string; disabled?: boolean; onChange: (url: string) => void }) {
+export function ConfigImageUpload({
+    value,
+    disabled,
+    onChange,
+    onUpload,
+}: {
+    value: string;
+    disabled?: boolean;
+    onChange: (url: string) => void;
+    onUpload?: (file: File) => Promise<string>;
+}) {
     const inputRef = useRef<HTMLInputElement>(null);
     const upload = useUploadSystemImage();
     const [imageUrl, setImageUrl] = useState(value);
+    const [isUploading, setIsUploading] = useState(false);
 
     const chooseImage = async (file: File | undefined) => {
         if (!file) return;
@@ -17,12 +28,16 @@ export function ConfigImageUpload({ value, disabled, onChange }: { value: string
             Toast.error('请选择不超过 10 MB 的 jpg、jpeg、png 或 gif 图片');
             return;
         }
+        setIsUploading(true);
         try {
-            const result = await upload.mutateAsync(file);
-            setImageUrl(result.url);
-            onChange(result.url);
+            const url = onUpload ? await onUpload(file) : (await upload.mutateAsync(file)).url;
+            setImageUrl(url);
+            onChange(url);
         } catch {
-            // 请求层负责显示上传错误。
+            if (onUpload) Toast.error('图片读取失败');
+            // 默认上传的请求层负责显示错误。
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -40,7 +55,7 @@ export function ConfigImageUpload({ value, disabled, onChange }: { value: string
                         event.currentTarget.value = '';
                     }}
                 />
-                <Button icon={<ImagePlus size={14} />} disabled={disabled || upload.isPending} loading={upload.isPending} onClick={() => inputRef.current?.click()}>
+                <Button icon={<ImagePlus size={14} />} disabled={disabled || isUploading || upload.isPending} loading={isUploading || upload.isPending} onClick={() => inputRef.current?.click()}>
                     {imageUrl ? '更换图片' : '上传图片'}
                 </Button>
                 {imageUrl && <Button icon={<Trash2 size={14} />} disabled={disabled} onClick={() => { setImageUrl(''); onChange(''); }}>移除</Button>}

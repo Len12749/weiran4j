@@ -55,11 +55,15 @@ export function SystemConfigGroupForm({
     canEdit,
     showSettings,
     onEdit,
+    onSave,
+    onUploadImage,
 }: {
     records: ConfigView[];
     canEdit: boolean;
     showSettings: boolean;
     onEdit: (record: ConfigView) => void;
+    onSave?: (values: ConfigSaveRequest[]) => Promise<void> | void;
+    onUploadImage?: (file: File) => Promise<string>;
 }) {
     const api = useRef<FormApi<Record<string, unknown>> | null>(null);
     const save = useSaveConfig();
@@ -79,23 +83,25 @@ export function SystemConfigGroupForm({
                 return;
             }
         }
-        await Promise.all(
-            records.map((record) => {
-                const value = values[String(record.id)];
-                const body: ConfigSaveRequest = {
-                    configKey: record.configKey,
-                    configValue: record.fieldType === 'switch' ? String(Boolean(value)) : toTextValue(value),
-                    configType: record.configType,
-                    groupKey: record.groupKey,
-                    fieldType: record.fieldType,
-                    fieldOptions: record.fieldOptions,
-                    required: record.required,
-                    description: record.description,
-                };
-                return save.mutateAsync({ id: record.id, body });
-            }),
-        );
-        Toast.success('分组配置已保存');
+        const requests: ConfigSaveRequest[] = records.map((record) => {
+            const value = values[String(record.id)];
+            return {
+                configKey: record.configKey,
+                configValue: record.fieldType === 'switch' ? String(Boolean(value)) : toTextValue(value),
+                configType: record.configType,
+                groupKey: record.groupKey,
+                fieldType: record.fieldType,
+                fieldOptions: record.fieldOptions,
+                required: record.required,
+                description: record.description,
+            };
+        });
+        if (onSave) {
+            await onSave(requests);
+        } else {
+            await Promise.all(records.map((record, index) => save.mutateAsync({ id: record.id, body: requests[index]! })));
+        }
+        Toast.success(onSave ? '示例值已保存到当前页面' : '分组配置已保存');
     };
 
     return (
@@ -156,6 +162,7 @@ export function SystemConfigGroupForm({
                                         key={`${record.id}:${record.configValue}`}
                                         value={toStringValue(initValues[field])}
                                         disabled={!canEdit}
+                                        {...(onUploadImage ? { onUpload: onUploadImage } : {})}
                                         onChange={(url) => {
                                             api.current?.setValue(field, url);
                                         }}

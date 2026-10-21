@@ -121,7 +121,7 @@ class OperationLogAspectTest {
 
         assertThat(this.events).singleElement().satisfies(event -> {
             assertThat(event.success()).isFalse();
-            assertThat(event.responseCode()).isEqualTo(40901);
+            assertThat(event.responseCode()).isEqualTo(100004);
             assertThat(event.errorMessage()).isEqualTo("内置用户不可删除");
             assertThat(event.userId()).isNull();
             assertThat(event.requestBody()).isNull();

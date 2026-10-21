@@ -148,7 +148,7 @@ class CookieAuthIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("Cookie 认证的写请求：缺 CSRF 头或头值不一致返回 403 / 40302 且资料不变；带正确的头才成功")
+    @DisplayName("Cookie 认证的写请求：缺 CSRF 头或头值不一致返回 403 / 100103 且资料不变；带正确的头才成功")
     void cookieWritesRequireCsrf() {
         final Session session = this.browserLogin(this.newUser("csrf"));
         final Map<String, Object> profile = Map.of("nickname", "被篡改");
@@ -156,7 +156,7 @@ class CookieAuthIT extends IntegrationTestSupport {
         IntegrationTestSupport.assertError(
                 this.exchange(HttpMethod.PUT, "/api/system/auth/updateProfile", session.cookies(), profile),
                 HttpStatus.FORBIDDEN,
-                40302);
+                100103);
         IntegrationTestSupport.assertError(
                 this.exchange(
                         HttpMethod.PUT,
@@ -164,7 +164,7 @@ class CookieAuthIT extends IntegrationTestSupport {
                         session.cookiesWithCsrf(session.csrf() + "x"),
                         profile),
                 HttpStatus.FORBIDDEN,
-                40302);
+                100103);
         assertThat(this.nickname(session)).isEqualTo("原昵称");
 
         IntegrationTestSupport.assertOk(this.exchange(
@@ -203,7 +203,7 @@ class CookieAuthIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("令牌载荷带 iss / aud；同一密钥签发但 iss 缺失、iss 不符、aud 不符的令牌一律 40100")
+    @DisplayName("令牌载荷带 iss / aud；同一密钥签发但 iss 缺失、iss 不符、aud 不符的令牌一律 100101")
     void enforcesIssuerAndAudience() throws Exception {
         final String token = IntegrationTestSupport.data(
                         this.login(IntegrationTestSupport.ADMIN, IntegrationTestSupport.ADMIN_PASSWORD))
@@ -228,25 +228,25 @@ class CookieAuthIT extends IntegrationTestSupport {
             IntegrationTestSupport.assertError(
                     this.get("/api/system/auth/getCurrentUser", CookieAuthIT.sign(claims)),
                     HttpStatus.UNAUTHORIZED,
-                    40100);
+                    100101);
         }
     }
 
     @Test
-    @DisplayName("绕过应用服务直接改库吊销（模拟另一个实例）：令牌版本加一或禁用后，下一次请求立即 40100")
+    @DisplayName("绕过应用服务直接改库吊销（模拟另一个实例）：令牌版本加一或禁用后，下一次请求立即 100101")
     void revocationBypassesCache() {
         final String bumped = this.newUser("revoke");
         final String bumpedToken = this.tokenOf(bumped, CookieAuthIT.PASSWORD);
         IntegrationTestSupport.assertOk(this.get("/api/system/auth/getCurrentUser", bumpedToken));
         this.jdbc.update("UPDATE sys_user SET token_version = token_version + 1 WHERE username = ?", bumped);
         IntegrationTestSupport.assertError(
-                this.get("/api/system/auth/getCurrentUser", bumpedToken), HttpStatus.UNAUTHORIZED, 40100);
+                this.get("/api/system/auth/getCurrentUser", bumpedToken), HttpStatus.UNAUTHORIZED, 100101);
 
         final String disabled = this.newUser("disable");
         final String disabledToken = this.tokenOf(disabled, CookieAuthIT.PASSWORD);
         IntegrationTestSupport.assertOk(this.get("/api/system/auth/getCurrentUser", disabledToken));
         this.jdbc.update("UPDATE sys_user SET status = 'disabled' WHERE username = ?", disabled);
         IntegrationTestSupport.assertError(
-                this.get("/api/system/auth/getCurrentUser", disabledToken), HttpStatus.UNAUTHORIZED, 40100);
+                this.get("/api/system/auth/getCurrentUser", disabledToken), HttpStatus.UNAUTHORIZED, 100101);
     }
 }

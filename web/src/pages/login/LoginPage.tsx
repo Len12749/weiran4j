@@ -127,7 +127,7 @@ export default function LoginPage() {
         try {
             await sendCode.mutateAsync({ phone: normalizedPhone });
             setCountdown(60);
-            setNotice('若手机号已绑定启用账号，验证码将发送，请查收短信');
+            setNotice('验证码已发送，请查收短信');
         } catch (e) {
             setError(e instanceof ApiError ? e.message : '验证码发送失败，请稍后重试');
         }

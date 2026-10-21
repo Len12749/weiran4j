@@ -33,7 +33,7 @@ class RegionIT extends IntegrationTestSupport {
                 .isEqualTo(3351);
 
         IntegrationTestSupport.assertError(
-                this.get("/api/region/area/getEnabledTree", null), HttpStatus.UNAUTHORIZED, 40100);
+                this.get("/api/region/area/getEnabledTree", null), HttpStatus.UNAUTHORIZED, 100101);
         final String admin = this.adminToken();
         final JsonNode lookup = IntegrationTestSupport.data(this.get("/api/region/area/getEnabledTree", admin));
         assertThat(lookup).hasSize(31);
@@ -50,7 +50,7 @@ class RegionIT extends IntegrationTestSupport {
         final String viewer = this.tokenOf(username, RegionIT.USER_PASSWORD);
 
         IntegrationTestSupport.assertOk(this.get("/api/region/area/getEnabledTree", viewer));
-        IntegrationTestSupport.assertError(this.get("/api/region/area/listTree", viewer), HttpStatus.FORBIDDEN, 40300);
+        IntegrationTestSupport.assertError(this.get("/api/region/area/listTree", viewer), HttpStatus.FORBIDDEN, 100102);
     }
 
     @Test
@@ -68,11 +68,11 @@ class RegionIT extends IntegrationTestSupport {
                 Map.of("code", provinceCode + "01", "name", "集成测试市", "level", "city", "parentCode", provinceCode));
 
         IntegrationTestSupport.assertError(
-                this.delete("/api/region/area/delete/" + provinceId, admin), HttpStatus.CONFLICT, 40921);
+                this.delete("/api/region/area/delete/" + provinceId, admin), HttpStatus.CONFLICT, 120103);
         IntegrationTestSupport.assertError(
                 this.put("/api/region/area/update/" + provinceId, admin, Map.of("code", provinceCode + "99")),
                 HttpStatus.CONFLICT,
-                40901);
+                100004);
         IntegrationTestSupport.assertOk(this.put(
                 "/api/region/area/update/" + provinceId, admin, Map.of("name", "修改后的集成测试省", "status", "disabled")));
         final JsonNode updated = IntegrationTestSupport.data(this.get("/api/region/area/get/" + provinceId, admin));

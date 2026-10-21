@@ -22,7 +22,7 @@ class PlatformIT extends IntegrationTestSupport {
     private ApplicationContext context;
 
     @Test
-    @DisplayName("字典与字典项 CRUD；按编码只取启用项；值重复 40900；内置字典保护 40901；删除级联")
+    @DisplayName("字典与字典项 CRUD；按编码只取启用项；值重复 100003；内置字典保护 100004；删除级联")
     void dictCrud() {
         final String admin = this.adminToken();
         final String code = IntegrationTestSupport.unique("dict");
@@ -41,7 +41,7 @@ class PlatformIT extends IntegrationTestSupport {
         IntegrationTestSupport.assertError(
                 this.post("/api/system/dict/createItem/" + dictId, admin, Map.of("label", "重复", "value", "a")),
                 HttpStatus.CONFLICT,
-                40900);
+                100003);
         IntegrationTestSupport.assertOk(this.put(
                 "/api/system/dict/updateItem/" + dictId + "/" + itemA,
                 admin,
@@ -62,22 +62,23 @@ class PlatformIT extends IntegrationTestSupport {
         assertThat(page.path("total").asLong()).isEqualTo(1L);
         assertThat(page.path("list").get(0).path("isBuiltin").asBoolean()).isFalse();
 
-        IntegrationTestSupport.assertError(this.delete("/api/system/dict/delete/1", admin), HttpStatus.CONFLICT, 40901);
+        IntegrationTestSupport.assertError(
+                this.delete("/api/system/dict/delete/1", admin), HttpStatus.CONFLICT, 100004);
         IntegrationTestSupport.assertError(
                 this.put(
                         "/api/system/dict/update/1",
                         admin,
                         Map.of("name", "用户性别", "code", "sys_user_gender", "status", "disabled")),
                 HttpStatus.CONFLICT,
-                40901);
+                100004);
         IntegrationTestSupport.assertError(
                 this.put("/api/system/dict/update/1", admin, Map.of("name", "性别", "code", "renamed")),
                 HttpStatus.CONFLICT,
-                40901);
+                100004);
         IntegrationTestSupport.assertError(
                 this.post("/api/system/dict/create", admin, Map.of("name", "重复", "code", code)),
                 HttpStatus.CONFLICT,
-                40900);
+                100003);
 
         IntegrationTestSupport.assertOk(this.delete("/api/system/dict/deleteItem/" + dictId + "/" + itemB, admin));
         IntegrationTestSupport.assertOk(this.delete("/api/system/dict/delete/" + dictId, admin));
@@ -85,19 +86,19 @@ class PlatformIT extends IntegrationTestSupport {
                 "SELECT COUNT(*) FROM sys_dict_item WHERE group_id = ?", Integer.class, dictId);
         assertThat(remaining).isZero();
         IntegrationTestSupport.assertError(
-                this.get("/api/system/dict/get/" + dictId, admin), HttpStatus.NOT_FOUND, 40400);
+                this.get("/api/system/dict/get/" + dictId, admin), HttpStatus.NOT_FOUND, 100002);
     }
 
     @Test
-    @DisplayName("配置按类型校验值，内置项保护，公开接口只放行 system.site.* 且无需登录")
+    @DisplayName("配置按类型校验值，内置项保护，公开接口只放行 system.general.title 且无需登录")
     void configRules() {
         final String admin = this.adminToken();
         final String suffix = IntegrationTestSupport.unique("cfg");
         final String prefix = "system.general." + suffix;
         final JsonNode groups = IntegrationTestSupport.data(this.get("/api/system/config/listGroups", admin));
-        assertThat(groups.findValuesAsText("key")).containsExactly("general", "general", "user", "site", "system_tpl");
+        assertThat(groups.findValuesAsText("key")).containsExactly("general", "general", "user", "system_tpl");
         assertThat(groups.findValuesAsText("groupKey"))
-                .containsExactly("config_system", "config_sms", "config_system", "config_system", "config_sms");
+                .containsExactly("config_system", "config_sms", "config_system", "config_sms");
         assertThat(this.jdbc.queryForObject(
                         "SELECT config_value FROM sys_config WHERE config_key = 'system.user.enable_phone_login'",
                         String.class))
@@ -133,9 +134,9 @@ class PlatformIT extends IntegrationTestSupport {
                         .orElseThrow();
         assertThat(populatedGroupView.path("canDelete").asBoolean()).isFalse();
         IntegrationTestSupport.assertError(
-                this.delete("/api/system/config/deleteGroup/" + customGroup, admin), HttpStatus.CONFLICT, 40901);
+                this.delete("/api/system/config/deleteGroup/" + customGroup, admin), HttpStatus.CONFLICT, 100004);
         IntegrationTestSupport.assertError(
-                this.delete("/api/system/config/deleteGroup/general", admin), HttpStatus.CONFLICT, 40901);
+                this.delete("/api/system/config/deleteGroup/general", admin), HttpStatus.CONFLICT, 100004);
         IntegrationTestSupport.assertOk(
                 this.put("/api/system/config/updateGroup/" + customGroup, admin, Map.of("label", "已编辑分组")));
         assertThat(this.jdbc.queryForObject("SELECT name FROM sys_group WHERE id = ?", String.class, customGroupId))
@@ -146,24 +147,24 @@ class PlatformIT extends IntegrationTestSupport {
                         admin,
                         PlatformIT.config(prefix + "_wrong_group", "x", "string", "sys_user_gender")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
 
         IntegrationTestSupport.assertError(
                 this.post("/api/system/config/create", admin, PlatformIT.config(prefix + "_n", "abc", "number")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         IntegrationTestSupport.assertError(
                 this.post("/api/system/config/create", admin, PlatformIT.config(prefix + "_b", "yes", "boolean")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         IntegrationTestSupport.assertError(
                 this.post("/api/system/config/create", admin, PlatformIT.config(prefix + "_j", "{broken", "json")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         IntegrationTestSupport.assertError(
                 this.post("/api/system/config/create", admin, PlatformIT.config(prefix + "_t", "x", "yaml")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
 
         this.create("/api/system/config/create", admin, PlatformIT.config(prefix + "_n", "3.5", "number"));
         this.create("/api/system/config/create", admin, PlatformIT.config(prefix + "_b", "true", "boolean"));
@@ -172,7 +173,7 @@ class PlatformIT extends IntegrationTestSupport {
         IntegrationTestSupport.assertError(
                 this.post("/api/system/config/create", admin, PlatformIT.config(prefix + "_j", "{}", "json")),
                 HttpStatus.CONFLICT,
-                40900);
+                100003);
 
         final JsonNode view = IntegrationTestSupport.data(this.get("/api/system/config/get/" + jsonId, admin));
         assertThat(view.path("configType").asText()).isEqualTo("json");
@@ -183,25 +184,28 @@ class PlatformIT extends IntegrationTestSupport {
                 .isEqualTo(4L);
 
         final long builtinId = Objects.requireNonNull(this.jdbc.queryForObject(
-                "SELECT id FROM sys_config WHERE config_key = 'system.site.title'", Long.class));
+                "SELECT id FROM sys_config WHERE config_key = 'system.general.title'", Long.class));
         IntegrationTestSupport.assertError(
-                this.delete("/api/system/config/delete/" + builtinId, admin), HttpStatus.CONFLICT, 40901);
+                this.delete("/api/system/config/delete/" + builtinId, admin), HttpStatus.CONFLICT, 100004);
         IntegrationTestSupport.assertError(
                 this.put(
                         "/api/system/config/update/" + builtinId,
                         admin,
-                        PlatformIT.config("system.site.name", "x", "string")),
+                        PlatformIT.config("system.general.name", "x", "string")),
                 HttpStatus.CONFLICT,
-                40901);
+                100004);
 
         final JsonNode title =
-                IntegrationTestSupport.data(this.get("/api/system/config/getPublic/system.site.title", null));
-        assertThat(title.path("configKey").asText()).isEqualTo("system.site.title");
+                IntegrationTestSupport.data(this.get("/api/system/config/getPublic/system.general.title", null));
+        assertThat(title.path("configKey").asText()).isEqualTo("system.general.title");
         assertThat(title.path("configValue").asText()).isEqualTo("Weiran Admin");
+        assertThat(this.jdbc.queryForObject(
+                        "SELECT group_key FROM sys_config WHERE config_key = 'system.general.title'", String.class))
+                .isEqualTo("general");
         IntegrationTestSupport.assertError(
-                this.get("/api/system/config/getPublic/" + prefix + "_n", null), HttpStatus.FORBIDDEN, 40300);
+                this.get("/api/system/config/getPublic/" + prefix + "_n", null), HttpStatus.FORBIDDEN, 100102);
         IntegrationTestSupport.assertError(
-                this.get("/api/system/config/getPublic/system.site.missing", null), HttpStatus.NOT_FOUND, 40400);
+                this.get("/api/system/config/getPublic/system.site.title", null), HttpStatus.FORBIDDEN, 100102);
 
         IntegrationTestSupport.assertOk(this.delete("/api/system/config/delete/" + jsonId, admin));
         IntegrationTestSupport.assertOk(this.delete("/api/system/config/delete/" + customConfigId, admin));
@@ -209,7 +213,7 @@ class PlatformIT extends IntegrationTestSupport {
         IntegrationTestSupport.assertError(
                 this.put("/api/system/config/updateGroup/" + customGroup, admin, Map.of("label", "不存在")),
                 HttpStatus.NOT_FOUND,
-                40400);
+                100002);
     }
 
     @Test
@@ -223,7 +227,8 @@ class PlatformIT extends IntegrationTestSupport {
         user.put("password", "Passw0rd1");
         user.put("roleIds", List.of());
         this.create("/api/system/user/create", admin, user);
-        IntegrationTestSupport.assertError(this.delete("/api/system/user/delete/1", admin), HttpStatus.CONFLICT, 40901);
+        IntegrationTestSupport.assertError(
+                this.delete("/api/system/user/delete/1", admin), HttpStatus.CONFLICT, 100004);
 
         final String like = "%" + username + "%";
         await().atMost(Duration.ofSeconds(10))
@@ -250,7 +255,8 @@ class PlatformIT extends IntegrationTestSupport {
 
         await().atMost(Duration.ofSeconds(10))
                 .untilAsserted(() -> assertThat(this.jdbc.queryForObject(
-                                "SELECT COUNT(*) FROM sys_operation_log WHERE path = '/api/system/user/delete/1' AND response_code = 40901",
+                                "SELECT COUNT(*) FROM sys_operation_log "
+                                        + "WHERE path = '/api/system/user/delete/1' AND response_code = 100004",
                                 Integer.class))
                         .isPositive());
 
@@ -259,7 +265,7 @@ class PlatformIT extends IntegrationTestSupport {
         final JsonNode failure = failures.path("list").get(0);
         assertThat(failure.path("success").isBoolean()).isTrue();
         assertThat(failure.path("success").asBoolean()).isFalse();
-        assertThat(failure.path("responseCode").asInt()).isEqualTo(40901);
+        assertThat(failure.path("responseCode").asInt()).isEqualTo(100004);
         assertThat(failure.path("errorMessage").asText()).isEqualTo("内置用户不可删除");
 
         final JsonNode detail = IntegrationTestSupport.data(
@@ -268,7 +274,7 @@ class PlatformIT extends IntegrationTestSupport {
         assertThat(detail.path("durationMs").isNumber()).isTrue();
         assertThat(detail.path("createdAt").asText()).matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}");
         IntegrationTestSupport.assertError(
-                this.get("/api/system/operationLog/get/987654321", admin), HttpStatus.NOT_FOUND, 40400);
+                this.get("/api/system/operationLog/get/987654321", admin), HttpStatus.NOT_FOUND, 100002);
     }
 
     @Test

@@ -91,7 +91,7 @@ class AuthIT extends IntegrationTestSupport {
         assertThat(componentsDemo.path("type").asText()).isEqualTo("directory");
         assertThat(componentsDemo.path("path").asText()).isEqualTo("/demo");
         assertThat(componentsDemo.path("component").isNull()).isTrue();
-        assertThat(AuthIT.ids(componentsDemo.path("children"))).containsExactly(15L, 16L, 17L, 18L);
+        assertThat(AuthIT.ids(componentsDemo.path("children"))).containsExactly(15L, 16L, 17L, 18L, 19L);
         assertThat(componentsDemo.path("children").get(0).path("component").asText())
                 .isEqualTo("demo/DemoListPage");
         assertThat(componentsDemo.path("children").get(1).path("component").asText())
@@ -100,17 +100,19 @@ class AuthIT extends IntegrationTestSupport {
                 .isEqualTo("demo/DemoFieldsPage");
         assertThat(componentsDemo.path("children").get(3).path("component").asText())
                 .isEqualTo("demo/DemoAccessPage");
+        assertThat(componentsDemo.path("children").get(4).path("component").asText())
+                .isEqualTo("demo/DemoConfigPage");
     }
 
     @Test
-    @DisplayName("用户名不存在与密码错误都返回 40101，并写失败的登录日志")
+    @DisplayName("用户名不存在与密码错误都返回 110101，并写失败的登录日志")
     void badCredentials() {
         final String ghost = IntegrationTestSupport.unique("ghost");
 
         IntegrationTestSupport.assertError(
-                this.login(IntegrationTestSupport.ADMIN, "wrong-password1"), HttpStatus.UNAUTHORIZED, 40101);
+                this.login(IntegrationTestSupport.ADMIN, "wrong-password1"), HttpStatus.UNAUTHORIZED, 110101);
         final ResponseEntity<JsonNode> unknown = this.login(ghost, "whatever1");
-        IntegrationTestSupport.assertError(unknown, HttpStatus.UNAUTHORIZED, 40101);
+        IntegrationTestSupport.assertError(unknown, HttpStatus.UNAUTHORIZED, 110101);
         assertThat(IntegrationTestSupport.body(unknown).path("message").asText())
                 .isEqualTo("用户名或密码错误");
 
@@ -124,30 +126,30 @@ class AuthIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("无令牌、令牌无效返回 401 / 40100；公开接口不受影响")
+    @DisplayName("无令牌、令牌无效返回 401 / 100101；公开接口不受影响")
     void rejectsMissingOrInvalidToken() {
         IntegrationTestSupport.assertError(
-                this.get("/api/system/auth/getCurrentUser", null), HttpStatus.UNAUTHORIZED, 40100);
+                this.get("/api/system/auth/getCurrentUser", null), HttpStatus.UNAUTHORIZED, 100101);
         IntegrationTestSupport.assertError(
-                this.get("/api/system/user/list", "not-a-jwt"), HttpStatus.UNAUTHORIZED, 40100);
+                this.get("/api/system/user/list", "not-a-jwt"), HttpStatus.UNAUTHORIZED, 100101);
         IntegrationTestSupport.assertOk(this.get("/api/health", "not-a-jwt"));
     }
 
     @Test
-    @DisplayName("请求体校验失败返回 40000，提示语为「字段: 中文提示」")
+    @DisplayName("请求体校验失败返回 100001，提示语为「字段: 中文提示」")
     void validationMessage() {
         final ResponseEntity<JsonNode> response = this.post("/api/system/auth/login", null, Map.of("password", "x"));
 
-        IntegrationTestSupport.assertError(response, HttpStatus.BAD_REQUEST, 40000);
+        IntegrationTestSupport.assertError(response, HttpStatus.BAD_REQUEST, 100001);
         assertThat(IntegrationTestSupport.body(response).path("message").asText())
                 .isEqualTo("username: 不能为空");
     }
 
     @Test
-    @DisplayName("不存在的接口返回 404 / 40400")
+    @DisplayName("不存在的接口返回 404 / 100002")
     void unknownEndpoint() {
         IntegrationTestSupport.assertError(
-                this.get("/api/does-not-exist", this.adminToken()), HttpStatus.NOT_FOUND, 40400);
+                this.get("/api/does-not-exist", this.adminToken()), HttpStatus.NOT_FOUND, 100002);
     }
 
     @Test

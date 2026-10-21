@@ -27,7 +27,7 @@ class FavoriteMenusTest {
     }
 
     @Test
-    @DisplayName("去重后恰好 50 个通过，51 个抛 40000；重复项不计入上限")
+    @DisplayName("去重后恰好 50 个通过，51 个抛 100001；重复项不计入上限")
     void enforcesMaxSize() {
         final List<Long> fifty = LongStream.rangeClosed(1, 50).boxed().toList();
         final List<Long> fiftyWithDuplicates = new ArrayList<>(fifty);
@@ -42,7 +42,7 @@ class FavoriteMenusTest {
     }
 
     @Test
-    @DisplayName("包含不可访问的菜单 ID 抛 40000，并指出是哪一个")
+    @DisplayName("包含不可访问的菜单 ID 抛 100001，并指出是哪一个")
     void rejectsInaccessibleMenu() {
         assertThatThrownBy(() -> FavoriteMenus.normalize(List.of(1L, 999L), FavoriteMenusTest.ACCESSIBLE))
                 .isInstanceOf(BizException.class)

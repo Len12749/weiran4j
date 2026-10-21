@@ -62,8 +62,8 @@ class UserRoleIT extends IntegrationTestSupport {
                         token,
                         UserRoleIT.newUser(IntegrationTestSupport.unique("x"), List.of())),
                 HttpStatus.FORBIDDEN,
-                40300);
-        IntegrationTestSupport.assertError(this.get("/api/system/role/list", token), HttpStatus.FORBIDDEN, 40300);
+                100102);
+        IntegrationTestSupport.assertError(this.get("/api/system/role/list", token), HttpStatus.FORBIDDEN, 100102);
         IntegrationTestSupport.assertOk(this.get("/api/system/role/listOptions", token));
         IntegrationTestSupport.assertOk(this.get("/api/system/department/list", token));
 
@@ -87,7 +87,7 @@ class UserRoleIT extends IntegrationTestSupport {
                         token,
                         UserRoleIT.newUser(IntegrationTestSupport.unique("esc"), List.of(1L))),
                 HttpStatus.FORBIDDEN,
-                40300);
+                100102);
     }
 
     @Test
@@ -135,7 +135,7 @@ class UserRoleIT extends IntegrationTestSupport {
         assertThat(options.findValuesAsText("username")).contains(username, "admin");
 
         IntegrationTestSupport.assertOk(this.delete("/api/system/user/delete/" + id, admin));
-        IntegrationTestSupport.assertError(this.get("/api/system/user/get/" + id, admin), HttpStatus.NOT_FOUND, 40400);
+        IntegrationTestSupport.assertError(this.get("/api/system/user/get/" + id, admin), HttpStatus.NOT_FOUND, 100002);
         final Integer links =
                 this.jdbc.queryForObject("SELECT COUNT(*) FROM sys_user_role WHERE user_id = ?", Integer.class, id);
         assertThat(links).isZero();
@@ -153,7 +153,7 @@ class UserRoleIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("高级筛选：用户名 / ID / 手机 / 邮箱精确匹配，角色去重，性别，时间闭区间与从未登录，多条件交集，非法值 40000")
+    @DisplayName("高级筛选：用户名 / ID / 手机 / 邮箱精确匹配，角色去重，性别，时间闭区间与从未登录，多条件交集，非法值 100001")
     void advancedFilters() {
         final String admin = this.adminToken();
         final long role1 = this.createRole(admin, IntegrationTestSupport.unique("adv"), List.of());
@@ -187,14 +187,14 @@ class UserRoleIT extends IntegrationTestSupport {
         assertThat(this.userIds(admin, "roleId=" + role1)).containsExactlyInAnyOrder(idA, idB);
         assertThat(this.userIds(admin, "roleId=" + role2)).containsExactly(idA);
 
-        // 性别：按值过滤，非法值 40000；不传性别时不过滤（B 为 male 仍在）
+        // 性别：按值过滤，非法值 100001；不传性别时不过滤（B 为 male 仍在）
         final ResponseEntity<JsonNode> females = this.get("/api/system/user/list?pageSize=100&gender=female", admin);
         assertThat(IntegrationTestSupport.data(females).path("list").findValuesAsText("gender"))
                 .containsOnly("female");
         assertThat(this.userIds(admin, "gender=female")).contains(idA).doesNotContain(idB);
         assertThat(this.userIds(admin, "roleId=" + role1)).contains(idB);
         IntegrationTestSupport.assertError(
-                this.get("/api/system/user/list?gender=x", admin), HttpStatus.BAD_REQUEST, 40000);
+                this.get("/api/system/user/list?gender=x", admin), HttpStatus.BAD_REQUEST, 100001);
 
         // 创建时间闭区间：边界时刻包含
         final String createdAt = IntegrationTestSupport.data(this.get("/api/system/user/get/" + idA, admin))
@@ -223,13 +223,13 @@ class UserRoleIT extends IntegrationTestSupport {
 
         // 非法数字与时间格式
         IntegrationTestSupport.assertError(
-                this.get("/api/system/user/list?userId=abc", admin), HttpStatus.BAD_REQUEST, 40000);
+                this.get("/api/system/user/list?userId=abc", admin), HttpStatus.BAD_REQUEST, 100001);
         IntegrationTestSupport.assertError(
-                this.get("/api/system/user/list?createdStartTime=2026-13-01", admin), HttpStatus.BAD_REQUEST, 40000);
+                this.get("/api/system/user/list?createdStartTime=2026-13-01", admin), HttpStatus.BAD_REQUEST, 100001);
     }
 
     @Test
-    @DisplayName("用户名重复 40900，弱密码与非法角色 40000，内置用户删除 / 禁用 40901")
+    @DisplayName("用户名重复 100003，弱密码与非法角色 100001，内置用户删除 / 禁用 100004")
     void userRules() {
         final String admin = this.adminToken();
         final String username = IntegrationTestSupport.unique("dup");
@@ -238,12 +238,12 @@ class UserRoleIT extends IntegrationTestSupport {
         IntegrationTestSupport.assertError(
                 this.post("/api/system/user/create", admin, UserRoleIT.newUser(username, List.of())),
                 HttpStatus.CONFLICT,
-                40900);
+                100003);
 
         final Map<String, Object> weak = UserRoleIT.newUser(IntegrationTestSupport.unique("weak"), List.of());
         weak.put("password", "abcdefgh");
         final ResponseEntity<JsonNode> weakResponse = this.post("/api/system/user/create", admin, weak);
-        IntegrationTestSupport.assertError(weakResponse, HttpStatus.BAD_REQUEST, 40000);
+        IntegrationTestSupport.assertError(weakResponse, HttpStatus.BAD_REQUEST, 100001);
         assertThat(IntegrationTestSupport.body(weakResponse).path("message").asText())
                 .startsWith("password: ");
 
@@ -253,29 +253,30 @@ class UserRoleIT extends IntegrationTestSupport {
                         admin,
                         UserRoleIT.newUser(IntegrationTestSupport.unique("r"), List.of(999_999L))),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
 
-        IntegrationTestSupport.assertError(this.delete("/api/system/user/delete/1", admin), HttpStatus.CONFLICT, 40901);
+        IntegrationTestSupport.assertError(
+                this.delete("/api/system/user/delete/1", admin), HttpStatus.CONFLICT, 100004);
         final Map<String, Object> disableAdmin = new HashMap<>();
         disableAdmin.put("nickname", "超级管理员");
         disableAdmin.put("departmentId", 1);
         disableAdmin.put("status", "disabled");
         disableAdmin.put("roleIds", List.of(1L));
         IntegrationTestSupport.assertError(
-                this.put("/api/system/user/update/1", admin, disableAdmin), HttpStatus.CONFLICT, 40901);
+                this.put("/api/system/user/update/1", admin, disableAdmin), HttpStatus.CONFLICT, 100004);
         final Map<String, Object> stripAdmin = new HashMap<>(disableAdmin);
         stripAdmin.put("status", "enabled");
         stripAdmin.put("roleIds", List.of());
         IntegrationTestSupport.assertError(
-                this.put("/api/system/user/update/1", admin, stripAdmin), HttpStatus.CONFLICT, 40901);
+                this.put("/api/system/user/update/1", admin, stripAdmin), HttpStatus.CONFLICT, 100004);
         final Map<String, Object> missingRoles = UserRoleIT.newUser(IntegrationTestSupport.unique("nr"), List.of());
         missingRoles.remove("roleIds");
         IntegrationTestSupport.assertError(
-                this.post("/api/system/user/create", admin, missingRoles), HttpStatus.BAD_REQUEST, 40000);
+                this.post("/api/system/user/create", admin, missingRoles), HttpStatus.BAD_REQUEST, 100001);
     }
 
     @Test
-    @DisplayName("自己改密后旧令牌失效、新密码可登录；原密码错误返回 40000")
+    @DisplayName("自己改密后旧令牌失效、新密码可登录；原密码错误返回 100001")
     void changeOwnPasswordRevokesToken() {
         final String admin = this.adminToken();
         final String username = IntegrationTestSupport.unique("pwd");
@@ -288,28 +289,28 @@ class UserRoleIT extends IntegrationTestSupport {
                         oldToken,
                         Map.of("oldPassword", "wrong-1234", "newPassword", "NewPass123")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         IntegrationTestSupport.assertError(
                 this.put(
                         "/api/system/auth/updatePassword",
                         oldToken,
                         Map.of("oldPassword", UserRoleIT.PASSWORD, "newPassword", "short")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         IntegrationTestSupport.assertOk(this.put(
                 "/api/system/auth/updatePassword",
                 oldToken,
                 Map.of("oldPassword", UserRoleIT.PASSWORD, "newPassword", "NewPass123")));
 
         IntegrationTestSupport.assertError(
-                this.get("/api/system/auth/getCurrentUser", oldToken), HttpStatus.UNAUTHORIZED, 40100);
-        IntegrationTestSupport.assertError(this.login(username, UserRoleIT.PASSWORD), HttpStatus.UNAUTHORIZED, 40101);
+                this.get("/api/system/auth/getCurrentUser", oldToken), HttpStatus.UNAUTHORIZED, 100101);
+        IntegrationTestSupport.assertError(this.login(username, UserRoleIT.PASSWORD), HttpStatus.UNAUTHORIZED, 110101);
         IntegrationTestSupport.assertOk(
                 this.get("/api/system/auth/getCurrentUser", this.tokenOf(username, "NewPass123")));
     }
 
     @Test
-    @DisplayName("管理员重置密码与禁用用户都会让旧令牌失效，禁用后登录返回 40301")
+    @DisplayName("管理员重置密码与禁用用户都会让旧令牌失效，禁用后登录返回 110103")
     void resetAndDisableRevokeTokens() {
         final String admin = this.adminToken();
         final String username = IntegrationTestSupport.unique("reset");
@@ -320,7 +321,7 @@ class UserRoleIT extends IntegrationTestSupport {
         IntegrationTestSupport.assertOk(
                 this.put("/api/system/user/updatePassword/" + id, admin, Map.of("password", "Reset1234")));
         IntegrationTestSupport.assertError(
-                this.get("/api/system/auth/getCurrentUser", firstToken), HttpStatus.UNAUTHORIZED, 40100);
+                this.get("/api/system/auth/getCurrentUser", firstToken), HttpStatus.UNAUTHORIZED, 100101);
 
         final String secondToken = this.tokenOf(username, "Reset1234");
         final Map<String, Object> disable = new HashMap<>();
@@ -329,8 +330,8 @@ class UserRoleIT extends IntegrationTestSupport {
         disable.put("roleIds", List.of());
         IntegrationTestSupport.assertOk(this.put("/api/system/user/update/" + id, admin, disable));
         IntegrationTestSupport.assertError(
-                this.get("/api/system/auth/getCurrentUser", secondToken), HttpStatus.UNAUTHORIZED, 40100);
-        IntegrationTestSupport.assertError(this.login(username, "Reset1234"), HttpStatus.FORBIDDEN, 40301);
+                this.get("/api/system/auth/getCurrentUser", secondToken), HttpStatus.UNAUTHORIZED, 100101);
+        IntegrationTestSupport.assertError(this.login(username, "Reset1234"), HttpStatus.FORBIDDEN, 110103);
 
         // PUT 中省略 status 时保持原值，不会把禁用用户悄悄启用。
         final Map<String, Object> rename = new HashMap<>();
@@ -378,7 +379,7 @@ class UserRoleIT extends IntegrationTestSupport {
                 this.jdbc.queryForObject("SELECT token_version FROM sys_user WHERE id = ?", Integer.class, id);
         assertThat(tokenVersion).isEqualTo(passwords.size() - 1);
         IntegrationTestSupport.assertOk(this.login(username, "Reset4444"));
-        IntegrationTestSupport.assertError(this.login(username, "Reset3333"), HttpStatus.UNAUTHORIZED, 40101);
+        IntegrationTestSupport.assertError(this.login(username, "Reset3333"), HttpStatus.UNAUTHORIZED, 110101);
     }
 
     @Test
@@ -400,13 +401,13 @@ class UserRoleIT extends IntegrationTestSupport {
         demote.put("nickname", "降级");
         demote.put("roleIds", List.of());
         IntegrationTestSupport.assertError(
-                this.put("/api/system/user/update/" + superUser, token, demote), HttpStatus.FORBIDDEN, 40300);
+                this.put("/api/system/user/update/" + superUser, token, demote), HttpStatus.FORBIDDEN, 100102);
 
         final Map<String, Object> promoteSelf = new HashMap<>();
         promoteSelf.put("nickname", "提权");
         promoteSelf.put("roleIds", List.of(managerRole, 1L));
         IntegrationTestSupport.assertError(
-                this.put("/api/system/user/update/" + managerId, token, promoteSelf), HttpStatus.FORBIDDEN, 40300);
+                this.put("/api/system/user/update/" + managerId, token, promoteSelf), HttpStatus.FORBIDDEN, 100102);
 
         // 保留对方已有的 super_admin 不算授予 / 移除，改其它字段允许。
         final Map<String, Object> keep = new HashMap<>();
@@ -439,7 +440,7 @@ class UserRoleIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("角色 CRUD 与规则：编码格式 40000、重复 40900、内置或有用户时删除 40901")
+    @DisplayName("角色 CRUD 与规则：编码格式 100001、重复 100003、内置或有用户时删除 100004")
     void roleRules() {
         final String admin = this.adminToken();
         final String code = IntegrationTestSupport.unique("editor");
@@ -455,16 +456,17 @@ class UserRoleIT extends IntegrationTestSupport {
         IntegrationTestSupport.assertError(
                 this.post("/api/system/role/create", admin, Map.of("name", "x", "code", "Bad-Code")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         IntegrationTestSupport.assertError(
                 this.post("/api/system/role/create", admin, Map.of("name", "x", "code", code)),
                 HttpStatus.CONFLICT,
-                40900);
-        IntegrationTestSupport.assertError(this.delete("/api/system/role/delete/1", admin), HttpStatus.CONFLICT, 40901);
+                100003);
+        IntegrationTestSupport.assertError(
+                this.delete("/api/system/role/delete/1", admin), HttpStatus.CONFLICT, 100004);
         IntegrationTestSupport.assertError(
                 this.put("/api/system/role/update/1", admin, Map.of("name", "超管", "code", "root")),
                 HttpStatus.CONFLICT,
-                40901);
+                100004);
 
         this.create(
                 "/api/system/user/create",
@@ -473,7 +475,7 @@ class UserRoleIT extends IntegrationTestSupport {
         final JsonNode page = IntegrationTestSupport.data(this.get("/api/system/role/list?keyword=" + code, admin));
         assertThat(page.path("list").get(0).path("userCount").asLong()).isEqualTo(1L);
         IntegrationTestSupport.assertError(
-                this.delete("/api/system/role/delete/" + roleId, admin), HttpStatus.CONFLICT, 40901);
+                this.delete("/api/system/role/delete/" + roleId, admin), HttpStatus.CONFLICT, 100004);
 
         final long emptyRole = this.createRole(admin, IntegrationTestSupport.unique("tmp"), List.of(2L, 3L));
         IntegrationTestSupport.assertOk(this.put(
@@ -487,6 +489,6 @@ class UserRoleIT extends IntegrationTestSupport {
         IntegrationTestSupport.assertError(
                 this.put("/api/system/role/assignMenus/" + roleId, admin, Map.of("menuIds", List.of(987_654L))),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
     }
 }

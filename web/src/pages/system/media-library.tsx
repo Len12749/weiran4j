@@ -29,7 +29,7 @@ function validateImage(file: File): string | null {
 }
 
 function isReferenceConflict(error: unknown): error is ApiError {
-    return error instanceof ApiError && (error.status === 409 || (error.code >= 40900 && error.code < 41000));
+    return error instanceof ApiError && (error.status === 409 || error.code === 100004);
 }
 
 export default function SystemMediaLibraryPage() {

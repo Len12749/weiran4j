@@ -133,7 +133,7 @@ describe('PreferencesProvider', () => {
         signIn(1);
         mockFetch({
             [`GET ${API}`]: { ...defaultPreferences, colorMode: 'dark' },
-            'GET /api/system/user/list': () => Response.json({ code: 40100, message: '登录已失效', data: null }, { status: 401 }),
+            'GET /api/system/user/list': () => Response.json({ code: 100101, message: '登录已失效', data: null }, { status: 401 }),
         });
         renderProvider();
         await waitFor(() => expect(state()).toBe('dark|20|logo'));
@@ -152,7 +152,7 @@ describe('PreferencesProvider', () => {
         localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify({ ...defaultPreferences, colorMode: 'dark' }));
         signIn();
         const { calls } = mockFetch({
-            [`GET ${API}`]: () => Response.json({ code: 50000, message: '服务器错误', data: null }, { status: 500 }),
+            [`GET ${API}`]: () => Response.json({ code: 100005, message: '服务器错误', data: null }, { status: 500 }),
         });
         renderProvider();
         await waitFor(() => expect(calls).toHaveLength(1));

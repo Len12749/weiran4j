@@ -11,8 +11,8 @@ import org.jspecify.annotations.Nullable;
 @Builder(toBuilder = true)
 public final class SystemConfig {
 
-    /** 允许匿名读取的配置键前缀。 */
-    public static final String PUBLIC_PREFIX = "system.site.";
+    /** 允许匿名读取的配置键。 */
+    public static final String PUBLIC_KEY = "system.general.title";
 
     private final @Nullable Long id;
 
@@ -46,9 +46,9 @@ public final class SystemConfig {
         return this.id;
     }
 
-    /** 键是否在公开前缀下。 */
+    /** 键是否允许公开读取。 */
     public static boolean isPublicKey(final String configKey) {
-        return configKey.startsWith(SystemConfig.PUBLIC_PREFIX);
+        return SystemConfig.PUBLIC_KEY.equals(configKey);
     }
 
     /** 新建配置及变更键或分组时，键须与所属分组保持一致。 */

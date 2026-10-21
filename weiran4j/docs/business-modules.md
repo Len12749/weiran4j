@@ -2,7 +2,8 @@
 
 > 本表是通用后台仓库的号段登记入口。上游只维护表头与框架/基座行；下游模块由其维护者登记。
 
-| 模块 | 错误码序号段 | 菜单 ID 段 | 权限码前缀 | Flyway 目录 · 表名 |
+| 模块 | 错误码服务号 · 资源号 | 菜单 ID 段 | 权限码前缀 | Flyway 目录 · 表名 |
 |---|---|---|---|---|
-| 框架与基座（`weiran-framework`、`weiran-system`） | `00`–`19` | `1`–`999` | `system:` | `system/`、`platform/` · `sys_` |
-| `weiran-region` | `20`–`29` | `1000`–`1099` | `region:` | `region/` · `region` |
+| `weiran-framework` | 服务 `10`；资源 `00` 通用、`01` 认证与请求安全 | — | — | — |
+| `weiran-system` | 服务 `11`；资源 `01` 认证 | `1`–`999` | `system:` | `system/`、`platform/` · `sys_` |
+| `weiran-region` | 服务 `12`；资源 `01` 行政区划 | `1000`–`1099` | `region:` | `region/` · `region` |

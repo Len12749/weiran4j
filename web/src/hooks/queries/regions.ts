@@ -75,7 +75,7 @@ export async function downloadRegionCsv(query: RegionQuery): Promise<void> {
         });
         if (!response.ok) {
             let message = `导出失败（HTTP ${response.status}）`;
-            let code = response.status * 100;
+            let code = -1;
             try {
                 const error = (await response.json()) as { code?: unknown; message?: unknown };
                 if (typeof error.message === 'string') message = error.message;

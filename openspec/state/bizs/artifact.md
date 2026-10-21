@@ -47,7 +47,7 @@
   关闭条件:`main` 设为受保护分支,改为 feature/hotfix 分支 + PR 合并,CR 清单沿用公司 CR 规约的 P0~P3。
 
 - **#13 🔴 P2 写接口幂等只靠唯一键兜底**
-  症状:重复提交创建类请求时,有唯一键的表返回 `40900`,没有业务唯一键的写入会产生重复数据;
+  症状:重复提交创建类请求时,有唯一键的表返回 `100003`,没有业务唯一键的写入会产生重复数据;
   两个管理员同时编辑同一条记录时后写覆盖先写,先写的人不会得到任何提示。
   公司 Java 编码规约把「同时插入 / 同时修改」两种幂等列为强制。
   关闭条件:定下统一策略(唯一键 + 乐观锁 `version` 列,或提交令牌),从用户、角色写接口开始落地。
@@ -77,7 +77,7 @@
     MyBatis-Plus + Flyway(非 Raptor + PageHelper);无 Tesla RPC / MWP 网关 / Metabase / Vacuum / Spirit / Sentry;
     自建 JWT + RBAC(非 Auth / CAS 平台与 `@Permission` 启动上报)。
   - 响应体:`{code: 0, message, data}`(公司为 `{status, success, message, data, requestId}`;requestId 缺失见 #10)。
-  - 错误码:5 位、前三位即 HTTP 状态(公司为 9 位:异常类型 1 + 服务 3 + 领域 2 + 业务 3)。
+  - 错误码:6 位，服务、资源、错误各 2 位，HTTP 状态单独定义(公司为 9 位:异常类型 1 + 服务 3 + 领域 2 + 业务 3)。
   - URL 与方法:REST 风格 `/api/users/{id}` + PUT / DELETE(公司只用 GET / POST,
     路径 `/{服务}/{模块}/{资源}/v1/{动作}`,蛇形)。
   - 分页:入参 `page/pageSize`、返回 `list/total`(公司为 `current/size`、`records/total`)。

@@ -18,6 +18,7 @@ const SEED_COMPONENTS = [
     'demo/DemoNavigationPage',
     'demo/DemoFieldsPage',
     'demo/DemoAccessPage',
+    'demo/DemoConfigPage',
 ];
 
 describe('page-registry', () => {
