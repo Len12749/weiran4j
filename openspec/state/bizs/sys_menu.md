@@ -33,7 +33,7 @@
 | 后端模块 | `weiran-system`；`MenuController` → `MenuApplicationService` → `MybatisMenuRepository` |
 | 接口前缀 | `/api/menus`（管理）；`/api/auth/menus`（当前用户可见菜单树，`AuthController`） |
 | 权限码 | `system:menu:list` · `system:menu:create` · `system:menu:update` · `system:menu:delete` |
-| 种子 | 菜单 id 1–19 固定（首页、系统管理 8 项、日志审计 2 项、组件演示目录与 5 个子页），按钮 id 100–125；前端与测试按 ID 引用 |
+| 种子 | 通用菜单 id 1–13 固定；组件演示 id 14–19 仅由 `weiran-app` 在 local/test 播种；按钮 id 100–125；前端与测试按 ID 引用 |
 
 ## 1. 列表
 
@@ -121,6 +121,9 @@
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-22**
+- 组件演示菜单从通用基座迁至 `weiran-app` 的 local/test 专用 Flyway 路径；通用系统迁移删除历史演示菜单，生产环境不再展示。
 
 **2026-10-21**
 - 组件演示新增「配置表单」子页（id 19，`/demo/config`），用本地数据展示系统配置的八种字段类型。
