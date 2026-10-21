@@ -44,8 +44,10 @@ public class MybatisConfigRepository implements ConfigRepository {
     }
 
     @Override
-    public boolean existsByGroupKey(final String groupKey) {
-        return this.configMapper.exists(Wrappers.lambdaQuery(SysConfigDO.class).eq(SysConfigDO::getGroupKey, groupKey));
+    public boolean existsByGroupKey(final String groupKey, final String keyPrefix) {
+        return this.configMapper.exists(Wrappers.lambdaQuery(SysConfigDO.class)
+                .eq(SysConfigDO::getGroupKey, groupKey)
+                .likeRight(SysConfigDO::getConfigKey, keyPrefix));
     }
 
     @Override

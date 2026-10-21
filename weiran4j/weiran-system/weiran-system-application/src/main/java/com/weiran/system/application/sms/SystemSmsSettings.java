@@ -1,0 +1,50 @@
+package com.weiran.system.application.sms;
+
+import com.weiran.platform.api.config.ConfigService;
+import com.weiran.platform.api.config.ConfigView;
+import com.weiran.system.domain.sms.SmsSettings;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
+
+/** 通过系统配置动态读取短信签名与验证码模板。 */
+public class SystemSmsSettings implements SmsSettings {
+
+    private static final String SIGN_NAME_KEY = "sms.sign_name";
+
+    private static final String LOCAL_TEMPLATE_CODE_KEY = "sms.captcha_local";
+
+    private static final String ALIYUN_TEMPLATE_CODE_KEY = "sms.captcha_aliyun";
+
+    private final ConfigService configService;
+
+    private final String mode;
+
+    public SystemSmsSettings(
+            final ConfigService configService, @Value("${weiran.sms.mode:disabled}") final String mode) {
+        this.configService = configService;
+        this.mode = mode;
+    }
+
+    @Override
+    public String signName() {
+        return this.values().getOrDefault(SystemSmsSettings.SIGN_NAME_KEY, "").strip();
+    }
+
+    @Override
+    public String verificationTemplateCode() {
+        return this.values().getOrDefault(this.templateCodeKey(), "").strip();
+    }
+
+    private Map<String, String> values() {
+        return this.configService.all().stream()
+                .filter(config -> config.configKey().startsWith("sms."))
+                .collect(Collectors.toMap(ConfigView::configKey, ConfigView::configValue, (first, ignored) -> first));
+    }
+
+    private String templateCodeKey() {
+        return "aliyun".equals(this.mode)
+                ? SystemSmsSettings.ALIYUN_TEMPLATE_CODE_KEY
+                : SystemSmsSettings.LOCAL_TEMPLATE_CODE_KEY;
+    }
+}

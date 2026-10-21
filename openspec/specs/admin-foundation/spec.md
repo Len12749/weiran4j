@@ -202,7 +202,7 @@ status: "active"
 
 ### Requirement: [FR-013] 分组式系统配置表单
 
-字典与系统配置分组 **MUST** 共用 `sys_group` 表，且不得保留独立 `sys_dict` 主表。`sys_group.type` **MUST** 支持 `config` 与 `dict`，唯一键为 `(type, code)`；既有字典记录迁移后为 `type=dict`，配置分组为 `type=config`。字典项继续存于 `sys_dict_item`，数据库列 `group_id` 引用对应 `type=dict` 的组 ID；既有 HTTP 字段 `dictId` 保持兼容。字典 API **MUST** 只查询和修改 `dict` 类型组，配置 API **MUST** 只查询和引用 `config` 类型组。系统配置页面 **MUST** 在左侧展示启用的配置组导航，在右侧展示当前组选中的配置项及其表单。每个配置项的表单字段类型、选项与必填规则 **MUST** 决定控件渲染和前后端校验。支持单行输入、多行文本、数字、布尔开关、下拉选择和 JSON 字段，值类型必须与字段类型兼容。新增和修改配置 **MUST** 使用 `system.` 键前缀；内置配置 **MUST** 保留键名且不可删除。匿名配置读取 **MUST** 只允许 `system.site.*`，且不隐式改变前端展示。系统站点内容配置及其存储表 **MUST NOT** 存在。
+字典与系统配置分组 **MUST** 共用 `sys_group` 表，且不得保留独立 `sys_dict` 主表。`sys_group.type` **MUST** 支持 `config` 与 `dict`，唯一键为 `(type, group_key, code)`；既有字典记录迁移后为 `type=dict`，配置分组为 `type=config`。系统配置组使用 `group_key=config_system`，短信配置组使用 `group_key=config_sms`，两者允许同名编码。字典项继续存于 `sys_dict_item`，数据库列 `group_id` 引用对应 `type=dict` 的组 ID；既有 HTTP 字段 `dictId` 保持兼容。字典 API **MUST** 只查询和修改 `dict` 类型组，配置 API **MUST** 只查询和引用 `config` 类型组。系统配置页面 **MUST** 在左侧展示适用于系统配置的启用配置组导航，在右侧展示当前组选中的配置项及其表单；短信配置项使用 `sms.` 键前缀并由独立短信配置页面展示，不能出现在系统配置表单中。每个配置项的表单字段类型、选项与必填规则 **MUST** 决定控件渲染和前后端校验。支持单行输入、多行文本、数字、布尔开关、下拉选择和 JSON 字段，值类型必须与字段类型兼容。常规配置使用 `system.` 键前缀；短信配置可使用 `sms.` 键前缀。内置配置 **MUST** 保留键名且不可删除。匿名配置读取 **MUST** 只允许 `system.site.*`，且不隐式改变前端展示。系统站点内容配置及其存储表 **MUST NOT** 存在。
 
 #### Scenario: 配置 API 统一使用 system 路径
 - **WHEN** 客户端访问配置列表、分组、全量、详情、写入或公开读取接口
@@ -211,8 +211,8 @@ status: "active"
 
 #### Scenario: 按类型查询配置组并显示双栏页面
 - **WHEN** 管理员打开系统配置页面
-- **THEN** 左侧显示启用的 `type=config` 分组，右侧显示当前分组的配置项，并按配置元数据渲染字段控件和必填/选项校验
-- **判据**:`GET /api/system/config/listGroups` 仅返回 `config` 类型启用组；选择左侧组后右侧配置项与其 `groupKey` 一致
+- **THEN** 左侧显示启用的系统配置组，右侧显示当前分组的非短信配置项，并按配置元数据渲染字段控件和必填/选项校验；`config_sms` 短信配置域不显示在此页面
+- **判据**:`GET /api/system/config/listGroups` 仍返回 `config` 类型启用组；页面隐藏短信模板专用组与 `sms.` 配置项
 
 #### Scenario: 从配置侧栏新增分组
 - **WHEN** 有配置创建权限的管理员从分组侧栏新增一个分组
@@ -257,7 +257,7 @@ status: "active"
 #### Scenario: 字典与配置共用分组表并按类型隔离
 - **WHEN** 数据库迁移从既有版本升级
 - **THEN** 原字典记录保留 ID 并迁入 `sys_group`，标记 `type=dict`；新增配置分组标记 `type=config`
-- **判据**:`sys_dict` 表不存在；`sys_group` 唯一约束包含 `type,code`；`sys_dict_item.group_id` 保留原关联值并关联原字典 ID
+- **判据**:`sys_dict` 表不存在；`sys_group` 唯一约束包含 `type,group_key,code`；`sys_dict_item.group_id` 保留原关联值并关联原字典 ID
 
 #### Scenario: 字典 API 只操作 dict 类型分组
 - **WHEN** 字典列表、编码查询、创建、修改或删除被调用

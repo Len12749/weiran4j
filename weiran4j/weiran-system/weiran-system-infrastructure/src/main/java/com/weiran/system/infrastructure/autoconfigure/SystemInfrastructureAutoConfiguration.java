@@ -7,6 +7,7 @@ import com.weiran.system.domain.auth.TokenVerifier;
 import com.weiran.system.domain.identity.ExternalIdentityProviders;
 import com.weiran.system.domain.identity.SsoStateSigner;
 import com.weiran.system.domain.sms.SmsSender;
+import com.weiran.system.domain.sms.SmsSettings;
 import com.weiran.system.domain.storage.FileStorage;
 import com.weiran.system.domain.user.PasswordHasher;
 import com.weiran.system.infrastructure.identity.AuthProvidersProperties;
@@ -26,7 +27,7 @@ import com.weiran.system.infrastructure.security.JwtTokenCodec;
 import com.weiran.system.infrastructure.security.SystemSecurityProperties;
 import com.weiran.system.infrastructure.sms.AliyunSmsSender;
 import com.weiran.system.infrastructure.sms.DisabledSmsSender;
-import com.weiran.system.infrastructure.sms.LogSmsSender;
+import com.weiran.system.infrastructure.sms.LocalSmsSender;
 import com.weiran.system.infrastructure.sms.SystemSmsProperties;
 import com.weiran.system.infrastructure.storage.DisabledFileStorage;
 import com.weiran.system.infrastructure.storage.LocalFileStorage;
@@ -69,12 +70,13 @@ public class SystemInfrastructureAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(SmsSender.class)
-    public SmsSender systemSmsSender(final SystemSmsProperties properties, final ObjectMapper objectMapper) {
+    public SmsSender systemSmsSender(
+            final SystemSmsProperties properties, final ObjectMapper objectMapper, final SmsSettings smsSettings) {
         return switch (properties.mode()) {
             case "disabled" -> new DisabledSmsSender();
-            case "log" -> new LogSmsSender(objectMapper);
-            case "aliyun" -> AliyunSmsSender.create(properties, objectMapper);
-            default -> throw new IllegalStateException("短信模式无效，请检查 WEIRAN_SMS_MODE（允许值：disabled、log、aliyun）");
+            case "local" -> new LocalSmsSender(objectMapper);
+            case "aliyun" -> AliyunSmsSender.create(properties, smsSettings, objectMapper);
+            default -> throw new IllegalStateException("短信模式无效，请检查 WEIRAN_SMS_MODE（允许值：disabled、local、aliyun）");
         };
     }
 

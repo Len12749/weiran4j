@@ -8,11 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 
 /** 仅记录短信内容、不连接短信服务的开发与联调 sender。 */
 @Slf4j
-public final class LogSmsSender implements SmsSender {
+public final class LocalSmsSender implements SmsSender {
 
     private final ObjectMapper objectMapper;
 
-    public LogSmsSender(final ObjectMapper objectMapper) {
+    public LocalSmsSender(final ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
@@ -21,16 +21,16 @@ public final class LogSmsSender implements SmsSender {
     public SmsSendOutcome send(final String phone, final String templateCode, final Map<String, String> parameters) {
         try {
             final String templateParameters = this.objectMapper.writeValueAsString(parameters);
-            LogSmsSender.log.info(
-                    "短信 log 模式 phone={} templateCode={} templateParameters={}",
-                    LogSmsSender.maskPhone(phone),
+            LocalSmsSender.log.info(
+                    "短信 local 模式 phone={} templateCode={} templateParameters={}",
+                    LocalSmsSender.maskPhone(phone),
                     templateCode,
                     templateParameters);
             return SmsSendOutcome.LOGGED;
         } catch (final Exception exception) {
-            LogSmsSender.log.warn(
-                    "短信 log 模式记录失败 phone={} error={}",
-                    LogSmsSender.maskPhone(phone),
+            LocalSmsSender.log.warn(
+                    "短信 local 模式记录失败 phone={} error={}",
+                    LocalSmsSender.maskPhone(phone),
                     exception.getClass().getSimpleName());
             return SmsSendOutcome.FAILED;
         }

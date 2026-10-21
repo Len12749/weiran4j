@@ -393,6 +393,7 @@ export type ConfigType = 'string' | 'number' | 'boolean' | 'json';
 export type ConfigFieldType = 'input' | 'textarea' | 'number' | 'switch' | 'select' | 'json' | 'image' | 'richtext';
 
 export interface ConfigGroupView {
+    groupKey: string;
     key: string;
     label: string;
     isBuiltin: boolean;
@@ -401,6 +402,7 @@ export interface ConfigGroupView {
 }
 
 export interface ConfigGroupSaveRequest {
+    groupKey?: 'config_system' | 'config_sms';
     key: string;
     label: string;
 }

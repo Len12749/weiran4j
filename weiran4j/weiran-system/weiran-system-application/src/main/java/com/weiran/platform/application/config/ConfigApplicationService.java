@@ -60,10 +60,13 @@ public class ConfigApplicationService implements ConfigService {
     public List<ConfigGroupView> groups() {
         return this.configGroupRepository.findEnabled().stream()
                 .map(item -> new ConfigGroupView(
+                        item.groupKey(),
                         item.key(),
                         item.label(),
                         item.builtin(),
-                        !item.builtin() && !this.configRepository.existsByGroupKey(item.key()),
+                        !item.builtin()
+                                && !this.configRepository.existsByGroupKey(
+                                        item.key(), item.groupKey().equals("config_sms") ? "sms." : "system."),
                         item.createdAt()))
                 .toList();
     }
@@ -71,6 +74,7 @@ public class ConfigApplicationService implements ConfigService {
     @Override
     @Transactional
     public long createGroup(final CreateConfigGroupCommand command) {
+        final String groupDomain = ConfigApplicationService.requireGroupDomain(command.groupKey());
         final String key = command.key().strip();
         final String label = command.label().strip();
         if (key.isEmpty() || !key.matches("[a-z][a-z0-9_-]*")) {
@@ -79,42 +83,48 @@ public class ConfigApplicationService implements ConfigService {
         if (label.isEmpty()) {
             throw BizException.badRequest("分组名称不能为空");
         }
-        if (this.configGroupRepository.existsByKey(key)) {
+        if (this.configGroupRepository.existsByKey(groupDomain, key)) {
             throw BizException.duplicate("配置分组编码已存在");
         }
-        final int sort = this.configGroupRepository.findEnabled().size() + 1;
-        return this.configGroupRepository.save(new ConfigGroup(key, label, sort, false, null));
+        final int sort = (int) this.configGroupRepository.findEnabled().stream()
+                        .filter(group -> group.groupKey().equals(groupDomain))
+                        .count()
+                + 1;
+        return this.configGroupRepository.save(new ConfigGroup(groupDomain, key, label, sort, false, null));
     }
 
     @Override
     @Transactional
     public void updateGroup(final UpdateConfigGroupCommand command) {
+        final String groupDomain = ConfigApplicationService.requireGroupDomain(command.groupKey());
         final String key = command.key().strip();
         final String label = command.label().strip();
         if (label.isEmpty()) {
             throw BizException.badRequest("分组名称不能为空");
         }
-        if (this.configGroupRepository.findEnabledByKey(key).isEmpty()) {
+        if (this.configGroupRepository.findEnabledByKey(groupDomain, key).isEmpty()) {
             throw new BizException(CommonErrors.NOT_FOUND, "配置分组不存在");
         }
-        if (!this.configGroupRepository.updateLabel(key, label)) {
+        if (!this.configGroupRepository.updateLabel(groupDomain, key, label)) {
             throw new BizException(CommonErrors.NOT_FOUND, "配置分组不存在");
         }
     }
 
     @Override
     @Transactional
-    public void deleteGroup(final String groupKey) {
-        final String key = groupKey.strip();
-        final ConfigGroup group =
-                this.configGroupRepository.findEnabledByKey(key).orElseThrow(() -> BizException.notFound("配置分组不存在"));
+    public void deleteGroup(final String groupKey, final String code) {
+        final String groupDomain = ConfigApplicationService.requireGroupDomain(groupKey);
+        final String key = code.strip();
+        final ConfigGroup group = this.configGroupRepository
+                .findEnabledByKey(groupDomain, key)
+                .orElseThrow(() -> BizException.notFound("配置分组不存在"));
         if (group.builtin()) {
             throw BizException.conflict("内置配置分组不可删除");
         }
-        if (this.configRepository.existsByGroupKey(key)) {
+        if (this.configRepository.existsByGroupKey(key, groupDomain.equals("config_sms") ? "sms." : "system.")) {
             throw BizException.conflict("分组下仍有配置项，不能删除");
         }
-        if (!this.configGroupRepository.deleteByKey(key)) {
+        if (!this.configGroupRepository.deleteByKey(groupDomain, key)) {
             throw BizException.notFound("配置分组不存在");
         }
     }
@@ -128,8 +138,8 @@ public class ConfigApplicationService implements ConfigService {
     @Override
     @Transactional
     public long create(final SaveConfigCommand command) {
-        this.requireConfigGroup(command.groupKey().strip());
         final String key = command.configKey().strip();
+        this.requireConfigGroup(key, command.groupKey().strip());
         if (this.configRepository.existsByKey(key)) {
             throw BizException.duplicate("配置键已存在");
         }
@@ -151,9 +161,9 @@ public class ConfigApplicationService implements ConfigService {
     @Override
     @Transactional
     public void update(final long id, final SaveConfigCommand command) {
-        this.requireConfigGroup(command.groupKey().strip());
         final SystemConfig config = this.requireConfig(id);
         final String key = command.configKey().strip();
+        this.requireConfigGroup(key, command.groupKey().strip());
         final SystemConfig updated = config.withDetails(
                 key,
                 command.configValue(),
@@ -195,10 +205,18 @@ public class ConfigApplicationService implements ConfigService {
         return this.configRepository.findById(id).orElseThrow(() -> BizException.notFound("配置不存在"));
     }
 
-    private void requireConfigGroup(final String groupKey) {
-        if (this.configGroupRepository.findEnabledByKey(groupKey).isEmpty()) {
+    private void requireConfigGroup(final String configKey, final String groupKey) {
+        final String groupDomain = configKey.startsWith("sms.") ? "config_sms" : "config_system";
+        if (this.configGroupRepository.findEnabledByKey(groupDomain, groupKey).isEmpty()) {
             throw BizException.badRequest("配置分组不存在或未启用");
         }
+    }
+
+    private static String requireGroupDomain(final String groupKey) {
+        if (!groupKey.equals("config_system") && !groupKey.equals("config_sms")) {
+            throw BizException.badRequest("配置域无效");
+        }
+        return groupKey;
     }
 
     private static ConfigView toView(final SystemConfig config) {

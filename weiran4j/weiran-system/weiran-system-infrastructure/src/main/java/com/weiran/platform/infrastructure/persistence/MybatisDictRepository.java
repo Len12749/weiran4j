@@ -59,6 +59,7 @@ public class MybatisDictRepository implements DictRepository {
         final SysGroupDO row = new SysGroupDO();
         row.setId(dict.getId());
         row.setType("dict");
+        row.setGroupKey("dict");
         row.setName(dict.getName());
         row.setCode(dict.getCode());
         row.setDescription(dict.getDescription());

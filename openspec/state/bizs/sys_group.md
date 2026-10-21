@@ -2,7 +2,7 @@
 
 > 属于 `openspec/state/`，**只描述事实，不是规范**：过期不会被 `check.mjs` 拦截，**以代码为准**，发现不符回来改这里。
 > 契约文档 `weiran4j/docs/01-架构与接口契约.md` 只作索引；它与代码不一致的地方以代码为准写在下文，并在 §6 登记。
-> `sys_group` 通过 `type=dict/config` 同时承载字典与系统配置分组；本文件同时覆盖子表 `sys_dict_item`（字典项）。
+> `sys_group` 通过 `type=dict/config` 同时承载字典与配置分组；配置组再由 `group_key=config_system/config_sms` 区分系统配置与短信配置。本文件同时覆盖子表 `sys_dict_item`（字典项）。
 >
 > 事实源：
 > [`DictController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/weiran/platform/adapter/web/DictController.java)、
@@ -28,7 +28,7 @@
 
 | 项 | 值 |
 | --- | --- |
-| 表 | `sys_group`（`type=dict/config`；字典组/配置组）+ `sys_dict_item`（字典项，`group_id` 关联；唯一键 `(group_id, value)`） |
+| 表 | `sys_group`（`type=dict/config`，唯一键 `(type, group_key, code)`）+ `sys_dict_item`（字典项，`group_id` 关联；唯一键 `(group_id, value)`） |
 | 菜单 | 系统管理 › 字典管理（`sys_menu.id = 7`） |
 | 路由 | `/system/dicts` |
 | 页面组件 | `system/dicts/DictsPage`（左：`NavListPanel` 字典列表，同 mono4ts；右：`DictItemsPanel` 字典项；弹窗 `DictFormModal`、`DictItemFormModal`） |
@@ -36,6 +36,8 @@
 | 接口前缀 | `/api/dicts` |
 | 权限码 | `system:dict:list` · `system:dict:create` · `system:dict:update`（**字典项的增删改也用它**）· `system:dict:delete`；`GET /code/{code}/items` 仅需登录 |
 | 种子 | 内置字典 `sys_user_gender`（male 男 / female 女 / unknown 未知）、`sys_common_status`（enabled 启用 / disabled 禁用），均带颜色 |
+
+系统配置域 `config_system` 包含 `general`（通用）、`user`（用户）；短信配置域 `config_sms` 单独包含 `general`（通用）、`system_tpl`（系统模板）。短信签名位于短信域的 `general`，本地/阿里云验证码模板位于短信域的 `system_tpl`；由独立的「短信配置」页面维护。
 
 ## 1. 列表
 
@@ -138,6 +140,9 @@
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-21**
+- 为 `sys_group` 增加 `group_key`，拆出独立 `config_sms` 配置域及其内置 `general`、`system_tpl` 组；短信配置项使用 `sms.` 键前缀。
 
 **2026-10-20**
 - `sys_dict` 已通过追加迁移并入 `sys_group`；已有字典记录的 `type=dict`，配置分组 `general/user` 为 `type=config`。`sys_dict_item.dict_id` 改为 `group_id`，数据关联值保留，字典 HTTP 字段仍为 `dictId`。系统配置分组侧栏显示审计创建时间与内置标识，支持按编码修改名称（编码保持稳定）。

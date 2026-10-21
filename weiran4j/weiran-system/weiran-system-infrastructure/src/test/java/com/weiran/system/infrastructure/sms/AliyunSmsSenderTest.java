@@ -8,6 +8,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weiran.system.domain.sms.SmsSendOutcome;
+import com.weiran.system.domain.sms.SmsSettings;
 import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
@@ -17,14 +18,24 @@ import org.slf4j.LoggerFactory;
 
 class AliyunSmsSenderTest {
 
-    private static final SystemSmsProperties.Aliyun PROPERTIES =
-            new SystemSmsProperties.Aliyun("access-id", "access-secret", "示例签名", "3", "5");
+    private static final SmsSettings SMS_SETTINGS = new SmsSettings() {
+        @Override
+        public String signName() {
+            return "示例签名";
+        }
+
+        @Override
+        public String verificationTemplateCode() {
+            return "SMS_123";
+        }
+    };
 
     @Test
     @DisplayName("成功请求将模板参数序列化后交给网关")
     void serializesParametersAndSendsRequest() {
         final CapturingGateway gateway = new CapturingGateway(new AliyunSmsGateway.Reply("OK", "request-1"));
-        final AliyunSmsSender sender = new AliyunSmsSender(AliyunSmsSenderTest.PROPERTIES, gateway, new ObjectMapper());
+        final AliyunSmsSender sender =
+                new AliyunSmsSender(AliyunSmsSenderTest.SMS_SETTINGS, gateway, new ObjectMapper());
 
         final SmsSendOutcome result = sender.send("13800138000", "SMS_123", Map.of("code", "123456"));
 
@@ -53,7 +64,8 @@ class AliyunSmsSenderTest {
         final AliyunSmsGateway gateway = (phone, signName, templateCode, templateParam) -> {
             throw new IllegalStateException("sensitive provider response");
         };
-        final AliyunSmsSender sender = new AliyunSmsSender(AliyunSmsSenderTest.PROPERTIES, gateway, new ObjectMapper());
+        final AliyunSmsSender sender =
+                new AliyunSmsSender(AliyunSmsSenderTest.SMS_SETTINGS, gateway, new ObjectMapper());
 
         assertThat(sender.send("13800138000", "SMS_123", Map.of("code", "123456")))
                 .isEqualTo(SmsSendOutcome.FAILED);
@@ -65,7 +77,8 @@ class AliyunSmsSenderTest {
         final AliyunSmsGateway gateway = (phone, signName, templateCode, templateParam) -> {
             throw new IllegalStateException("sensitive provider response");
         };
-        final AliyunSmsSender sender = new AliyunSmsSender(AliyunSmsSenderTest.PROPERTIES, gateway, new ObjectMapper());
+        final AliyunSmsSender sender =
+                new AliyunSmsSender(AliyunSmsSenderTest.SMS_SETTINGS, gateway, new ObjectMapper());
         final List<ILoggingEvent> events =
                 AliyunSmsSenderTest.captureLog(sender, "13800138000", Map.of("code", "123456"));
 
@@ -79,11 +92,11 @@ class AliyunSmsSenderTest {
     @DisplayName("成功与服务商失败日志均脱敏手机号且不记录模板参数")
     void masksSensitiveValuesInProviderLogs() {
         final AliyunSmsSender successSender = new AliyunSmsSender(
-                AliyunSmsSenderTest.PROPERTIES,
+                AliyunSmsSenderTest.SMS_SETTINGS,
                 new CapturingGateway(new AliyunSmsGateway.Reply("OK", "request-success")),
                 new ObjectMapper());
         final AliyunSmsSender failedSender = new AliyunSmsSender(
-                AliyunSmsSenderTest.PROPERTIES,
+                AliyunSmsSenderTest.SMS_SETTINGS,
                 new CapturingGateway(new AliyunSmsGateway.Reply("isv.BUSINESS_LIMIT_CONTROL", "request-failed")),
                 new ObjectMapper());
 
@@ -106,24 +119,13 @@ class AliyunSmsSenderTest {
     @DisplayName("阿里云模式缺少密钥时报告环境变量名且不暴露密钥")
     void rejectsMissingCredentialsWithoutLeakingSecrets() {
         final SystemSmsProperties incomplete =
-                new SystemSmsProperties("aliyun", new SystemSmsProperties.Aliyun("", "secret-value", "签名", "3", "5"));
+                new SystemSmsProperties("aliyun", new SystemSmsProperties.Aliyun("", "secret-value"));
 
-        assertThatThrownBy(() -> AliyunSmsSender.create(incomplete, new ObjectMapper()))
+        assertThatThrownBy(
+                        () -> AliyunSmsSender.create(incomplete, AliyunSmsSenderTest.SMS_SETTINGS, new ObjectMapper()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("WEIRAN_SMS_ALIYUN_ACCESS_KEY_ID")
                 .hasMessageNotContaining("secret-value");
-    }
-
-    @Test
-    @DisplayName("无效超时配置只暴露配置项名称")
-    void rejectsInvalidTimeoutWithoutLeakingValue() {
-        final SystemSmsProperties invalid = new SystemSmsProperties(
-                "aliyun", new SystemSmsProperties.Aliyun("id", "secret", "签名", "secret-timeout", "5"));
-
-        assertThatThrownBy(() -> AliyunSmsSender.create(invalid, new ObjectMapper()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("WEIRAN_SMS_ALIYUN_CONNECT_TIMEOUT")
-                .hasMessageNotContaining("secret-timeout");
     }
 
     @Test
@@ -137,7 +139,8 @@ class AliyunSmsSenderTest {
     private static SmsSendOutcome sendWithCode(final @Nullable String code) {
         final AliyunSmsGateway gateway =
                 (phone, signName, templateCode, templateParam) -> new AliyunSmsGateway.Reply(code, "request-1");
-        final AliyunSmsSender sender = new AliyunSmsSender(AliyunSmsSenderTest.PROPERTIES, gateway, new ObjectMapper());
+        final AliyunSmsSender sender =
+                new AliyunSmsSender(AliyunSmsSenderTest.SMS_SETTINGS, gateway, new ObjectMapper());
         return sender.send("13800138000", "SMS_123", Map.of());
     }
 

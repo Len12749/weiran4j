@@ -24,7 +24,7 @@ public interface ConfigService {
     void updateGroup(UpdateConfigGroupCommand command);
 
     /** 删除空的自定义配置分组；内置分组或含配置项的分组不可删。 */
-    void deleteGroup(String key);
+    void deleteGroup(String groupKey, String key);
 
     /** 详情；不存在抛 40400。 */
     ConfigView get(long id);

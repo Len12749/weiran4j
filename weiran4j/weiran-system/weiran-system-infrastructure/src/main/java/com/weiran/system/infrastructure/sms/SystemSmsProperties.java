@@ -6,6 +6,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties("weiran.sms")
 public record SystemSmsProperties(String mode, Aliyun aliyun) {
 
-    public record Aliyun(
-            String accessKeyId, String accessKeySecret, String signName, String connectTimeout, String readTimeout) {}
+    public record Aliyun(String accessKeyId, String accessKeySecret) {}
 }

@@ -12,18 +12,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
-class LogSmsSenderTest {
+class LocalSmsSenderTest {
 
     @Test
-    @DisplayName("log 模式记录短信模板参数并返回 LOGGED")
+    @DisplayName("local 模式记录短信模板参数并返回 LOGGED")
     void logsMessageAndReturnsLogged() {
-        final Logger logger = (Logger) LoggerFactory.getLogger(LogSmsSender.class);
+        final Logger logger = (Logger) LoggerFactory.getLogger(LocalSmsSender.class);
         final ListAppender<ILoggingEvent> appender = new ListAppender<>();
         appender.start();
         logger.addAppender(appender);
         final SmsSendOutcome outcome;
         try {
-            outcome = new LogSmsSender(new ObjectMapper()).send("13800138000", "LOGIN_CODE", Map.of("code", "123456"));
+            outcome =
+                    new LocalSmsSender(new ObjectMapper()).send("13800138000", "LOGIN_CODE", Map.of("code", "123456"));
         } finally {
             logger.detachAppender(appender);
             appender.stop();

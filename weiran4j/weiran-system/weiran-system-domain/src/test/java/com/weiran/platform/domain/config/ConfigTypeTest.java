@@ -101,6 +101,17 @@ class ConfigTypeTest {
         assertThat(updated.requireId()).isEqualTo(1L);
         assertThat(SystemConfig.isPublicKey("system.site.title")).isTrue();
         assertThat(SystemConfig.isPublicKey("sys.secret")).isFalse();
+        assertThatCode(() -> SystemConfig.builder()
+                        .configKey("sms.sign_name")
+                        .configValue("开发签名")
+                        .configType(ConfigType.STRING)
+                        .groupKey("general")
+                        .fieldType("input")
+                        .required(false)
+                        .builtin(true)
+                        .build()
+                        .validated(ConfigTypeTest.JSON))
+                .doesNotThrowAnyException();
         assertThatCode(() -> builtin.toBuilder().builtin(false).build().ensureDeletable())
                 .doesNotThrowAnyException();
     }

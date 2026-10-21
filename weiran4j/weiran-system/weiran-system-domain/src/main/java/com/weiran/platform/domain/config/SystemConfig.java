@@ -54,8 +54,8 @@ public final class SystemConfig {
     /** 按类型校验当前值。 */
     public SystemConfig validated(final JsonSyntax jsonSyntax) {
         this.configType.validate(this.configValue, jsonSyntax);
-        if (!this.configKey.startsWith("system.")) {
-            throw BizException.badRequest("configKey: 必须使用 system. 前缀");
+        if (!this.configKey.startsWith("system.") && !this.configKey.startsWith("sms.")) {
+            throw BizException.badRequest("configKey: 必须使用 system. 或 sms. 前缀");
         }
         if (this.required && this.configValue.isBlank()) {
             throw BizException.badRequest("该配置项不能为空");

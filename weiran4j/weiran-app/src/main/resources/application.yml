@@ -39,6 +39,7 @@ weiran:
   system:
     bcrypt-strength: 10
   storage:
+    # 可选值：disabled（默认，拒绝上传）、local（本地存储，仅开发/测试）、aliyun（阿里云 OSS）。
     mode: ${WEIRAN_STORAGE_MODE:disabled}
     local:
       root: ${WEIRAN_STORAGE_LOCAL_ROOT:uploads}
@@ -50,14 +51,11 @@ weiran:
       access-key-secret: ${WEIRAN_STORAGE_ALIYUN_ACCESS_KEY_SECRET:}
       public-base-url: ${WEIRAN_STORAGE_ALIYUN_PUBLIC_BASE_URL:}
   sms:
-    # 短信默认关闭；log 模式记录模板内容，仅供受控开发/测试联调。
+    # 可选值：disabled（默认，不发送）、local（记录模板与参数，仅受控开发/测试）、aliyun（阿里云短信）。
     mode: ${WEIRAN_SMS_MODE:disabled}
     aliyun:
       access-key-id: ${WEIRAN_SMS_ALIYUN_ACCESS_KEY_ID:}
       access-key-secret: ${WEIRAN_SMS_ALIYUN_ACCESS_KEY_SECRET:}
-      sign-name: ${WEIRAN_SMS_ALIYUN_SIGN_NAME:}
-      connect-timeout: ${WEIRAN_SMS_ALIYUN_CONNECT_TIMEOUT:3}
-      read-timeout: ${WEIRAN_SMS_ALIYUN_READ_TIMEOUT:5}
   auth:
     jwt:
       # 生产环境必须由环境变量注入，至少 32 字节；缺失或过短时应用启动失败。仓库里不放真实密钥。

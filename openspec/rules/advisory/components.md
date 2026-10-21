@@ -58,6 +58,7 @@
 | **IconPicker** | `components/IconPicker.tsx` | 菜单图标选择:弹层网格 + 搜索,可配合 Semi `withField` 当表单项 | 只含 `utils/icons.tsx` 白名单里的 lucide 图标;新图标先加进 `MENU_ICONS` |
 | **ConfigImageUpload** | `components/ConfigImageUpload.tsx` | 系统配置的单图字段:上传后保存媒体库返回的 URL,支持预览、更换和移除 | 限 jpg/jpeg/png/gif,最大 10 MB;依赖系统媒体上传权限 |
 | **ConfigRichTextEditor** | `components/ConfigRichTextEditor.tsx` + `ConfigRichTextEditor.css` | 系统配置的富文本字段,保存 HTML 字符串 | 工具栏提供粗体、斜体、二级标题及列表;编辑器由配置表单负责回写字段值 |
+| **SystemConfigGroupForm** | `components/SystemConfigGroupForm.tsx` | 系统配置分组的动态字段编辑器，按字段类型渲染控件、校验并保存分组配置；可在系统管理页面或其它管理入口复用 | 调用方传 `ConfigView[]`、编辑权限与字段设置回调；保存后由系统配置 Query hooks 刷新数据 |
 
 ## 布局(`web/src/layouts/`)
 

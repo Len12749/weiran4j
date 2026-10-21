@@ -32,18 +32,20 @@ public class MybatisConfigGroupRepository implements ConfigGroupRepository {
     }
 
     @Override
-    public Optional<ConfigGroup> findEnabledByKey(final String key) {
+    public Optional<ConfigGroup> findEnabledByKey(final String groupKey, final String key) {
         return Optional.ofNullable(this.groupMapper.selectOne(Wrappers.lambdaQuery(SysGroupDO.class)
                         .eq(SysGroupDO::getType, "config")
+                        .eq(SysGroupDO::getGroupKey, groupKey)
                         .eq(SysGroupDO::getCode, key)
                         .eq(SysGroupDO::getStatus, "enabled")))
                 .map(MybatisConfigGroupRepository::toDomain);
     }
 
     @Override
-    public boolean existsByKey(final String key) {
+    public boolean existsByKey(final String groupKey, final String key) {
         return this.groupMapper.exists(Wrappers.lambdaQuery(SysGroupDO.class)
                 .eq(SysGroupDO::getType, "config")
+                .eq(SysGroupDO::getGroupKey, groupKey)
                 .eq(SysGroupDO::getCode, key));
     }
 
@@ -51,6 +53,7 @@ public class MybatisConfigGroupRepository implements ConfigGroupRepository {
     public long save(final ConfigGroup group) {
         final SysGroupDO row = new SysGroupDO();
         row.setType("config");
+        row.setGroupKey(group.groupKey());
         row.setName(group.label());
         row.setCode(group.key());
         row.setStatus("enabled");
@@ -61,9 +64,10 @@ public class MybatisConfigGroupRepository implements ConfigGroupRepository {
     }
 
     @Override
-    public boolean updateLabel(final String key, final String label) {
+    public boolean updateLabel(final String groupKey, final String key, final String label) {
         final SysGroupDO row = this.groupMapper.selectOne(Wrappers.lambdaQuery(SysGroupDO.class)
                 .eq(SysGroupDO::getType, "config")
+                .eq(SysGroupDO::getGroupKey, groupKey)
                 .eq(SysGroupDO::getCode, key)
                 .eq(SysGroupDO::getStatus, "enabled"));
         if (row == null) {
@@ -74,9 +78,10 @@ public class MybatisConfigGroupRepository implements ConfigGroupRepository {
     }
 
     @Override
-    public boolean deleteByKey(final String key) {
+    public boolean deleteByKey(final String groupKey, final String key) {
         return this.groupMapper.delete(Wrappers.lambdaQuery(SysGroupDO.class)
                         .eq(SysGroupDO::getType, "config")
+                        .eq(SysGroupDO::getGroupKey, groupKey)
                         .eq(SysGroupDO::getCode, key)
                         .eq(SysGroupDO::getStatus, "enabled"))
                 > 0;
@@ -84,6 +89,7 @@ public class MybatisConfigGroupRepository implements ConfigGroupRepository {
 
     private static ConfigGroup toDomain(final SysGroupDO row) {
         return new ConfigGroup(
+                row.getGroupKey(),
                 row.getCode(),
                 row.getName(),
                 row.getSort() == null ? 0 : row.getSort(),

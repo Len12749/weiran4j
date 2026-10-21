@@ -17,6 +17,7 @@ import com.weiran.system.application.media.MediaAssetDeletionService;
 import com.weiran.system.application.menu.MenuApplicationService;
 import com.weiran.system.application.role.RoleApplicationService;
 import com.weiran.system.application.sms.SmsApplicationService;
+import com.weiran.system.application.sms.SystemSmsSettings;
 import com.weiran.system.application.user.UserApplicationService;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Import;
@@ -36,6 +37,7 @@ import org.springframework.context.annotation.Import;
     DispatchingTokenAuthenticator.class,
     AuthApplicationService.class,
     PhoneLoginSettings.class,
+    SystemSmsSettings.class,
     PhoneLoginApplicationService.class,
     IdentityProvisioner.class,
     ExternalLoginApplicationService.class,

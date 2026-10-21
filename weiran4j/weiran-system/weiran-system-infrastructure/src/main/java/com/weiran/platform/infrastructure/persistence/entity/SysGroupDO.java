@@ -17,6 +17,8 @@ public class SysGroupDO extends AuditableDO {
 
     private String type;
 
+    private String groupKey;
+
     private String name;
 
     private String code;

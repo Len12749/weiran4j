@@ -10,6 +10,7 @@ const SEED_COMPONENTS = [
     'system/departments/DepartmentsPage',
     'system/dicts/DictsPage',
     'system/configs/ConfigsPage',
+    'system/sms/SmsConfigsPage',
     'logs/LoginLogsPage',
     'logs/OperationLogsPage',
     'system/media-library',
