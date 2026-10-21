@@ -17,7 +17,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties("weiran.auth")
 public record AuthProvidersProperties(
-        @DefaultValue("http://localhost:5373") String publicBaseUrl,
+        @DefaultValue("http://localhost:5202") String publicBaseUrl,
         @DefaultValue PasswordLogin passwordLogin,
         @DefaultValue Map<String, Provider> providers) {
 

@@ -10,7 +10,7 @@ import { unlockScreen } from './useLockScreen';
 export const TABS_STORAGE_KEY = 'weiran_tabs';
 
 /**
- * 认证状态：会话（`weiran_csrf` Cookie）+ 当前用户（/api/system/auth/getCurrentUser）+ 登录/退出。
+ * 认证状态：会话（`weiran_csrf` Cookie）+ 当前用户（/api-backend/system/auth/getCurrentUser）+ 登录/退出。
  * me 走 TanStack Query 缓存，多处调用不会重复请求。
  */
 export function useAuth() {
@@ -20,7 +20,7 @@ export function useAuth() {
 
     const login = useCallback(async (body: LoginRequest) => {
         // 密码错误是 110101，不走会话失效分支；错误提示由登录页自己展示
-        const res = await http.post<LoginResult>('/api/system/auth/login', body, { silent: true });
+        const res = await http.post<LoginResult>('/api-nbackend/system/auth/login', body, { silent: true });
         qc.clear();
         // 会话过期被踢回登录页时锁屏标记还留着，重新登录后不应再锁
         unlockScreen();
@@ -48,7 +48,7 @@ export function useAuth() {
     const logout = useCallback(async () => {
         let ssoLogoutUrl: string | null = null;
         try {
-            const res = await http.post<LogoutResult | null>('/api/system/auth/logout', undefined, { silent: true });
+            const res = await http.post<LogoutResult | null>('/api-backend/system/auth/logout', undefined, { silent: true });
             ssoLogoutUrl = res?.ssoLogoutUrl ?? null;
         } catch {
             // 尽力通知服务端写登出日志；失败也照样清本地

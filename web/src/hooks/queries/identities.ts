@@ -21,7 +21,7 @@ const PROVIDERS_STALE_TIME = 10 * 60 * 1000;
 export function useProviders() {
     return useQuery({
         queryKey: identityKeys.providers,
-        queryFn: () => http.get<ProvidersView>('/api/system/auth/listProviders', { silent: true }),
+        queryFn: () => http.get<ProvidersView>('/api-nbackend/system/auth/listProviders', { silent: true }),
         staleTime: PROVIDERS_STALE_TIME,
     });
 }
@@ -31,7 +31,7 @@ export function useMyIdentities() {
     const session = useSession();
     return useQuery({
         queryKey: [...identityKeys.mine, session],
-        queryFn: () => http.get<UserIdentityView[]>('/api/system/auth/listCurrentIdentities'),
+        queryFn: () => http.get<UserIdentityView[]>('/api-backend/system/auth/listCurrentIdentities'),
         enabled: !!session,
     });
 }
@@ -40,7 +40,7 @@ export function useMyIdentities() {
 export function useUnbindMyIdentity() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => http.delete<null>(`/api/system/auth/deleteCurrentIdentity/${id}`),
+        mutationFn: (id: number) => http.delete<null>(`/api-backend/system/auth/deleteCurrentIdentity/${id}`),
         onSuccess: () => qc.invalidateQueries({ queryKey: identityKeys.mine }),
     });
 }
@@ -49,14 +49,14 @@ export function useUnbindMyIdentity() {
 export function useUserIdentities(userId: number) {
     return useQuery({
         queryKey: identityKeys.ofUser(userId),
-        queryFn: () => http.get<UserIdentityView[]>(`/api/system/user/listIdentities/${userId}`),
+        queryFn: () => http.get<UserIdentityView[]>(`/api-backend/system/user/listIdentities/${userId}`),
     });
 }
 
 export function useBindUserIdentity(userId: number) {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (body: BindIdentityRequest) => http.post<IdResult>(`/api/system/user/createIdentity/${userId}`, body),
+        mutationFn: (body: BindIdentityRequest) => http.post<IdResult>(`/api-backend/system/user/createIdentity/${userId}`, body),
         onSuccess: () => qc.invalidateQueries({ queryKey: identityKeys.ofUser(userId) }),
     });
 }
@@ -64,7 +64,7 @@ export function useBindUserIdentity(userId: number) {
 export function useUnbindUserIdentity(userId: number) {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (identityId: number) => http.delete<null>(`/api/system/user/deleteIdentity/${userId}/${identityId}`),
+        mutationFn: (identityId: number) => http.delete<null>(`/api-backend/system/user/deleteIdentity/${userId}/${identityId}`),
         onSuccess: () => qc.invalidateQueries({ queryKey: identityKeys.ofUser(userId) }),
     });
 }
@@ -74,7 +74,8 @@ export function useUnbindUserIdentity(userId: number) {
  * `redirect` 必须是站内路径；后端还会再做一次规范化，非法时按 `/` 处理。
  */
 export function ssoAuthorizeUrl(providerId: string, { redirect, mode }: { redirect: string; mode: 'login' | 'bind' }): string {
-    return `${config.apiBaseUrl}/api/system/auth/authorizeSso/${encodeURIComponent(providerId)}?redirect=${encodeURIComponent(redirect)}&mode=${mode}`;
+    const apiPrefix = mode === 'bind' ? '/api-backend' : '/api-nbackend';
+    return `${config.apiBaseUrl}${apiPrefix}/system/auth/authorizeSso/${encodeURIComponent(providerId)}?redirect=${encodeURIComponent(redirect)}&mode=${mode}`;
 }
 
 /** 回调失败时 URL 上 `ssoError=<code>` 的提示文案（契约 §4、§6.1） */

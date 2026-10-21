@@ -20,15 +20,14 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * 认证与权限拦截器，只注册在 {@code /api/**}。
+ * 认证与权限拦截器，只注册在 {@code /api-backend/**}；该前缀下的接口一律要求登录。
  *
  * <p>流程：取令牌（{@code Authorization: Bearer} 优先，其次 {@value AuthCookies#TOKEN_COOKIE} Cookie）→
- * {@link TokenAuthenticator} → 非 {@link PublicApi} 且未登录抛 401 → 以 Cookie 认证的写请求做 CSRF 双提交校验（不通过抛 403 /
+ * {@link TokenAuthenticator} → 未登录抛 401 → 以 Cookie 认证的写请求做 CSRF 双提交校验（不通过抛 403 /
  * 100103）→ 不满足 {@link RequiresPermission} 抛 403 → 写入 {@link CurrentUser}。
  * 异常由全局异常处理器统一输出（拦截器运行在 DispatcherServlet 内，能被 {@code @ExceptionHandler} 接到）。
  *
- * <p>CSRF 只查「Cookie 认证 + 非公开接口 + 写方法」：Bearer 头不会被浏览器自动附带，不存在跨站伪造；
- * 公开接口（如登录）此时还没有 CSRF 值，而跨站的 JSON POST 本就会被 CORS 预检挡住。
+ * <p>CSRF 只查「Cookie 认证 + 写方法」：Bearer 头不会被浏览器自动附带，不存在跨站伪造；
  *
  * <p>注意 {@code preHandle} 抛异常时本拦截器的 {@code afterCompletion} 不会被调用，
  * 所以用户只在全部检查通过后才写入 ThreadLocal，否则 Tomcat 线程复用时会把上一个用户带进下一个请求。
@@ -69,20 +68,16 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
         final Credential credential = AuthInterceptor.credential(request);
         final Optional<LoginUser> user = credential == null ? Optional.empty() : this.authenticate(credential.token());
-        if (!AuthInterceptor.isPublic(handlerMethod)) {
-            final LoginUser loginUser = user.orElseThrow(() -> new BizException(CommonErrors.UNAUTHORIZED));
-            if (credential != null && credential.source() == Source.COOKIE) {
-                AuthInterceptor.checkCsrf(request, loginUser);
-            }
-            final RequiresPermission required = AuthInterceptor.requiredPermission(handlerMethod);
-            if (required != null && !loginUser.hasPermissions(required.value(), required.logical())) {
-                throw new BizException(CommonErrors.FORBIDDEN);
-            }
+        final LoginUser loginUser = user.orElseThrow(() -> new BizException(CommonErrors.UNAUTHORIZED));
+        if (credential != null && credential.source() == Source.COOKIE) {
+            AuthInterceptor.checkCsrf(request, loginUser);
         }
-        user.ifPresent(loginUser -> {
-            CurrentUser.set(loginUser);
-            request.setAttribute(AuthInterceptor.USER_ID_ATTRIBUTE, loginUser.id());
-        });
+        final RequiresPermission required = AuthInterceptor.requiredPermission(handlerMethod);
+        if (required != null && !loginUser.hasPermissions(required.value(), required.logical())) {
+            throw new BizException(CommonErrors.FORBIDDEN);
+        }
+        CurrentUser.set(loginUser);
+        request.setAttribute(AuthInterceptor.USER_ID_ATTRIBUTE, loginUser.id());
         return true;
     }
 
@@ -160,11 +155,6 @@ public class AuthInterceptor implements HandlerInterceptor {
             }
         }
         return null;
-    }
-
-    private static boolean isPublic(final HandlerMethod handlerMethod) {
-        return AnnotatedElementUtils.hasAnnotation(handlerMethod.getMethod(), PublicApi.class)
-                || AnnotatedElementUtils.hasAnnotation(handlerMethod.getBeanType(), PublicApi.class);
     }
 
     private static @Nullable RequiresPermission requiredPermission(final HandlerMethod handlerMethod) {

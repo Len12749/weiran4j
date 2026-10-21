@@ -3,7 +3,7 @@ import { DEFAULT_PRIMARY, isValidThemeColor } from '@/lib/theme-color';
 import { THEME_MODES, type ThemeMode } from '@/lib/theme';
 
 /**
- * 界面偏好：字段定义与默认值的唯一事实源（契约 §6.1 `/api/system/auth/getPreferences` 只存不校验）。
+ * 界面偏好：字段定义与默认值的唯一事实源（契约 §6.1 `/api-backend/system/auth/getPreferences` 只存不校验）。
  * 移植自 mono4ts `hooks/usePreferences.tsx`。
  *
  * 新增字段：见 openspec/rules/advisory/components.md「新增偏好字段的步骤」。
@@ -55,7 +55,7 @@ export interface UserPreferences {
     showFullscreen: boolean;
     /** 侧边栏显示 Logo */
     showLogo: boolean;
-    /** 显示收藏快捷入口（面包屑收藏按钮 + 顶部 Popover），数据走 /api/system/auth/listFavoriteMenus */
+    /** 显示收藏快捷入口（面包屑收藏按钮 + 顶部 Popover），数据走 /api-backend/system/auth/listFavoriteMenus */
     showFavorites: boolean;
     /** 动态标题：浏览器标签显示「页面名 - 应用名」 */
     dynamicTitle: boolean;
@@ -73,7 +73,7 @@ export interface UserPreferences {
     tableSize: TableSizePreference;
     /** 列表默认分页大小 */
     tablePageSize: number;
-    /** 锁屏：顶栏按钮 / Alt+L 锁定，登录密码经 /api/system/auth/verifyPassword 解锁；锁定状态存 sessionStorage */
+    /** 锁屏：顶栏按钮 / Alt+L 锁定，登录密码经 /api-backend/system/auth/verifyPassword 解锁；锁定状态存 sessionStorage */
     enableLockScreen: boolean;
     /** 侧边栏手风琴展开：同级只允许展开一个子菜单 */
     sidebarAccordion: boolean;

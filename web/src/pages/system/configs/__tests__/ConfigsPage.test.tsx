@@ -39,20 +39,20 @@ const editableConfig: ConfigView = {
 function setup() {
     const groups = initialGroups.map((group) => ({ ...group }));
     const fetch = mockFetch({
-        'GET /api/system/config/listAll': [builtinConfig, editableConfig],
-        'GET /api/system/config/listGroups': () => groups,
-        'POST /api/system/config/createGroup': (init?: RequestInit) => {
+        'GET /api-backend/system/config/listAll': [builtinConfig, editableConfig],
+        'GET /api-backend/system/config/listGroups': () => groups,
+        'POST /api-backend/system/config/createGroup': (init?: RequestInit) => {
             const body = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as { key: string; label: string };
             const group: ConfigGroupView = { ...body, groupKey: 'config_system', isBuiltin: false, canDelete: true, createdAt: '2026-10-20 12:00:00' };
             groups.push(group);
             return { id: groups.length };
         },
-        'DELETE /api/system/config/deleteGroup/custom_group': () => {
+        'DELETE /api-backend/system/config/deleteGroup/custom_group': () => {
             const index = groups.findIndex((item) => item.key === 'custom_group');
             if (index >= 0) groups.splice(index, 1);
             return null;
         },
-        'PUT /api/system/config/updateGroup/general': (init?: RequestInit) => {
+        'PUT /api-backend/system/config/updateGroup/general': (init?: RequestInit) => {
             const body = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as { label: string };
             const group = groups.find((item) => item.key === 'general');
             if (group) group.label = body.label;
@@ -91,7 +91,7 @@ describe('ConfigsPage 配置分组侧栏', () => {
         expect(fetch.calls).toContainEqual(
             expect.objectContaining({
                 method: 'POST',
-                path: '/api/system/config/createGroup',
+                path: '/api-backend/system/config/createGroup',
                 body: { key: 'custom_group', label: '自定义组' },
             }),
         );
@@ -117,7 +117,7 @@ describe('ConfigsPage 配置分组侧栏', () => {
         expect(fetch.calls).toContainEqual(
             expect.objectContaining({
                 method: 'PUT',
-                path: '/api/system/config/updateGroup/general',
+                path: '/api-backend/system/config/updateGroup/general',
                 body: { label: '基础设置' },
             }),
         );

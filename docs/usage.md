@@ -23,7 +23,7 @@ pnpm install
 pnpm dev
 ```
 
-打开后台 `http://localhost:5373`。文档站运行在 `http://localhost:5173`。首次登录账号为 `admin`，密码为 `admin123`；部署到共享环境后应立即修改。
+打开后台 `http://localhost:5202`。文档站运行在 `http://localhost:5209`。首次登录账号为 `admin`，密码为 `admin123`；部署到共享环境后应立即修改。
 
 首次启动时 Flyway 会在空库中建表并写入种子数据。请勿将本地配置指向已有业务库。
 

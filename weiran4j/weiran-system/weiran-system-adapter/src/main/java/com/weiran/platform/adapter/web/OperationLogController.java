@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** 操作日志接口。 */
 @RestController
-@RequestMapping("/api/system/operationLog")
+@RequestMapping("/api-backend/system/operationLog")
 public class OperationLogController {
 
     private final OperationLogService operationLogService;

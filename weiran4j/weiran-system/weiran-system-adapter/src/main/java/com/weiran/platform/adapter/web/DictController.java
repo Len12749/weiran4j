@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** 字典管理接口。 */
 @RestController
-@RequestMapping("/api/system/dict")
+@RequestMapping("/api-backend/system/dict")
 public class DictController {
 
     private static final String MODULE = "字典管理";

@@ -21,7 +21,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * 否则生成 32 位十六进制。写入 MDC（{@value #MDC_KEY}，日志格式里的 {@code %X{requestId}}）与响应头，
  * 响应头在进入链路<b>之前</b>设置——响应一旦提交就加不上了。不合法的入站值直接丢弃、不进日志，防日志注入。
  *
- * <p>请求结束时对 {@code /api/**} 打一行访问日志（logger {@value #ACCESS_LOGGER}）：方法、路径、状态码、耗时、
+ * <p>请求结束时对 {@code /api-backend/**} 和 {@code /api-nbackend/**} 打一行访问日志（logger {@value #ACCESS_LOGGER}）：方法、路径、状态码、耗时、
  * 用户、IP；<b>不记</b>请求体和查询参数（写接口另有脱敏的操作日志）。健康检查只打 DEBUG，免得探活刷屏。
  * 用户 ID 由 {@link AuthInterceptor} 写进请求属性——{@code CurrentUser} 在拦截器的 afterCompletion 就清掉了。
  */
@@ -40,9 +40,11 @@ public class RequestIdFilter extends OncePerRequestFilter {
 
     private static final Pattern VALID_ID = Pattern.compile("[A-Za-z0-9_-]{1,64}");
 
-    private static final String API_PREFIX = "/api/";
+    private static final String BACKEND_PREFIX = "/api-backend/";
 
-    private static final String HEALTH_PATH = "/api/health";
+    private static final String NBACKEND_PREFIX = "/api-nbackend/";
+
+    private static final String HEALTH_PATH = "/api-nbackend/health";
 
     private static final long NANOS_PER_MILLI = 1_000_000L;
 
@@ -72,7 +74,7 @@ public class RequestIdFilter extends OncePerRequestFilter {
 
     private static void logAccess(final HttpServletRequest request, final HttpServletResponse response, final long ms) {
         final String path = request.getRequestURI();
-        if (!path.startsWith(RequestIdFilter.API_PREFIX)) {
+        if (!path.startsWith(RequestIdFilter.BACKEND_PREFIX) && !path.startsWith(RequestIdFilter.NBACKEND_PREFIX)) {
             return;
         }
         final boolean health = RequestIdFilter.HEALTH_PATH.equals(path);

@@ -39,9 +39,9 @@ const shanghai: RegionNode = {
 };
 
 const baseRoutes = () => ({
-    'GET /api/region/area/listTree': [shanghai, beijing],
-    'PUT /api/region/area/update/10': { ...beijing, status: 'disabled' },
-    'DELETE /api/region/area/delete/9': null,
+    'GET /api-backend/region/area/listTree': [shanghai, beijing],
+    'PUT /api-backend/region/area/update/10': { ...beijing, status: 'disabled' },
+    'DELETE /api-backend/region/area/delete/9': null,
 });
 
 describe('RegionsPage', () => {
@@ -76,7 +76,7 @@ describe('RegionsPage', () => {
     it('提交当前关键字和级别筛选，并显示已生效条件', async () => {
         const { calls } = mockFetch({
             ...baseRoutes(),
-            'GET /api/region/area/listTree': (_init: unknown, url: URL) => {
+            'GET /api-backend/region/area/listTree': (_init: unknown, url: URL) => {
                 if (url.searchParams.get('keyword') === '北京') return [beijing];
                 return [shanghai, beijing];
             },
@@ -88,7 +88,7 @@ describe('RegionsPage', () => {
         const toolbar = document.querySelector('.search-toolbar') as HTMLElement;
         fireEvent.click(within(toolbar).getByRole('button', { name: '搜索' }));
 
-        await waitFor(() => expect(calls.some((call) => call.path === '/api/region/area/listTree' && call.search === '?keyword=%E5%8C%97%E4%BA%AC')).toBe(true));
+        await waitFor(() => expect(calls.some((call) => call.path === '/api-backend/region/area/listTree' && call.search === '?keyword=%E5%8C%97%E4%BA%AC')).toBe(true));
         expect(await screen.findByRole('group', { name: '已选条件' })).toHaveTextContent('关键字：北京');
         fireEvent.click(screen.getByRole('button', { name: '移除条件 关键字：北京' }));
         await waitFor(() => expect(screen.queryByRole('group', { name: '已选条件' })).not.toBeInTheDocument());
@@ -101,7 +101,7 @@ describe('RegionsPage', () => {
 
         const beijingRow = screen.getByText('北京市').closest('tr') as HTMLElement;
         fireEvent.click(within(beijingRow).getByRole('button', { name: '停用' }));
-        await waitFor(() => expect(calls.some((call) => call.method === 'PUT' && call.path === '/api/region/area/update/10')).toBe(true));
+        await waitFor(() => expect(calls.some((call) => call.method === 'PUT' && call.path === '/api-backend/region/area/update/10')).toBe(true));
         expect(calls.find((call) => call.method === 'PUT')?.body).toMatchObject({ code: '110000', status: 'disabled' });
     });
 
@@ -117,7 +117,7 @@ describe('RegionsPage', () => {
             createdAt: '2026-10-01 00:00:00',
             updatedAt: '2026-10-01 00:00:00',
         };
-        const { calls } = mockFetch({ ...baseRoutes(), 'POST /api/region/area/create': created });
+        const { calls } = mockFetch({ ...baseRoutes(), 'POST /api-backend/region/area/create': created });
         renderWithProviders(<RegionsPage />);
         await screen.findByText('北京市');
         fireEvent.click(screen.getByRole('button', { name: '新增地区' }));
@@ -128,7 +128,7 @@ describe('RegionsPage', () => {
         fireEvent.change(form.getByLabelText('地区名称'), { target: { value: '天津市' } });
         fireEvent.click(form.getByText('确定').closest('button')!);
 
-        await waitFor(() => expect(calls.some((call) => call.method === 'POST' && call.path === '/api/region/area/create')).toBe(true));
+        await waitFor(() => expect(calls.some((call) => call.method === 'POST' && call.path === '/api-backend/region/area/create')).toBe(true));
         expect(calls.find((call) => call.method === 'POST')?.body).toMatchObject({
             code: '120000',
             name: '天津市',
@@ -151,7 +151,7 @@ describe('RegionsPage', () => {
     it('导出使用当前已应用筛选，而不依赖树展开状态', async () => {
         const { calls } = mockFetch({
             ...baseRoutes(),
-            'GET /api/region/area/export': new Response('id,name\n10,北京市', {
+            'GET /api-backend/region/area/export': new Response('id,name\n10,北京市', {
                 headers: { 'Content-Type': 'text/csv; charset=utf-8' },
             }),
         });
@@ -163,9 +163,9 @@ describe('RegionsPage', () => {
 
         fireEvent.change(screen.getByPlaceholderText('地区名称 / 区划代码'), { target: { value: '北京' } });
         fireEvent.click(within(document.querySelector('.search-toolbar') as HTMLElement).getByRole('button', { name: '搜索' }));
-        await waitFor(() => expect(calls.some((call) => call.path === '/api/region/area/listTree' && call.search.includes('keyword='))).toBe(true));
+        await waitFor(() => expect(calls.some((call) => call.path === '/api-backend/region/area/listTree' && call.search.includes('keyword='))).toBe(true));
         fireEvent.click(screen.getByRole('button', { name: '导出 CSV' }));
 
-        await waitFor(() => expect(calls.some((call) => call.path === '/api/region/area/export' && call.search.includes('keyword='))).toBe(true));
+        await waitFor(() => expect(calls.some((call) => call.path === '/api-backend/region/area/export' && call.search.includes('keyword='))).toBe(true));
     });
 });

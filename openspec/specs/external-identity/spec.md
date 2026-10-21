@@ -13,7 +13,7 @@ status: "active"
 
 ### Requirement: [FR-001] 提供方列表
 
-系统 **MUST** 通过公开接口 `GET /api/auth/providers` 返回已启用的提供方 `[{id, type, name}]` 与 `passwordLoginEnabled`。**MUST NOT** 返回任何密钥或提供方的内部地址。
+系统 **MUST** 通过公开接口 `GET /api-nbackend/auth/providers` 返回已启用的提供方 `[{id, type, name}]` 与 `passwordLoginEnabled`。**MUST NOT** 返回任何密钥或提供方的内部地址。
 
 #### Scenario: 列出已配置的提供方
 - **WHEN** 配置了一个 OIDC 提供方和一个 CAS 提供方后,未登录调用该接口
@@ -27,7 +27,7 @@ OIDC 登录 **MUST** 使用授权码流程,带 PKCE(S256)、`state` 与 `nonce`;
 
 #### Scenario: 用 Keycloak 完成登录
 - **WHEN** 已绑定的 Keycloak 用户走「authorize → Keycloak 登录 → callback」
-- **THEN** 回调响应下发 `weiran_token` 与 `weiran_csrf` 并 302 到 `redirect`,随后 `/api/auth/me` 返回该本地用户
+- **THEN** 回调响应下发 `weiran_token` 与 `weiran_csrf` 并 302 到 `redirect`,随后 `/api-backend/auth/me` 返回该本地用户
 - **判据**:集成测试(Keycloak 容器)以 HTTP 客户端跟随整个流程并断言
 
 #### Scenario: state 不符时拒绝
@@ -76,7 +76,7 @@ CAS 登录 **MUST** 使用 CAS 3.0 的 `/p3/serviceValidate`(`format=JSON`)验�
 
 #### Scenario: 本人绑定
 - **WHEN** 已用密码登录的用户发起 bind 模式并完成外部登录
-- **THEN** `GET /api/auth/identities` 出现该绑定,且不改变当前会话的用户
+- **THEN** `GET /api-backend/auth/identities` 出现该绑定,且不改变当前会话的用户
 - **判据**:集成测试断言
 
 #### Scenario: 禁止解绑导致锁死
@@ -85,13 +85,13 @@ CAS 登录 **MUST** 使用 CAS 3.0 的 `/p3/serviceValidate`(`format=JSON`)验�
 - **判据**:集成测试断言
 
 #### Scenario: 管理员手工绑定与权限
-- **WHEN** 管理员 `POST /api/users/{id}/identities {provider, externalId}`;无权限用户调用同一接口
+- **WHEN** 管理员 `POST /api-backend/users/{id}/identities {provider, externalId}`;无权限用户调用同一接口
 - **THEN** 前者成功,后者返回 100102
 - **判据**:集成测试断言
 
 ### Requirement: [FR-006] 流程状态与重定向安全
 
-authorize 与 callback 之间的流程状态 **MUST** 存在签名 Cookie `weiran_sso` 中:HttpOnly、`SameSite=Lax`、`Path=/api/auth/sso`、10 分钟有效。被篡改或过期 **MUST** 视为校验失败(110102)。
+authorize 与 callback 之间的流程状态 **MUST** 存在签名 Cookie `weiran_sso` 中:HttpOnly、`SameSite=Lax`、`Path=/api-nbackend/auth/sso`、10 分钟有效。被篡改或过期 **MUST** 视为校验失败(110102)。
 `redirect` **MUST** 只接受以单个 `/` 开头的站内路径,其它值 **MUST** 改为 `/`。
 
 #### Scenario: 开放重定向被阻止
@@ -132,7 +132,7 @@ authorize 与 callback 之间的流程状态 **MUST** 存在签名 Cookie `weira
 外部登录签发的本地令牌 **MUST** 带 `idp` claim。登出响应 **MUST** 为 `{ssoLogoutUrl}`:会话来自配置了登出地址的提供方时为该地址(带回跳参数),否则为 `null`。
 
 #### Scenario: 外部登录的会话登出时返回登出地址
-- **WHEN** 经 Keycloak 登录后调用 `POST /api/auth/logout`
+- **WHEN** 经 Keycloak 登录后调用 `POST /api-backend/auth/logout`
 - **THEN** `data.ssoLogoutUrl` 指向 Keycloak 的 end_session 端点;密码登录的会话为 `null`
 - **判据**:集成测试断言
 

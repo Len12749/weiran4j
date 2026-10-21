@@ -31,7 +31,7 @@ spring:
     timeout-per-shutdown-phase: ${WEIRAN_SHUTDOWN_TIMEOUT:30s}
 
 server:
-  port: ${WEIRAN_PORT:3310}
+  port: ${WEIRAN_PORT:5200}
   # Spring Boot 3.4 起默认就是 graceful；显式写出，不随框架默认值漂移。
   shutdown: graceful
 
@@ -68,7 +68,7 @@ weiran:
       # 认证 Cookie 是否带 Secure。线上走 HTTPS 保持 true；本地 http://localhost 在 config/application-local.yml 设 false。
       secure: ${WEIRAN_COOKIE_SECURE:true}
     # 对外访问地址（不带结尾斜杠）：拼外部登录的回调与登出回跳地址，不从请求头推断（防 Host 头注入，D-015）。
-    public-base-url: ${WEIRAN_PUBLIC_BASE_URL:http://localhost:5373}
+    public-base-url: ${WEIRAN_PUBLIC_BASE_URL:http://localhost:5202}
     password-login:
       # 关闭后只有内置超管能用密码登录（外部身份提供方故障时的应急入口）。
       enabled: ${WEIRAN_PASSWORD_LOGIN_ENABLED:true}

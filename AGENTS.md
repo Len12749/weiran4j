@@ -28,7 +28,7 @@
 
 ```bash
 # ── 一条命令起后端、后台前端和文档站（仓库根，turbo 编排）──
-pnpm dev                          # = turbo run dev：后端 bootRun(3310) + 后台 vite(5373) + VitePress(5173)
+pnpm dev                          # = turbo run dev：后端 bootRun(5200) + 后台 vite(5202) + VitePress(5209)
 pnpm dev:server / pnpm dev:web / pnpm dev:docs  # 单独启动后端、后台前端或文档站
 # 后端的 dev 是 weiran4j/scripts/dev.mjs：自动找 JDK 21、缺本地配置时先提示，Ctrl-C 会一并停掉应用 JVM。
 # 给后端传环境变量（如 SERVER_PORT、WEIRAN_*）必须先在 turbo.json 的 passThroughEnv 里放行，否则被静默丢弃。
@@ -98,7 +98,7 @@ duoli-weiran4j/                  # git 仓库根 = pnpm 工作区根 = openspec 
    往 `sys_menu` 插菜单行与按钮权限行（`component` = 相对 `web/src/pages` 的路径）。
 3. 后端：domain → application → infrastructure → adapter；写接口标 `@RequiresPermission` 与 `@OperationLog`。
 4. 前端：`web/src/pages/<component>.tsx` + `hooks/queries/*` + `types/api.ts`；按钮用 `<Permission code>`。
-   **不需要改 `App.tsx`**——路由由 `/api/auth/menus` 驱动；菜单行与页面文件缺一个都不报错（见 project.md SL-4/SL-5）。
+   **不需要改 `App.tsx`**——路由由 `/api-backend/system/auth/listCurrentMenus` 驱动；菜单行与页面文件缺一个都不报错（见 project.md SL-4/SL-5）。
    写页面前先查 [`components.md`](openspec/rules/advisory/components.md)；列表页照 [`list-view.md`](openspec/rules/advisory/list-view.md) 的约定做。
 5. 现状文档：新表在 `openspec/state/bizs/` 加一份 `<table>.md`（八段结构，见 [`bizs/README.md`](openspec/state/bizs/README.md)）。
 
@@ -151,7 +151,7 @@ duoli-weiran4j/                  # git 仓库根 = pnpm 工作区根 = openspec 
 | [`rules/enforced/project.md`](openspec/rules/enforced/project.md) | 新增 Gradle 模块前、**新增页面/菜单前（§一 SL-4/SL-5：菜单行与页面文件配对）**、取 Flyway 版本号或菜单 id 前（序号型资源）；判断能不能与他人同时推进时（§二 WT-N，本仓库没有 worktree）；写 `proposal.md`/`tasks.md`/`design.md` 前（§三～六 CC/PK/TG/DS-N） | ✅ `TEMPLATE/profile-rows` |
 | [`rules/advisory/components.md`](openspec/rules/advisory/components.md) | **写 `web/` 的页面或组件前 —— 先查再造**；**给侧边菜单加图标时**（目录节点必须用 `renderNavIcon()`）；删除组件或改其对外协议后回来改这里 | 🟡 只查「新增未登记」（`REPO/components-unregistered`），不查描述对不对 |
 | [`rules/advisory/list-view.md`](openspec/rules/advisory/list-view.md) | **写或改 `web/` 的列表页（搜索栏 + 表格）前**；**加列 / 改列宽前**（1440 宽双列布局表格只有 1115px，手机号、时间按最坏数据算宽，否则只有部分行折行）；**往高级筛选面板加字段前**（后端不认的参数被静默忽略，筛了等于没筛） | ❌ 无 —— 全靠这张表唤起 |
-| [`rules/advisory/api-design.md`](openspec/rules/advisory/api-design.md) | 新增或修改 Spring Controller 路由前；新增路由必须按 `/api/{module}/{resource}/{action}` 命名，存量逐步迁移 | 🟡 新增非规范路由由 `REPO/api-route-nonconforming` 拦截；存量按精确 method + path 兼容 |
+| [`rules/advisory/api-design.md`](openspec/rules/advisory/api-design.md) | 新增或修改 Spring Controller 路由前；按 `api-{type}` 用户鉴权、`api-n{type}` 未鉴权成对命名，当前 `type=backend` | 🟡 新增非规范路由由 `REPO/api-route-nonconforming` 拦截；存量按精确 method + path 兼容 |
 | [`rules/advisory/pitfalls.md`](openspec/rules/advisory/pitfalls.md) | 走 OpenSpec 流水线的**每一层**开工前，读对应那一节（L0–L10 分节）；**尤其**产出 L7 证据前（`git stash` 会让刚写好的证据全部失效）、判定「本次不修」时（只写在 `verify.md` 里等于把它埋了） | ❌ 无 —— 全靠这张表唤起 |
 | [`rules/advisory/toolchain.md`](openspec/rules/advisory/toolchain.md) | **构建报 `palantir-java-format(...)` 相关错误时**（`InvocationTargetException` / `NoClassDefFoundError`，那不是代码问题）；**集成测试成片失败、日志里有 `NoSuchFileException ... build/` 时**（有人同时在跑 `clean`）；**`pnpm dev` 前面设的环境变量没生效时**（turbo 严格模式静默丢弃未声明的变量）；**编译报「类 X 是公共的, 应在名为 X.java 的文件中声明」、或改过类名大小写准备提交时**（macOS 上 git 会吞掉只改大小写的重命名）；**从旧版或别处搬前端代码时**（`code` 现为数字 `0`） | ❌ 无 —— 全靠这张表唤起 |
 
@@ -248,15 +248,16 @@ vitest + jsdom + @testing-library/react。**断言 Semi `Form.*` 受控控件时
 
 ## 认证与权限要点
 
-- 认证不用 Spring Security 过滤器链：`weiran-framework` 的 `AuthInterceptor` 拦 `/api/**`，
-  `@PublicApi` 放行，`@RequiresPermission` 校验权限码，`CurrentUser` 取当前用户。
+- 认证不用 Spring Security 过滤器链：`weiran-framework` 的 `AuthInterceptor` 拦 `/api-backend/**` 并要求登录，
+  `/api-nbackend/**` 不做用户授权，`@RequiresPermission` 校验权限码，`CurrentUser` 取当前用户。
+- API 前缀通则：`api-{type}` 必须做用户鉴权，`api-n{type}` 不做用户鉴权；当前只启用 `type=backend`。新增 `type` 先接好后端拦截器、开发代理和部署反代，再开放路由。
 - 权限码登记在 `sys_menu` 的 button 行（如 `system:user:create`）；角色 `super_admin` 放行一切，`/me` 返回 `["*"]`。
 - 认证三段式（D-014）：按 JWT `iss` 选 `TokenVerifier` → `IdentityResolver` 认身份并判吊销 → `PermissionSource` 取权限。
 - 令牌吊销只靠 `sys_user.token_version`（JWT 的 `ver` claim）：改密码 / 重置密码 / 禁用账号时递增，且每次请求查库、不走缓存（宪法 CP-8）。
 - 浏览器令牌在 HttpOnly Cookie `weiran_token` 里，页面脚本读不到；前端靠非 HttpOnly 的 `weiran_csrf` 判断登录态，
   写请求带 `X-CSRF-Token`（缺了 403 / `100103`）。脚本调用登录时带 `X-Auth-Mode: token` 拿令牌，再用 Bearer 头（契约 §4）。**前后端必须同源部署**。
 - 登录失败不区分「用户不存在」与「密码错误」，统一 `110101`（宪法 CP-10）。前端对 `100101` 清会话跳登录，对 `110101` 不清。
-- 外部身份登录（CAS / OIDC，D-015）：浏览器整页跳 `/api/auth/sso/{id}/authorize`，回调由后端换码或验票后下发同一套本地 Cookie。
+- 外部身份登录（CAS / OIDC，D-015）：登录发起走 `/api-nbackend/system/auth/authorizeSso/{id}`，绑定发起走 `/api-backend/system/auth/authorizeSso/{id}`；回调走 `/api-nbackend/system/auth/callbackSso/{id}`，由后端换码或验票后下发同一套本地 Cookie。
   外部身份只按 `sys_user_identity(provider, external_id)` 映射，**不按用户名关联**；自动开通的用户没有本地密码（`password` 为空串，`/me.hasPassword=false`）。
   提供方用环境变量 `WEIRAN_AUTH_PROVIDERS_<ID>_*` 配置，见 `weiran4j/docs/02-部署.md` §5a。
 - 种子账号 `admin` / `admin123`（Flyway 种子），**上线前必须改密**。

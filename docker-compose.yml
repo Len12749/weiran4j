@@ -53,7 +53,7 @@ services:
       dockerfile: web/Dockerfile
     image: weiran4j-web:local
     ports:
-      - "${WEIRAN_WEB_PORT:-8080}:80"
+      - "${WEIRAN_WEB_PORT:-5202}:80"
     depends_on:
       - backend
     restart: unless-stopped

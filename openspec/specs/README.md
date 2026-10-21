@@ -19,7 +19,7 @@
 | [system-file-storage](system-file-storage/spec.md) | 1 | active | 本能力长期负责 system 模块文件的安全存储与访问：根据部署配置选择禁用、本地开发或阿里云 OSS 存储，约束对… |
 | [system-media-library](system-media-library/spec.md) | 4 | active | 本能力长期负责后台图片资产的登记与维护：让管理员能够在一个位置批量上传、检索、复用和安全删除图片 |
 | [system-sms-sender](system-sms-sender/spec.md) | 6 | active | 本能力长期负责为业务模块提供统一、可替换且安全的短信发送入口，使业务模块不必直接依赖具体短信厂商 SDK；验证码生成… |
-| [user-list-search](user-list-search/spec.md) | 7 | active | 本能力长期负责后台用户列表的检索口径:`GET /api/users` 接受哪些查询条件、每个条件如何匹配、多个条件… |
+| [user-list-search](user-list-search/spec.md) | 7 | active | 本能力长期负责后台用户列表的检索口径:`GET /api-backend/users` 接受哪些查询条件、每个条件如… |
 | [admin-console-shell](admin-console-shell/spec.md) | 4 | superseded → `admin-foundation` | 本能力长期承担后台管理前端的整体外壳职责：统一的侧边菜单、顶部栏、嵌套布局路由，以及基于当前登录账号权限的菜单显隐控制 |
 | [rbac-account-management](rbac-account-management/spec.md) | 5 | superseded → `admin-foundation` | 本能力长期负责后台管理员对账号（`pam_account`）生命周期的管理：分页检索账号、创建新账号、编辑账号资料、… |
 | [rbac-ban-management](rbac-ban-management/spec.md) | 3 | superseded → `admin-foundation` | 本能力长期负责基于 IP 与设备标识维度的访问封禁名单管理 |

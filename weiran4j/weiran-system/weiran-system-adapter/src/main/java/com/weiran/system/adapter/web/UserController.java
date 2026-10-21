@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** 用户管理接口。 */
 @RestController
-@RequestMapping("/api/system/user")
+@RequestMapping("/api-backend/system/user")
 public class UserController {
 
     private static final String MODULE = "用户管理";

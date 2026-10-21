@@ -53,58 +53,57 @@ class WebLayerTest {
     /** 张三（id=2）的 CSRF 值。 */
     private static final String USER_CSRF = "2.abc";
 
-    /** {@code /api/test/write} 被执行的次数：CSRF 被拒时业务代码不应执行。 */
+    /** {@code /api-backend/test/write} 被执行的次数：CSRF 被拒时业务代码不应执行。 */
     private static final AtomicInteger WRITES = new AtomicInteger();
 
     private MockMvc mockMvc;
 
     @RestController
-    @RequestMapping("/api/test")
     static class TestController {
 
         @PublicApi
-        @GetMapping("/public")
+        @GetMapping("/api-nbackend/test/public")
         String publicText() {
             return "hello";
         }
 
-        @GetMapping("/me")
+        @GetMapping("/api-backend/test/me")
         String me() {
             return CurrentUser.require().username();
         }
 
-        @PostMapping("/write")
+        @PostMapping("/api-backend/test/write")
         String write() {
             WebLayerTest.WRITES.incrementAndGet();
             return CurrentUser.require().username();
         }
 
         @RequiresPermission("system:user:list")
-        @GetMapping("/perm")
+        @GetMapping("/api-backend/test/perm")
         ApiResponse<Void> permitted() {
             return ApiResponse.ok();
         }
 
         @PublicApi
-        @PostMapping("/body")
+        @PostMapping("/api-nbackend/test/body")
         Payload body(@Valid @RequestBody final Payload payload) {
             return payload;
         }
 
         @PublicApi
-        @GetMapping("/biz")
+        @GetMapping("/api-nbackend/test/biz")
         String biz() {
             throw BizException.conflict("内置数据不可删除");
         }
 
         @PublicApi
-        @GetMapping("/boom")
+        @GetMapping("/api-nbackend/test/boom")
         String boom() {
             throw new IllegalStateException("secret detail");
         }
 
         @PublicApi
-        @GetMapping("/duplicate")
+        @GetMapping("/api-nbackend/test/duplicate")
         String duplicate() {
             throw new DuplicateKeyException("Duplicate entry 'x' for key 'uk_username'");
         }
@@ -173,7 +172,7 @@ class WebLayerTest {
                 .setControllerAdvice(new ApiResponseBodyAdvice(objectMapper), new GlobalExceptionHandler())
                 .addFilters(new RequestIdFilter())
                 .addMappedInterceptors(
-                        new String[] {"/api/**"},
+                        new String[] {"/api-backend/**"},
                         new AuthInterceptor(beanFactory.getBeanProvider(TokenAuthenticator.class)))
                 .build();
     }
@@ -182,7 +181,7 @@ class WebLayerTest {
     @DisplayName("失败体带 requestId 且与响应头一致；成功体没有 requestId 键")
     void errorBodyCarriesRequestId() throws Exception {
         final MvcResult failed = this.mockMvc
-                .perform(get("/api/test/me").header(RequestIdFilter.HEADER, "abc-1"))
+                .perform(get("/api-backend/test/me").header(RequestIdFilter.HEADER, "abc-1"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().string(RequestIdFilter.HEADER, "abc-1"))
                 .andExpect(jsonPath("$.requestId").value("abc-1"))
@@ -190,10 +189,10 @@ class WebLayerTest {
                 .andReturn();
         assertThat(failed.getResponse().getContentAsString()).contains("\"requestId\"");
         this.mockMvc
-                .perform(get("/api/test/biz"))
+                .perform(get("/api-nbackend/test/biz"))
                 .andExpect(jsonPath("$.requestId").isString());
         this.mockMvc
-                .perform(get("/api/test/public"))
+                .perform(get("/api-nbackend/test/public"))
                 .andExpect(header().exists(RequestIdFilter.HEADER))
                 .andExpect(jsonPath("$.requestId").doesNotExist());
     }
@@ -206,8 +205,8 @@ class WebLayerTest {
         appender.start();
         logger.addAppender(appender);
         try {
-            this.mockMvc.perform(get("/api/test/biz"));
-            this.mockMvc.perform(get("/api/test/boom"));
+            this.mockMvc.perform(get("/api-nbackend/test/biz"));
+            this.mockMvc.perform(get("/api-nbackend/test/boom"));
         } finally {
             logger.detachAppender(appender);
         }
@@ -225,7 +224,7 @@ class WebLayerTest {
     @DisplayName("String 返回值被包成 JSON 统一响应，code 为数字 0")
     void wrapsStringReturnValue() throws Exception {
         this.mockMvc
-                .perform(get("/api/test/public"))
+                .perform(get("/api-nbackend/test/public"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.code").value(0))
@@ -237,11 +236,11 @@ class WebLayerTest {
     @DisplayName("未登录访问非公开接口返回 401 / 100101")
     void rejectsAnonymous() throws Exception {
         this.mockMvc
-                .perform(get("/api/test/me"))
+                .perform(get("/api-backend/test/me"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value(100101));
         this.mockMvc
-                .perform(get("/api/test/me").header("Authorization", "Bearer nope"))
+                .perform(get("/api-backend/test/me").header("Authorization", "Bearer nope"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -249,7 +248,7 @@ class WebLayerTest {
     @DisplayName("登录后可读当前用户，请求结束后上下文被清理")
     void exposesCurrentUser() throws Exception {
         this.mockMvc
-                .perform(get("/api/test/me").header("Authorization", "Bearer user"))
+                .perform(get("/api-backend/test/me").header("Authorization", "Bearer user"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("zhangsan"));
         assertThat(CurrentUser.get()).isEmpty();
@@ -259,16 +258,16 @@ class WebLayerTest {
     @DisplayName("没有 Bearer 头时从 weiran_token Cookie 取令牌；两者都有时以 Bearer 为准")
     void readsTokenFromCookie() throws Exception {
         this.mockMvc
-                .perform(get("/api/test/me").cookie(new Cookie(AuthCookies.TOKEN_COOKIE, "user")))
+                .perform(get("/api-backend/test/me").cookie(new Cookie(AuthCookies.TOKEN_COOKIE, "user")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("zhangsan"));
         this.mockMvc
-                .perform(get("/api/test/me")
+                .perform(get("/api-backend/test/me")
                         .header("Authorization", "Bearer admin")
                         .cookie(new Cookie(AuthCookies.TOKEN_COOKIE, "user")))
                 .andExpect(jsonPath("$.data").value("admin"));
         this.mockMvc
-                .perform(get("/api/test/me").cookie(new Cookie(AuthCookies.TOKEN_COOKIE, "nope")))
+                .perform(get("/api-backend/test/me").cookie(new Cookie(AuthCookies.TOKEN_COOKIE, "nope")))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value(100101));
     }
@@ -278,20 +277,22 @@ class WebLayerTest {
     void rejectsCookieWriteWithoutValidCsrf() throws Exception {
         final Cookie token = new Cookie(AuthCookies.TOKEN_COOKIE, "user");
         this.mockMvc
-                .perform(post("/api/test/write")
+                .perform(post("/api-backend/test/write")
                         .cookie(token, new Cookie(AuthCookies.CSRF_COOKIE, WebLayerTest.USER_CSRF)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(100103));
         this.mockMvc
-                .perform(post("/api/test/write")
+                .perform(post("/api-backend/test/write")
                         .cookie(token, new Cookie(AuthCookies.CSRF_COOKIE, WebLayerTest.USER_CSRF))
                         .header(AuthCookies.CSRF_HEADER, "2.other"))
                 .andExpect(jsonPath("$.code").value(100103));
         this.mockMvc
-                .perform(post("/api/test/write").cookie(token).header(AuthCookies.CSRF_HEADER, WebLayerTest.USER_CSRF))
+                .perform(post("/api-backend/test/write")
+                        .cookie(token)
+                        .header(AuthCookies.CSRF_HEADER, WebLayerTest.USER_CSRF))
                 .andExpect(jsonPath("$.code").value(100103));
         this.mockMvc
-                .perform(post("/api/test/write")
+                .perform(post("/api-backend/test/write")
                         .cookie(token, new Cookie(AuthCookies.CSRF_COOKIE, "1.abc"))
                         .header(AuthCookies.CSRF_HEADER, "1.abc"))
                 .andExpect(jsonPath("$.code").value(100103));
@@ -303,7 +304,7 @@ class WebLayerTest {
     @DisplayName("Cookie 认证的写请求带正确的 CSRF 头即放行")
     void acceptsCookieWriteWithCsrf() throws Exception {
         this.mockMvc
-                .perform(post("/api/test/write")
+                .perform(post("/api-backend/test/write")
                         .cookie(
                                 new Cookie(AuthCookies.TOKEN_COOKIE, "user"),
                                 new Cookie(AuthCookies.CSRF_COOKIE, WebLayerTest.USER_CSRF))
@@ -314,17 +315,17 @@ class WebLayerTest {
     }
 
     @Test
-    @DisplayName("Bearer 认证的写请求、Cookie 认证的 GET、公开接口的写请求都不查 CSRF")
+    @DisplayName("Bearer 认证的写请求、Cookie 认证的 GET、非授权前缀的写请求都不查 CSRF")
     void skipsCsrfWhereNotApplicable() throws Exception {
         this.mockMvc
-                .perform(post("/api/test/write").header("Authorization", "Bearer user"))
+                .perform(post("/api-backend/test/write").header("Authorization", "Bearer user"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
         this.mockMvc
-                .perform(get("/api/test/me").cookie(new Cookie(AuthCookies.TOKEN_COOKIE, "user")))
+                .perform(get("/api-backend/test/me").cookie(new Cookie(AuthCookies.TOKEN_COOKIE, "user")))
                 .andExpect(jsonPath("$.code").value(0));
         this.mockMvc
-                .perform(post("/api/test/body")
+                .perform(post("/api-nbackend/test/body")
                         .cookie(new Cookie(AuthCookies.TOKEN_COOKIE, "user"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"x\"}"))
@@ -335,12 +336,12 @@ class WebLayerTest {
     @DisplayName("缺权限返回 403 / 100102，超级管理员直接放行")
     void checksPermission() throws Exception {
         this.mockMvc
-                .perform(get("/api/test/perm").header("Authorization", "Bearer user"))
+                .perform(get("/api-backend/test/perm").header("Authorization", "Bearer user"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(100102));
         assertThat(CurrentUser.get()).isEmpty();
         this.mockMvc
-                .perform(get("/api/test/perm").header("Authorization", "bearer admin"))
+                .perform(get("/api-backend/test/perm").header("Authorization", "bearer admin"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data").isEmpty());
@@ -350,20 +351,20 @@ class WebLayerTest {
     @DisplayName("请求体校验失败返回 100001，message 形如「字段: 提示」")
     void reportsValidationError() throws Exception {
         this.mockMvc
-                .perform(post("/api/test/body")
+                .perform(post("/api-nbackend/test/body")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(100001))
                 .andExpect(jsonPath("$.message").value("name: 不能为空"));
         this.mockMvc
-                .perform(post("/api/test/body")
+                .perform(post("/api-nbackend/test/body")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{broken"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("请求体格式不正确"));
         this.mockMvc
-                .perform(post("/api/test/body")
+                .perform(post("/api-nbackend/test/body")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"x\"}"))
                 .andExpect(jsonPath("$.data.name").value("x"));
@@ -373,16 +374,16 @@ class WebLayerTest {
     @DisplayName("业务异常、唯一键冲突、未知异常分别映射到约定错误码")
     void mapsExceptions() throws Exception {
         this.mockMvc
-                .perform(get("/api/test/biz"))
+                .perform(get("/api-nbackend/test/biz"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value(CommonErrors.CONFLICT.code()))
                 .andExpect(jsonPath("$.message").value("内置数据不可删除"));
         this.mockMvc
-                .perform(get("/api/test/duplicate"))
+                .perform(get("/api-nbackend/test/duplicate"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value(100003));
         this.mockMvc
-                .perform(get("/api/test/boom"))
+                .perform(get("/api-nbackend/test/boom"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.code").value(100005))
                 .andExpect(jsonPath("$.message").value("服务器内部错误"));
@@ -392,7 +393,7 @@ class WebLayerTest {
     @DisplayName("不存在的请求方法映射为 100001")
     void mapsMethodNotSupported() throws Exception {
         this.mockMvc
-                .perform(post("/api/test/public"))
+                .perform(post("/api-nbackend/test/public"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("不支持的请求方法: POST"));
     }

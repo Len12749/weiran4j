@@ -12,7 +12,7 @@ export const logKeys = {
 export function useLoginLogs(query: LoginLogQuery) {
     return useQuery({
         queryKey: logKeys.login(query),
-        queryFn: () => http.get<PageResult<LoginLogView>>(`/api/system/loginLog/list${toQueryString(query)}`),
+        queryFn: () => http.get<PageResult<LoginLogView>>(`/api-backend/system/loginLog/list${toQueryString(query)}`),
         placeholderData: keepPreviousData,
     });
 }
@@ -20,7 +20,7 @@ export function useLoginLogs(query: LoginLogQuery) {
 export function useOperationLogs(query: OperationLogQuery) {
     return useQuery({
         queryKey: logKeys.operation(query),
-        queryFn: () => http.get<PageResult<OperationLogView>>(`/api/system/operationLog/list${toQueryString(query)}`),
+        queryFn: () => http.get<PageResult<OperationLogView>>(`/api-backend/system/operationLog/list${toQueryString(query)}`),
         placeholderData: keepPreviousData,
     });
 }
@@ -28,7 +28,7 @@ export function useOperationLogs(query: OperationLogQuery) {
 export function useOperationLogDetail(id: number | null) {
     return useQuery({
         queryKey: logKeys.operationDetail(id ?? 0),
-        queryFn: () => http.get<OperationLogView>(`/api/system/operationLog/get/${id}`),
+        queryFn: () => http.get<OperationLogView>(`/api-backend/system/operationLog/get/${id}`),
         enabled: id !== null,
     });
 }

@@ -24,7 +24,7 @@ WORKDIR /app
 COPY --from=build --chown=weiran:weiran /src/app.jar /app/app.jar
 USER weiran
 ENV WEIRAN_LOG_DIR=/app/logs
-EXPOSE 3310
+EXPOSE 5200
 # exec 形式：java 是 PID 1，能直接收到 SIGTERM，触发优雅停机。
 # 时区用 JVM 参数而不是 TZ 环境变量：JRE 镜像没有 tzdata，TZ 不生效，日志时间会变成 UTC；Java 自带时区库。
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-Duser.timezone=Asia/Shanghai", "-jar", "/app/app.jar"]

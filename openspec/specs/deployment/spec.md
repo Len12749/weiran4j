@@ -23,12 +23,12 @@ status: "active"
 
 仓库 **MUST** 提供可直接使用的容器化部署产物:
 - 后端镜像:以非 root 用户运行 JRE 21;
-- 前端镜像:Nginx 提供静态文件,并把 `/api/` 同源反代到后端,透传 `Cookie`、`Set-Cookie`、`X-CSRF-Token`、`X-Request-Id`、`X-Forwarded-*`;
+- 前端镜像:Nginx 提供静态文件,并把 `/api-backend/` 同源反代到后端,透传 `Cookie`、`Set-Cookie`、`X-CSRF-Token`、`X-Request-Id`、`X-Forwarded-*`;
 - `docker-compose.yml`:编排 MySQL 8、后端、前端,密钥一律来自 `weiran4j/.env`,不写死。
 
 #### Scenario: Compose 起一套可登录的环境
 - **WHEN** 准备好 `weiran4j/.env` 后执行 `docker compose --env-file weiran4j/.env up -d --build`
-- **THEN** 经前端端口用浏览器 Cookie 模式登录 `admin/admin123` 成功,随后 `GET /api/auth/me` 返回 `code 0`
+- **THEN** 经前端端口用浏览器 Cookie 模式登录 `admin/admin123` 成功,随后 `GET /api-backend/auth/me` 返回 `code 0`
 - **判据**:用 `curl` 加 cookie jar 经前端端口走「登录 → `/me`」,断言 `code` 为 0,并记录在 verify
 
 #### Scenario: 后端以非 root 运行并优雅停机

@@ -4,8 +4,8 @@ import { http } from '@/utils/request';
 import { sessionUserId, useSession } from '@/utils/session';
 import { defaultPreferences, normalizePreferences, PreferencesContext, type UserPreferences } from './usePreferences';
 
-const PREFERENCES_GET_API = '/api/system/auth/getPreferences';
-const PREFERENCES_UPDATE_API = '/api/system/auth/updatePreferences';
+const PREFERENCES_GET_API = '/api-backend/system/auth/getPreferences';
+const PREFERENCES_UPDATE_API = '/api-backend/system/auth/updatePreferences';
 /** 连续修改（拖滑块、连点开关）合并成一次写入 */
 export const PREFERENCES_SYNC_DELAY = 500;
 

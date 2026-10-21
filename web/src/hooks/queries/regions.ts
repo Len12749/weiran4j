@@ -19,21 +19,21 @@ export const regionKeys = {
 export function useRegionTree(query: RegionQuery = {}) {
     return useQuery({
         queryKey: regionKeys.tree(query),
-        queryFn: () => http.get<RegionNode[]>(`/api/region/area/listTree${toQueryString(query)}`),
+        queryFn: () => http.get<RegionNode[]>(`/api-backend/region/area/listTree${toQueryString(query)}`),
     });
 }
 
 export function useRegionFlat(query: RegionQuery = {}) {
     return useQuery({
         queryKey: regionKeys.flat(query),
-        queryFn: () => http.get<RegionView[]>(`/api/region/area/list${toQueryString(query)}`),
+        queryFn: () => http.get<RegionView[]>(`/api-backend/region/area/list${toQueryString(query)}`),
     });
 }
 
 export function useRegionDetail(id: number | null) {
     return useQuery({
         queryKey: regionKeys.detail(id ?? 0),
-        queryFn: () => http.get<RegionView>(`/api/region/area/get/${id}`),
+        queryFn: () => http.get<RegionView>(`/api-backend/region/area/get/${id}`),
         enabled: id !== null,
         staleTime: 0,
     });
@@ -42,7 +42,7 @@ export function useRegionDetail(id: number | null) {
 export function useRegionLookup() {
     return useQuery({
         queryKey: regionKeys.lookup,
-        queryFn: () => http.get<RegionNode[]>('/api/region/area/getEnabledTree'),
+        queryFn: () => http.get<RegionNode[]>('/api-backend/region/area/getEnabledTree'),
         staleTime: LOOKUP_STALE_TIME,
     });
 }
@@ -52,8 +52,8 @@ export function useSaveRegion() {
     return useMutation({
         mutationFn: ({ id, body }: { id?: number; body: RegionSaveRequest }) =>
             id === undefined
-                ? http.post<RegionView>('/api/region/area/create', body)
-                : http.put<RegionView>(`/api/region/area/update/${id}`, body),
+                ? http.post<RegionView>('/api-backend/region/area/create', body)
+                : http.put<RegionView>(`/api-backend/region/area/update/${id}`, body),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: regionKeys.all }),
     });
 }
@@ -61,7 +61,7 @@ export function useSaveRegion() {
 export function useDeleteRegion() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => http.delete<null>(`/api/region/area/delete/${id}`),
+        mutationFn: (id: number) => http.delete<null>(`/api-backend/region/area/delete/${id}`),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: regionKeys.all }),
     });
 }
@@ -69,7 +69,7 @@ export function useDeleteRegion() {
 /** Download a UTF-8 CSV response while keeping the normal same-origin cookie session. */
 export async function downloadRegionCsv(query: RegionQuery): Promise<void> {
     try {
-        const response = await fetch(`${config.apiBaseUrl}/api/region/area/export${toQueryString(query)}`, {
+        const response = await fetch(`${config.apiBaseUrl}/api-backend/region/area/export${toQueryString(query)}`, {
             credentials: 'same-origin',
             headers: { Accept: 'text/csv' },
         });

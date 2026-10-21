@@ -17,6 +17,6 @@
 
 组件演示的「配置表单」页面使用同一套表单展示八种字段类型各一条；示例值只保存在当前页面，图片在浏览器内预览。
 
-匿名接口 `/api/system/config/getPublic/{key}` 只允许 `system.general.title`。它不会自动改变前端显示；标题仍由构建变量 `VITE_APP_TITLE` 提供。
+匿名接口 `/api-nbackend/system/config/getPublic/{key}` 只允许 `system.general.title`。它不会自动改变前端显示；标题仍由构建变量 `VITE_APP_TITLE` 提供。
 
 站点内容配置已从页面、接口与数据库移除。表结构和跨接口业务约束见 `weiran4j/docs/01-架构与接口契约.md`；接口路径与字段 schema 以本地 OpenAPI 为准。

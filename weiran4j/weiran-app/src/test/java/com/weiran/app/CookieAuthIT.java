@@ -51,7 +51,7 @@ class CookieAuthIT extends IntegrationTestSupport {
     private String newUser(final String prefix) {
         final String username = IntegrationTestSupport.unique(prefix);
         this.create(
-                "/api/system/user/create",
+                "/api-backend/system/user/create",
                 this.adminToken(),
                 Map.of(
                         "username",
@@ -92,8 +92,8 @@ class CookieAuthIT extends IntegrationTestSupport {
     }
 
     private String nickname(final Session session) {
-        return IntegrationTestSupport.data(
-                        this.exchange(HttpMethod.GET, "/api/system/auth/getCurrentUser", session.cookies(), null))
+        return IntegrationTestSupport.data(this.exchange(
+                        HttpMethod.GET, "/api-backend/system/auth/getCurrentUser", session.cookies(), null))
                 .path("nickname")
                 .asText();
     }
@@ -141,7 +141,7 @@ class CookieAuthIT extends IntegrationTestSupport {
         final Session session = this.browserLogin(this.newUser("cookie"));
 
         final ResponseEntity<JsonNode> me =
-                this.exchange(HttpMethod.GET, "/api/system/auth/getCurrentUser", session.cookies(), null);
+                this.exchange(HttpMethod.GET, "/api-backend/system/auth/getCurrentUser", session.cookies(), null);
 
         IntegrationTestSupport.assertOk(me);
         assertThat(IntegrationTestSupport.data(me).path("nickname").asText()).isEqualTo("原昵称");
@@ -154,13 +154,13 @@ class CookieAuthIT extends IntegrationTestSupport {
         final Map<String, Object> profile = Map.of("nickname", "被篡改");
 
         IntegrationTestSupport.assertError(
-                this.exchange(HttpMethod.PUT, "/api/system/auth/updateProfile", session.cookies(), profile),
+                this.exchange(HttpMethod.PUT, "/api-backend/system/auth/updateProfile", session.cookies(), profile),
                 HttpStatus.FORBIDDEN,
                 100103);
         IntegrationTestSupport.assertError(
                 this.exchange(
                         HttpMethod.PUT,
-                        "/api/system/auth/updateProfile",
+                        "/api-backend/system/auth/updateProfile",
                         session.cookiesWithCsrf(session.csrf() + "x"),
                         profile),
                 HttpStatus.FORBIDDEN,
@@ -169,7 +169,7 @@ class CookieAuthIT extends IntegrationTestSupport {
 
         IntegrationTestSupport.assertOk(this.exchange(
                 HttpMethod.PUT,
-                "/api/system/auth/updateProfile",
+                "/api-backend/system/auth/updateProfile",
                 session.cookiesWithCsrf(session.csrf()),
                 Map.of("nickname", "新昵称")));
         assertThat(this.nickname(session)).isEqualTo("新昵称");
@@ -186,7 +186,8 @@ class CookieAuthIT extends IntegrationTestSupport {
         final String token =
                 IntegrationTestSupport.data(response).path("accessToken").asText();
         assertThat(token).isNotBlank();
-        IntegrationTestSupport.assertOk(this.put("/api/system/auth/updateProfile", token, Map.of("nickname", "脚本改的")));
+        IntegrationTestSupport.assertOk(
+                this.put("/api-backend/system/auth/updateProfile", token, Map.of("nickname", "脚本改的")));
     }
 
     @Test
@@ -195,7 +196,7 @@ class CookieAuthIT extends IntegrationTestSupport {
         final Session session = this.browserLogin(this.newUser("logout"));
 
         final ResponseEntity<JsonNode> response = this.exchange(
-                HttpMethod.POST, "/api/system/auth/logout", session.cookiesWithCsrf(session.csrf()), Map.of());
+                HttpMethod.POST, "/api-backend/system/auth/logout", session.cookiesWithCsrf(session.csrf()), Map.of());
 
         IntegrationTestSupport.assertOk(response);
         assertThat(CookieAuthIT.setCookie(response, AuthCookies.TOKEN_COOKIE)).contains("Max-Age=0", "Path=/api");
@@ -226,7 +227,7 @@ class CookieAuthIT extends IntegrationTestSupport {
         otherAudience.put("aud", "other");
         for (final Map<String, Object> claims : List.of(noIssuer, otherIssuer, otherAudience)) {
             IntegrationTestSupport.assertError(
-                    this.get("/api/system/auth/getCurrentUser", CookieAuthIT.sign(claims)),
+                    this.get("/api-backend/system/auth/getCurrentUser", CookieAuthIT.sign(claims)),
                     HttpStatus.UNAUTHORIZED,
                     100101);
         }
@@ -237,16 +238,16 @@ class CookieAuthIT extends IntegrationTestSupport {
     void revocationBypassesCache() {
         final String bumped = this.newUser("revoke");
         final String bumpedToken = this.tokenOf(bumped, CookieAuthIT.PASSWORD);
-        IntegrationTestSupport.assertOk(this.get("/api/system/auth/getCurrentUser", bumpedToken));
+        IntegrationTestSupport.assertOk(this.get("/api-backend/system/auth/getCurrentUser", bumpedToken));
         this.jdbc.update("UPDATE sys_user SET token_version = token_version + 1 WHERE username = ?", bumped);
         IntegrationTestSupport.assertError(
-                this.get("/api/system/auth/getCurrentUser", bumpedToken), HttpStatus.UNAUTHORIZED, 100101);
+                this.get("/api-backend/system/auth/getCurrentUser", bumpedToken), HttpStatus.UNAUTHORIZED, 100101);
 
         final String disabled = this.newUser("disable");
         final String disabledToken = this.tokenOf(disabled, CookieAuthIT.PASSWORD);
-        IntegrationTestSupport.assertOk(this.get("/api/system/auth/getCurrentUser", disabledToken));
+        IntegrationTestSupport.assertOk(this.get("/api-backend/system/auth/getCurrentUser", disabledToken));
         this.jdbc.update("UPDATE sys_user SET status = 'disabled' WHERE username = ?", disabled);
         IntegrationTestSupport.assertError(
-                this.get("/api/system/auth/getCurrentUser", disabledToken), HttpStatus.UNAUTHORIZED, 100101);
+                this.get("/api-backend/system/auth/getCurrentUser", disabledToken), HttpStatus.UNAUTHORIZED, 100101);
     }
 }

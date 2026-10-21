@@ -33,9 +33,9 @@ class RegionIT extends IntegrationTestSupport {
                 .isEqualTo(3351);
 
         IntegrationTestSupport.assertError(
-                this.get("/api/region/area/getEnabledTree", null), HttpStatus.UNAUTHORIZED, 100101);
+                this.get("/api-backend/region/area/getEnabledTree", null), HttpStatus.UNAUTHORIZED, 100101);
         final String admin = this.adminToken();
-        final JsonNode lookup = IntegrationTestSupport.data(this.get("/api/region/area/getEnabledTree", admin));
+        final JsonNode lookup = IntegrationTestSupport.data(this.get("/api-backend/region/area/getEnabledTree", admin));
         assertThat(lookup).hasSize(31);
         assertThat(lookup.findValuesAsText("code")).contains("11", "110101");
 
@@ -46,11 +46,12 @@ class RegionIT extends IntegrationTestSupport {
         user.put("password", RegionIT.USER_PASSWORD);
         user.put("departmentId", 1);
         user.put("roleIds", List.of());
-        this.create("/api/system/user/create", admin, user);
+        this.create("/api-backend/system/user/create", admin, user);
         final String viewer = this.tokenOf(username, RegionIT.USER_PASSWORD);
 
-        IntegrationTestSupport.assertOk(this.get("/api/region/area/getEnabledTree", viewer));
-        IntegrationTestSupport.assertError(this.get("/api/region/area/listTree", viewer), HttpStatus.FORBIDDEN, 100102);
+        IntegrationTestSupport.assertOk(this.get("/api-backend/region/area/getEnabledTree", viewer));
+        IntegrationTestSupport.assertError(
+                this.get("/api-backend/region/area/listTree", viewer), HttpStatus.FORBIDDEN, 100102);
     }
 
     @Test
@@ -59,35 +60,38 @@ class RegionIT extends IntegrationTestSupport {
         final String admin = this.adminToken();
         final String provinceCode = RegionIT.uniqueCode();
         final long provinceId = this.create(
-                "/api/region/area/create",
+                "/api-backend/region/area/create",
                 admin,
                 Map.of("code", provinceCode, "name", "集成测试省", "level", "province", "sort", 99));
         final long cityId = this.create(
-                "/api/region/area/create",
+                "/api-backend/region/area/create",
                 admin,
                 Map.of("code", provinceCode + "01", "name", "集成测试市", "level", "city", "parentCode", provinceCode));
 
         IntegrationTestSupport.assertError(
-                this.delete("/api/region/area/delete/" + provinceId, admin), HttpStatus.CONFLICT, 120103);
+                this.delete("/api-backend/region/area/delete/" + provinceId, admin), HttpStatus.CONFLICT, 120103);
         IntegrationTestSupport.assertError(
-                this.put("/api/region/area/update/" + provinceId, admin, Map.of("code", provinceCode + "99")),
+                this.put("/api-backend/region/area/update/" + provinceId, admin, Map.of("code", provinceCode + "99")),
                 HttpStatus.CONFLICT,
                 100004);
         IntegrationTestSupport.assertOk(this.put(
-                "/api/region/area/update/" + provinceId, admin, Map.of("name", "修改后的集成测试省", "status", "disabled")));
-        final JsonNode updated = IntegrationTestSupport.data(this.get("/api/region/area/get/" + provinceId, admin));
+                "/api-backend/region/area/update/" + provinceId,
+                admin,
+                Map.of("name", "修改后的集成测试省", "status", "disabled")));
+        final JsonNode updated =
+                IntegrationTestSupport.data(this.get("/api-backend/region/area/get/" + provinceId, admin));
         assertThat(updated.path("code").asText()).isEqualTo(provinceCode);
         assertThat(updated.path("name").asText()).isEqualTo("修改后的集成测试省");
         assertThat(updated.path("status").asText()).isEqualTo("disabled");
 
-        IntegrationTestSupport.assertOk(this.delete("/api/region/area/delete/" + cityId, admin));
-        IntegrationTestSupport.assertOk(this.delete("/api/region/area/delete/" + provinceId, admin));
+        IntegrationTestSupport.assertOk(this.delete("/api-backend/region/area/delete/" + cityId, admin));
+        IntegrationTestSupport.assertOk(this.delete("/api-backend/region/area/delete/" + provinceId, admin));
         await().atMost(Duration.ofSeconds(3))
                 .untilAsserted(() -> assertThat(this.jdbc.queryForObject(
                                 "SELECT COUNT(*) FROM sys_operation_log WHERE module = ? AND path LIKE ? AND description IN (?, ?, ?)",
                                 Integer.class,
                                 "行政区划管理",
-                                "/api/region/area/%",
+                                "/api-backend/region/area/%",
                                 "新增地区",
                                 "修改地区",
                                 "删除地区"))

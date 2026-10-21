@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** 登录日志接口。 */
 @RestController
-@RequestMapping("/api/system/loginLog")
+@RequestMapping("/api-backend/system/loginLog")
 public class LoginLogController {
 
     private final LoginLogService loginLogService;

@@ -1,5 +1,10 @@
 # 流程本身的修改记录
 
+## 2026-10-21 · API 路由守卫识别授权与公开入口
+
+- `api-route-convention.mjs` 改为扫描 `/api-backend/` 与 `/api-nbackend/`，并拦截重新出现的旧 `/api/` 路由；继续检查模块、资源、动作三段结构；健康探针例外迁到 `/api-nbackend/health`。
+- 同步路由约定、`project.json` 和 `design/check.md`，避免新前缀绕过机械检查。
+
 ## 2026-10-20 · 新增 API 路由规范与存量基线守卫
 
 - 新增 `rules/advisory/api-design.md`，约定新接口使用 `/api/{module}/{resource}/{action}`（模块 / 资源 / 动作）；该规则通过根 `AGENTS.md` 索引唤起，不写入对外 API 契约文档。

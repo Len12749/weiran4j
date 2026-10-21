@@ -11,7 +11,7 @@ status: "active"
 
 ### Requirement: [FR-001] 媒体资产登记
 
-图片库上传的图片 **MUST** 在文件写入成功后登记到 `sys_media`，保存原始文件名、公开 URL、对象名、大小、上传人和创建时间；数据库失败时不得返回成功上传结果。图片资产表使用 `sys_` 前缀，图片上传接口 **MUST** 位于 `/api/system/` 路径下。
+图片库上传的图片 **MUST** 在文件写入成功后登记到 `sys_media`，保存原始文件名、公开 URL、对象名、大小、上传人和创建时间；数据库失败时不得返回成功上传结果。图片资产表使用 `sys_` 前缀，图片上传接口 **MUST** 位于 `/api-backend/system/` 路径下。
 
 #### Scenario: 图片上传后持久可查
 - **WHEN** 管理员通过图片库上传有效图片
@@ -25,7 +25,7 @@ status: "active"
 
 ### Requirement: [FR-002] 图片资产检索
 
-具备 `system:media-library:list` 权限的管理员 **MUST** 能通过 `GET /api/system/media-library` 按上传时间倒序分页查询媒体资产，并可按原始文件名关键词过滤。
+具备 `system:media-library:list` 权限的管理员 **MUST** 能通过 `GET /api-backend/system/media-library` 按上传时间倒序分页查询媒体资产，并可按原始文件名关键词过滤。
 
 #### Scenario: 分页并按名称搜索
 - **WHEN** 管理员提交关键词、页码和页大小查询图片库
@@ -34,7 +34,7 @@ status: "active"
 
 ### Requirement: [FR-003] 多图上传与复用
 
-具备 `system:media-library:upload` 权限的管理员 **MUST** 能通过一次多文件选择上传多张 jpg/jpeg/png/gif 图片，每张不超过 10 MB；每张图片独立显示上传结果，失败项可重试。管理员 **MUST** 能预览图片并复制其 URL。每张图片通过 `POST /api/system/media/images` 单独上传。
+具备 `system:media-library:upload` 权限的管理员 **MUST** 能通过一次多文件选择上传多张 jpg/jpeg/png/gif 图片，每张不超过 10 MB；每张图片独立显示上传结果，失败项可重试。管理员 **MUST** 能预览图片并复制其 URL。每张图片通过 `POST /api-backend/system/media/images` 单独上传。
 
 #### Scenario: 一次选择多张图片
 - **WHEN** 管理员一次选择多张有效图片上传
@@ -48,7 +48,7 @@ status: "active"
 
 ### Requirement: [FR-005] 图片资产删除
 
-具备 `system:media-library:delete` 权限的管理员 **MUST** 能通过 `DELETE /api/system/media-library/{id}` 删除登记图片。图片删除不依赖站点配置引用检查；文件对象删除 **MUST** 在数据库事务提交后执行。重复删除对象应安全，确保外部存储错误或数据库提交失败时资产记录仍可重试处理。
+具备 `system:media-library:delete` 权限的管理员 **MUST** 能通过 `DELETE /api-backend/system/media-library/{id}` 删除登记图片。图片删除不依赖站点配置引用检查；文件对象删除 **MUST** 在数据库事务提交后执行。重复删除对象应安全，确保外部存储错误或数据库提交失败时资产记录仍可重试处理。
 
 #### Scenario: 删除图片
 - **WHEN** 管理员有删除权限且目标图片已登记

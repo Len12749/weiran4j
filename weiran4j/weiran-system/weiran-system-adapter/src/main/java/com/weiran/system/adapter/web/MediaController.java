@@ -30,7 +30,7 @@ public class MediaController {
         this.service = service;
     }
 
-    @PostMapping("/api/system/media/uploadImage")
+    @PostMapping("/api-backend/system/media/uploadImage")
     @RequiresPermission("system:media-library:upload")
     @OperationLog(module = "图片库", description = "上传图片")
     public ImageUploadView upload(@RequestParam("file") final MultipartFile file) throws IOException {
@@ -44,7 +44,7 @@ public class MediaController {
                 CurrentUser.require().id());
     }
 
-    @GetMapping("/api/system/mediaLibrary/list")
+    @GetMapping("/api-backend/system/mediaLibrary/list")
     @RequiresPermission("system:media-library:list")
     public PageResult<MediaView> page(
             @RequestParam(defaultValue = "1") final int page,
@@ -53,7 +53,7 @@ public class MediaController {
         return this.service.page(keyword, new PageQuery(page, pageSize));
     }
 
-    @DeleteMapping("/api/system/mediaLibrary/delete/{id}")
+    @DeleteMapping("/api-backend/system/mediaLibrary/delete/{id}")
     @RequiresPermission("system:media-library:delete")
     @OperationLog(module = "图片库", description = "删除图片")
     public ApiResponse<Void> delete(@PathVariable final long id) {

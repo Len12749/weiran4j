@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** 行政区划管理与登录态 lookup API。 */
 @RestController
-@RequestMapping("/api/region/area")
+@RequestMapping("/api-backend/region/area")
 public class RegionController {
 
     private static final String MODULE = "行政区划管理";
