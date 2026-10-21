@@ -13,7 +13,7 @@ const initialGroups: ConfigGroupView[] = [
 
 const builtinConfig: ConfigView = {
     id: 1,
-    configKey: 'system.site.title',
+    configKey: 'system.general.title',
     configValue: 'Weiran Admin',
     configType: 'string',
     groupKey: 'general',
@@ -29,7 +29,7 @@ const builtinConfig: ConfigView = {
 const editableConfig: ConfigView = {
     ...builtinConfig,
     id: 2,
-    configKey: 'system.site.footer',
+    configKey: 'system.general.footer',
     configValue: '© Weiran',
     required: false,
     description: '页脚信息',
@@ -147,7 +147,7 @@ describe('ConfigsPage 配置分组侧栏', () => {
         const user = userEvent.setup();
         setup();
         expect(await screen.findByText('系统标题')).toBeInTheDocument();
-        expect(screen.queryByText('system.site.title')).not.toBeInTheDocument();
+        expect(screen.queryByText('system.general.title')).not.toBeInTheDocument();
         expect(screen.getAllByText('内置')).toHaveLength(3);
 
         expect(screen.queryByRole('button', { name: '字段设置：页脚信息' })).not.toBeInTheDocument();

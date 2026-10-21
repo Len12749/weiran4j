@@ -37,7 +37,7 @@
 | 权限码 | `system:dict:list` · `system:dict:create` · `system:dict:update`（**字典项的增删改也用它**）· `system:dict:delete`；`GET /code/{code}/items` 仅需登录 |
 | 种子 | 内置字典 `sys_user_gender`（male 男 / female 女 / unknown 未知）、`sys_common_status`（enabled 启用 / disabled 禁用），均带颜色 |
 
-系统配置域 `config_system` 包含 `general`（通用）、`user`（用户）；短信配置域 `config_sms` 单独包含 `general`（通用）、`system_tpl`（系统模板）。短信签名位于短信域的 `general`，本地/阿里云验证码模板位于短信域的 `system_tpl`；由独立的「短信配置」页面维护。
+系统配置域 `config_system` 包含 `general`（通用）、`user`（用户）、`site`（站点）；短信配置域 `config_sms` 单独包含 `general`（通用）、`system_tpl`（系统模板）。配置键的第二段与所属分组编码一致。短信签名位于短信域的 `general`，本地/阿里云验证码模板位于短信域的 `system_tpl`；由独立的「短信配置」页面维护。
 
 ## 1. 列表
 
@@ -142,6 +142,7 @@
 新条目插在本节最上方（按日期倒序，新在上）。
 
 **2026-10-21**
+- 新增 `config_system/site` 内置组，承载 `system.site.title`，使配置键中的分组编码与实际归属一致。
 - 为 `sys_group` 增加 `group_key`，拆出独立 `config_sms` 配置域及其内置 `general`、`system_tpl` 组；短信配置项使用 `sms.` 键前缀。
 
 **2026-10-20**

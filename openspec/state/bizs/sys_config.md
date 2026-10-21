@@ -31,7 +31,7 @@
 | 后端模块 | `weiran-system`；`ConfigController` → `ConfigApplicationService` → `MybatisConfigRepository` |
 | 接口前缀 | `/api/system/config`；具体 HTTP 接口以 Springdoc OpenAPI 为准 |
 | 权限码 | `system:config:list` · `system:config:create` · `system:config:update` · `system:config:delete`；`GET /public/{key}` 为 `@PublicApi`（免登录） |
-| 种子 | `system.site.title` = `Weiran Admin`（string，内置）；`system.user.enable_phone_login` = `false`（boolean，内置）；`sms.sign_name`（`config_sms/general`）、`sms.captcha_local`、`sms.captcha_aliyun`（`config_sms/system_tpl`，string，内置，默认空）；`config_system` 含 `general`、`user`，`config_sms` 含 `general`、`system_tpl` |
+| 种子 | `system.site.title` = `Weiran Admin`（`config_system/site`，string，内置）；`system.user.enable_phone_login` = `false`（`config_system/user`，boolean，内置）；`sms.general.sign_name`（`config_sms/general`）、`sms.system_tpl.captcha_local`、`sms.system_tpl.captcha_aliyun`（`config_sms/system_tpl`，string，内置，默认空）；`config_system` 含 `general`、`user`、`site`，`config_sms` 含 `general`、`system_tpl` |
 
 ## 1. 可视化表单
 
@@ -43,13 +43,13 @@
 配置分组目录和配置项通过 Springdoc OpenAPI 发布；系统配置路由遵循 `/api/system/config/{action}`。
 
 每条配置项通过 `group_key`、`field_type`、`field_options`、`required` 描述分组、控件和校验规则。
-键必须以 `system.` 或 `sms.` 开头，匿名读取仅允许 `system.site.*`。
+键遵循 `{range}.{group}.{value}`，其中 `range=system/sms`、`group` 与所属分组编码一致；匿名读取仅允许 `system.site.*`。
 
 ## 2. 配置字段
 
 | 字段 | 控件 | 校验 | DB 列 / 类型 |
 | --- | --- | --- | --- |
-| 配置键 | 输入；内置项不可改 | 必填、最多 128 字符、`system.` 前缀；重复 40900；内置项改键 40901 | `config_key varchar(128)` 唯一 |
+| 配置键 | 输入；内置项不可改 | 必填、最多 128 字符、`{range}.{group}.{value}`；新建及改键/改组时校验分组一致；重复 40900；内置项改键 40901 | `config_key varchar(128)` 唯一 |
 | 分组 | 从启用的配置分组选择 | 必须是 `sys_group` 中已启用且 `type=config`、`group_key` 与配置键前缀对应的编码 | `group_key varchar(64)` |
 | 表单字段 | 单行 / 多行 / 数字 / 开关 / 下拉 / JSON / 单图 / 富文本 | 字段类型与值类型匹配；下拉选项为合法 JSON 数组；单图保存媒体 URL，富文本保存 HTML | `field_type varchar(16)`、`field_options varchar(2048)` |
 | 必填 | 开关 | 必填项不可为空 | `required tinyint(1)` |
@@ -88,8 +88,8 @@
 ## 5. 说明与建议
 
 - 配置写入后没有缓存层，公开接口每次查库。
-- 系统配置页面按 `sys_group(type=config,group_key=config_system)` 分组；短信页面按 `group_key=config_sms` 分组。配置项以 `sys_config.group_key` 归组；`field_type`、`field_options`、`required` 控制表单渲染和校验。配置域键以 `system.` 或 `sms.` 开头，匿名读取仅允许 `system.site.*`。
-- 短信配置由 `/system/sms` 菜单进入共用的 `ConfigsPage`，传入 `config_sms` 后只呈现短信域分组及 `sms.*` 配置项：`sms.sign_name` 位于 `general` 组，`sms.captcha_local` 与 `sms.captcha_aliyun` 位于 `system_tpl` 组。分组与配置项管理共用同一页面流程，分组写接口按配置域定位。
+- 系统配置页面按 `sys_group(type=config,group_key=config_system)` 分组；短信页面按 `group_key=config_sms` 分组。配置键遵循 `{range}.{group}.{value}`，其中 `range=system/sms`、`group=sys_config.group_key=sys_group.code`；新建或变更键、分组时校验。已有不合规的自定义键允许原位改值。`field_type`、`field_options`、`required` 控制表单渲染和校验。匿名读取仅允许 `system.site.*`。
+- 短信配置由 `/system/sms` 菜单进入共用的 `ConfigsPage`，传入 `config_sms` 后只呈现短信域分组及 `sms.*` 配置项：`sms.general.sign_name` 位于 `general` 组，`sms.system_tpl.captcha_local` 与 `sms.system_tpl.captcha_aliyun` 位于 `system_tpl` 组。分组与配置项管理共用同一页面流程，分组写接口按配置域定位。
 - 登录页通过公开 `/api/auth/providers` 获取手机号登录状态；后端只有在 `system.user.enable_phone_login=true`、短信发送模式可用且当前模式的 `sms.{mode}.verify_template_code` 非空时才返回 `phoneLoginEnabled=true`。
 - 站点标题仍取自构建期环境变量 `VITE_APP_TITLE`（见 #02）；`web/src` 不直接调用公开配置接口。
 - 内置配置只保护「键不可改、不可删」，值与表单配置都可以改。
@@ -112,6 +112,7 @@
 新条目插在本节最上方（按日期倒序，新在上）。
 
 **2026-10-21**
+- 约定配置键为 `{range}.{group}.{value}`；追加迁移使短信内置键带上分组段，并将 `system.site.title` 归入 `site` 组；新建和变更键/分组时校验。
 - 新增独立菜单「短信配置」及 `/system/sms` 入口；两处菜单共用参数化的 `ConfigsPage`，按配置域隔离分组和配置项。短信域按 `general`、`system_tpl` 分组展示签名与本地/阿里云模板三个字段，并将旧手机号登录模板键迁入本地短信配置。
 - 配置表单新增单图上传与富文本字段。单图复用系统媒体上传并保存图片 URL；富文本保存 HTML，均按 string 类型校验。
 

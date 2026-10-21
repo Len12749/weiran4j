@@ -102,7 +102,7 @@ class ConfigTypeTest {
         assertThat(SystemConfig.isPublicKey("system.site.title")).isTrue();
         assertThat(SystemConfig.isPublicKey("sys.secret")).isFalse();
         assertThatCode(() -> SystemConfig.builder()
-                        .configKey("sms.sign_name")
+                        .configKey("sms.general.sign_name")
                         .configValue("开发签名")
                         .configType(ConfigType.STRING)
                         .groupKey("general")

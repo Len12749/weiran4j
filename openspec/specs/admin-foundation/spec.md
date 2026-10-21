@@ -202,7 +202,7 @@ status: "active"
 
 ### Requirement: [FR-013] 分组式系统配置表单
 
-字典与系统配置分组 **MUST** 共用 `sys_group` 表，且不得保留独立 `sys_dict` 主表。`sys_group.type` **MUST** 支持 `config` 与 `dict`，唯一键为 `(type, group_key, code)`；既有字典记录迁移后为 `type=dict`，配置分组为 `type=config`。系统配置组使用 `group_key=config_system`，短信配置组使用 `group_key=config_sms`，两者允许同名编码。字典项继续存于 `sys_dict_item`，数据库列 `group_id` 引用对应 `type=dict` 的组 ID；既有 HTTP 字段 `dictId` 保持兼容。字典 API **MUST** 只查询和修改 `dict` 类型组，配置 API **MUST** 只查询和引用 `config` 类型组。系统配置页面 **MUST** 在左侧展示适用于系统配置的启用配置组导航，在右侧展示当前组选中的配置项及其表单；短信配置项使用 `sms.` 键前缀并由独立短信配置页面展示，不能出现在系统配置表单中。每个配置项的表单字段类型、选项与必填规则 **MUST** 决定控件渲染和前后端校验。支持单行输入、多行文本、数字、布尔开关、下拉选择和 JSON 字段，值类型必须与字段类型兼容。常规配置使用 `system.` 键前缀；短信配置可使用 `sms.` 键前缀。内置配置 **MUST** 保留键名且不可删除。匿名配置读取 **MUST** 只允许 `system.site.*`，且不隐式改变前端展示。系统站点内容配置及其存储表 **MUST NOT** 存在。
+字典与系统配置分组 **MUST** 共用 `sys_group` 表，且不得保留独立 `sys_dict` 主表。`sys_group.type` **MUST** 支持 `config` 与 `dict`，唯一键为 `(type, group_key, code)`；既有字典记录迁移后为 `type=dict`，配置分组为 `type=config`。系统配置组使用 `group_key=config_system`，短信配置组使用 `group_key=config_sms`，两者允许同名编码。字典项继续存于 `sys_dict_item`，数据库列 `group_id` 引用对应 `type=dict` 的组 ID；既有 HTTP 字段 `dictId` 保持兼容。字典 API **MUST** 只查询和修改 `dict` 类型组，配置 API **MUST** 只查询和引用 `config` 类型组。系统配置页面 **MUST** 在左侧展示适用于系统配置的启用配置组导航，在右侧展示当前组选中的配置项及其表单；短信配置项使用 `sms.` 键前缀并由独立短信配置页面展示，不能出现在系统配置表单中。每个配置项的表单字段类型、选项与必填规则 **MUST** 决定控件渲染和前后端校验。支持单行输入、多行文本、数字、布尔开关、下拉选择和 JSON 字段，值类型必须与字段类型兼容。配置键 **MUST** 遵循 `{range}.{group}.{value}`，其中 `range` 为 `system` 或 `sms`，`group` 与配置项所属 `sys_group.code` 相同，`value` 为组内编码；新建配置及修改配置键或分组时必须校验。既有不合规自定义键允许原位改值。内置配置 **MUST** 保留键名且不可删除。匿名配置读取 **MUST** 只允许 `system.site.*`，且不隐式改变前端展示。系统站点内容配置及其存储表 **MUST NOT** 存在。
 
 #### Scenario: 配置 API 统一使用 system 路径
 - **WHEN** 客户端访问配置列表、分组、全量、详情、写入或公开读取接口

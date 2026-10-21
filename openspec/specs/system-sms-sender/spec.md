@@ -46,7 +46,7 @@ system **MUST** 支持 `disabled`、`local` 与 `aliyun` 三种短信模式，�
 
 `aliyun` 模式 **MUST** 使用阿里云 `SendSms` API 发送调用方提供的模板消息；请求 **MUST** 使用系统配置中的签名名称与固定端点，并将调用方模板参数序列化为模板参数 JSON。
 
-短信配置 **MUST** 通过独立的「短信配置」菜单进入与系统配置共用的页面实现，并复用 `sys_config` 存储。配置键使用 `sms.` 前缀；`sys_group.group_key=config_sms` 是独立短信配置域，其中 `sms.sign_name` 位于 `general`（通用）配置组，`sms.captcha_local` 和 `sms.captcha_aliyun` 位于 `system_tpl`（系统模板）配置组。页面必须复用系统配置的分组导航、配置项表单和管理操作，并按配置域隔离数据；手机号登录按当前发送模式读取对应验证码模板，阿里云发送读取短信签名。
+短信配置 **MUST** 通过独立的「短信配置」菜单进入与系统配置共用的页面实现，并复用 `sys_config` 存储。配置键遵循 `{range}.{group}.{value}`，短信的 `range=sms`；`sys_group.group_key=config_sms` 是独立短信配置域，其中 `sms.general.sign_name` 位于 `general`（通用）配置组，`sms.system_tpl.captcha_local` 和 `sms.system_tpl.captcha_aliyun` 位于 `system_tpl`（系统模板）配置组。页面必须复用系统配置的分组导航、配置项表单和管理操作，并按配置域隔离数据；手机号登录按当前发送模式读取对应验证码模板，阿里云发送读取短信签名。
 
 #### Scenario: 成功发送短信
 - **WHEN** 已配置阿里云凭据与系统配置签名，调用方提交有效手机号、模板 CODE 与参数

@@ -92,11 +92,12 @@ class PlatformIT extends IntegrationTestSupport {
     @DisplayName("配置按类型校验值，内置项保护，公开接口只放行 system.site.* 且无需登录")
     void configRules() {
         final String admin = this.adminToken();
-        final String prefix = "system.private." + IntegrationTestSupport.unique("cfg");
+        final String suffix = IntegrationTestSupport.unique("cfg");
+        final String prefix = "system.general." + suffix;
         final JsonNode groups = IntegrationTestSupport.data(this.get("/api/system/config/listGroups", admin));
-        assertThat(groups.findValuesAsText("key")).containsExactly("general", "general", "user", "system_tpl");
+        assertThat(groups.findValuesAsText("key")).containsExactly("general", "general", "user", "site", "system_tpl");
         assertThat(groups.findValuesAsText("groupKey"))
-                .containsExactly("config_system", "config_sms", "config_system", "config_sms");
+                .containsExactly("config_system", "config_sms", "config_system", "config_system", "config_sms");
         assertThat(this.jdbc.queryForObject(
                         "SELECT config_value FROM sys_config WHERE config_key = 'system.user.enable_phone_login'",
                         String.class))
@@ -122,7 +123,7 @@ class PlatformIT extends IntegrationTestSupport {
         final long customConfigId = this.create(
                 "/api/system/config/create",
                 admin,
-                PlatformIT.config(prefix + ".group-item", "x", "string", customGroup));
+                PlatformIT.config("system." + customGroup + "." + suffix + "_group_item", "x", "string", customGroup));
         final JsonNode populatedGroupView =
                 IntegrationTestSupport.data(this.get("/api/system/config/listGroups", admin))
                         .findParents("key")
@@ -143,40 +144,40 @@ class PlatformIT extends IntegrationTestSupport {
                 this.post(
                         "/api/system/config/create",
                         admin,
-                        PlatformIT.config(prefix + ".wrong-group", "x", "string", "sys_user_gender")),
+                        PlatformIT.config(prefix + "_wrong_group", "x", "string", "sys_user_gender")),
                 HttpStatus.BAD_REQUEST,
                 40000);
 
         IntegrationTestSupport.assertError(
-                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + ".n", "abc", "number")),
+                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + "_n", "abc", "number")),
                 HttpStatus.BAD_REQUEST,
                 40000);
         IntegrationTestSupport.assertError(
-                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + ".b", "yes", "boolean")),
+                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + "_b", "yes", "boolean")),
                 HttpStatus.BAD_REQUEST,
                 40000);
         IntegrationTestSupport.assertError(
-                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + ".j", "{broken", "json")),
+                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + "_j", "{broken", "json")),
                 HttpStatus.BAD_REQUEST,
                 40000);
         IntegrationTestSupport.assertError(
-                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + ".t", "x", "yaml")),
+                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + "_t", "x", "yaml")),
                 HttpStatus.BAD_REQUEST,
                 40000);
 
-        this.create("/api/system/config/create", admin, PlatformIT.config(prefix + ".n", "3.5", "number"));
-        this.create("/api/system/config/create", admin, PlatformIT.config(prefix + ".b", "true", "boolean"));
+        this.create("/api/system/config/create", admin, PlatformIT.config(prefix + "_n", "3.5", "number"));
+        this.create("/api/system/config/create", admin, PlatformIT.config(prefix + "_b", "true", "boolean"));
         final long jsonId = this.create(
-                "/api/system/config/create", admin, PlatformIT.config(prefix + ".j", "{\"a\":[1,2]}", "json"));
+                "/api/system/config/create", admin, PlatformIT.config(prefix + "_j", "{\"a\":[1,2]}", "json"));
         IntegrationTestSupport.assertError(
-                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + ".j", "{}", "json")),
+                this.post("/api/system/config/create", admin, PlatformIT.config(prefix + "_j", "{}", "json")),
                 HttpStatus.CONFLICT,
                 40900);
 
         final JsonNode view = IntegrationTestSupport.data(this.get("/api/system/config/get/" + jsonId, admin));
         assertThat(view.path("configType").asText()).isEqualTo("json");
         assertThat(view.path("configValue").asText()).isEqualTo("{\"a\":[1,2]}");
-        assertThat(IntegrationTestSupport.data(this.get("/api/system/config/list?keyword=" + prefix, admin))
+        assertThat(IntegrationTestSupport.data(this.get("/api/system/config/list?keyword=" + suffix, admin))
                         .path("total")
                         .asLong())
                 .isEqualTo(4L);
@@ -198,7 +199,7 @@ class PlatformIT extends IntegrationTestSupport {
         assertThat(title.path("configKey").asText()).isEqualTo("system.site.title");
         assertThat(title.path("configValue").asText()).isEqualTo("Weiran Admin");
         IntegrationTestSupport.assertError(
-                this.get("/api/system/config/getPublic/" + prefix + ".n", null), HttpStatus.FORBIDDEN, 40300);
+                this.get("/api/system/config/getPublic/" + prefix + "_n", null), HttpStatus.FORBIDDEN, 40300);
         IntegrationTestSupport.assertError(
                 this.get("/api/system/config/getPublic/system.site.missing", null), HttpStatus.NOT_FOUND, 40400);
 

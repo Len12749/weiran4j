@@ -122,7 +122,7 @@ function ConfigMetadataModal({
                     api.current = formApi;
                 }}
                 initValues={{
-                    configKey: record?.configKey ?? (domain === 'config_sms' ? 'sms.' : 'system.'),
+                    configKey: record?.configKey ?? `${domain === 'config_sms' ? 'sms' : 'system'}.${defaultGroup?.key ?? 'general'}.`,
                     configValue: record?.configValue ?? '',
                     groupKey: record?.groupKey ?? defaultGroup?.key ?? 'general',
                     fieldType: record?.fieldType ?? 'input',
@@ -140,7 +140,19 @@ function ConfigMetadataModal({
                     disabled={record?.isBuiltin ?? false}
                     rules={[
                         { required: true, message: '请输入配置键' },
-                        { pattern: domain === 'config_sms' ? /^sms\.[\w.-]+$/ : /^system\.[\w.-]+$/, message: `配置键必须以 ${domain === 'config_sms' ? 'sms.' : 'system.'} 开头` },
+                        {
+                            validator: (_rule: unknown, value: unknown) => {
+                                const key = typeof value === 'string' ? value.trim() : '';
+                                const groupKey = api.current?.getValue('groupKey');
+                                if (record && key === record.configKey && groupKey === record.groupKey) return true;
+                                const parts = key.split('.');
+                                return parts.length === 3
+                                    && parts[0] === (domain === 'config_sms' ? 'sms' : 'system')
+                                    && parts[1] === groupKey
+                                    && /^[a-z][a-z0-9_-]*$/.test(parts[2] ?? '');
+                            },
+                            message: '配置键须为 {范围}.{分组}.{配置项}，且分组与所选配置分组一致',
+                        },
                     ]}
                 />
                 <Form.Select

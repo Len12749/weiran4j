@@ -139,6 +139,7 @@ public class ConfigApplicationService implements ConfigService {
     @Transactional
     public long create(final SaveConfigCommand command) {
         final String key = command.configKey().strip();
+        SystemConfig.requireKeyConvention(key, command.groupKey().strip());
         this.requireConfigGroup(key, command.groupKey().strip());
         if (this.configRepository.existsByKey(key)) {
             throw BizException.duplicate("配置键已存在");
@@ -174,6 +175,10 @@ public class ConfigApplicationService implements ConfigService {
                 command.required(),
                 Texts.trimToNull(command.description()),
                 this.jsonSyntax);
+        if (!config.getConfigKey().equals(key)
+                || !config.getGroupKey().equals(command.groupKey().strip())) {
+            SystemConfig.requireKeyConvention(key, command.groupKey().strip());
+        }
         if (!config.getConfigKey().equals(key) && this.configRepository.existsByKey(key)) {
             throw BizException.duplicate("配置键已存在");
         }

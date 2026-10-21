@@ -51,6 +51,17 @@ public final class SystemConfig {
         return configKey.startsWith(SystemConfig.PUBLIC_PREFIX);
     }
 
+    /** 新建配置及变更键或分组时，键须与所属分组保持一致。 */
+    public static void requireKeyConvention(final String configKey, final String groupKey) {
+        final String[] segments = configKey.split("\\.", -1);
+        if (segments.length != 3
+                || (!"system".equals(segments[0]) && !"sms".equals(segments[0]))
+                || !groupKey.equals(segments[1])
+                || !segments[2].matches("[a-z][a-z0-9_-]*")) {
+            throw BizException.badRequest("configKey: 必须遵循 {range}.{group}.{value}，且 group 与配置分组一致");
+        }
+    }
+
     /** 按类型校验当前值。 */
     public SystemConfig validated(final JsonSyntax jsonSyntax) {
         this.configType.validate(this.configValue, jsonSyntax);
