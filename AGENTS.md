@@ -28,7 +28,7 @@
 
 ```bash
 # ── 一条命令起后端、后台前端和文档站（仓库根，turbo 编排）──
-pnpm dev                          # = turbo run dev：后端 bootRun(5200) + 后台 vite(5202) + VitePress(5209)
+pnpm dev                          # = turbo run dev：后端 bootRun(5200) + 后台 vite(5202) + VitePress(5309)
 pnpm dev:server / pnpm dev:web / pnpm dev:docs  # 单独启动后端、后台前端或文档站
 # 后端的 dev 是 weiran4j/scripts/dev.mjs：自动找 JDK 21、缺本地配置时先提示，Ctrl-C 会一并停掉应用 JVM。
 # 给后端传环境变量（如 SERVER_PORT、WEIRAN_*）必须先在 turbo.json 的 passThroughEnv 里放行，否则被静默丢弃。

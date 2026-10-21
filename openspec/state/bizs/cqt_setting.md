@@ -18,7 +18,7 @@
 | 项 | 值 |
 | --- | --- |
 | 表 | `cqt_setting`（原统一库 `cqtxj2026.sc_setting`，只改表名，列不变） |
-| 菜单 / 页面 | 站点配置（`cqt/site-config`，独立后台表单） |
+| 菜单 / 页面 | 「站点资料」目录下的「站点配置」（`cqt/site-config`，独立后台表单） |
 | 后端模块 | `weiran-cqt`；前台 `ProductController`、后台 `SiteConfigAdminController` 共用站点配置仓储 |
 | 接口 | 前台 `GET /api-web/product/getconfig`；后台 `GET /api-backend/cqt/site-config/get、PUT /api-backend/cqt/site-config/update`、`POST /api-backend/cqt/site-config/uploadImage` |
 | 权限码 | `cqt:site-config:list`、`cqt:site-config:update` |
