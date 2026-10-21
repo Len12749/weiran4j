@@ -104,8 +104,8 @@ const getTokenHeader = () => {
 
 // ==================== 请求封装 ====================
 // 页面与工具里的接口路径沿用旧写法 /api/...，发请求前统一改写成后端的 /api-web/...
-// 行政区划查询走未鉴权的 /api-nbackend/region/area/getEnabledTree。
-export const toWebApi = (url) => url.startsWith('/api-nbackend/region/area/getEnabledTree') ? url : url.replace(/^\/api\//, '/api-web/');
+// 行政区划查询走未鉴权的 /api-backend/n/region/area/getEnabledTree。
+export const toWebApi = (url) => url.startsWith('/api-backend/n/region/area/getEnabledTree') ? url : url.replace(/^\/api\//, '/api-web/');
 
 const requestPublic = (configObj, resolve, reject) => {
 	const {
@@ -119,7 +119,7 @@ const requestPublic = (configObj, resolve, reject) => {
 	const historicalLookup = Number(data?.year) === 1 && [
 		'/api/product/Competitionlist', '/api/product/ViewGrades', '/api/product/view-grades', '/api/competition/certificate'
 	].includes(url);
-	const regionLookup = url === '/api-nbackend/region/area/getEnabledTree';
+	const regionLookup = url === '/api-backend/n/region/area/getEnabledTree';
 	const fullHeader = {
 		'Content-Type': 'application/json',
 		version: 1,

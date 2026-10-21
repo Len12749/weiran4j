@@ -1,6 +1,6 @@
 # weiran4j 前端镜像（docs/02-部署.md）。构建上下文是仓库根（pnpm 工作区要用根目录的 lockfile）：
 #   docker build -f web/Dockerfile -t weiran4j-web .
-# Nginx 提供静态文件，并把 两个 API 前缀同源反代到后端（web/nginx.conf）。
+# Nginx 提供静态文件，并把 /api-backend/ 同源反代到后端（web/nginx.conf）。
 
 # ---- 构建 ----
 FROM node:22-alpine AS build

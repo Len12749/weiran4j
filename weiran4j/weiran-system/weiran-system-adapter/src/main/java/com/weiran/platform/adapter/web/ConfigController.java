@@ -99,7 +99,7 @@ public class ConfigController {
 
     /** 公开配置（仅 {@code system.general.title}），无需登录。 */
     @PublicApi
-    @GetMapping("/api-nbackend/system/config/getPublic/{key}")
+    @GetMapping("/api-backend/n/system/config/getPublic/{key}")
     public PublicConfigView getPublic(@PathVariable final String key) {
         return this.configService.getPublic(key);
     }

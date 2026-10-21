@@ -19,7 +19,7 @@
    | 后台管理（`web/`） | `/api-backend/cqt/**` | 框架 JWT + `@RequiresPermission("cqt:…")` | 框架统一包络 `{code:0}` |
    | 前台 uniapp | `/api-web/**` | 业务自己的 C 端 JWT 拦截器（框架 `AuthInterceptor` 只拦 `/api-backend/**`） | Controller 标 `@SkipApiResponse`，返回 `{code:200, message, data}` |
 
-   地区公开查询使用 `/api-nbackend/region/area/getEnabledTree`；新增后台接口遵循 `openspec/rules/advisory/api-design.md` 的模块、资源、动作结构。
+   地区公开查询使用 `/api-backend/n/region/area/getEnabledTree`；新增后台接口遵循 `openspec/rules/advisory/api-design.md` 的模块、资源、动作结构。
 
    uniapp 的两个硬约定：**HTTP 状态必须是 2xx**（非 2xx 一律弹窗报错），**未登录用 body `code:401`** 表示。
    写前台接口的固定做法（`weiran-cqt-adapter` 的 `com.weiran.cqt.adapter.portal` 包，change `cqt-web-foundation`）：

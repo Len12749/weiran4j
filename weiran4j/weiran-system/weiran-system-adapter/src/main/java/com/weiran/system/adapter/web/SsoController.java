@@ -40,7 +40,7 @@ public class SsoController {
 
     /** 发起外部登录。 */
     @PublicApi
-    @GetMapping("/api-nbackend/system/auth/authorizeSso/{provider}")
+    @GetMapping("/api-backend/n/system/auth/authorizeSso/{provider}")
     public void authorizeLogin(
             @PathVariable final String provider,
             @RequestParam(required = false) final @Nullable String redirect,
@@ -73,7 +73,7 @@ public class SsoController {
 
     /** 提供方回调。 */
     @PublicApi
-    @GetMapping("/api-nbackend/system/auth/callbackSso/{provider}")
+    @GetMapping("/api-backend/n/system/auth/callbackSso/{provider}")
     public void callback(
             @PathVariable final String provider,
             @RequestParam final Map<String, String> params,

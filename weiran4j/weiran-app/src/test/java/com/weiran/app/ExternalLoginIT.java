@@ -189,7 +189,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
         /** 用 Keycloak 账号走完 authorize → 登录表单 → callback，返回回调的 Location。 */
         String keycloak(final String provider, final String mode, final String username, final String password)
                 throws IOException, InterruptedException {
-            final HttpResponse<String> authorize = this.app(("bind".equals(mode) ? "/api-backend" : "/api-nbackend")
+            final HttpResponse<String> authorize = this.app(("bind".equals(mode) ? "/api-backend" : "/api-backend/n")
                     + "/system/auth/authorizeSso/" + provider + "?redirect=%2Fsystem%2Fusers&mode=" + mode);
             assertThat(authorize.statusCode()).isEqualTo(302);
             final String authUrl = authorize.headers().firstValue("Location").orElseThrow();
@@ -219,7 +219,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
 
         /** 把提供方给的回调地址（公开地址）换成本服务地址并请求，返回本服务回调的 Location。 */
         String callback(final String publicCallback) throws IOException, InterruptedException {
-            assertThat(publicCallback).startsWith(PUBLIC_BASE + "/api-nbackend/system/auth/callbackSso/");
+            assertThat(publicCallback).startsWith(PUBLIC_BASE + "/api-backend/n/system/auth/callbackSso/");
             final HttpResponse<String> response = this.app(publicCallback.substring(PUBLIC_BASE.length()));
             assertThat(response.statusCode()).isEqualTo(302);
             return response.headers().firstValue("Location").orElseThrow();
@@ -274,7 +274,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
     @Test
     @DisplayName("providers 公开返回三个提供方与 passwordLoginEnabled=false，不含任何密钥与地址")
     void listsProviders() {
-        final ResponseEntity<JsonNode> response = this.get("/api-nbackend/system/auth/listProviders", null);
+        final ResponseEntity<JsonNode> response = this.get("/api-backend/n/system/auth/listProviders", null);
         IntegrationTestSupport.assertOk(response);
         final JsonNode data = IntegrationTestSupport.data(response);
         assertThat(data.path("passwordLoginEnabled").asBoolean(true)).isFalse();
@@ -336,13 +336,13 @@ class ExternalLoginIT extends IntegrationTestSupport {
         assertThat(new Browser().keycloak("kc", "login", "bob", "bob-pass")).isEqualTo("/login?ssoError=110104");
 
         final Browser browser = new Browser();
-        final HttpResponse<String> authorize = browser.app("/api-nbackend/system/auth/authorizeSso/kc?redirect=%2F");
+        final HttpResponse<String> authorize = browser.app("/api-backend/n/system/auth/authorizeSso/kc?redirect=%2F");
         final String state = ExternalLoginIT.queryParam(
                 URI.create(authorize.headers().firstValue("Location").orElseThrow())
                         .getRawQuery(),
                 "state");
         assertThat(state).isNotBlank();
-        assertThat(browser.callback(PUBLIC_BASE + "/api-nbackend/system/auth/callbackSso/kc?code=x&state=forged"))
+        assertThat(browser.callback(PUBLIC_BASE + "/api-backend/n/system/auth/callbackSso/kc?code=x&state=forged"))
                 .isEqualTo("/login?ssoError=110102");
         assertThat(browser.appCookies).doesNotContainKey(AuthCookies.TOKEN_COOKIE);
     }
@@ -390,19 +390,19 @@ class ExternalLoginIT extends IntegrationTestSupport {
                 Map.of("provider", "cas", "externalId", username)));
 
         final Browser browser = new Browser();
-        final String authorize = browser.app("/api-nbackend/system/auth/authorizeSso/cas?redirect=%2Fdashboard")
+        final String authorize = browser.app("/api-backend/n/system/auth/authorizeSso/cas?redirect=%2Fdashboard")
                 .headers()
                 .firstValue("Location")
                 .orElseThrow();
         final String service = ExternalLoginIT.queryParam(URI.create(authorize).getRawQuery(), "service");
-        assertThat(service).startsWith(PUBLIC_BASE + "/api-nbackend/system/auth/callbackSso/cas?state=");
+        assertThat(service).startsWith(PUBLIC_BASE + "/api-backend/n/system/auth/callbackSso/cas?state=");
         assertThat(browser.callback(service + "&ticket=ST-ok-" + username)).isEqualTo("/dashboard");
         assertThat(browser.me().path("data").path("id").asLong()).isEqualTo(userId);
         assertThat(ExternalLoginIT.queryParam(CAS_REQUESTS.get(CAS_REQUESTS.size() - 1), "service"))
                 .isEqualTo(service);
 
         final Browser failed = new Browser();
-        final String failedAuthorize = failed.app("/api-nbackend/system/auth/authorizeSso/cas")
+        final String failedAuthorize = failed.app("/api-backend/n/system/auth/authorizeSso/cas")
                 .headers()
                 .firstValue("Location")
                 .orElseThrow();
@@ -433,7 +433,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
                 Map.of("provider", "cas", "externalId", username)));
         final Browser browser = new Browser();
         browser.callback(ExternalLoginIT.queryParam(
-                        URI.create(browser.app("/api-nbackend/system/auth/authorizeSso/cas")
+                        URI.create(browser.app("/api-backend/n/system/auth/authorizeSso/cas")
                                         .headers()
                                         .firstValue("Location")
                                         .orElseThrow())
@@ -495,7 +495,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
         // 无权限用户（经 CAS 登录，没有任何角色）
         final Browser browser = new Browser();
         browser.callback(ExternalLoginIT.queryParam(
-                        URI.create(browser.app("/api-nbackend/system/auth/authorizeSso/cas")
+                        URI.create(browser.app("/api-backend/n/system/auth/authorizeSso/cas")
                                         .headers()
                                         .firstValue("Location")
                                         .orElseThrow())

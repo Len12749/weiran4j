@@ -25,7 +25,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
  *   <li>已经是 {@link ApiResponse}（显式返回 {@code ApiResponse.ok()} 的写操作）或 {@link ErrorResponse}（全局异常处理器的失败体）的不重复包；</li>
  *   <li>返回 {@code String} 时 Spring 选中的是 {@link StringHttpMessageConverter}，它只能写字符串，
  *       直接塞对象会 ClassCastException，因此这里先序列化成 JSON 字符串并改写 Content-Type；</li>
- *   <li>方法或所在类标了 {@link SkipApiResponse}（含作为元注解）的不包，返回值原样写出——只给两个 API 前缀
+ *   <li>方法或所在类标了 {@link SkipApiResponse}（含作为元注解）的不包，返回值原样写出——只给 API 前缀
  *       之外需要自定响应格式的接口用。</li>
  * </ul>
  *

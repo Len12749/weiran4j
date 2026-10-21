@@ -45,7 +45,7 @@ export interface PhoneLoginRequest {
 }
 
 /**
- * POST /api-nbackend/system/auth/login 的响应（契约 §6.1）。默认模式下令牌只走 HttpOnly Cookie，
+ * POST /api-backend/n/system/auth/login 的响应（契约 §6.1）。默认模式下令牌只走 HttpOnly Cookie，
  * `accessToken` 为 null 或缺省，前端两种都按「没有」处理、也不读它；`X-Auth-Mode: token` 时才有值（给非浏览器客户端）。
  */
 export interface LoginResult {
@@ -109,7 +109,7 @@ export interface ProviderView {
     name: string;
 }
 
-/** GET /api-nbackend/system/auth/listProviders（公开）：只含已启用的提供方 */
+/** GET /api-backend/n/system/auth/listProviders（公开）：只含已启用的提供方 */
 export interface ProvidersView {
     passwordLoginEnabled: boolean;
     phoneLoginEnabled?: boolean;

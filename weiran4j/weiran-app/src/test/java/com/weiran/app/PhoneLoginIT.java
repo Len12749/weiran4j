@@ -88,17 +88,17 @@ class PhoneLoginIT extends IntegrationTestSupport {
 
             final String unboundPhone = "139" + phone.substring(3);
             final ResponseEntity<JsonNode> unbound =
-                    this.post("/api-nbackend/system/auth/sendPhoneCode", null, Map.of("phone", unboundPhone));
+                    this.post("/api-backend/n/system/auth/sendPhoneCode", null, Map.of("phone", unboundPhone));
             IntegrationTestSupport.assertError(unbound, HttpStatus.BAD_REQUEST, 110106);
             assertThat(IntegrationTestSupport.body(unbound).path("message").asText())
                     .isEqualTo("手机号不存在");
             IntegrationTestSupport.assertError(
-                    this.post("/api-nbackend/system/auth/sendPhoneCode", null, Map.of("phone", unboundPhone)),
+                    this.post("/api-backend/n/system/auth/sendPhoneCode", null, Map.of("phone", unboundPhone)),
                     HttpStatus.BAD_REQUEST,
                     110106);
             this.jdbc.update("UPDATE sys_user SET status = 'disabled' WHERE username = ?", username);
             final ResponseEntity<JsonNode> disabled =
-                    this.post("/api-nbackend/system/auth/sendPhoneCode", null, Map.of("phone", phone));
+                    this.post("/api-backend/n/system/auth/sendPhoneCode", null, Map.of("phone", phone));
             IntegrationTestSupport.assertError(disabled, HttpStatus.BAD_REQUEST, 110107);
             assertThat(IntegrationTestSupport.body(disabled).path("message").asText())
                     .isEqualTo("手机号已禁用");
@@ -106,7 +106,7 @@ class PhoneLoginIT extends IntegrationTestSupport {
             this.jdbc.update("UPDATE sys_user SET status = 'enabled' WHERE username = ?", username);
 
             IntegrationTestSupport.assertOk(
-                    this.post("/api-nbackend/system/auth/sendPhoneCode", null, Map.of("phone", phone)));
+                    this.post("/api-backend/n/system/auth/sendPhoneCode", null, Map.of("phone", phone)));
             assertThat(appender.list).hasSize(1);
             final String log = appender.list.getFirst().getFormattedMessage();
             assertThat(log).contains("138****" + phone.substring(7), "5 分钟有效, 请不要告知他人");
@@ -144,7 +144,7 @@ class PhoneLoginIT extends IntegrationTestSupport {
     }
 
     private boolean phoneLoginEnabled() {
-        return IntegrationTestSupport.data(this.get("/api-nbackend/system/auth/listProviders", null))
+        return IntegrationTestSupport.data(this.get("/api-backend/n/system/auth/listProviders", null))
                 .path("phoneLoginEnabled")
                 .asBoolean();
     }
@@ -154,7 +154,7 @@ class PhoneLoginIT extends IntegrationTestSupport {
         headers.set(AuthCookies.AUTH_MODE_HEADER, AuthCookies.AUTH_MODE_TOKEN);
         return this.exchange(
                 HttpMethod.POST,
-                "/api-nbackend/system/auth/loginWithPhoneCode",
+                "/api-backend/n/system/auth/loginWithPhoneCode",
                 headers,
                 Map.of("phone", phone, "code", code));
     }

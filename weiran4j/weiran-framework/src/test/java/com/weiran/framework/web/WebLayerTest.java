@@ -62,7 +62,7 @@ class WebLayerTest {
     static class TestController {
 
         @PublicApi
-        @GetMapping("/api-nbackend/test/public")
+        @GetMapping("/api-backend/n/test/public")
         String publicText() {
             return "hello";
         }
@@ -85,25 +85,25 @@ class WebLayerTest {
         }
 
         @PublicApi
-        @PostMapping("/api-nbackend/test/body")
+        @PostMapping("/api-backend/n/test/body")
         Payload body(@Valid @RequestBody final Payload payload) {
             return payload;
         }
 
         @PublicApi
-        @GetMapping("/api-nbackend/test/biz")
+        @GetMapping("/api-backend/n/test/biz")
         String biz() {
             throw BizException.conflict("内置数据不可删除");
         }
 
         @PublicApi
-        @GetMapping("/api-nbackend/test/boom")
+        @GetMapping("/api-backend/n/test/boom")
         String boom() {
             throw new IllegalStateException("secret detail");
         }
 
         @PublicApi
-        @GetMapping("/api-nbackend/test/duplicate")
+        @GetMapping("/api-backend/n/test/duplicate")
         String duplicate() {
             throw new DuplicateKeyException("Duplicate entry 'x' for key 'uk_username'");
         }
@@ -172,7 +172,7 @@ class WebLayerTest {
                 .setControllerAdvice(new ApiResponseBodyAdvice(objectMapper), new GlobalExceptionHandler())
                 .addFilters(new RequestIdFilter())
                 .addMappedInterceptors(
-                        new String[] {"/api-backend/**"},
+                        new String[] {"/api-backend/test/**"},
                         new AuthInterceptor(beanFactory.getBeanProvider(TokenAuthenticator.class)))
                 .build();
     }
@@ -189,10 +189,10 @@ class WebLayerTest {
                 .andReturn();
         assertThat(failed.getResponse().getContentAsString()).contains("\"requestId\"");
         this.mockMvc
-                .perform(get("/api-nbackend/test/biz"))
+                .perform(get("/api-backend/n/test/biz"))
                 .andExpect(jsonPath("$.requestId").isString());
         this.mockMvc
-                .perform(get("/api-nbackend/test/public"))
+                .perform(get("/api-backend/n/test/public"))
                 .andExpect(header().exists(RequestIdFilter.HEADER))
                 .andExpect(jsonPath("$.requestId").doesNotExist());
     }
@@ -205,8 +205,8 @@ class WebLayerTest {
         appender.start();
         logger.addAppender(appender);
         try {
-            this.mockMvc.perform(get("/api-nbackend/test/biz"));
-            this.mockMvc.perform(get("/api-nbackend/test/boom"));
+            this.mockMvc.perform(get("/api-backend/n/test/biz"));
+            this.mockMvc.perform(get("/api-backend/n/test/boom"));
         } finally {
             logger.detachAppender(appender);
         }
@@ -224,7 +224,7 @@ class WebLayerTest {
     @DisplayName("String 返回值被包成 JSON 统一响应，code 为数字 0")
     void wrapsStringReturnValue() throws Exception {
         this.mockMvc
-                .perform(get("/api-nbackend/test/public"))
+                .perform(get("/api-backend/n/test/public"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.code").value(0))
@@ -325,7 +325,7 @@ class WebLayerTest {
                 .perform(get("/api-backend/test/me").cookie(new Cookie(AuthCookies.TOKEN_COOKIE, "user")))
                 .andExpect(jsonPath("$.code").value(0));
         this.mockMvc
-                .perform(post("/api-nbackend/test/body")
+                .perform(post("/api-backend/n/test/body")
                         .cookie(new Cookie(AuthCookies.TOKEN_COOKIE, "user"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"x\"}"))
@@ -351,20 +351,20 @@ class WebLayerTest {
     @DisplayName("请求体校验失败返回 100001，message 形如「字段: 提示」")
     void reportsValidationError() throws Exception {
         this.mockMvc
-                .perform(post("/api-nbackend/test/body")
+                .perform(post("/api-backend/n/test/body")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(100001))
                 .andExpect(jsonPath("$.message").value("name: 不能为空"));
         this.mockMvc
-                .perform(post("/api-nbackend/test/body")
+                .perform(post("/api-backend/n/test/body")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{broken"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("请求体格式不正确"));
         this.mockMvc
-                .perform(post("/api-nbackend/test/body")
+                .perform(post("/api-backend/n/test/body")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"x\"}"))
                 .andExpect(jsonPath("$.data.name").value("x"));
@@ -374,16 +374,16 @@ class WebLayerTest {
     @DisplayName("业务异常、唯一键冲突、未知异常分别映射到约定错误码")
     void mapsExceptions() throws Exception {
         this.mockMvc
-                .perform(get("/api-nbackend/test/biz"))
+                .perform(get("/api-backend/n/test/biz"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value(CommonErrors.CONFLICT.code()))
                 .andExpect(jsonPath("$.message").value("内置数据不可删除"));
         this.mockMvc
-                .perform(get("/api-nbackend/test/duplicate"))
+                .perform(get("/api-backend/n/test/duplicate"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value(100003));
         this.mockMvc
-                .perform(get("/api-nbackend/test/boom"))
+                .perform(get("/api-backend/n/test/boom"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.code").value(100005))
                 .andExpect(jsonPath("$.message").value("服务器内部错误"));
@@ -393,7 +393,7 @@ class WebLayerTest {
     @DisplayName("不存在的请求方法映射为 100001")
     void mapsMethodNotSupported() throws Exception {
         this.mockMvc
-                .perform(post("/api-nbackend/test/public"))
+                .perform(post("/api-backend/n/test/public"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("不支持的请求方法: POST"));
     }

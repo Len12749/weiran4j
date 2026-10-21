@@ -37,10 +37,6 @@ export default defineConfig(({ mode }) => {
                     target: apiTarget,
                     changeOrigin: true,
                 },
-                '/api-nbackend': {
-                    target: apiTarget,
-                    changeOrigin: true,
-                },
             },
         },
         test: {

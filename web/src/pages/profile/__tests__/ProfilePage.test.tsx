@@ -46,7 +46,7 @@ function routes(overrides: Record<string, unknown> = {}) {
     return {
         'GET /api-backend/system/auth/getCurrentUser': me,
         'GET /api-backend/system/dict/listItemsByCode/sys_user_gender': [],
-        'GET /api-nbackend/system/auth/listProviders': providers,
+        'GET /api-backend/n/system/auth/listProviders': providers,
         'GET /api-backend/system/auth/listCurrentIdentities': [keycloakIdentity],
         ...overrides,
     };
@@ -118,7 +118,7 @@ describe('ProfilePage 外部账号', () => {
     });
 
     it('没有启用的提供方时不显示卡片', async () => {
-        mockFetch(routes({ 'GET /api-nbackend/system/auth/listProviders': { passwordLoginEnabled: true, providers: [] } }));
+        mockFetch(routes({ 'GET /api-backend/n/system/auth/listProviders': { passwordLoginEnabled: true, providers: [] } }));
         renderProfile();
         expect(await screen.findByText('修改密码', { selector: '.page-container__title' })).toBeInTheDocument();
         expect(screen.queryByText('外部账号')).not.toBeInTheDocument();

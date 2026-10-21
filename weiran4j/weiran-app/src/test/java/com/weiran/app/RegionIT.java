@@ -35,7 +35,7 @@ class RegionIT extends IntegrationTestSupport {
         IntegrationTestSupport.assertError(
                 this.get("/api-backend/region/area/getEnabledTree", null), HttpStatus.UNAUTHORIZED, 100101);
         final JsonNode publicLookup =
-                IntegrationTestSupport.data(this.get("/api-nbackend/region/area/getEnabledTree", null));
+                IntegrationTestSupport.data(this.get("/api-backend/n/region/area/getEnabledTree", null));
         assertThat(publicLookup).hasSize(31);
         final String admin = this.adminToken();
         final JsonNode lookup = IntegrationTestSupport.data(this.get("/api-backend/region/area/getEnabledTree", admin));

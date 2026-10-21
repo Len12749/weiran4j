@@ -331,7 +331,7 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
         assertThat(IntegrationTestSupport.data(link).asText())
                 .isEqualTo("https://example.com/commitment-template.docx");
 
-        final ResponseEntity<JsonNode> regions = this.get("/api-nbackend/region/area/getEnabledTree", null);
+        final ResponseEntity<JsonNode> regions = this.get("/api-backend/n/region/area/getEnabledTree", null);
         IntegrationTestSupport.assertOk(regions);
         final List<JsonNode> hebei = new ArrayList<>();
         IntegrationTestSupport.data(regions).forEach(node -> {

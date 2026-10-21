@@ -23,7 +23,7 @@
 | 表 | `sys_user_identity`：`(provider, external_id)` 唯一，`user_id` 有索引，不建外键 |
 | 菜单 | 没有独立页面；入口在「用户管理」行操作（按钮 `sys_menu.id = 120`）与「个人中心 → 外部账号」 |
 | 后端模块 | `weiran-system`（包 `com.weiran.system`，domain 子包 `identity`） |
-| 接口 | 公开：`GET /api-nbackend/system/auth/listProviders`、`GET /api-nbackend/system/auth/authorizeSso/{provider}`、`GET /api-nbackend/system/auth/callbackSso/{provider}`；需登录：`GET /api-backend/system/auth/authorizeSso/{provider}`（绑定）、本人身份与管理员用户身份接口 |
+| 接口 | 公开：`GET /api-backend/n/system/auth/listProviders`、`GET /api-backend/n/system/auth/authorizeSso/{provider}`、`GET /api-backend/n/system/auth/callbackSso/{provider}`；需登录：`GET /api-backend/system/auth/authorizeSso/{provider}`（绑定）、本人身份与管理员用户身份接口 |
 | 权限码 | `system:user:identity`（管理员查看、绑定、解绑他人）；本人操作只需登录 |
 
 ## 1. 列表
@@ -59,7 +59,7 @@
 
 ## 5. 说明与建议
 
-- **流程状态**放在签名 Cookie `weiran_sso` 里(Lax、10 分钟、`Path=/api-nbackend/system/auth/callbackSso`)。回调结束后,无论成功与否都会清除它。
+- **流程状态**放在签名 Cookie `weiran_sso` 里(Lax、10 分钟、`Path=/api-backend/n/system/auth/callbackSso`)。回调结束后,无论成功与否都会清除它。
 - **对外地址** `WEIRAN_PUBLIC_BASE_URL` 必须与浏览器地址完全一致,否则提供方会拒绝回调地址,或者回调后带不上 Cookie。
 - **OIDC 缓存**:discovery 与 JWKS 都缓存在进程内,按 `kid` 找不到公钥时刷新一次;提供方的地址变了需要重启。
 
@@ -76,7 +76,7 @@
 
 **2026-10-21**（API 入口分离）
 
-- 外部登录发起与回调迁到 `/api-nbackend/`，本人绑定发起与身份管理迁到 `/api-backend/`；令牌 Cookie 只发往授权前缀。
+- 外部登录发起与回调迁到 `/api-backend/n/`，本人绑定发起与身份管理迁到 `/api-backend/`；令牌 Cookie 只发往授权前缀。
 
 **2026-10-06**(`external-identity-login`)
 

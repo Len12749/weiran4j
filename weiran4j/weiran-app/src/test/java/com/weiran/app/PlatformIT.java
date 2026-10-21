@@ -206,16 +206,18 @@ class PlatformIT extends IntegrationTestSupport {
                 100004);
 
         final JsonNode title = IntegrationTestSupport.data(
-                this.get("/api-nbackend/system/config/getPublic/system.general.title", null));
+                this.get("/api-backend/n/system/config/getPublic/system.general.title", null));
         assertThat(title.path("configKey").asText()).isEqualTo("system.general.title");
         assertThat(title.path("configValue").asText()).isEqualTo("Weiran Admin");
         assertThat(this.jdbc.queryForObject(
                         "SELECT group_key FROM sys_config WHERE config_key = 'system.general.title'", String.class))
                 .isEqualTo("general");
         IntegrationTestSupport.assertError(
-                this.get("/api-nbackend/system/config/getPublic/" + prefix + "_n", null), HttpStatus.FORBIDDEN, 100102);
+                this.get("/api-backend/n/system/config/getPublic/" + prefix + "_n", null),
+                HttpStatus.FORBIDDEN,
+                100102);
         IntegrationTestSupport.assertError(
-                this.get("/api-nbackend/system/config/getPublic/system.site.title", null),
+                this.get("/api-backend/n/system/config/getPublic/system.site.title", null),
                 HttpStatus.FORBIDDEN,
                 100102);
 

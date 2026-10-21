@@ -115,7 +115,7 @@ class IdentityInfrastructureTest {
         final CasIdentityProvider cas =
                 new CasIdentityProvider("cas", "CAS", this.base + "/cas/", false, Set.of(), true, this.http());
         final SsoState state = IdentityInfrastructureTest.state(Instant.MAX);
-        final String callback = "https://admin.example.com/api-nbackend/system/auth/callbackSso/cas";
+        final String callback = "https://admin.example.com/api-backend/n/system/auth/callbackSso/cas";
         assertThat(cas.authorizeUrl(state, callback))
                 .startsWith(this.base + "/cas/login?service=")
                 .contains("state%3Dst-1");

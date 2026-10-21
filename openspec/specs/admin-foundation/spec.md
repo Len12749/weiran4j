@@ -19,7 +19,7 @@ status: "active"
 - **判据**:集成测试断言 `$.code` 的 JSON 类型为 number 且值为 0,`$.requestId` 不存在
 
 #### Scenario: 参数校验失败
-- **WHEN** 调用 `POST /api-nbackend/auth/login` 且 `username` 为空
+- **WHEN** 调用 `POST /api-backend/n/auth/login` 且 `username` 为空
 - **THEN** 返回 HTTP 400,`code` 为 `100001`,`requestId` 等于响应头 `X-Request-Id`
 - **判据**:响应状态 400、`$.code == 100001`,且 `$.requestId` 与响应头相等
 

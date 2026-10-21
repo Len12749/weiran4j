@@ -1,5 +1,5 @@
 /**
- * 项目级检查 · 新增 HTTP API 必须遵循 /api-backend 或 /api-nbackend/{module}/{resource}/{action}。
+ * 项目级检查 · 当前 type=backend，API 必须遵循 /api-backend/[n/]模块/资源/动作。
  *
  * 存量按 HEAD 中的全局 method + path 精确兼容：改业务代码不会触发迁移，新增或改名的
  * 非规范路由会被拦截。例外只能在 project.json 按精确 method + path 登记并写明理由。
@@ -150,7 +150,7 @@ function scanRoutes(source) {
     for (const prefix of prefixes) {
       for (const suffix of pathsFrom(args)) {
         const path = joinPath(prefix, suffix)
-        if (path === '/api' || path.startsWith('/api/') || path.startsWith('/api-backend/') || path.startsWith('/api-nbackend/')) {
+        if (path === '/api' || path.startsWith('/api/') || path.startsWith('/api-')) {
           for (const method of routeMethods) routes.push(`${method} ${path}`)
         }
       }
@@ -162,9 +162,10 @@ function scanRoutes(source) {
 function isCompliant(signature) {
   const path = signature.slice(signature.indexOf(' ') + 1)
   const segments = path.split('/').filter(Boolean)
-  return (segments[0] === 'api-backend' || segments[0] === 'api-nbackend')
-    && segments.length >= 4
-    && segments.slice(1, 4).every((segment) => !segment.startsWith('{') && !segment.endsWith('}'))
+  if (segments[0] !== 'api-backend') return false
+  const first = segments[1] === 'n' ? 2 : 1
+  return segments.length >= first + 3
+    && segments.slice(first, first + 3).every((segment) => !segment.startsWith('{') && !segment.endsWith('}'))
 }
 
 export default {
@@ -187,13 +188,13 @@ export default {
     }
 
     for (const [signature, file] of current) {
-      if (isCompliant(signature) || (baseline.has(signature) && !signature.includes(' /api/')) || exceptionReasons.has(signature)) continue
+      if (isCompliant(signature) || (baseline.has(signature) && signature.includes(' /api-backend/')) || exceptionReasons.has(signature)) continue
       const reason = exceptionReasons.get(signature)
       if (typeof reason === 'string' && reason.trim()) continue
       err(
         'REPO/api-route-nonconforming',
         file,
-        `新增路由 ${signature} 不符合 /api-backend|api-nbackend/{module}/{resource}/{action}；按需调整路径，或仅对确需保留的精确路由在 project.json 的 apiRouteConvention.exceptions 写明理由`,
+        `新增路由 ${signature} 不符合 /api-backend/[n/]模块/资源/动作；按需调整路径，或仅对确需保留的精确路由在 project.json 的 apiRouteConvention.exceptions 写明理由`,
       )
     }
 

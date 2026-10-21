@@ -29,7 +29,7 @@ export default defineConfig({
 		// 核心配置：代理
 		proxy: {
 			// weiran-region 的公开行政区划查询使用框架 API 路径，不经过 portal 路由改写。
-			'/api-nbackend/region/area/getEnabledTree': {
+			'/api-backend/n/region/area/getEnabledTree': {
 				target: 'http://127.0.0.1:5300',
 				changeOrigin: true,
 			},

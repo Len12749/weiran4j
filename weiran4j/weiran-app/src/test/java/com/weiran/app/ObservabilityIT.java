@@ -51,7 +51,7 @@ class ObservabilityIT extends IntegrationTestSupport {
     @DisplayName("失败体带 requestId 且与响应头一致：400 / 401 / 403 / 404")
     void errorBodiesCarryRequestId() {
         ObservabilityIT.assertErrorCarriesRequestId(
-                this.post("/api-nbackend/system/auth/login", null, Map.of("username", "", "password", "x")),
+                this.post("/api-backend/n/system/auth/login", null, Map.of("username", "", "password", "x")),
                 HttpStatus.BAD_REQUEST,
                 100001);
         ObservabilityIT.assertErrorCarriesRequestId(
@@ -86,13 +86,13 @@ class ObservabilityIT extends IntegrationTestSupport {
     void reusesValidInboundRequestId() {
         final HttpHeaders valid = new HttpHeaders();
         valid.set(RequestIdFilter.HEADER, "gw-123_abc");
-        assertThat(ObservabilityIT.requestIdHeader(this.exchange(HttpMethod.GET, "/api-nbackend/health", valid, null)))
+        assertThat(ObservabilityIT.requestIdHeader(this.exchange(HttpMethod.GET, "/api-backend/n/health", valid, null)))
                 .isEqualTo("gw-123_abc");
 
         final HttpHeaders invalid = new HttpHeaders();
         invalid.set(RequestIdFilter.HEADER, "bad id!");
         assertThat(ObservabilityIT.requestIdHeader(
-                        this.exchange(HttpMethod.GET, "/api-nbackend/health", invalid, null)))
+                        this.exchange(HttpMethod.GET, "/api-backend/n/health", invalid, null)))
                 .matches("[0-9a-f]{32}");
     }
 

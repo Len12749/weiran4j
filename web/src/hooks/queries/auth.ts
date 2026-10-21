@@ -23,7 +23,7 @@ export const authKeys = {
 /** 公开发送短信验证码；登录页负责校验手机号与展示错误。 */
 export function useSendPhoneLoginCode() {
     return useMutation({
-        mutationFn: (body: PhoneLoginCodeRequest) => http.post<null>('/api-nbackend/system/auth/sendPhoneCode', body, { silent: true }),
+        mutationFn: (body: PhoneLoginCodeRequest) => http.post<null>('/api-backend/n/system/auth/sendPhoneCode', body, { silent: true }),
     });
 }
 
@@ -31,7 +31,7 @@ export function useSendPhoneLoginCode() {
 export function usePhoneLogin() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (body: PhoneLoginRequest) => http.post<LoginResult>('/api-nbackend/system/auth/loginWithPhoneCode', body, { silent: true }),
+        mutationFn: (body: PhoneLoginRequest) => http.post<LoginResult>('/api-backend/n/system/auth/loginWithPhoneCode', body, { silent: true }),
         onSuccess: () => {
             qc.clear();
             unlockScreen();

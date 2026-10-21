@@ -98,7 +98,7 @@ describe('request', () => {
 
     it('未登录时写请求不带 X-CSRF-Token（如登录接口）', async () => {
         respond({ code: 0, message: 'ok', data: null });
-        await http.post('/api-nbackend/system/auth/login', { username: 'a', password: 'b' });
+        await http.post('/api-backend/n/system/auth/login', { username: 'a', password: 'b' });
         const init = vi.mocked(fetch).mock.calls[0]![1];
         const headers = init?.headers as Record<string, string>;
         expect(headers['X-CSRF-Token']).toBeUndefined();

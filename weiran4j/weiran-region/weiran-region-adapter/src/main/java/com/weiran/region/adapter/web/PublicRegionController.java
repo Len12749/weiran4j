@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** 供前台注册和资料维护使用的公开地区树。 */
 @RestController
-@RequestMapping("/api-nbackend/region/area")
+@RequestMapping("/api-backend/n/region/area")
 public class PublicRegionController {
 
     private final RegionApplicationService regionService;

@@ -20,7 +20,7 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * 认证与权限拦截器，只注册在 {@code /api-backend/**}；该前缀下的接口一律要求登录。
+ * 认证与权限拦截器，注册在 {@code /api-backend/**} 并排除 {@code /api-backend/n/**}；其余接口要求登录。
  *
  * <p>流程：取令牌（{@code Authorization: Bearer} 优先，其次 {@value AuthCookies#TOKEN_COOKIE} Cookie）→
  * {@link TokenAuthenticator} → 未登录抛 401 → 以 Cookie 认证的写请求做 CSRF 双提交校验（不通过抛 403 /

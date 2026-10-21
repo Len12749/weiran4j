@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 /**
  * 标识公开接口，供代码阅读使用；是否需要用户授权由 URL 前缀决定。
  *
- * <p>{@code /api-nbackend/**} 不经过认证拦截器；{@code /api-backend/**} 一律要求登录，即使标记了本注解。
+ * <p>{@code /api-backend/n/**} 不经过认证拦截器；其余 {@code /api-backend/**} 路径要求登录，即使标记了本注解。
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

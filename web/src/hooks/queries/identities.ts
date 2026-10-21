@@ -21,7 +21,7 @@ const PROVIDERS_STALE_TIME = 10 * 60 * 1000;
 export function useProviders() {
     return useQuery({
         queryKey: identityKeys.providers,
-        queryFn: () => http.get<ProvidersView>('/api-nbackend/system/auth/listProviders', { silent: true }),
+        queryFn: () => http.get<ProvidersView>('/api-backend/n/system/auth/listProviders', { silent: true }),
         staleTime: PROVIDERS_STALE_TIME,
     });
 }
@@ -74,7 +74,7 @@ export function useUnbindUserIdentity(userId: number) {
  * `redirect` 必须是站内路径；后端还会再做一次规范化，非法时按 `/` 处理。
  */
 export function ssoAuthorizeUrl(providerId: string, { redirect, mode }: { redirect: string; mode: 'login' | 'bind' }): string {
-    const apiPrefix = mode === 'bind' ? '/api-backend' : '/api-nbackend';
+    const apiPrefix = mode === 'bind' ? '/api-backend' : '/api-backend/n';
     return `${config.apiBaseUrl}${apiPrefix}/system/auth/authorizeSso/${encodeURIComponent(providerId)}?redirect=${encodeURIComponent(redirect)}&mode=${mode}`;
 }
 
