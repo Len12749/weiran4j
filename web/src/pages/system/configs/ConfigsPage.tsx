@@ -3,6 +3,8 @@ import type { FormApi } from '@douyinfe/semi-ui/lib/es/form';
 import { Eye, EyeOff, MoreHorizontal, Pencil, Plus, RefreshCw, Settings, Trash2 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { PageContainer } from '@/components/PageContainer';
+import { ConfigImageUpload } from '@/components/ConfigImageUpload';
+import { ConfigRichTextEditor } from '@/components/ConfigRichTextEditor';
 import { NavListItem, NavListPanel } from '@/components/NavListPanel';
 import { Permission } from '@/components/Permission';
 import {
@@ -35,6 +37,8 @@ const FIELD_OPTIONS = [
     { label: '开关', value: 'switch' },
     { label: '下拉选择', value: 'select' },
     { label: 'JSON', value: 'json' },
+    { label: '单图上传', value: 'image' },
+    { label: '富文本', value: 'richtext' },
 ];
 
 function configType(fieldType: ConfigFieldType): ConfigSaveRequest['configType'] {
@@ -61,6 +65,10 @@ function parseOptions(value: string): Array<{ label: string; value: string }> {
 
 function toTextValue(value: unknown): string {
     return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value) : '';
+}
+
+function toStringValue(value: unknown): string {
+    return typeof value === 'string' ? value : '';
 }
 
 function validateField(record: ConfigView, value: unknown): string | null {
@@ -182,7 +190,7 @@ function ConfigMetadataModal({
                 <Form.Select field="fieldType" label="表单字段" optionList={FIELD_OPTIONS} style={{ width: '100%' }} />
                 <Form.TextArea
                     field="fieldOptions"
-                    label="下拉选项 JSON"
+                    label="下拉选项 JSON（仅下拉选择使用）"
                     rows={3}
                     placeholder={'[{"label":"选项一","value":"one"}]'}
                     rules={[
@@ -368,6 +376,31 @@ function ConfigGroupPanel({
                                 <Form.Select {...common} optionList={parseOptions(record.fieldOptions ?? '')} style={{ width: '100%' }} />
                             ) : record.fieldType === 'json' ? (
                                 <Form.TextArea {...common} rows={5} maxLength={4096} />
+                            ) : record.fieldType === 'image' ? (
+                                <div>
+                                    <Form.Input field={field} style={{ display: 'none' }} />
+                                    <div style={{ marginBottom: 8 }}>{label}</div>
+                                    <ConfigImageUpload
+                                        key={`${record.id}:${record.configValue}`}
+                                        value={toStringValue(initValues[field])}
+                                        disabled={!canEdit}
+                                        onChange={(url) => {
+                                            api.current?.setValue(field, url);
+                                        }}
+                                    />
+                                </div>
+                            ) : record.fieldType === 'richtext' ? (
+                                <div>
+                                    <Form.Input field={field} style={{ display: 'none' }} />
+                                    <div style={{ marginBottom: 8 }}>{label}</div>
+                                    <ConfigRichTextEditor
+                                        value={toStringValue(initValues[field])}
+                                        disabled={!canEdit}
+                                        onChange={(html) => {
+                                            api.current?.setValue(field, html);
+                                        }}
+                                    />
+                                </div>
                             ) : (
                                 <Form.Input {...common} maxLength={4096} />
                             )}

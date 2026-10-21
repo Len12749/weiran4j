@@ -62,7 +62,7 @@ public final class SystemConfig {
         }
         final boolean fieldMatches =
                 switch (this.fieldType) {
-                    case "input", "textarea", "select" -> this.configType == ConfigType.STRING;
+                    case "input", "textarea", "select", "image", "richtext" -> this.configType == ConfigType.STRING;
                     case "number" -> this.configType == ConfigType.NUMBER;
                     case "switch" -> this.configType == ConfigType.BOOLEAN;
                     case "json" -> this.configType == ConfigType.JSON;

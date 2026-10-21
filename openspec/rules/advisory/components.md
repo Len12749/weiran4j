@@ -56,6 +56,8 @@
 | **DepartmentTreeSelect** | `components/DepartmentTreeSelect.tsx` | 筛选栏的部门树下拉;表单里用同文件导出的 `useDepartmentTreeData(disabledIds)` 喂给 `Form.TreeSelect` | 编辑部门时把「自己 + 后代」传进 `disabledIds`,否则前端能选、后端返回 `40901` |
 | **RegionSelect** | `components/RegionSelect.tsx` | 省市县级联选择器；受控值为字符串区划代码路径 `string[]`，数据取登录态 `/api/regions/lookup` | 只展示启用节点及启用祖先组成的路径；管理权限不是使用前提，lookup 失败遵循请求层提示 |
 | **IconPicker** | `components/IconPicker.tsx` | 菜单图标选择:弹层网格 + 搜索,可配合 Semi `withField` 当表单项 | 只含 `utils/icons.tsx` 白名单里的 lucide 图标;新图标先加进 `MENU_ICONS` |
+| **ConfigImageUpload** | `components/ConfigImageUpload.tsx` | 系统配置的单图字段:上传后保存媒体库返回的 URL,支持预览、更换和移除 | 限 jpg/jpeg/png/gif,最大 10 MB;依赖系统媒体上传权限 |
+| **ConfigRichTextEditor** | `components/ConfigRichTextEditor.tsx` + `ConfigRichTextEditor.css` | 系统配置的富文本字段,保存 HTML 字符串 | 工具栏提供粗体、斜体、二级标题及列表;编辑器由配置表单负责回写字段值 |
 
 ## 布局(`web/src/layouts/`)
 

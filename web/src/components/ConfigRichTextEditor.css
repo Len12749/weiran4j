@@ -1,0 +1,9 @@
+.config-rich-text .ProseMirror {
+    min-height: 160px;
+    padding: 12px;
+    outline: none;
+}
+
+.config-rich-text .ProseMirror p {
+    margin: 0 0 8px;
+}

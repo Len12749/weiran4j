@@ -49,7 +49,7 @@
 | --- | --- | --- | --- |
 | 配置键 | 输入；内置项不可改 | 必填、最多 128 字符、`system.` 前缀；重复 40900；内置项改键 40901 | `config_key varchar(128)` 唯一 |
 | 分组 | 从启用的配置分组选择 | 必须是 `sys_group` 中已启用且 `type=config` 的编码 | `group_key varchar(64)` |
-| 表单字段 | 单行 / 多行 / 数字 / 开关 / 下拉 / JSON | 字段类型与值类型匹配；下拉选项为合法 JSON 数组 | `field_type varchar(16)`、`field_options varchar(2048)` |
+| 表单字段 | 单行 / 多行 / 数字 / 开关 / 下拉 / JSON / 单图 / 富文本 | 字段类型与值类型匹配；下拉选项为合法 JSON 数组；单图保存媒体 URL，富文本保存 HTML | `field_type varchar(16)`、`field_options varchar(2048)` |
 | 必填 | 开关 | 必填项不可为空 | `required tinyint(1)` |
 | 类型 | 随控件设置 | 只能 `string/number/boolean/json` | `config_type varchar(16)` 默认 `string` |
 | 配置值 | 由 `field_type` 渲染 | 最多 4096 字符，并按类型校验（见下） | `config_value varchar(4096)` 默认 `''` |
@@ -107,6 +107,9 @@
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-21**
+- 配置表单新增单图上传与富文本字段。单图复用系统媒体上传并保存图片 URL；富文本保存 HTML，均按 string 类型校验。
 
 **2026-10-20**
 - 新增内置配置 `system.user.phone_login_sms_template_code`，用于配置已审核的手机号登录验证码短信模板 CODE；手机号登录需同时启用开关、短信发送器和模板 CODE。
