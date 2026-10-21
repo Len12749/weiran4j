@@ -55,10 +55,10 @@
 
 | 字段 | 前端控件 | 前端校验 | 后端校验 | DB 列 / 类型 |
 | --- | --- | --- | --- | --- |
-| 上级部门 | `Form.TreeSelect`（「顶级」+ 当前页面拿到的部门树；编辑时禁选自己与后代） | 无 | `@NotNull` `@PositiveOrZero`；非 0 时须存在（40000「parentId: 上级部门不存在」）；编辑时不能是自己或后代（40901） | `parent_id bigint` 默认 0 |
+| 上级部门 | `Form.TreeSelect`（「顶级」+ 当前页面拿到的部门树；编辑时禁选自己与后代） | 无 | `@NotNull` `@PositiveOrZero`；非 0 时须存在（100001「parentId: 上级部门不存在」）；编辑时不能是自己或后代（100004） | `parent_id bigint` 默认 0 |
 | 部门名称 | `Form.Input` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)` | `name varchar(64)` |
-| 部门编码 | `Form.Input` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)`；去首尾空白后查重 40900「部门编码已存在」；无格式规则 | `code varchar(64)` 唯一 |
-| 负责人 ❓ | `Form.Select`（可搜索、可清空），选项来自 `GET /api/users/options`（仅启用用户；负责人被禁用或删除后回填值无对应选项，见 `sys_user.md#03`） | 无 | 可空；非空时用户须存在（40000「leaderId: 负责人不存在」）；不校验用户是否启用 | `leader_id bigint null` |
+| 部门编码 | `Form.Input` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)`；去首尾空白后查重 100003「部门编码已存在」；无格式规则 | `code varchar(64)` 唯一 |
+| 负责人 ❓ | `Form.Select`（可搜索、可清空），选项来自 `GET /api/users/options`（仅启用用户；负责人被禁用或删除后回填值无对应选项，见 `sys_user.md#03`） | 无 | 可空；非空时用户须存在（100001「leaderId: 负责人不存在」）；不校验用户是否启用 | `leader_id bigint null` |
 | 联系电话 | `Form.Input` | `maxLength=20` | `@Size(max=20)`，无格式校验 | `phone varchar(20) null` |
 | 排序 | `Form.InputNumber` | `min=0` | 可空；新增 0，编辑保持原值 | `sort int` 默认 0 |
 | 状态 | `Form.RadioGroup` | 无 | 新增 `enabled`，编辑保持原值 | `status varchar(16)` 默认 `enabled` |
@@ -71,7 +71,7 @@
 | --- | --- | --- | --- | --- |
 | 新增部门（工具栏最左）/ 新增下级（行） | `POST /api/departments` → `{id}` | `system:department:create` | ✅ 部门管理 / 新增部门 | 见 §2 |
 | 编辑（行） | `PUT /api/departments/{id}` | `system:department:update` | ✅ 修改部门 | 404 部门不存在；见 §2 |
-| 删除（行「操作」列，确认后执行；窄屏（< 992px）收在「…」菜单里） | `DELETE /api/departments/{id}` | `system:department:delete` | ✅ 删除部门 | 有下级 40901「请先删除下级部门」；仍有用户 40901「部门下仍有 N 个用户，请先调整用户部门」。前端不预判，确认后由后端拒绝 |
+| 删除（行「操作」列，确认后执行；窄屏（< 992px）收在「…」菜单里） | `DELETE /api/departments/{id}` | `system:department:delete` | ✅ 删除部门 | 有下级 100004「请先删除下级部门」；仍有用户 100004「部门下仍有 N 个用户，请先调整用户部门」。前端不预判，确认后由后端拒绝 |
 | —（详情） | `GET /api/departments/{id}` | `system:department:list` | — | 单节点、`children` 为空；前端页面未调用 |
 
 部门变更不影响授权，不清授权快照缓存。

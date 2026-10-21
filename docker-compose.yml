@@ -35,11 +35,14 @@ services:
       WEIRAN_DB_URL: jdbc:mysql://mysql:3306/weiran4j?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
       WEIRAN_DB_USERNAME: root
       WEIRAN_LOG_DIR: /app/logs
+      # 外部 profile 配置可按 .env 中的 SPRING_PROFILES_ACTIVE 选择；不固定具体环境名。
+      SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/app/config/
     depends_on:
       mysql:
         condition: service_healthy
     volumes:
       - backend-logs:/app/logs
+      - ./weiran4j/config:/app/config:ro
     # 比 WEIRAN_SHUTDOWN_TIMEOUT（30s）长，给优雅停机留足时间后再强杀
     stop_grace_period: 40s
     restart: unless-stopped

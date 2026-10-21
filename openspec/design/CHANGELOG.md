@@ -1,5 +1,11 @@
 # 流程本身的修改记录
 
+## 2026-10-20 · 新增 API 路由规范与存量基线守卫
+
+- 新增 `rules/advisory/api-design.md`，约定新接口使用 `/api/{module}/{resource}/{action}`（模块 / 资源 / 动作）；该规则通过根 `AGENTS.md` 索引唤起，不写入对外 API 契约文档。
+- 新增 `guards/api-route-convention.mjs`：与 HEAD 的 method + path 精确比对存量，新出现的不合规路径报错；`project.json` 仅接受带理由的精确例外。
+- `check.mjs` 登记守卫的错误码说明，`design/check.md` 记录配置字段与插件策略。
+
 记录 **openspec 流水线的演进**(schema / 模板 / 校验 / 文档结构),不记录业务 change ——
 业务 change 的记录在 `openspec/changes/archive/`。
 

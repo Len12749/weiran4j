@@ -10,7 +10,7 @@ public interface DictService {
     /** 分页查询。 */
     PageResult<DictView> page(DictQuery query, PageQuery pageQuery);
 
-    /** 详情；不存在抛 40400。 */
+    /** 详情；不存在抛 100002。 */
     DictView get(long id);
 
     /** 新增，返回 ID。 */

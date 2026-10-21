@@ -23,15 +23,15 @@
    写前台接口的固定做法（`weiran-cqt-adapter` 的 `com.weiran.cqt.adapter.portal` 包，change `cqt-web-foundation`）：
    - Controller 类标 **`@PortalController`**（= `@RestController` + `@SkipApiResponse`），路径放 `/api-web/...`，返回 `PortalResult.ok(data)`；
    - 默认需要登录；免登录的方法或类标 **`@PortalPublic`**；当前账号用 `PortalAccount.current()`；
-   - 出错直接抛 `BizException`（复用 `CommonErrors`），由 `PortalExceptionAdvice` 统一输出：HTTP 恒 200，`code` = 五位错误码前三位。
+   - 出错直接抛 `BizException`（复用 `CommonErrors`），由 `PortalExceptionAdvice` 统一输出：HTTP 恒 200，`code` = 错误码对应的 HTTP 状态。
      这是对宪法 CP-11 的**有意偏离**，只限 `/api-web`；状态仍只由错误码决定，Controller 里不要手写 code、不要捕获转换；
    - 前台令牌由 `PortalTokenCodec` 签发 / 解析（HS256，`typ=cqt-web`、`ver`，与后台令牌互斥）；拦截器经 `PortalAuthService`
      比对账号 `token_version`，重置密码即失效（宪法 CP-8）。需要「让某账号所有登录失效」时，只能递增 `token_version`；
-   - 业务错误码在 `weiran-cqt-api` 的 `CqtErrors`（序号段 20–39），只有前端要区分、或通用码没有对应状态（如 429 / 503）时才加；
+   - 业务错误码在 `weiran-cqt-api` 的 `CqtErrors`（服务 `13`、资源 `01`），只有前端要区分、或通用码没有对应状态（如 429 / 503）时才加；
    - 集成测试写在 `weiran-app/src/test/java/com/weiran/app/Cqt*IT.java`（继承包级私有的 `IntegrationTestSupport`），
      测试专用 Controller 用测试类上的 `@Import` 注册；测试密钥在 `weiran-app/src/test/resources/application-biz-test.yml`。
-4. **号段与表前缀**（登记在 `weiran4j/docs/business-modules.md`）：`weiran-cqt` 使用错误码序号 `20`–`39`、菜单 id `1000`–`1999`、
-   权限码前缀 `cqt:`、Flyway 目录 `db/migration/cqt/`、表前缀 `cqt_`；`weiran-region` 使用 `40`–`49`、`2000`–`2099`、`region:`、`db/migration/region/` 与表 `region`。
+4. **号段与表前缀**（登记在 `weiran4j/docs/business-modules.md`）：`weiran-cqt` 使用错误码服务 `13`、资源 `01`、菜单 id `1000`–`1999`、
+   权限码前缀 `cqt:`、Flyway 目录 `db/migration/cqt/`、表前缀 `cqt_`；`weiran-region` 使用错误码服务 `12`、资源 `01`、菜单 id `2000`–`2099`、`region:`、`db/migration/region/` 与表 `region`。
    原统一库 `cqtxj2026` 的表迁入时一律加 `cqt_` 前缀（2026-10-02 决定）。
 
 ## 下游自有文件（上游永不创建）
@@ -73,8 +73,8 @@ pnpm dev:uniapp
 
 - 环境变量：`WEIRAN_CQT_JWT_SECRET`（前台令牌密钥，≥ 32 字节，**必填**，缺失启动失败）、`WEIRAN_CQT_JWT_TTL`（可选，默认 `7d`）、
   `WEIRAN_CQT_SMS_IP_HOURLY_LIMIT`（同一客户端 IP 每小时最多成功发送条数，默认 10，0 不限）、`WEIRAN_CQT_COMMITMENT_TEMPLATE_URL`（学校承诺书模板链接）。
-- 短信发送由 system `SmsService` 统一处理：`WEIRAN_SYSTEM_SMS_MODE` 选择 `disabled`、`log` 或 `aliyun`；阿里云凭据和签名使用 `WEIRAN_SYSTEM_SMS_ACCESS_KEY_ID`、
-  `WEIRAN_SYSTEM_SMS_ACCESS_KEY_SECRET`、`WEIRAN_SYSTEM_SMS_SIGN_NAME`。验证码模板 CODE 在后台「系统配置 → 用户」组的 `system.user.cqt_sms_template_code` 配置项维护；模板变量为 `code`，正文应注明 10 分钟有效。
+- 短信发送由 system `SmsService` 统一处理：`WEIRAN_SMS_MODE` 选择 `disabled`、`local` 或 `aliyun`；阿里云凭据使用 `WEIRAN_SMS_ALIYUN_ACCESS_KEY_ID`、
+  `WEIRAN_SMS_ALIYUN_ACCESS_KEY_SECRET`，签名在后台短信配置页维护。常青藤验证码模板 CODE 在 `system.user.cqt_sms_template_code` 配置项维护；模板变量为 `code`，正文应注明 10 分钟有效。
 - 文件存储（change `cqt-file-upload`）：`WEIRAN_CQT_STORAGE_MODE`（默认 `disabled`，上传返回 503；`oss` 阿里云 OSS；`local` 本地目录，**仅开发 / 测试**，
   经 `/uploads/**` 提供）。`oss` 必填 `WEIRAN_CQT_OSS_ACCESS_KEY_ID`、`WEIRAN_CQT_OSS_ACCESS_KEY_SECRET`、`WEIRAN_CQT_OSS_BUCKET`、
   `WEIRAN_CQT_OSS_ENDPOINT`（如 `oss-cn-beijing.aliyuncs.com`）、`WEIRAN_CQT_OSS_PUBLIC_BASE_URL`（Bucket 公网地址或自定义域名），缺一项启动失败。

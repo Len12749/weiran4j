@@ -10,17 +10,17 @@ public interface ConfigGroupRepository {
     List<ConfigGroup> findEnabled();
 
     /** 按编码查询启用的配置分组。 */
-    Optional<ConfigGroup> findEnabledByKey(String key);
+    Optional<ConfigGroup> findEnabledByKey(String groupKey, String key);
 
     /** 判断配置组编码是否已存在（包含停用分组）。 */
-    boolean existsByKey(String key);
+    boolean existsByKey(String groupKey, String key);
 
     /** 保存配置组。 */
     long save(ConfigGroup group);
 
     /** 修改启用配置组的名称。 */
-    boolean updateLabel(String key, String label);
+    boolean updateLabel(String groupKey, String key, String label);
 
     /** 删除启用配置组。 */
-    boolean deleteByKey(String key);
+    boolean deleteByKey(String groupKey, String key);
 }

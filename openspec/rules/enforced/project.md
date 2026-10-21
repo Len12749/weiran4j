@@ -86,8 +86,9 @@
 
 ### SL-6 · `weiran-framework/src/main/java/com/weiran/framework/error/CommonErrors.java`
 
-跨模块错误码基座（五位数字，前三位 = HTTP 状态）。**刻意冻结为小集合**——模块专属错误码应定义在各自模块
-domain 的 `error` 包里。前端 `web/src/utils/request.ts` 依赖 `40100`（清令牌跳登录）与 `40101`（不清令牌）的区分，
+跨模块错误码基座（六位数字，服务 / 资源 / 错误各两位；HTTP 状态由 `httpStatus()` 独立指定）。
+**刻意冻结为小集合**——模块专属错误码定义在各自模块的 `*-api` 中。前端 `web/src/utils/request.ts`
+依赖 `100101`（清令牌跳登录）与 `110101`（不清令牌）的区分，
 改这两个码必须同步前端。**不是"该加就加"，而是"新增前先确认真的是跨模块概念"**。
 
 ### SL-7 · `weiran-framework/src/main/java/com/weiran/framework/{page,response}/*`

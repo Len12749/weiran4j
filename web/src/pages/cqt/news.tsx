@@ -62,8 +62,8 @@ export default function CqtNewsPage() {
         <PageContainer>
             <SearchToolbar
                 tools={columnSettings}
-                searchIconOnly
-                resetIconOnly
+               
+               
                 onSearch={() => {
                     setKeyword(keywordInput.trim());
                     setPage(1);

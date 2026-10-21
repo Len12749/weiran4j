@@ -60,12 +60,16 @@ public class IdentityProvisioner {
         final String nickname = Texts.truncate(
                 displayName == null || displayName.isBlank() ? username : displayName.strip(), MAX_NICKNAME_LENGTH);
         final String email = identity.email();
+        final String normalizedEmail = email == null ? null : Texts.trimToNull(Texts.truncate(email, MAX_EMAIL_LENGTH));
+        if (normalizedEmail != null && this.userRepository.existsByEmail(normalizedEmail)) {
+            throw com.weiran.framework.error.BizException.duplicate("邮箱已存在");
+        }
         final User user = User.builder()
                 .username(username)
                 .nickname(nickname)
                 // 空串 = 没有本地密码：sys_user.password 非空，BCrypt 永远匹配不上它（User#hasPassword）。
                 .passwordHash("")
-                .email(email == null ? null : Texts.truncate(email, MAX_EMAIL_LENGTH))
+                .email(normalizedEmail)
                 .gender(Gender.UNKNOWN)
                 .status(EnableStatus.ENABLED)
                 .tokenVersion(0)

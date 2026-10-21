@@ -14,6 +14,5 @@ weiran:
     storage:
       # 本地目录存储（默认在系统临时目录下 cqt-uploads），IT 经 /uploads/** 取回文件。
       mode: local
-  system:
-    sms:
-      mode: log
+  sms:
+    mode: local

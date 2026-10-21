@@ -8,11 +8,16 @@ import com.weiran.system.application.auth.ExternalLoginApplicationService;
 import com.weiran.system.application.auth.IdentityProvisioner;
 import com.weiran.system.application.auth.LocalIdentityResolver;
 import com.weiran.system.application.auth.LocalRbacPermissionSource;
+import com.weiran.system.application.auth.PhoneLoginApplicationService;
+import com.weiran.system.application.auth.PhoneLoginSettings;
 import com.weiran.system.application.department.DepartmentApplicationService;
 import com.weiran.system.application.loginlog.LoginLogApplicationService;
+import com.weiran.system.application.media.MediaApplicationService;
+import com.weiran.system.application.media.MediaAssetDeletionService;
 import com.weiran.system.application.menu.MenuApplicationService;
 import com.weiran.system.application.role.RoleApplicationService;
 import com.weiran.system.application.sms.SmsApplicationService;
+import com.weiran.system.application.sms.SystemSmsSettings;
 import com.weiran.system.application.user.UserApplicationService;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Import;
@@ -31,6 +36,9 @@ import org.springframework.context.annotation.Import;
     LocalRbacPermissionSource.class,
     DispatchingTokenAuthenticator.class,
     AuthApplicationService.class,
+    PhoneLoginSettings.class,
+    SystemSmsSettings.class,
+    PhoneLoginApplicationService.class,
     IdentityProvisioner.class,
     ExternalLoginApplicationService.class,
     UserApplicationService.class,
@@ -38,6 +46,8 @@ import org.springframework.context.annotation.Import;
     MenuApplicationService.class,
     DepartmentApplicationService.class,
     LoginLogApplicationService.class,
+    MediaApplicationService.class,
+    MediaAssetDeletionService.class,
     SmsApplicationService.class
 })
 public class SystemApplicationAutoConfiguration {}

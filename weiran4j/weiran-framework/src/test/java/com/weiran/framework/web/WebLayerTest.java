@@ -112,10 +112,10 @@ class WebLayerTest {
 
     record Payload(@NotBlank(message = "不能为空") String name) {}
 
-    /** 模拟下游给 uniapp 的接口：整个类自定包络。 */
+    /** 模拟使用自定义响应格式的外部 API。 */
     @SkipApiResponse
     @RestController
-    @RequestMapping("/api-web/skip")
+    @RequestMapping("/external-api/skip")
     static class SkippedController {
 
         @GetMapping("/object")
@@ -135,7 +135,7 @@ class WebLayerTest {
     @interface WebApi {}
 
     @RestController
-    @RequestMapping("/api-web/mixed")
+    @RequestMapping("/external-api/mixed")
     static class MixedController {
 
         @SkipApiResponse
@@ -214,7 +214,7 @@ class WebLayerTest {
         assertThat(appender.list).hasSize(2);
         final ILoggingEvent warn = appender.list.get(0);
         assertThat(warn.getLevel()).isEqualTo(Level.WARN);
-        assertThat(warn.getFormattedMessage()).contains("40901").contains("内置数据不可删除");
+        assertThat(warn.getFormattedMessage()).contains("100004").contains("内置数据不可删除");
         assertThat(warn.getThrowableProxy()).isNull();
         final ILoggingEvent error = appender.list.get(1);
         assertThat(error.getLevel()).isEqualTo(Level.ERROR);
@@ -234,12 +234,12 @@ class WebLayerTest {
     }
 
     @Test
-    @DisplayName("未登录访问非公开接口返回 401 / 40100")
+    @DisplayName("未登录访问非公开接口返回 401 / 100101")
     void rejectsAnonymous() throws Exception {
         this.mockMvc
                 .perform(get("/api/test/me"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value(40100));
+                .andExpect(jsonPath("$.code").value(100101));
         this.mockMvc
                 .perform(get("/api/test/me").header("Authorization", "Bearer nope"))
                 .andExpect(status().isUnauthorized());
@@ -270,31 +270,31 @@ class WebLayerTest {
         this.mockMvc
                 .perform(get("/api/test/me").cookie(new Cookie(AuthCookies.TOKEN_COOKIE, "nope")))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value(40100));
+                .andExpect(jsonPath("$.code").value(100101));
     }
 
     @Test
-    @DisplayName("Cookie 认证的写请求：缺 CSRF 头、头与 Cookie 不一致、CSRF 值不属于当前用户都返回 403 / 40302 且不执行业务")
+    @DisplayName("Cookie 认证的写请求：缺 CSRF 头、头与 Cookie 不一致、CSRF 值不属于当前用户都返回 403 / 100103 且不执行业务")
     void rejectsCookieWriteWithoutValidCsrf() throws Exception {
         final Cookie token = new Cookie(AuthCookies.TOKEN_COOKIE, "user");
         this.mockMvc
                 .perform(post("/api/test/write")
                         .cookie(token, new Cookie(AuthCookies.CSRF_COOKIE, WebLayerTest.USER_CSRF)))
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value(40302));
+                .andExpect(jsonPath("$.code").value(100103));
         this.mockMvc
                 .perform(post("/api/test/write")
                         .cookie(token, new Cookie(AuthCookies.CSRF_COOKIE, WebLayerTest.USER_CSRF))
                         .header(AuthCookies.CSRF_HEADER, "2.other"))
-                .andExpect(jsonPath("$.code").value(40302));
+                .andExpect(jsonPath("$.code").value(100103));
         this.mockMvc
                 .perform(post("/api/test/write").cookie(token).header(AuthCookies.CSRF_HEADER, WebLayerTest.USER_CSRF))
-                .andExpect(jsonPath("$.code").value(40302));
+                .andExpect(jsonPath("$.code").value(100103));
         this.mockMvc
                 .perform(post("/api/test/write")
                         .cookie(token, new Cookie(AuthCookies.CSRF_COOKIE, "1.abc"))
                         .header(AuthCookies.CSRF_HEADER, "1.abc"))
-                .andExpect(jsonPath("$.code").value(40302));
+                .andExpect(jsonPath("$.code").value(100103));
         assertThat(WebLayerTest.WRITES.get()).isZero();
         assertThat(CurrentUser.get()).isEmpty();
     }
@@ -332,12 +332,12 @@ class WebLayerTest {
     }
 
     @Test
-    @DisplayName("缺权限返回 403 / 40300，超级管理员直接放行")
+    @DisplayName("缺权限返回 403 / 100102，超级管理员直接放行")
     void checksPermission() throws Exception {
         this.mockMvc
                 .perform(get("/api/test/perm").header("Authorization", "Bearer user"))
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value(40300));
+                .andExpect(jsonPath("$.code").value(100102));
         assertThat(CurrentUser.get()).isEmpty();
         this.mockMvc
                 .perform(get("/api/test/perm").header("Authorization", "bearer admin"))
@@ -347,14 +347,14 @@ class WebLayerTest {
     }
 
     @Test
-    @DisplayName("请求体校验失败返回 40000，message 形如「字段: 提示」")
+    @DisplayName("请求体校验失败返回 100001，message 形如「字段: 提示」")
     void reportsValidationError() throws Exception {
         this.mockMvc
                 .perform(post("/api/test/body")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(40000))
+                .andExpect(jsonPath("$.code").value(100001))
                 .andExpect(jsonPath("$.message").value("name: 不能为空"));
         this.mockMvc
                 .perform(post("/api/test/body")
@@ -380,16 +380,16 @@ class WebLayerTest {
         this.mockMvc
                 .perform(get("/api/test/duplicate"))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value(40900));
+                .andExpect(jsonPath("$.code").value(100003));
         this.mockMvc
                 .perform(get("/api/test/boom"))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.code").value(50000))
+                .andExpect(jsonPath("$.code").value(100005))
                 .andExpect(jsonPath("$.message").value("服务器内部错误"));
     }
 
     @Test
-    @DisplayName("不存在的请求方法映射为 40000")
+    @DisplayName("不存在的请求方法映射为 100001")
     void mapsMethodNotSupported() throws Exception {
         this.mockMvc
                 .perform(post("/api/test/public"))
@@ -401,7 +401,7 @@ class WebLayerTest {
     @DisplayName("类上标 @SkipApiResponse：对象原样输出，不包统一响应")
     void skipsWrappingForAnnotatedClass() throws Exception {
         this.mockMvc
-                .perform(get("/api-web/skip/object"))
+                .perform(get("/external-api/skip/object"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.msg").value("ok"))
@@ -412,7 +412,7 @@ class WebLayerTest {
     @DisplayName("@SkipApiResponse 下返回 String 原样输出，不被序列化成 JSON 字符串")
     void skipsWrappingForStringReturnValue() throws Exception {
         this.mockMvc
-                .perform(get("/api-web/skip/text"))
+                .perform(get("/external-api/skip/text"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("pong"));
     }
@@ -421,15 +421,15 @@ class WebLayerTest {
     @DisplayName("方法上标 @SkipApiResponse 或其组合注解只跳过该方法，同类其他方法照常包装")
     void skipsWrappingOnlyForAnnotatedMethod() throws Exception {
         this.mockMvc
-                .perform(get("/api-web/mixed/skipped"))
+                .perform(get("/external-api/mixed/skipped"))
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data").doesNotExist());
         this.mockMvc
-                .perform(get("/api-web/mixed/meta"))
+                .perform(get("/external-api/mixed/meta"))
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data").doesNotExist());
         this.mockMvc
-                .perform(get("/api-web/mixed/wrapped"))
+                .perform(get("/external-api/mixed/wrapped"))
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.code").value(200));
     }

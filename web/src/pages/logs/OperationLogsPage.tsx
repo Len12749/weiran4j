@@ -110,6 +110,7 @@ export default function OperationLogsPage() {
     ];
 
     const columns: ColumnProps<OperationLogView>[] = [
+        { title: 'ID', dataIndex: 'id', width: 180 },
         { title: '操作人', dataIndex: 'username', width: 110, render: (v: string | null) => v || '—' },
         { title: '模块', dataIndex: 'module', width: 110 },
         { title: '描述', dataIndex: 'description', width: 150 },

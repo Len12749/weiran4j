@@ -93,29 +93,36 @@ interface NavListItemProps {
     style?: CSSProperties;
 }
 
-/** NavListPanel 的条目：圆角卡片，悬停 / 选中有底色；extra 区（含其弹出菜单）的点击不会触发 onClick */
+/** NavListPanel 的条目：有 onClick 时主体是原生按钮；extra 区与按钮并列，不触发条目选择 */
 export function NavListItem({ active, onClick, primary, secondary, meta, extra, className, style }: NavListItemProps) {
+    const content = (
+        <>
+            <div className="nav-list-item__row1">
+                <span className="nav-list-item__primary">{primary}</span>
+                {secondary !== undefined && (
+                    <>
+                        <span className="nav-list-item__sep">·</span>
+                        <span className="nav-list-item__secondary">{secondary}</span>
+                    </>
+                )}
+            </div>
+            {meta !== undefined && <div className="nav-list-item__meta">{meta}</div>}
+        </>
+    );
     return (
         <List.Item
             className={['nav-list-item', active ? 'nav-list-item--active' : '', className ?? ''].filter(Boolean).join(' ')}
-            {...(onClick ? { onClick } : {})}
             {...(style ? { style } : {})}
         >
-            <div className="nav-list-item__body">
-                <div className="nav-list-item__row1">
-                    <span className="nav-list-item__primary">{primary}</span>
-                    {secondary !== undefined && (
-                        <>
-                            <span className="nav-list-item__sep">·</span>
-                            <span className="nav-list-item__secondary">{secondary}</span>
-                        </>
-                    )}
-                </div>
-                {meta !== undefined && <div className="nav-list-item__meta">{meta}</div>}
-            </div>
+            {onClick ? (
+                <button type="button" className="nav-list-item__body" aria-pressed={active ?? false} onClick={onClick}>
+                    {content}
+                </button>
+            ) : (
+                <div className="nav-list-item__body">{content}</div>
+            )}
             {extra !== undefined && (
-                // 操作区的点击不冒泡给条目：Semi Dropdown 的菜单虽渲染在 portal 里，React 事件仍沿组件树冒泡到 List.Item，
-                // 不拦的话点「…」或点菜单里的「编辑」都会顺带选中该条目
+                // 操作区与选择按钮是兄弟节点；仍拦住 portal 内菜单点击的 React 冒泡。
                 <div className="nav-list-item__extra" onClick={(e) => e.stopPropagation()}>
                     {extra}
                 </div>

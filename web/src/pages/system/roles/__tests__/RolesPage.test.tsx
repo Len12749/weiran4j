@@ -55,7 +55,7 @@ describe('RolesPage', () => {
     afterEach(() => vi.unstubAllGlobals());
 
     it('渲染角色列表', async () => {
-        mockFetch({ 'GET /api/roles': page([editor]), 'GET /api/dicts/code/sys_common_status/items': [] });
+        mockFetch({ 'GET /api/system/role/list': page([editor]), 'GET /api/system/dict/listItemsByCode/sys_common_status': [] });
         renderWithProviders(<RolesPage />);
         expect(await screen.findByText('editor')).toBeInTheDocument();
         expect(screen.getByText('内容编辑')).toBeInTheDocument();
@@ -63,11 +63,11 @@ describe('RolesPage', () => {
 
     it('分配权限：读取已有 menuIds，全选后 PUT 全量菜单 id', async () => {
         const { calls } = mockFetch({
-            'GET /api/roles': page([editor]),
-            'GET /api/dicts/code/sys_common_status/items': [],
-            'GET /api/menus': menus,
-            'GET /api/roles/2': { ...editor, menuIds: [2, 3] },
-            'PUT /api/roles/2/menus': null,
+            'GET /api/system/role/list': page([editor]),
+            'GET /api/system/dict/listItemsByCode/sys_common_status': [],
+            'GET /api/system/menu/list': menus,
+            'GET /api/system/role/get/2': { ...editor, menuIds: [2, 3] },
+            'PUT /api/system/role/assignMenus/2': null,
         });
         renderWithProviders(<RolesPage />);
         await screen.findByText('editor');
@@ -82,13 +82,13 @@ describe('RolesPage', () => {
         const sheet = screen.getByText('分配权限：编辑').closest('.semi-sidesheet') as HTMLElement;
         fireEvent.click(within(sheet).getByText('保存').closest('button')!);
 
-        await waitFor(() => expect(calls.some((c) => c.method === 'PUT' && c.path === '/api/roles/2/menus')).toBe(true));
-        const put = calls.find((c) => c.method === 'PUT' && c.path === '/api/roles/2/menus');
+        await waitFor(() => expect(calls.some((c) => c.method === 'PUT' && c.path === '/api/system/role/assignMenus/2')).toBe(true));
+        const put = calls.find((c) => c.method === 'PUT' && c.path === '/api/system/role/assignMenus/2');
         expect((put?.body as { menuIds: number[] }).menuIds.sort((a, b) => a - b)).toEqual([2, 3, 100]);
     });
 
     it('新增角色：编码不合规时不提交', async () => {
-        const { calls } = mockFetch({ 'GET /api/roles': page([]), 'GET /api/dicts/code/sys_common_status/items': [] });
+        const { calls } = mockFetch({ 'GET /api/system/role/list': page([]), 'GET /api/system/dict/listItemsByCode/sys_common_status': [] });
         renderWithProviders(<RolesPage />);
         fireEvent.click(await screen.findByRole('button', { name: '新增角色' }));
         const dialog = await screen.findByRole('dialog');

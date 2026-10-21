@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 操作日志接口 {@code /api/operation-logs}。 */
+/** 操作日志接口。 */
 @RestController
-@RequestMapping("/api/operation-logs")
+@RequestMapping("/api/system/operationLog")
 public class OperationLogController {
 
     private final OperationLogService operationLogService;
@@ -28,7 +28,7 @@ public class OperationLogController {
 
     /** 分页查询，按 ID 倒序；{@code success} 传 {@code true / false}。 */
     @RequiresPermission("system:operation-log:list")
-    @GetMapping
+    @GetMapping("/list")
     public PageResult<OperationLogView> page(
             @RequestParam(required = false) final @Nullable String username,
             @RequestParam(required = false) final @Nullable String module,
@@ -43,7 +43,7 @@ public class OperationLogController {
 
     /** 详情。 */
     @RequiresPermission("system:operation-log:list")
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     public OperationLogView get(@PathVariable final long id) {
         return this.operationLogService.get(id);
     }

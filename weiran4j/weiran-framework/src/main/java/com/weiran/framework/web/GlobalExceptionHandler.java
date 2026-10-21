@@ -29,7 +29,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
- * 全局异常处理：所有异常都转换成 {@link ApiResponse}，HTTP 状态码与错误码前三位一致。
+ * 全局异常处理：所有异常都转换成 {@link ApiResponse}，HTTP 状态由错误定义单独决定。
  *
  * <p>Spring MVC 自身的异常（参数校验、请求体不可读、404、405 等）由父类
  * {@link ResponseEntityExceptionHandler} 分派，本类只在 {@link #handleExceptionInternal} 里统一改写响应体，

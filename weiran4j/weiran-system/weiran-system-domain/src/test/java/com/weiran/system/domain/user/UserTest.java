@@ -99,7 +99,7 @@ class UserTest {
     }
 
     @Test
-    @DisplayName("性别过滤条件：空与空白不过滤，合法值解析，非法值 40000")
+    @DisplayName("性别过滤条件：空与空白不过滤，合法值解析，非法值 100001")
     void parsesGenderFilter() {
         assertThat(Gender.filterOf(null)).isNull();
         assertThat(Gender.filterOf(" ")).isNull();
@@ -108,6 +108,6 @@ class UserTest {
         assertThatThrownBy(() -> Gender.filterOf("x"))
                 .isInstanceOfSatisfying(
                         BizException.class,
-                        e -> assertThat(e.getErrorCode().code()).isEqualTo(40000));
+                        e -> assertThat(e.getErrorCode().code()).isEqualTo(100001));
     }
 }

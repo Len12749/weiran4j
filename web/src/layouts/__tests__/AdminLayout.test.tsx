@@ -70,11 +70,11 @@ function renderAuthed(route = '/dashboard', prefs: Partial<UserPreferences> = {}
     signIn(1);
     savePreferences({ ...defaultPreferences, ...prefs }, 1);
     const fetch = mockFetch({
-        'GET /api/auth/me': me,
-        'GET /api/auth/menus': menus,
-        'GET /api/auth/preferences': null,
-        'PUT /api/auth/preferences': null,
-        'GET /api/dicts/code/sys_user_gender/items': [],
+        'GET /api/system/auth/getCurrentUser': me,
+        'GET /api/system/auth/listCurrentMenus': menus,
+        'GET /api/system/auth/getPreferences': null,
+        'PUT /api/system/auth/updatePreferences': null,
+        'GET /api/system/dict/listItemsByCode/sys_user_gender': [],
     });
     return { ...renderWithProviders(<App />, { route }), fetch };
 }

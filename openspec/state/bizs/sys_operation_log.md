@@ -59,7 +59,7 @@
 
 **分页**：`page` 默认 1、`pageSize` 默认 20（上限 200）；前端可切换条数、显示总数。
 
-**详情侧滑**（宽 640，`GET /api/operation-logs/{id}`，不存在 40400）：操作人、模块、描述、请求、结果、响应码、耗时、IP、
+**详情侧滑**（宽 640，`GET /api/operation-logs/{id}`，不存在 100002）：操作人、模块、描述、请求、结果、响应码、耗时、IP、
 User-Agent、时间、错误信息（有才显示）；请求体是 JSON 时格式化展示，否则原样，空显示「（无）」。
 
 ## 2. 字段与表单
@@ -72,7 +72,7 @@ User-Agent、时间、错误信息（有才显示）；请求体是 JSON 时格�
 | `module` / `description` | `varchar(64)` / `varchar(128)` | `@OperationLog(module, description)`，按列宽截断 |
 | `method` / `path` | `varchar(16)` / `varchar(256)` | `request.getMethod()` / `request.getRequestURI()`（不含查询串），截断 |
 | `request_body` | `varchar(4096) null` | 标了 `@RequestBody` 的参数重新序列化为 JSON 后脱敏，截断到 4096（超长以 `...` 结尾）；无请求体为 `NULL` |
-| `response_code` | `int` | 成功 0；`BizException` 取其错误码；其它异常 50000 |
+| `response_code` | `int` | 成功 0；`BizException` 取其错误码；其它异常 100005 |
 | `success` | `tinyint(1)` | 是否未抛异常 |
 | `error_message` | `varchar(512) null` | `BizException` 的 message（截断到 512）；其它异常固定为通用 500 文案，不暴露堆栈 |
 | `duration_ms` | `bigint` | 方法执行耗时 |

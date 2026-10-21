@@ -12,7 +12,7 @@
 | 菜单 / 权限点 | `sys_menu` | weiran-system | `/system/menus` | `system/menus/MenusPage` | [`sys_menu.md`](sys_menu.md) |
 | 部门 | `sys_department` | weiran-system | `/system/departments` | `system/departments/DepartmentsPage` | [`sys_department.md`](sys_department.md) |
 | 登录日志 | `sys_login_log` | weiran-system | `/logs/login` | `logs/LoginLogsPage` | [`sys_login_log.md`](sys_login_log.md) |
-| 字典 / 字典项 | `sys_dict` / `sys_dict_item` | weiran-system | `/system/dicts` | `system/dicts/DictsPage` | [`sys_dict.md`](sys_dict.md) |
+| 字典 / 字典项 / 配置分组 | `sys_group` / `sys_dict_item` | weiran-system | `/system/dicts`、`/system/configs` | `system/dicts/DictsPage`、`system/configs/ConfigsPage` | [`sys_group.md`](sys_group.md)、[`sys_config.md`](sys_config.md) |
 | 系统配置 | `sys_config` | weiran-system | `/system/configs` | `system/configs/ConfigsPage` | [`sys_config.md`](sys_config.md) |
 | 操作日志 | `sys_operation_log` | weiran-system | `/logs/operation` | `logs/OperationLogsPage` | [`sys_operation_log.md`](sys_operation_log.md) |
 
@@ -29,8 +29,8 @@
 | 角色 ↔ 菜单 | `sys_role_menu(role_id, menu_id)` 多对多 | `PUT /api/roles/{id}/menus` 全量覆盖;前端勾选子节点会连带父目录 |
 | 用户 → 部门 | `sys_user.department_id` | 部门下有用户时不能删 |
 | 部门 → 负责人 | `sys_department.leader_id → sys_user.id` | 可空 |
-| 部门 / 菜单 树 | `parent_id`(0 = 根) | 不能挂到自己或后代下(`40901`) |
-| 字典 → 字典项 | `sys_dict_item.dict_id` | 删字典级联删字典项;`(dict_id, value)` 唯一 |
+| 部门 / 菜单 树 | `parent_id`(0 = 根) | 不能挂到自己或后代下(`100004`) |
+| 字典组 → 字典项 | `sys_dict_item.group_id` | 仅 `sys_group.type=dict` 管理字典项；删字典组级联删字典项；`(group_id, value)` 唯一 |
 | 日志 → 用户 | `sys_login_log.user_id` / `sys_operation_log.user_id` | 快照 `username`,用户删除后日志仍可读 |
 
 ## 3. 跨模块业务口径问题

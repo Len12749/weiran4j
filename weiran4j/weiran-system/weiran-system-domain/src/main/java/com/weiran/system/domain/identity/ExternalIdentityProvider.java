@@ -30,7 +30,7 @@ public interface ExternalIdentityProvider {
     String authorizeUrl(SsoState state, String callbackUrl);
 
     /**
-     * 处理回调：换码 / 验票并校验。任何校验失败都返回空（调用方统一按 40102 处理），不抛异常。
+     * 处理回调：换码 / 验票并校验。任何校验失败都返回空（调用方统一按 110102 处理），不抛异常。
      *
      * @param params 回调的查询参数
      * @param state 已验签的流程状态

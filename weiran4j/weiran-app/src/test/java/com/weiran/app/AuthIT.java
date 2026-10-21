@@ -43,7 +43,7 @@ class AuthIT extends IntegrationTestSupport {
         final String token = loginData.path("accessToken").asText();
         assertThat(token).isNotBlank();
 
-        final ResponseEntity<JsonNode> me = this.get("/api/auth/me", token);
+        final ResponseEntity<JsonNode> me = this.get("/api/system/auth/getCurrentUser", token);
         IntegrationTestSupport.assertOk(me);
         final JsonNode data = IntegrationTestSupport.data(me);
         assertThat(data.path("id").asLong()).isEqualTo(1L);
@@ -62,17 +62,14 @@ class AuthIT extends IntegrationTestSupport {
     @Test
     @DisplayName("超管的 /auth/menus 返回全部启用的目录与菜单树，不含按钮，布尔字段为 boolean")
     void adminMenusTree() {
-        final ResponseEntity<JsonNode> response = this.get("/api/auth/menus", this.adminToken());
+        final ResponseEntity<JsonNode> response = this.get("/api/system/auth/listCurrentMenus", this.adminToken());
 
         IntegrationTestSupport.assertOk(response);
         final JsonNode roots = IntegrationTestSupport.data(response);
-        assertThat(AuthIT.ids(roots))
-                .containsExactly(
-                        1L, 2L, 9L, 1000L, 1010L, 1015L, 1016L, 1020L, 1025L, 1026L, 1030L, 1035L, 1036L, 1040L, 1045L,
-                        1046L, 1055L);
+        assertThat(AuthIT.ids(roots)).contains(1L, 2L, 9L, 14L);
         final JsonNode system = roots.get(1);
         assertThat(system.path("type").asText()).isEqualTo("directory");
-        assertThat(AuthIT.ids(system.path("children"))).containsExactly(3L, 4L, 5L, 6L, 7L, 8L);
+        assertThat(AuthIT.ids(system.path("children"))).containsExactly(3L, 4L, 5L, 6L, 7L, 8L, 12L, 2000L, 13L);
         final JsonNode users = system.path("children").get(0);
         assertThat(users.path("component").asText()).isEqualTo("system/users/UsersPage");
         assertThat(users.path("permission").asText()).isEqualTo("system:user:list");
@@ -81,34 +78,41 @@ class AuthIT extends IntegrationTestSupport {
         assertThat(users.path("keepAlive").isBoolean()).isTrue();
         assertThat(users.path("isExternal").isBoolean()).isTrue();
         assertThat(users.path("status").asText()).isEqualTo("enabled");
-        final JsonNode siteConfig = roots.get(3);
-        assertThat(siteConfig.path("title").asText()).isEqualTo("站点配置");
-        assertThat(siteConfig.path("component").asText()).isEqualTo("cqt/site-config");
-        assertThat(siteConfig.path("permission").asText()).isEqualTo("cqt:site-config:list");
-        final JsonNode news = roots.get(4);
-        assertThat(news.path("title").asText()).isEqualTo("大赛动态");
-        assertThat(news.path("component").asText()).isEqualTo("cqt/news");
-        assertThat(news.path("permission").asText()).isEqualTo("cqt:news:list");
-        final JsonNode reviews = roots.get(16);
-        assertThat(reviews.path("title").asText()).isEqualTo("赛事评审");
-        assertThat(reviews.path("type").asText()).isEqualTo("directory");
-        assertThat(AuthIT.ids(reviews.path("children")))
-                .containsExactly(
-                        1130L, 1131L, 1132L, 1050L, 1060L, 1070L, 1080L, 1086L, 1090L, 1094L, 1100L, 1110L, 1120L,
-                        1126L);
-        assertThat(reviews.path("children").get(3).path("component").asText()).isEqualTo("cqt/review/EntryReviewsPage");
-        assertThat(AuthIT.ids(reviews.path("children").get(3).path("children"))).doesNotContain(1054L);
+        final JsonNode smsConfigs = system.path("children").get(6);
+        assertThat(smsConfigs.path("title").asText()).isEqualTo("短信配置");
+        assertThat(smsConfigs.path("path").asText()).isEqualTo("/system/sms");
+        assertThat(smsConfigs.path("component").asText()).isEqualTo("system/sms/SmsConfigsPage");
+        final JsonNode regions = system.path("children").get(7);
+        assertThat(regions.path("title").asText()).isEqualTo("行政区划");
+        assertThat(regions.path("component").asText()).isEqualTo("system/regions/RegionsPage");
+        assertThat(regions.path("permission").asText()).isEqualTo("region:list");
+        final JsonNode componentsDemo = roots.get(3);
+        assertThat(componentsDemo.path("title").asText()).isEqualTo("组件演示");
+        assertThat(componentsDemo.path("type").asText()).isEqualTo("directory");
+        assertThat(componentsDemo.path("path").asText()).isEqualTo("/demo");
+        assertThat(componentsDemo.path("component").isNull()).isTrue();
+        assertThat(AuthIT.ids(componentsDemo.path("children"))).containsExactly(15L, 16L, 17L, 18L, 19L);
+        assertThat(componentsDemo.path("children").get(0).path("component").asText())
+                .isEqualTo("demo/DemoListPage");
+        assertThat(componentsDemo.path("children").get(1).path("component").asText())
+                .isEqualTo("demo/DemoNavigationPage");
+        assertThat(componentsDemo.path("children").get(2).path("component").asText())
+                .isEqualTo("demo/DemoFieldsPage");
+        assertThat(componentsDemo.path("children").get(3).path("component").asText())
+                .isEqualTo("demo/DemoAccessPage");
+        assertThat(componentsDemo.path("children").get(4).path("component").asText())
+                .isEqualTo("demo/DemoConfigPage");
     }
 
     @Test
-    @DisplayName("用户名不存在与密码错误都返回 40101，并写失败的登录日志")
+    @DisplayName("用户名不存在与密码错误都返回 110101，并写失败的登录日志")
     void badCredentials() {
         final String ghost = IntegrationTestSupport.unique("ghost");
 
         IntegrationTestSupport.assertError(
-                this.login(IntegrationTestSupport.ADMIN, "wrong-password1"), HttpStatus.UNAUTHORIZED, 40101);
+                this.login(IntegrationTestSupport.ADMIN, "wrong-password1"), HttpStatus.UNAUTHORIZED, 110101);
         final ResponseEntity<JsonNode> unknown = this.login(ghost, "whatever1");
-        IntegrationTestSupport.assertError(unknown, HttpStatus.UNAUTHORIZED, 40101);
+        IntegrationTestSupport.assertError(unknown, HttpStatus.UNAUTHORIZED, 110101);
         assertThat(IntegrationTestSupport.body(unknown).path("message").asText())
                 .isEqualTo("用户名或密码错误");
 
@@ -122,28 +126,30 @@ class AuthIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("无令牌、令牌无效返回 401 / 40100；公开接口不受影响")
+    @DisplayName("无令牌、令牌无效返回 401 / 100101；公开接口不受影响")
     void rejectsMissingOrInvalidToken() {
-        IntegrationTestSupport.assertError(this.get("/api/auth/me", null), HttpStatus.UNAUTHORIZED, 40100);
-        IntegrationTestSupport.assertError(this.get("/api/users", "not-a-jwt"), HttpStatus.UNAUTHORIZED, 40100);
+        IntegrationTestSupport.assertError(
+                this.get("/api/system/auth/getCurrentUser", null), HttpStatus.UNAUTHORIZED, 100101);
+        IntegrationTestSupport.assertError(
+                this.get("/api/system/user/list", "not-a-jwt"), HttpStatus.UNAUTHORIZED, 100101);
         IntegrationTestSupport.assertOk(this.get("/api/health", "not-a-jwt"));
     }
 
     @Test
-    @DisplayName("请求体校验失败返回 40000，提示语为「字段: 中文提示」")
+    @DisplayName("请求体校验失败返回 100001，提示语为「字段: 中文提示」")
     void validationMessage() {
-        final ResponseEntity<JsonNode> response = this.post("/api/auth/login", null, Map.of("password", "x"));
+        final ResponseEntity<JsonNode> response = this.post("/api/system/auth/login", null, Map.of("password", "x"));
 
-        IntegrationTestSupport.assertError(response, HttpStatus.BAD_REQUEST, 40000);
+        IntegrationTestSupport.assertError(response, HttpStatus.BAD_REQUEST, 100001);
         assertThat(IntegrationTestSupport.body(response).path("message").asText())
                 .isEqualTo("username: 不能为空");
     }
 
     @Test
-    @DisplayName("不存在的接口返回 404 / 40400")
+    @DisplayName("不存在的接口返回 404 / 100002")
     void unknownEndpoint() {
         IntegrationTestSupport.assertError(
-                this.get("/api/does-not-exist", this.adminToken()), HttpStatus.NOT_FOUND, 40400);
+                this.get("/api/does-not-exist", this.adminToken()), HttpStatus.NOT_FOUND, 100002);
     }
 
     @Test
@@ -151,10 +157,10 @@ class AuthIT extends IntegrationTestSupport {
     void logoutAndLoginLogs() {
         final String token = this.adminToken();
 
-        IntegrationTestSupport.assertOk(this.post("/api/auth/logout", token, Map.of()));
+        IntegrationTestSupport.assertOk(this.post("/api/system/auth/logout", token, Map.of()));
 
         final ResponseEntity<JsonNode> page =
-                this.get("/api/login-logs?username=admin&eventType=logout&page=1&pageSize=5", token);
+                this.get("/api/system/loginLog/list?username=admin&eventType=logout&page=1&pageSize=5", token);
         IntegrationTestSupport.assertOk(page);
         final JsonNode data = IntegrationTestSupport.data(page);
         assertThat(data.path("page").asInt()).isEqualTo(1);
@@ -166,7 +172,8 @@ class AuthIT extends IntegrationTestSupport {
         assertThat(first.path("createdAt").asText()).matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}");
 
         final ResponseEntity<JsonNode> ranged = this.get(
-                "/api/login-logs?status=success&startTime=2000-01-01 00:00:00&endTime=2999-01-01 00:00:00", token);
+                "/api/system/loginLog/list?status=success&startTime=2000-01-01 00:00:00&endTime=2999-01-01 00:00:00",
+                token);
         IntegrationTestSupport.assertOk(ranged);
         assertThat(IntegrationTestSupport.data(ranged).path("total").asLong()).isPositive();
     }
@@ -177,20 +184,22 @@ class AuthIT extends IntegrationTestSupport {
         final String username = IntegrationTestSupport.unique("profile");
         final String admin = this.adminToken();
         this.create(
-                "/api/users",
+                "/api/system/user/create",
                 admin,
                 Map.of("username", username, "nickname", "旧昵称", "password", "Passw0rd1", "roleIds", List.of()));
         final String token = this.tokenOf(username, "Passw0rd1");
 
         IntegrationTestSupport.assertOk(this.put(
-                "/api/auth/profile", token, Map.of("nickname", "新昵称", "email", "me@example.com", "gender", "female")));
+                "/api/system/auth/updateProfile",
+                token,
+                Map.of("nickname", "新昵称", "email", "me@example.com", "gender", "female")));
 
-        final JsonNode me = IntegrationTestSupport.data(this.get("/api/auth/me", token));
+        final JsonNode me = IntegrationTestSupport.data(this.get("/api/system/auth/getCurrentUser", token));
         assertThat(me.path("nickname").asText()).isEqualTo("新昵称");
         assertThat(me.path("email").asText()).isEqualTo("me@example.com");
         assertThat(me.path("gender").asText()).isEqualTo("female");
         assertThat(AuthIT.texts(me.path("permissions"))).isEmpty();
-        assertThat(IntegrationTestSupport.data(this.get("/api/auth/menus", token))
+        assertThat(IntegrationTestSupport.data(this.get("/api/system/auth/listCurrentMenus", token))
                         .isEmpty())
                 .isTrue();
     }

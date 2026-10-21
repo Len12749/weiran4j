@@ -30,7 +30,7 @@ public enum ConfigType {
         return this.value;
     }
 
-    /** 解析字符串值，非法值抛 40000。 */
+    /** 解析字符串值，非法值抛 100001。 */
     public static ConfigType of(final String value) {
         return Arrays.stream(ConfigType.values())
                 .filter(type -> type.value.equals(value))
@@ -38,7 +38,7 @@ public enum ConfigType {
                 .orElseThrow(() -> BizException.badRequest("configType: 取值只能是 string、number、boolean 或 json"));
     }
 
-    /** 按类型校验配置值，不合法抛 40000。 */
+    /** 按类型校验配置值，不合法抛 100001。 */
     public void validate(final String configValue, final JsonSyntax jsonSyntax) {
         final boolean valid =
                 switch (this) {

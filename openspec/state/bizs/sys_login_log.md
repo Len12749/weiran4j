@@ -81,8 +81,8 @@
 | 触发 | 接口 | 权限 | `@OperationLog` | 写入的记录 |
 | --- | --- | --- | --- | --- |
 | 登录成功 | `POST /api/auth/login` | 免登录 | 否 | `login / success`「登录成功」；同时定向更新 `sys_user.last_login_at/ip` |
-| 用户名不存在或密码错误 | 同上 | 免登录 | 否 | `login / fail`「用户名或密码错误」；两种情况同一错误码 40101、同一文案，用户名不存在时仍空跑一次 BCrypt 以抹平耗时差 |
-| 账号已禁用 | 同上 | 免登录 | 否 | `login / fail`「账号已禁用」；返回 40301 |
+| 用户名不存在或密码错误 | 同上 | 免登录 | 否 | `login / fail`「用户名或密码错误」；两种情况同一错误码 110101、同一文案，用户名不存在时仍空跑一次 BCrypt 以抹平耗时差 |
+| 账号已禁用 | 同上 | 免登录 | 否 | `login / fail`「账号已禁用」；返回 110103 |
 | 登出 | `POST /api/auth/logout` | 仅登录 | 否 | `logout / success`「登出成功」 |
 | 查询 | `GET /api/login-logs` | `system:login-log:list` | 否 | — |
 

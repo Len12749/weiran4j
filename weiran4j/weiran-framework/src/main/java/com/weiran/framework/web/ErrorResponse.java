@@ -11,7 +11,7 @@ import org.slf4j.MDC;
  * 用户截图报障时就能直接拿到它。只由 {@link GlobalExceptionHandler} 产生，{@link ApiResponseBodyAdvice} 原样放行。
  * 放在 web 包而不是纯 Java 的 response 包：请求号来自框架的 {@link RequestIdFilter}（MDC），纯契约不该知道这些。
  *
- * @param code 五位错误码
+ * @param code 六位错误码
  * @param message 提示语
  * @param data 恒为 {@code null}
  * @param requestId 本次请求的请求号，与响应头 {@code X-Request-Id} 相同

@@ -11,6 +11,7 @@ dist/
 coverage/
 *.tsbuildinfo
 .turbo/
+docs/.vitepress/cache/
 
 # Env
 *.local

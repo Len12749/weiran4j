@@ -46,10 +46,10 @@
 
 | 动作 | 接口 | 规则 |
 | --- | --- | --- |
-| 外部登录 | authorize → callback | 只认 `(provider, external_id)`;未绑定时,提供方开了 `auto-provision` 就自动开通,否则返回 40303;**本地同名用户不会被自动关联**(40303) |
-| 自助绑定 | authorize `mode=bind` → callback | 必须已登录;已绑给自己时视为成功;绑给了别人返回 40901;写一条操作日志 |
-| 自助解绑 | `DELETE /api/auth/identities/{id}` | 没有本地密码且只剩这一个外部身份时 40901(防锁死) |
-| 管理员绑定 | `POST /api/users/{id}/identities` | 提供方未配置 40000;外部身份已被绑定 40901 |
+| 外部登录 | authorize → callback | 只认 `(provider, external_id)`;未绑定时,提供方开了 `auto-provision` 就自动开通,否则返回 110104;**本地同名用户不会被自动关联**(110104) |
+| 自助绑定 | authorize `mode=bind` → callback | 必须已登录;已绑给自己时视为成功;绑给了别人返回 100004;写一条操作日志 |
+| 自助解绑 | `DELETE /api/auth/identities/{id}` | 没有本地密码且只剩这一个外部身份时 100004(防锁死) |
+| 管理员绑定 | `POST /api/users/{id}/identities` | 提供方未配置 100001;外部身份已被绑定 100004 |
 | 管理员解绑 | `DELETE /api/users/{id}/identities/{identityId}` | 可以解绑最后一个(前端会提示「解绑后该用户可能无法登录」) |
 | 删除用户 | `DELETE /api/users/{id}` | 连带删除该用户的全部绑定 |
 

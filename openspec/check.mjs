@@ -185,6 +185,9 @@ const CHECK_DOC = {
   'REPO/state-id-dup': 'openspec/state/bizs/*.md 同一文件内两个条目用了同一个 #NN —— 跨文件引用「文件名.md#NN」从此指向两处,读的人拿到哪条全凭运气',
   'REPO/state-id-legacy': 'openspec/state/bizs/**/*.md 里又出现已废止的全局 T-NN/B-NN —— 旧编号不再对应任何条目,写下它等于写了一个永远翻不到的引用',
   'REPO/components-unregistered': '新增公共组件没登记进 rules/advisory/components.md —— 那份清单是「先查再造」的唯一依据,漏登记等于下一个人会把它重造一遍;清单自述的失效方向只有「删除/改协议」,少了「新增未登记」这一种',
+  'REPO/api-route-nonconforming': '新增 Spring Controller 路由不符合 /api/{module}/{resource}/{action} —— URL 结构无法从路径辨认所属模块、资源与动作,调用方与对外契约也会继续分叉',
+  'REPO/api-route-exception-reason': 'API 路由例外没有理由 —— 精确豁免失去审查依据,容易演变成无约束的例外',
+  'REPO/api-route-exception-stale': 'API 路由例外指向已删除的接口 —— 豁免清单残留会掩盖后续真实例外的审查',
   'REPO/rules-index-absent':
     '规则索引文件(AGENTS.md)不存在 —— rules/ 失去唯一的唤起途径,rules-index 检查也随之失效;'
     + '此前缺文件时是静默跳过,等于守卫消失却全绿',

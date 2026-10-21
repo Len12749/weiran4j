@@ -17,7 +17,7 @@ class UserPreferencesTest {
     }
 
     @Test
-    @DisplayName("恰好 16KB 通过，多 1 字节抛 40000")
+    @DisplayName("恰好 16KB 通过，多 1 字节抛 100001")
     void enforcesSizeLimitAtBoundary() {
         assertThatCode(() -> UserPreferences.validateSize(UserPreferencesTest.objectOfBytes(UserPreferences.MAX_BYTES)))
                 .doesNotThrowAnyException();

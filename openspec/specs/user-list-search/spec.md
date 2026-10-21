@@ -44,7 +44,7 @@ status: "active"
 ### Requirement: [FR-003] 性别过滤
 
 `GET /api/users` **MUST** 接受 `gender` 参数,取值只能是 `male`、`female`、`unknown`,只返回 `gender` 等于该值的用户;
-未传或为空白时 **MUST NOT** 按性别过滤。非法取值 **MUST** 返回业务错误 `40000`。
+未传或为空白时 **MUST NOT** 按性别过滤。非法取值 **MUST** 返回业务错误 `100001`。
 
 #### Scenario: 按性别过滤
 - **WHEN** 请求 `gender=female`
@@ -59,13 +59,13 @@ status: "active"
 #### Scenario: 非法性别值
 - **WHEN** 请求 `gender=x`
 - **THEN** 返回业务错误
-- **判据**:HTTP 400,响应 `code=40000`
+- **判据**:HTTP 400,响应 `code=100001`
 
 ### Requirement: [FR-004] 时间范围过滤
 
 `GET /api/users` **MUST** 接受 `createdStartTime` / `createdEndTime`(对 `created_at`)与 `lastLoginStartTime` / `lastLoginEndTime`
 (对 `last_login_at`),格式 `yyyy-MM-dd HH:mm:ss`,按闭区间过滤;只传一端时按单边过滤。
-传了最后登录时间任一端时,从未登录(`last_login_at` 为空)的用户 **MUST NOT** 被返回。格式非法 **MUST** 返回 `40000`。
+传了最后登录时间任一端时,从未登录(`last_login_at` 为空)的用户 **MUST NOT** 被返回。格式非法 **MUST** 返回 `100001`。
 
 #### Scenario: 闭区间包含边界
 - **WHEN** 用户 C 的 `created_at` 恰为 `T`,请求 `createdStartTime=T&createdEndTime=T`
@@ -80,7 +80,7 @@ status: "active"
 #### Scenario: 时间格式非法
 - **WHEN** 请求 `createdStartTime=2026-13-01`
 - **THEN** 返回业务错误
-- **判据**:HTTP 400,响应 `code=40000`
+- **判据**:HTTP 400,响应 `code=100001`
 
 ### Requirement: [FR-005] 条件组合与默认结果
 

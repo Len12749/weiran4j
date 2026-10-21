@@ -27,7 +27,7 @@ function stubFetch(server: { saved: number[] }) {
 }
 
 const ok = () => Response.json({ code: 0, message: 'ok', data: null });
-const fail = () => Response.json({ code: 40000, message: '菜单不可收藏', data: null }, { status: 400 });
+const fail = () => Response.json({ code: 100001, message: '菜单不可收藏', data: null }, { status: 400 });
 
 describe('useSaveFavoriteMenus', () => {
     afterEach(() => vi.unstubAllGlobals());

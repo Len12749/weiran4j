@@ -32,7 +32,7 @@ public class MybatisUserIdentityRepository implements UserIdentityRepository {
         return this.mapper
                 .selectList(Wrappers.lambdaQuery(SysUserIdentityDO.class)
                         .eq(SysUserIdentityDO::getUserId, userId)
-                        .orderByAsc(SysUserIdentityDO::getId))
+                        .orderByDesc(SysUserIdentityDO::getId))
                 .stream()
                 .map(MybatisUserIdentityRepository::toDomain)
                 .toList();

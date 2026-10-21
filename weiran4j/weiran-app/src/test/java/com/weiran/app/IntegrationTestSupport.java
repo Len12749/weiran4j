@@ -74,14 +74,14 @@ abstract class IntegrationTestSupport {
         final HttpHeaders headers = new HttpHeaders();
         headers.set(AuthCookies.AUTH_MODE_HEADER, AuthCookies.AUTH_MODE_TOKEN);
         return this.exchange(
-                HttpMethod.POST, "/api/auth/login", headers, Map.of("username", username, "password", password));
+                HttpMethod.POST, "/api/system/auth/login", headers, Map.of("username", username, "password", password));
     }
 
     /** 以浏览器默认的 Cookie 模式登录并返回原始响应（不带 {@code X-Auth-Mode}）。 */
     ResponseEntity<JsonNode> loginWithCookies(final String username, final String password) {
         return this.exchange(
                 HttpMethod.POST,
-                "/api/auth/login",
+                "/api/system/auth/login",
                 new HttpHeaders(),
                 Map.of("username", username, "password", password));
     }

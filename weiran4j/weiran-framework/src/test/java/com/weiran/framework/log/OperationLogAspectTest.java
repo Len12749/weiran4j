@@ -55,7 +55,7 @@ class OperationLogAspectTest {
 
     @BeforeEach
     void bindRequest() {
-        final MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/users");
+        final MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/system/user/create");
         request.setRemoteAddr("192.168.1.8");
         request.addHeader("User-Agent", "curl/8.7.1");
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
@@ -100,7 +100,7 @@ class OperationLogAspectTest {
         assertThat(event.module()).isEqualTo("用户管理");
         assertThat(event.description()).isEqualTo("新增用户");
         assertThat(event.method()).isEqualTo("POST");
-        assertThat(event.path()).isEqualTo("/api/users");
+        assertThat(event.path()).isEqualTo("/api/system/user/create");
         assertThat(event.ip()).isEqualTo("192.168.1.8");
         assertThat(event.userAgent()).isEqualTo("curl/8.7.1");
         assertThat(event.success()).isTrue();
@@ -121,7 +121,7 @@ class OperationLogAspectTest {
 
         assertThat(this.events).singleElement().satisfies(event -> {
             assertThat(event.success()).isFalse();
-            assertThat(event.responseCode()).isEqualTo(40901);
+            assertThat(event.responseCode()).isEqualTo(100004);
             assertThat(event.errorMessage()).isEqualTo("内置用户不可删除");
             assertThat(event.userId()).isNull();
             assertThat(event.requestBody()).isNull();

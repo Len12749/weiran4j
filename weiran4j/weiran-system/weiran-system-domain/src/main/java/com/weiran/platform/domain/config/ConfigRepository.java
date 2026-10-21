@@ -19,7 +19,7 @@ public interface ConfigRepository {
     boolean existsByKey(String configKey);
 
     /** 分组是否包含配置项。 */
-    boolean existsByGroupKey(String groupKey);
+    boolean existsByGroupKey(String groupKey, String keyPrefix);
 
     /** 新增或更新，返回 ID。 */
     long save(SystemConfig config);

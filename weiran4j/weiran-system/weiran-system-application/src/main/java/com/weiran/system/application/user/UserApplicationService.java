@@ -9,6 +9,7 @@ import com.weiran.framework.page.PageResult;
 import com.weiran.framework.status.EnableStatus;
 import com.weiran.framework.text.Texts;
 import com.weiran.system.api.user.CreateUserCommand;
+import com.weiran.system.api.user.UpdateUserAccountFieldCommand;
 import com.weiran.system.api.user.UpdateUserCommand;
 import com.weiran.system.api.user.UserOption;
 import com.weiran.system.api.user.UserQuery;
@@ -26,6 +27,7 @@ import com.weiran.system.domain.user.Gender;
 import com.weiran.system.domain.user.PasswordHasher;
 import com.weiran.system.domain.user.PasswordPolicy;
 import com.weiran.system.domain.user.User;
+import com.weiran.system.domain.user.UserAccountField;
 import com.weiran.system.domain.user.UserCriteria;
 import com.weiran.system.domain.user.UserRepository;
 import java.time.Clock;
@@ -41,6 +43,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 
 /** 用户管理用例。 */
@@ -115,6 +118,10 @@ public class UserApplicationService implements UserService {
         if (this.userRepository.existsByUsername(username)) {
             throw BizException.duplicate("用户名已存在");
         }
+        final String email = Texts.trimToNull(command.email());
+        final String phone = Texts.trimToNull(command.phone());
+        this.ensureEmailAvailable(email, null);
+        this.ensurePhoneAvailable(phone, null);
         PasswordPolicy.validate("password", command.password());
         this.ensureDepartmentExists(command.departmentId());
         this.ensureRolesGrantable(command.roleIds(), Set.of());
@@ -123,8 +130,8 @@ public class UserApplicationService implements UserService {
                 .username(username)
                 .nickname(command.nickname().strip())
                 .passwordHash(this.passwordHasher.hash(command.password()))
-                .email(Texts.trimToNull(command.email()))
-                .phone(Texts.trimToNull(command.phone()))
+                .email(email)
+                .phone(phone)
                 .gender(Gender.of(command.gender()))
                 .departmentId(command.departmentId())
                 .status(EnableStatus.ofNullable(command.status(), EnableStatus.ENABLED))
@@ -132,7 +139,12 @@ public class UserApplicationService implements UserService {
                 .passwordUpdatedAt(now)
                 .builtin(false)
                 .build();
-        final long id = this.userRepository.insert(user);
+        final long id;
+        try {
+            id = this.userRepository.insert(user);
+        } catch (final DuplicateKeyException ex) {
+            throw UserDuplicateErrors.from(ex, "用户账号信息已存在");
+        }
         this.userRepository.replaceRoles(id, command.roleIds());
         return id;
     }
@@ -141,6 +153,10 @@ public class UserApplicationService implements UserService {
     @Transactional
     public void update(final long id, final UpdateUserCommand command) {
         final User user = this.requireUser(id);
+        final String email = Texts.trimToNull(command.email());
+        final String phone = Texts.trimToNull(command.phone());
+        this.ensureEmailAvailable(email, id);
+        this.ensurePhoneAvailable(phone, id);
         this.ensureDepartmentExists(command.departmentId());
         final Set<Long> currentRoleIds = this.userRepository.findRoleIds(id);
         final List<Role> roles = this.ensureRolesGrantable(command.roleIds(), currentRoleIds);
@@ -150,18 +166,84 @@ public class UserApplicationService implements UserService {
         // PUT 中省略的可选枚举字段保持原值，避免「没传 status」把已禁用的用户悄悄启用。
         final User updated = user.withProfile(
                         command.nickname().strip(),
-                        Texts.trimToNull(command.email()),
-                        Texts.trimToNull(command.phone()),
+                        email,
+                        phone,
                         user.getAvatar(),
                         command.gender() == null ? user.getGender() : Gender.of(command.gender()))
                 .withAssignment(command.departmentId(), EnableStatus.ofNullable(command.status(), user.getStatus()));
-        this.userRepository.updateAccount(updated);
+        try {
+            this.userRepository.updateAccount(updated);
+        } catch (final DuplicateKeyException ex) {
+            throw UserDuplicateErrors.from(ex, "邮箱或手机号已存在");
+        }
         if (updated.getTokenVersion() != user.getTokenVersion()) {
             // 领域规则判定本次禁用需要吊销令牌；持久化用原子加一，不依赖读到的旧值。
             this.userRepository.revokeTokens(id);
         }
         this.userRepository.replaceRoles(id, command.roleIds());
         this.cache.evict(id);
+    }
+
+    @Override
+    @Transactional
+    public void updateAccountField(final long id, final UpdateUserAccountFieldCommand command) {
+        this.requireUser(id);
+        final String field = command.field().strip().toLowerCase(java.util.Locale.ROOT);
+        final UserAccountField accountField;
+        final String value = command.value().strip();
+        switch (field) {
+            case "username" -> {
+                accountField = UserAccountField.USERNAME;
+                if (value.length() < 2 || value.length() > 32 || !value.matches("^[A-Za-z][A-Za-z0-9_.-]*$")) {
+                    throw BizException.badRequest("value: 用户名需为 2–32 位且以字母开头，只能包含字母、数字、下划线、点或横线");
+                }
+                if (this.userRepository.existsByUsername(value)) {
+                    final User current = this.requireUser(id);
+                    if (!current.getUsername().equalsIgnoreCase(value)) {
+                        throw BizException.duplicate("用户名已存在");
+                    }
+                }
+            }
+            case "phone" -> {
+                accountField = UserAccountField.PHONE;
+                if (value.length() > 20) {
+                    throw BizException.badRequest("value: 手机号长度不能超过 20 位");
+                }
+                this.ensurePhoneAvailable(Texts.trimToNull(value), id);
+            }
+            case "email" -> {
+                accountField = UserAccountField.EMAIL;
+                if (value.length() > 128 || (!value.isEmpty() && !value.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"))) {
+                    throw BizException.badRequest("value: 邮箱格式不正确或长度超过 128 位");
+                }
+                this.ensureEmailAvailable(Texts.trimToNull(value), id);
+            }
+            default -> throw BizException.badRequest("field: 仅支持 username、phone 或 email");
+        }
+        try {
+            this.userRepository.updateAccountField(id, accountField, Texts.trimToNull(value));
+        } catch (final DuplicateKeyException ex) {
+            throw UserDuplicateErrors.from(ex, "账号信息已存在");
+        }
+        this.cache.evict(id);
+    }
+
+    private void ensureEmailAvailable(final @Nullable String email, final @Nullable Long userId) {
+        if (email != null
+                && (userId == null
+                        ? this.userRepository.existsByEmail(email)
+                        : this.userRepository.existsByEmail(email, userId))) {
+            throw BizException.duplicate("邮箱已存在");
+        }
+    }
+
+    private void ensurePhoneAvailable(final @Nullable String phone, final @Nullable Long userId) {
+        if (phone != null
+                && (userId == null
+                        ? this.userRepository.existsByPhone(phone)
+                        : this.userRepository.existsByPhone(phone, userId))) {
+            throw BizException.duplicate("手机号已存在");
+        }
     }
 
     @Override

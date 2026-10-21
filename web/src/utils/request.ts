@@ -4,14 +4,14 @@ import type { ApiResponse } from '@/types/api';
 import { clearSession, getSession } from './session';
 
 /** 契约 §4：未登录 / 会话失效 */
-export const CODE_UNAUTHORIZED = 40100;
+export const CODE_UNAUTHORIZED = 100101;
 /** 契约 §4：用户名或密码错误（HTTP 也是 401，但不代表会话失效，不能踢下线） */
-export const CODE_BAD_CREDENTIALS = 40101;
+export const CODE_BAD_CREDENTIALS = 110101;
 /**
  * 契约 §4：CSRF 校验失败（HTTP 403）。按普通业务错误 Toast，**不清会话**——
  * 令牌本身仍有效，多半是 `weiran_csrf` 被别的标签页换掉或代理剥掉了请求头，刷新页面即可恢复。
  */
-export const CODE_CSRF_REJECTED = 40302;
+export const CODE_CSRF_REJECTED = 100103;
 /** 写请求必须带的 CSRF 头（值 = `weiran_csrf` Cookie） */
 export const CSRF_HEADER = 'X-CSRF-Token';
 
@@ -63,8 +63,8 @@ function fail(err: ApiError, silent: boolean | undefined): never {
  *   不再发 Bearer 认证头；
  * - 非 GET 请求在有会话时带 `X-CSRF-Token: <weiran_csrf>`；
  * - code === 0（数字）返回 data；
- * - 其它 code 抛 ApiError 并 Toast message（含 40302 CSRF 校验失败，不清会话）；
- * - 会话失效（code 40100，或 HTTP 401 且不是「密码错误」）清会话，路由守卫随即跳登录页；
+ * - 其它 code 抛 ApiError 并 Toast message（含 100103 CSRF 校验失败，不清会话）；
+ * - 会话失效（code 100101，或 HTTP 401 且不是「密码错误」）清会话，路由守卫随即跳登录页；
  * - 失败时 ApiError 带 requestId（失败体 → 响应头 `X-Request-Id`），Toast 追加前 8 位请求号，
  *   console.warn 输出完整值，方便拿去后端日志里 grep（silent 不 Toast，但仍带 requestId）。
  */
@@ -99,7 +99,7 @@ export async function request<T>(url: string, options: RequestOptions = {}): Pro
     }
     const requestId = pickRequestId(payload, res);
 
-    const code = isApiResponse(payload) ? payload.code : res.ok ? -1 : res.status * 100;
+    const code = isApiResponse(payload) ? payload.code : -1;
     const sessionExpired =
         code === CODE_UNAUTHORIZED || (res.status === 401 && code !== CODE_BAD_CREDENTIALS);
 

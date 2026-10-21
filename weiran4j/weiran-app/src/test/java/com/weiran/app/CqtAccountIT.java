@@ -75,7 +75,7 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
         assertThat(data.path("type").asInt()).isEqualTo(1);
         assertThat(data.path("idcard").asText()).isEqualTo(idCard);
         assertThat(data.path("credential_type").asText()).isEqualTo("身份证号");
-        assertThat(data.path("cityname").asText()).isEqualTo("河北");
+        assertThat(data.path("cityname").asText()).isEqualTo("河北省");
         assertThat(data.path("source_database").asText()).isEqualTo("zhongxi");
         assertThat(this.jdbc.queryForObject(
                         "SELECT token_version FROM cqt_portal_accounts WHERE phone_value = ?", Integer.class, phone))
@@ -331,17 +331,17 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
         assertThat(IntegrationTestSupport.data(link).asText())
                 .isEqualTo("https://example.com/commitment-template.docx");
 
-        final ResponseEntity<JsonNode> regions = this.get("/api-web/competcategory/regions", null);
-        CqtAccountIT.assertPortalOk(regions);
+        final ResponseEntity<JsonNode> regions = this.get("/api/regions/lookup", null);
+        IntegrationTestSupport.assertOk(regions);
         final List<JsonNode> hebei = new ArrayList<>();
         IntegrationTestSupport.data(regions).forEach(node -> {
-            if (node.path("id").asLong() == 15) {
+            if (node.path("id").asLong() == 3) {
                 hebei.add(node);
             }
         });
         assertThat(hebei).hasSize(1);
-        assertThat(hebei.get(0).path("pid").asLong()).isZero();
-        assertThat(hebei.get(0).path("name").asText()).isEqualTo("河北");
+        assertThat(hebei.get(0).path("parentCode").isNull()).isTrue();
+        assertThat(hebei.get(0).path("name").asText()).isEqualTo("河北省");
         assertThat(hebei.get(0).has("code")).isTrue();
     }
 }

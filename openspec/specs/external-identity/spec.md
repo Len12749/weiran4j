@@ -23,7 +23,7 @@ status: "active"
 ### Requirement: [FR-002] OIDC 登录
 
 OIDC 登录 **MUST** 使用授权码流程,带 PKCE(S256)、`state` 与 `nonce`;id_token **MUST** 用提供方 JWKS 校验签名、`iss`、`aud`、`exp`(允许 60s 偏差)与 `nonce`。
-校验通过后 **MUST** 下发本地认证 Cookie,并 302 到站内 `redirect`;任何一项校验失败 **MUST** 302 到 `/login?ssoError=40102`,并且不下发认证 Cookie。
+校验通过后 **MUST** 下发本地认证 Cookie,并 302 到站内 `redirect`;任何一项校验失败 **MUST** 302 到 `/login?ssoError=110102`,并且不下发认证 Cookie。
 
 #### Scenario: 用 Keycloak 完成登录
 - **WHEN** 已绑定的 Keycloak 用户走「authorize → Keycloak 登录 → callback」
@@ -32,12 +32,12 @@ OIDC 登录 **MUST** 使用授权码流程,带 PKCE(S256)、`state` 与 `nonce`;
 
 #### Scenario: state 不符时拒绝
 - **WHEN** 回调携带的 `state` 与流程 Cookie 里的不一致
-- **THEN** 302 到 `/login?ssoError=40102`,没有认证 Cookie
+- **THEN** 302 到 `/login?ssoError=110102`,没有认证 Cookie
 - **判据**:集成测试断言 Location 头与 Set-Cookie
 
 ### Requirement: [FR-003] CAS 登录
 
-CAS 登录 **MUST** 使用 CAS 3.0 的 `/p3/serviceValidate`(`format=JSON`)验票。`service` **MUST** 由配置的公开地址加 `state` 构成,验票时 **MUST** 使用与跳转时完全相同的 `service`。验票失败或 state 不符 **MUST** 得到 `ssoError=40102`。
+CAS 登录 **MUST** 使用 CAS 3.0 的 `/p3/serviceValidate`(`format=JSON`)验票。`service` **MUST** 由配置的公开地址加 `state` 构成,验票时 **MUST** 使用与跳转时完全相同的 `service`。验票失败或 state 不符 **MUST** 得到 `ssoError=110102`。
 
 #### Scenario: 模拟 CAS 验票成功
 - **WHEN** 模拟的 CAS 对 ticket 返回 `authenticationSuccess`,user 已绑定
@@ -46,17 +46,17 @@ CAS 登录 **MUST** 使用 CAS 3.0 的 `/p3/serviceValidate`(`format=JSON`)验�
 
 #### Scenario: 模拟 CAS 验票失败
 - **WHEN** 模拟的 CAS 返回 `authenticationFailure`
-- **THEN** 302 到 `/login?ssoError=40102`
+- **THEN** 302 到 `/login?ssoError=110102`
 - **判据**:集成测试断言
 
 ### Requirement: [FR-004] 外部身份到本地用户的映射
 
-外部身份 **MUST** 只按 `(provider, external_id)` 映射到本地用户。未绑定时:提供方关闭自动建号 **MUST** 拒绝(40303);开启自动建号 **MUST** 创建一个没有本地密码、带有配置的默认角色的本地用户并完成绑定。
-本地已有同名用户且未绑定该外部身份时,**MUST NOT** 自动关联,**MUST** 返回 40303。
+外部身份 **MUST** 只按 `(provider, external_id)` 映射到本地用户。未绑定时:提供方关闭自动建号 **MUST** 拒绝(110104);开启自动建号 **MUST** 创建一个没有本地密码、带有配置的默认角色的本地用户并完成绑定。
+本地已有同名用户且未绑定该外部身份时,**MUST NOT** 自动关联,**MUST** 返回 110104。
 
 #### Scenario: 未绑定且未开启自动建号
 - **WHEN** 未绑定的外部用户登录,提供方 `auto-provision=false`
-- **THEN** 302 到 `/login?ssoError=40303`
+- **THEN** 302 到 `/login?ssoError=110104`
 - **判据**:集成测试断言
 
 #### Scenario: 自动建号后第二次登录命中同一用户
@@ -66,13 +66,13 @@ CAS 登录 **MUST** 使用 CAS 3.0 的 `/p3/serviceValidate`(`format=JSON`)验�
 
 #### Scenario: 同名本地用户不被自动关联
 - **WHEN** 外部用户名与一个未绑定的本地用户同名,且开启了自动建号
-- **THEN** 返回 40303,本地用户的绑定数仍为 0
+- **THEN** 返回 110104,本地用户的绑定数仍为 0
 - **判据**:集成测试断言
 
 ### Requirement: [FR-005] 绑定与解绑
 
-已登录用户 **MUST** 能以 bind 模式走一次外部登录,把该外部身份绑定到自己;该外部身份已绑定到其他用户时 **MUST** 拒绝(40901)。用户 **MUST** 能解绑自己的外部身份;但没有本地密码且只剩最后一个外部身份时,**MUST** 拒绝解绑(40901)。
-持有 `system:user:identity` 的管理员 **MUST** 能查看、手工绑定(提供方 + 外部用户标识)、解绑任意用户的外部身份;没有该权限 **MUST** 返回 40300。删除用户时 **MUST** 连带删除其绑定。
+已登录用户 **MUST** 能以 bind 模式走一次外部登录,把该外部身份绑定到自己;该外部身份已绑定到其他用户时 **MUST** 拒绝(100004)。用户 **MUST** 能解绑自己的外部身份;但没有本地密码且只剩最后一个外部身份时,**MUST** 拒绝解绑(100004)。
+持有 `system:user:identity` 的管理员 **MUST** 能查看、手工绑定(提供方 + 外部用户标识)、解绑任意用户的外部身份;没有该权限 **MUST** 返回 100102。删除用户时 **MUST** 连带删除其绑定。
 
 #### Scenario: 本人绑定
 - **WHEN** 已用密码登录的用户发起 bind 模式并完成外部登录
@@ -81,17 +81,17 @@ CAS 登录 **MUST** 使用 CAS 3.0 的 `/p3/serviceValidate`(`format=JSON`)验�
 
 #### Scenario: 禁止解绑导致锁死
 - **WHEN** 没有本地密码、只有一个外部身份的用户解绑它
-- **THEN** 返回 40901,绑定仍在
+- **THEN** 返回 100004,绑定仍在
 - **判据**:集成测试断言
 
 #### Scenario: 管理员手工绑定与权限
 - **WHEN** 管理员 `POST /api/users/{id}/identities {provider, externalId}`;无权限用户调用同一接口
-- **THEN** 前者成功,后者返回 40300
+- **THEN** 前者成功,后者返回 100102
 - **判据**:集成测试断言
 
 ### Requirement: [FR-006] 流程状态与重定向安全
 
-authorize 与 callback 之间的流程状态 **MUST** 存在签名 Cookie `weiran_sso` 中:HttpOnly、`SameSite=Lax`、`Path=/api/auth/sso`、10 分钟有效。被篡改或过期 **MUST** 视为校验失败(40102)。
+authorize 与 callback 之间的流程状态 **MUST** 存在签名 Cookie `weiran_sso` 中:HttpOnly、`SameSite=Lax`、`Path=/api/auth/sso`、10 分钟有效。被篡改或过期 **MUST** 视为校验失败(110102)。
 `redirect` **MUST** 只接受以单个 `/` 开头的站内路径,其它值 **MUST** 改为 `/`。
 
 #### Scenario: 开放重定向被阻止
@@ -101,30 +101,30 @@ authorize 与 callback 之间的流程状态 **MUST** 存在签名 Cookie `weira
 
 #### Scenario: 篡改流程 Cookie
 - **WHEN** 回调时 `weiran_sso` 的签名不对
-- **THEN** 302 到 `/login?ssoError=40102`
+- **THEN** 302 到 `/login?ssoError=110102`
 - **判据**:单测或集成测试断言
 
 ### Requirement: [FR-007] 无本地密码的用户
 
 没有本地密码的用户:
 - `/me` **MUST** 返回 `hasPassword=false`;
-- 用密码登录与 `verify-password` **MUST** 返回 40101,且仍跑一次 BCrypt;
-- 修改密码 **MUST** 返回 40000「未设置本地密码」。
+- 用密码登录与 `verify-password` **MUST** 返回 110101,且仍跑一次 BCrypt;
+- 修改密码 **MUST** 返回 100001「未设置本地密码」。
 
 管理员重置密码后,该用户 **MUST** 获得本地密码。
 
 #### Scenario: 自动建出的用户不能用密码登录
 - **WHEN** 自动建号的用户以空密码或任意密码调用登录
-- **THEN** 返回 40101
+- **THEN** 返回 110101
 - **判据**:集成测试断言
 
 ### Requirement: [FR-008] 密码登录开关
 
-`weiran.auth.password-login.enabled=false` 时,密码登录 **MUST** 只对内置超管(`is_builtin` 且持有 `super_admin`)开放;其他用户 **MUST** 得到 40304。`/providers` **MUST** 返回 `passwordLoginEnabled=false`。
+`weiran.auth.password-login.enabled=false` 时,密码登录 **MUST** 只对内置超管(`is_builtin` 且持有 `super_admin`)开放;其他用户 **MUST** 得到 110105。`/providers` **MUST** 返回 `passwordLoginEnabled=false`。
 
 #### Scenario: 关闭后普通用户被拒、内置超管可登录
 - **WHEN** 开关关闭时,普通用户与 `admin` 分别用正确密码登录
-- **THEN** 普通用户返回 40304,`admin` 登录成功
+- **THEN** 普通用户返回 110105,`admin` 登录成功
 - **判据**:集成测试断言
 
 ### Requirement: [FR-009] 外部登出

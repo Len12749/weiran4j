@@ -41,6 +41,9 @@ dependencies {
         // OpenAPI 文档：2.8.x 对应 Spring Boot 3.5。
         api("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17")
 
+        // OSS 存储适配器由通用 system 文件存储提供。
+        api("com.aliyun.oss:aliyun-sdk-oss:3.18.5")
+
         // system 的阿里云短信 SendSms 适配器。
         api("com.aliyun:dysmsapi20170525:4.6.0")
 

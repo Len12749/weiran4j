@@ -61,6 +61,6 @@ class CqtEntryExportIT extends CqtIntegrationTestSupport {
                 Map.of("competitionId", competition + 1, "phaseId", phase));
         assertThat(invalid.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(Objects.requireNonNull(invalid.getBody()).path("code").asInt())
-                .isEqualTo(40000);
+                .isEqualTo(100001);
     }
 }

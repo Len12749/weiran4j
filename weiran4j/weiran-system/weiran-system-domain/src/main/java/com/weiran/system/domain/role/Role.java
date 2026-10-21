@@ -39,7 +39,7 @@ public final class Role {
 
     private final @Nullable LocalDateTime updatedAt;
 
-    /** 校验角色编码格式，不合法抛 40000。 */
+    /** 校验角色编码格式，不合法抛 100001。 */
     public static void validateCode(final String code) {
         if (!Role.CODE_PATTERN.matcher(code).matches()) {
             throw BizException.badRequest("code: 需以小写字母开头，由 2–64 位小写字母、数字或下划线组成");

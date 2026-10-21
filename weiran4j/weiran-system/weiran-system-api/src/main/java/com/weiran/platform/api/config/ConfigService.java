@@ -24,9 +24,9 @@ public interface ConfigService {
     void updateGroup(UpdateConfigGroupCommand command);
 
     /** 删除空的自定义配置分组；内置分组或含配置项的分组不可删。 */
-    void deleteGroup(String key);
+    void deleteGroup(String groupKey, String key);
 
-    /** 详情；不存在抛 40400。 */
+    /** 详情；不存在抛 100002。 */
     ConfigView get(long id);
 
     /** 新增，返回 ID。 */
@@ -38,6 +38,6 @@ public interface ConfigService {
     /** 删除；内置不可删。 */
     void delete(long id);
 
-    /** 读取公开配置：非 {@code system.site.*} 前缀抛 40300，不存在抛 40400。 */
+    /** 读取公开配置：非 {@code system.general.title} 抛 100102，不存在抛 100002。 */
     PublicConfigView getPublic(String configKey);
 }

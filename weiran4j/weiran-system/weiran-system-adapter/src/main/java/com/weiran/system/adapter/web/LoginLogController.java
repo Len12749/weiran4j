@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 登录日志接口 {@code /api/login-logs}。 */
+/** 登录日志接口。 */
 @RestController
-@RequestMapping("/api/login-logs")
+@RequestMapping("/api/system/loginLog")
 public class LoginLogController {
 
     private final LoginLogService loginLogService;
@@ -27,7 +27,7 @@ public class LoginLogController {
 
     /** 分页查询，按 ID 倒序；时间格式 {@code yyyy-MM-dd HH:mm:ss}。 */
     @RequiresPermission("system:login-log:list")
-    @GetMapping
+    @GetMapping("/list")
     public PageResult<LoginLogView> page(
             @RequestParam(required = false) final @Nullable String username,
             @RequestParam(required = false) final @Nullable String status,

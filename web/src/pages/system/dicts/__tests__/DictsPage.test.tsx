@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mockFetch, page, renderWithProviders } from '@/test/helpers';
 import type { DictItemView, DictView } from '@/types/api';
@@ -35,10 +36,10 @@ const item = (id: number, dictId: number, label: string): DictItemView => ({
 
 function setup(permissions = ['*']) {
     const fetch = mockFetch({
-        'GET /api/dicts': page(dicts),
-        'GET /api/dicts/1/items': [item(11, 1, '高级')],
-        'GET /api/dicts/2/items': [item(21, 2, '党员')],
-        'GET /api/dicts/3/items': [item(31, 3, '男')],
+        'GET /api/system/dict/list': page(dicts),
+        'GET /api/system/dict/listItems/1': [item(11, 1, '高级')],
+        'GET /api/system/dict/listItems/2': [item(21, 2, '党员')],
+        'GET /api/system/dict/listItems/3': [item(31, 3, '男')],
     });
     renderWithProviders(<DictsPage />, { permissions });
     return fetch;
@@ -69,6 +70,22 @@ describe('DictsPage 左侧字典列表（NavListPanel，同 mono4ts）', () => {
         expect(listItem('职称级别')).not.toHaveClass('nav-list-item--active');
     });
 
+    it('条目主体可用 Enter 和空格选择，操作区按钮不嵌套在选择按钮里', async () => {
+        setup();
+        await screen.findByText('political_status');
+        const user = userEvent.setup();
+        const second = within(listItem('政治面貌')).getByRole('button', { pressed: false });
+        expect(second.closest('li')).toHaveClass('nav-list-item');
+        expect(second.contains(screen.getByRole('button', { name: '政治面貌的操作' }))).toBe(false);
+        second.focus();
+        await user.keyboard('{Enter}');
+        expect(listItem('政治面貌')).toHaveClass('nav-list-item--active');
+        const first = within(listItem('职称级别')).getByRole('button', { pressed: false });
+        first.focus();
+        await user.keyboard(' ');
+        expect(listItem('职称级别')).toHaveClass('nav-list-item--active');
+    });
+
     it('条目「…」菜单：编辑打开表单且不切换选中；内置字典不可删除', async () => {
         setup();
         await screen.findByText('professional_title_level');
@@ -87,20 +104,20 @@ describe('DictsPage 左侧字典列表（NavListPanel，同 mono4ts）', () => {
         fireEvent.change(input, { target: { value: ' 性别 ' } });
         fireEvent.keyDown(input, { key: 'Enter', keyCode: 13 });
         fireEvent.keyPress(input, { key: 'Enter', code: 'Enter', keyCode: 13, charCode: 13 });
-        await waitFor(() => expect(fetch.calls.some((c) => c.path === '/api/dicts' && c.search.includes('keyword=%E6%80%A7%E5%88%AB'))).toBe(true));
+        await waitFor(() => expect(fetch.calls.some((c) => c.path === '/api/system/dict/list' && c.search.includes('keyword=%E6%80%A7%E5%88%AB'))).toBe(true));
         expect(fetch.calls.at(-1)?.search).toContain('page=1');
     });
 
-    it('编辑当前选中的字典后，右栏标题跟着列表刷新（sys_dict.md#01）', async () => {
+    it('编辑当前选中的字典后，右栏标题跟着列表刷新（sys_group.md#01）', async () => {
         let list = dicts;
         mockFetch({
-            'GET /api/dicts': () => page(list),
-            'PUT /api/dicts/1': (init?: RequestInit) => {
+            'GET /api/system/dict/list': () => page(list),
+            'PUT /api/system/dict/update/1': (init?: RequestInit) => {
                 const body = JSON.parse(init?.body as string) as Partial<DictView>;
                 list = list.map((d) => (d.id === 1 ? { ...d, ...body } : d));
                 return null;
             },
-            'GET /api/dicts/1/items': [item(11, 1, '高级')],
+            'GET /api/system/dict/listItems/1': [item(11, 1, '高级')],
         });
         renderWithProviders(<DictsPage />);
         expect(await screen.findByText('字典项：职称级别（professional_title_level）')).toBeInTheDocument();
@@ -113,12 +130,11 @@ describe('DictsPage 左侧字典列表（NavListPanel，同 mono4ts）', () => {
         expect(await screen.findByText('字典项：职称等级（professional_title_level）')).toBeInTheDocument();
     });
 
-    it('没有增删改权限时条目不显示「…」，标题栏菜单只有刷新', async () => {
+    it('没有增删改权限时条目不显示「…」，标题栏只显示刷新图标', async () => {
         setup(['system:dict:query']);
         await screen.findByText('professional_title_level');
         expect(screen.queryByRole('button', { name: '职称级别的操作' })).toBeNull();
-        fireEvent.click(screen.getByRole('button', { name: '字典列表操作' }));
-        expect(await screen.findByText('刷新')).toBeInTheDocument();
-        expect(screen.queryByText('新增字典')).toBeNull();
+        expect(screen.getByRole('button', { name: '刷新字典列表' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: '新增字典' })).toBeNull();
     });
 });

@@ -317,8 +317,9 @@ body[theme-mode='dark'] ::-webkit-scrollbar-thumb:hover {
     font-size: 13px;
 }
 
-/* 便捷搜索（仅在有高级筛选时包这一层）：平时不产生盒子；窄屏隐藏，改用高级筛选面板 */
-.search-toolbar__quick {
+/* 便捷搜索不产生盒子；有高级筛选时窄屏隐藏整组，改用高级筛选面板 */
+.search-toolbar__quick,
+.search-toolbar__controls {
     display: contents;
 }
 
@@ -610,20 +611,56 @@ body[theme-mode='dark'] ::-webkit-scrollbar-thumb:hover {
     color: var(--semi-color-text-2);
 }
 
-/* 字典页：左侧字典列表（NavListPanel，同 mono4ts）+ 右侧字典项 */
-.dicts-layout {
+/* 字典与系统配置：共享双栏列表布局，左栏列表骨架保持一致。 */
+.dicts-layout,
+.config-groups-layout {
     display: grid;
     grid-template-columns: 300px minmax(0, 1fr);
     gap: 12px;
     align-items: start;
 }
 
-/* 左栏贴住内容区顶部，高度按视口扣掉顶栏、页签栏与内边距：字典少时随内容收缩，多时在栏内滚动 */
-.dicts-layout__master {
-    position: sticky;
-    top: 0;
+.dicts-layout__master,
+.config-groups-layout__master {
     display: flex;
     flex-direction: column;
+}
+
+.config-groups-layout .page-container {
+    min-width: 0;
+    margin-top: 0;
+}
+
+.config-field-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.config-field-title__edit.semi-button {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+}
+
+.config-field-title__edit.semi-button:hover {
+    background: transparent;
+}
+
+.config-metadata-modal__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* 左栏样式共享，确保配置分组与字典列表保持一致。 */
+.dicts-layout__master,
+.config-groups-layout__master {
+    position: sticky;
+    top: 0;
     max-height: calc(100dvh - var(--header-height) - 72px);
     border: 1px solid var(--color-border);
     border-radius: 8px;
@@ -641,11 +678,13 @@ body[theme-mode='dark'] ::-webkit-scrollbar-thumb:hover {
 }
 
 @media (--lg-down) {
-    .dicts-layout {
+    .dicts-layout,
+    .config-groups-layout {
         grid-template-columns: 1fr;
     }
 
-    .dicts-layout__master {
+    .dicts-layout__master,
+    .config-groups-layout__master {
         position: static;
         max-height: 420px;
     }

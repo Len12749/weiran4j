@@ -13,6 +13,7 @@ import com.weiran.framework.status.EnableStatus;
 import com.weiran.system.domain.auth.AuthState;
 import com.weiran.system.domain.user.Gender;
 import com.weiran.system.domain.user.User;
+import com.weiran.system.domain.user.UserAccountField;
 import com.weiran.system.domain.user.UserCriteria;
 import com.weiran.system.domain.user.UserRepository;
 import com.weiran.system.infrastructure.persistence.entity.SysUserDO;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 
 /** {@link UserRepository} 的 MyBatis-Plus 实现。 */
 public class MybatisUserRepository implements UserRepository {
@@ -69,8 +71,52 @@ public class MybatisUserRepository implements UserRepository {
     }
 
     @Override
+    public Optional<User> findByPhone(final String phone) {
+        return Optional.ofNullable(this.userMapper.selectOne(
+                        Wrappers.lambdaQuery(SysUserDO.class).eq(SysUserDO::getPhone, phone)))
+                .map(MybatisUserRepository::toDomain);
+    }
+
+    @Override
     public boolean existsByUsername(final String username) {
         return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class).eq(SysUserDO::getUsername, username));
+    }
+
+    @Override
+    public boolean existsByEmail(final String email) {
+        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class).eq(SysUserDO::getEmail, email));
+    }
+
+    @Override
+    public boolean existsByEmail(final String email, final long excludedUserId) {
+        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class)
+                .eq(SysUserDO::getEmail, email)
+                .ne(SysUserDO::getId, excludedUserId));
+    }
+
+    @Override
+    public boolean existsByPhone(final String phone) {
+        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class).eq(SysUserDO::getPhone, phone));
+    }
+
+    @Override
+    public boolean existsByPhone(final String phone, final long excludedUserId) {
+        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class)
+                .eq(SysUserDO::getPhone, phone)
+                .ne(SysUserDO::getId, excludedUserId));
+    }
+
+    @Override
+    public void updateAccountField(final long id, final UserAccountField field, final @Nullable String value) {
+        final SysUserDO row = new SysUserDO();
+        row.setId(id);
+        final var update = Wrappers.lambdaUpdate(SysUserDO.class).eq(SysUserDO::getId, id);
+        switch (field) {
+            case USERNAME -> update.set(SysUserDO::getUsername, value);
+            case PHONE -> update.set(SysUserDO::getPhone, value);
+            case EMAIL -> update.set(SysUserDO::getEmail, value);
+        }
+        this.userMapper.update(row, update);
     }
 
     @Override
@@ -224,7 +270,7 @@ public class MybatisUserRepository implements UserRepository {
                 .le(criteria.lastLoginTo() != null, SysUserDO::getLastLoginAt, criteria.lastLoginTo())
                 // 子查询而非 join：一人多角色也只出一行，total 正确；role_id 走参数绑定
                 .apply(roleId != null, "id in (select user_id from sys_user_role where role_id = {0})", roleId)
-                .orderByAsc(SysUserDO::getId);
+                .orderByDesc(SysUserDO::getId);
         return MybatisPages.toResult(
                 this.userMapper.selectPage(MybatisPages.of(pageQuery), wrapper),
                 pageQuery,

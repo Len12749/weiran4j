@@ -73,8 +73,8 @@ public class ConfigController {
     @OperationLog(module = ConfigController.MODULE, description = "新增配置分组")
     @PostMapping("/createGroup")
     public IdResult createGroup(@Valid @RequestBody final CreateConfigGroupRequest request) {
-        return new IdResult(
-                this.configService.createGroup(new CreateConfigGroupCommand(request.key(), request.label())));
+        return new IdResult(this.configService.createGroup(new CreateConfigGroupCommand(
+                request.groupKey() == null ? "config_system" : request.groupKey(), request.key(), request.label())));
     }
 
     /** 修改配置分组名称。 */
@@ -82,8 +82,10 @@ public class ConfigController {
     @OperationLog(module = ConfigController.MODULE, description = "修改配置分组")
     @PutMapping("/updateGroup/{key}")
     public ApiResponse<Void> updateGroup(
-            @PathVariable final String key, @Valid @RequestBody final UpdateConfigGroupRequest request) {
-        this.configService.updateGroup(new UpdateConfigGroupCommand(key, request.label()));
+            @PathVariable final String key,
+            @RequestParam(defaultValue = "config_system") final String groupKey,
+            @Valid @RequestBody final UpdateConfigGroupRequest request) {
+        this.configService.updateGroup(new UpdateConfigGroupCommand(groupKey, key, request.label()));
         return ApiResponse.ok();
     }
 
@@ -91,12 +93,13 @@ public class ConfigController {
     @RequiresPermission("system:config:delete")
     @OperationLog(module = ConfigController.MODULE, description = "删除配置分组")
     @DeleteMapping("/deleteGroup/{key}")
-    public ApiResponse<Void> deleteGroup(@PathVariable final String key) {
-        this.configService.deleteGroup(key);
+    public ApiResponse<Void> deleteGroup(
+            @PathVariable final String key, @RequestParam(defaultValue = "config_system") final String groupKey) {
+        this.configService.deleteGroup(groupKey, key);
         return ApiResponse.ok();
     }
 
-    /** 公开配置（仅 {@code system.site.*}），无需登录。 */
+    /** 公开配置（仅 {@code system.general.title}），无需登录。 */
     @PublicApi
     @GetMapping("/getPublic/{key}")
     public PublicConfigView getPublic(@PathVariable final String key) {

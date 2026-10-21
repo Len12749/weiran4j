@@ -13,9 +13,11 @@ import com.weiran.system.api.auth.CurrentUserView;
 import com.weiran.system.api.auth.LoginCommand;
 import com.weiran.system.api.auth.LoginResult;
 import com.weiran.system.api.auth.LogoutResult;
+import com.weiran.system.api.auth.SystemAuthErrors;
 import com.weiran.system.api.auth.UpdateProfileCommand;
 import com.weiran.system.api.menu.MenuNode;
 import com.weiran.system.application.menu.MenuAssembler;
+import com.weiran.system.application.user.UserDuplicateErrors;
 import com.weiran.system.domain.auth.Authorization;
 import com.weiran.system.domain.auth.TokenClaims;
 import com.weiran.system.domain.auth.TokenCodec;
@@ -40,6 +42,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -121,7 +124,7 @@ public class AuthApplicationService implements AuthService {
 
     /**
      * 密码登录已关闭时，只有内置超管还能用密码登录（IdP 故障时的应急入口，D-015）。
-     * 在校验密码<b>之前</b>判定：其他人一律 40304，不给出「密码对不对」的信号。
+     * 在校验密码<b>之前</b>判定：其他人一律 110105，不给出「密码对不对」的信号。
      */
     private void ensurePasswordLoginAllowed(final String username, final ClientContext client) {
         final Optional<User> found = this.userRepository.findByUsername(username);
@@ -139,7 +142,7 @@ public class AuthApplicationService implements AuthService {
                     LoginLog.EVENT_LOGIN,
                     LoginLog.STATUS_FAIL,
                     "密码登录已关闭");
-            throw new BizException(CommonErrors.PASSWORD_LOGIN_DISABLED);
+            throw new BizException(SystemAuthErrors.PASSWORD_LOGIN_DISABLED);
         }
     }
 
@@ -167,11 +170,19 @@ public class AuthApplicationService implements AuthService {
         this.appendLog(userId, username, client, LoginLog.EVENT_LOGIN, LoginLog.STATUS_FAIL, message);
     }
 
+    /** 手机号登录失败留痕；手机号或验证码本身不写入日志。 */
+    void recordPhoneLoginFailure(
+            final @Nullable Long userId, final String phone, final ClientContext client, final String message) {
+        final String maskedPhone =
+                phone.length() <= 4 ? "****" : phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
+        this.appendLog(userId, maskedPhone, client, LoginLog.EVENT_LOGIN, LoginLog.STATUS_FAIL, message);
+    }
+
     @Override
     public AuthenticatedUser authenticate(final String username, final String password, final ClientContext client) {
         final String name = username.strip();
         final Optional<User> found = this.userRepository.findByUsername(name);
-        // 用户不存在与密码错误共用 40101，且提示语一致；不存在时也空跑一次 BCrypt，响应时间不泄露用户名是否存在。
+        // 用户不存在与密码错误共用 110101，且提示语一致；不存在时也空跑一次 BCrypt，响应时间不泄露用户名是否存在。
         // 没有本地密码的用户（外部身份自动开通）同样对 DUMMY_HASH 空跑一次，耗时与口径都与「密码错误」一致。
         final String hash =
                 found.filter(User::hasPassword).map(User::getPasswordHash).orElse(AuthApplicationService.DUMMY_HASH);
@@ -180,12 +191,12 @@ public class AuthApplicationService implements AuthService {
         if (found.isEmpty() || !passwordMatches) {
             final Long userId = found.map(User::getId).orElse(null);
             this.appendLog(userId, name, client, LoginLog.EVENT_LOGIN, LoginLog.STATUS_FAIL, "用户名或密码错误");
-            throw new BizException(CommonErrors.BAD_CREDENTIALS);
+            throw new BizException(SystemAuthErrors.BAD_CREDENTIALS);
         }
         final User user = found.get();
         if (!user.isEnabled()) {
             this.appendLog(user.getId(), name, client, LoginLog.EVENT_LOGIN, LoginLog.STATUS_FAIL, "账号已禁用");
-            throw new BizException(CommonErrors.ACCOUNT_DISABLED);
+            throw new BizException(SystemAuthErrors.ACCOUNT_DISABLED);
         }
         return new AuthenticatedUser(user.requireId(), user.getUsername());
     }
@@ -245,12 +256,24 @@ public class AuthApplicationService implements AuthService {
     @Transactional
     public void updateProfile(final long userId, final UpdateProfileCommand command) {
         final User user = this.requireUser(userId);
-        this.userRepository.updateProfile(user.withProfile(
-                command.nickname().strip(),
-                Texts.trimToNull(command.email()),
-                Texts.trimToNull(command.phone()),
-                Texts.trimToNull(command.avatar()),
-                command.gender() == null ? user.getGender() : Gender.of(command.gender())));
+        final String email = Texts.trimToNull(command.email());
+        final String phone = Texts.trimToNull(command.phone());
+        if (email != null && this.userRepository.existsByEmail(email, userId)) {
+            throw BizException.duplicate("邮箱已存在");
+        }
+        if (phone != null && this.userRepository.existsByPhone(phone, userId)) {
+            throw BizException.duplicate("手机号已存在");
+        }
+        try {
+            this.userRepository.updateProfile(user.withProfile(
+                    command.nickname().strip(),
+                    email,
+                    phone,
+                    Texts.trimToNull(command.avatar()),
+                    command.gender() == null ? user.getGender() : Gender.of(command.gender())));
+        } catch (final DuplicateKeyException ex) {
+            throw UserDuplicateErrors.from(ex, "邮箱或手机号已存在");
+        }
         this.cache.evict(userId);
     }
 
@@ -302,7 +325,7 @@ public class AuthApplicationService implements AuthService {
     public void verifyPassword(final long userId, final String password) {
         final User user = this.requireUser(userId);
         if (!user.hasPassword() || !this.passwordHasher.matches(password, user.getPasswordHash())) {
-            throw new BizException(CommonErrors.BAD_CREDENTIALS, "密码错误");
+            throw new BizException(SystemAuthErrors.BAD_CREDENTIALS, "密码错误");
         }
     }
 

@@ -8,7 +8,7 @@ import { getSession } from '@/utils/session';
 import { PreferencesProvider } from '../PreferencesProvider';
 import { defaultPreferences, usePreferences, type UserPreferences } from '../usePreferences';
 
-const API = '/api/auth/preferences';
+const API = '/api/system/auth/getPreferences';
 
 function Probe() {
     const { preferences, setPreferences, resetPreferences } = usePreferences();
@@ -133,14 +133,14 @@ describe('PreferencesProvider', () => {
         signIn(1);
         mockFetch({
             [`GET ${API}`]: { ...defaultPreferences, colorMode: 'dark' },
-            'GET /api/users': () => Response.json({ code: 40100, message: '登录已失效', data: null }, { status: 401 }),
+            'GET /api/system/user/list': () => Response.json({ code: 100101, message: '登录已失效', data: null }, { status: 401 }),
         });
         renderProvider();
         await waitFor(() => expect(state()).toBe('dark|20|logo'));
         expect(stored()?.colorMode).toBe('dark');
 
         await act(async () => {
-            await request('/api/users', { silent: true }).catch(() => undefined);
+            await request('/api/system/user/list', { silent: true }).catch(() => undefined);
         });
         expect(getSession()).toBeNull();
         expect(state()).toBe('light|20|logo');
@@ -152,7 +152,7 @@ describe('PreferencesProvider', () => {
         localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify({ ...defaultPreferences, colorMode: 'dark' }));
         signIn();
         const { calls } = mockFetch({
-            [`GET ${API}`]: () => Response.json({ code: 50000, message: '服务器错误', data: null }, { status: 500 }),
+            [`GET ${API}`]: () => Response.json({ code: 100005, message: '服务器错误', data: null }, { status: 500 }),
         });
         renderProvider();
         await waitFor(() => expect(calls).toHaveLength(1));

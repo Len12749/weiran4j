@@ -1,0 +1,10 @@
+2026-10-19 | L7 lint verification
+
+Frontend command: pnpm --filter @weiran/web lint
+Result: PASS (ESLint).
+
+JDK 21 backend check: ./gradlew check --no-daemon
+Result: BLOCKED only by spotlessJavaCheck reporting the pre-existing extra blank line at EOF in weiran-app/src/main/java/com/weiran/app/WeiranApplication.java. The full check with that one task excluded passed; all other Gradle checks passed.
+
+OpenSpec command: node openspec/check.mjs
+Result: PASS (all checks).

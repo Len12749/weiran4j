@@ -11,8 +11,8 @@ import org.jspecify.annotations.Nullable;
 @Builder(toBuilder = true)
 public final class SystemConfig {
 
-    /** 允许匿名读取的配置键前缀。 */
-    public static final String PUBLIC_PREFIX = "system.site.";
+    /** 允许匿名读取的配置键。 */
+    public static final String PUBLIC_KEY = "system.general.title";
 
     private final @Nullable Long id;
 
@@ -46,23 +46,34 @@ public final class SystemConfig {
         return this.id;
     }
 
-    /** 键是否在公开前缀下。 */
+    /** 键是否允许公开读取。 */
     public static boolean isPublicKey(final String configKey) {
-        return configKey.startsWith(SystemConfig.PUBLIC_PREFIX);
+        return SystemConfig.PUBLIC_KEY.equals(configKey);
+    }
+
+    /** 新建配置及变更键或分组时，键须与所属分组保持一致。 */
+    public static void requireKeyConvention(final String configKey, final String groupKey) {
+        final String[] segments = configKey.split("\\.", -1);
+        if (segments.length != 3
+                || (!"system".equals(segments[0]) && !"sms".equals(segments[0]))
+                || !groupKey.equals(segments[1])
+                || !segments[2].matches("[a-z][a-z0-9_-]*")) {
+            throw BizException.badRequest("configKey: 必须遵循 {range}.{group}.{value}，且 group 与配置分组一致");
+        }
     }
 
     /** 按类型校验当前值。 */
     public SystemConfig validated(final JsonSyntax jsonSyntax) {
         this.configType.validate(this.configValue, jsonSyntax);
-        if (!this.configKey.startsWith("system.")) {
-            throw BizException.badRequest("configKey: 必须使用 system. 前缀");
+        if (!this.configKey.startsWith("system.") && !this.configKey.startsWith("sms.")) {
+            throw BizException.badRequest("configKey: 必须使用 system. 或 sms. 前缀");
         }
         if (this.required && this.configValue.isBlank()) {
             throw BizException.badRequest("该配置项不能为空");
         }
         final boolean fieldMatches =
                 switch (this.fieldType) {
-                    case "input", "textarea", "select" -> this.configType == ConfigType.STRING;
+                    case "input", "textarea", "select", "image", "richtext" -> this.configType == ConfigType.STRING;
                     case "number" -> this.configType == ConfigType.NUMBER;
                     case "switch" -> this.configType == ConfigType.BOOLEAN;
                     case "json" -> this.configType == ConfigType.JSON;

@@ -6,13 +6,14 @@ import type { ConfigGroupView, ConfigView } from '@/types/api';
 import ConfigsPage from '../ConfigsPage';
 
 const initialGroups: ConfigGroupView[] = [
-    { key: 'general', label: '通用设置', isBuiltin: true, canDelete: false, createdAt: '2026-10-20 12:00:00' },
-    { key: 'user', label: '用户', isBuiltin: true, canDelete: false, createdAt: '2026-10-20 12:00:00' },
+    { groupKey: 'config_system', key: 'general', label: '通用设置', isBuiltin: true, canDelete: false, createdAt: '2026-10-20 12:00:00' },
+    { groupKey: 'config_system', key: 'user', label: '用户', isBuiltin: true, canDelete: false, createdAt: '2026-10-20 12:00:00' },
+    { groupKey: 'config_sms', key: 'system_tpl', label: '系统模板', isBuiltin: true, canDelete: false, createdAt: '2026-10-20 12:00:00' },
 ];
 
 const builtinConfig: ConfigView = {
     id: 1,
-    configKey: 'system.site.title',
+    configKey: 'system.general.title',
     configValue: 'Weiran Admin',
     configType: 'string',
     groupKey: 'general',
@@ -28,7 +29,7 @@ const builtinConfig: ConfigView = {
 const editableConfig: ConfigView = {
     ...builtinConfig,
     id: 2,
-    configKey: 'system.site.footer',
+    configKey: 'system.general.footer',
     configValue: '© Weiran',
     required: false,
     description: '页脚信息',
@@ -42,7 +43,7 @@ function setup() {
         'GET /api/system/config/listGroups': () => groups,
         'POST /api/system/config/createGroup': (init?: RequestInit) => {
             const body = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as { key: string; label: string };
-            const group: ConfigGroupView = { ...body, isBuiltin: false, canDelete: true, createdAt: '2026-10-20 12:00:00' };
+            const group: ConfigGroupView = { ...body, groupKey: 'config_system', isBuiltin: false, canDelete: true, createdAt: '2026-10-20 12:00:00' };
             groups.push(group);
             return { id: groups.length };
         },
@@ -101,6 +102,7 @@ describe('ConfigsPage 配置分组侧栏', () => {
         const fetch = setup();
         expect(await screen.findAllByText('2026-10-20 12:00:00')).toHaveLength(2);
         expect(screen.getAllByText('内置')).toHaveLength(3);
+        expect(screen.queryByText('系统模板')).not.toBeInTheDocument();
         expect(screen.getByText('通用设置', { selector: '.page-container__title' })).toBeInTheDocument();
         expect(screen.queryByText('可删除', { exact: true })).not.toBeInTheDocument();
         expect(screen.queryByText('不可删除', { exact: true })).not.toBeInTheDocument();
@@ -145,7 +147,7 @@ describe('ConfigsPage 配置分组侧栏', () => {
         const user = userEvent.setup();
         setup();
         expect(await screen.findByText('系统标题')).toBeInTheDocument();
-        expect(screen.queryByText('system.site.title')).not.toBeInTheDocument();
+        expect(screen.queryByText('system.general.title')).not.toBeInTheDocument();
         expect(screen.getAllByText('内置')).toHaveLength(3);
 
         expect(screen.queryByRole('button', { name: '字段设置：页脚信息' })).not.toBeInTheDocument();

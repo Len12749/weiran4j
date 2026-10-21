@@ -115,7 +115,7 @@ class IdentityInfrastructureTest {
         final CasIdentityProvider cas =
                 new CasIdentityProvider("cas", "CAS", this.base + "/cas/", false, Set.of(), true, this.http());
         final SsoState state = IdentityInfrastructureTest.state(Instant.MAX);
-        final String callback = "https://admin.example.com/api/auth/sso/cas/callback";
+        final String callback = "https://admin.example.com/api/system/auth/callbackSso/cas";
         assertThat(cas.authorizeUrl(state, callback))
                 .startsWith(this.base + "/cas/login?service=")
                 .contains("state%3Dst-1");
@@ -127,7 +127,7 @@ class IdentityInfrastructureTest {
         assertThat(this.requests.get(this.requests.size() - 1))
                 .contains("format=JSON")
                 .contains("ticket=ST-1")
-                .contains("callback%3Fstate%3Dst-1");
+                .contains("callbackSso%2Fcas%3Fstate%3Dst-1");
 
         this.casResponse = "{\"serviceResponse\":{\"authenticationFailure\":{\"code\":\"INVALID_TICKET\"}}}";
         assertThat(cas.complete(Map.of("ticket", "ST-2"), state, callback)).isEmpty();

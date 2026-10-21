@@ -15,6 +15,7 @@ import com.weiran.platform.domain.dict.Dict;
 import com.weiran.platform.domain.dict.DictCriteria;
 import com.weiran.platform.domain.dict.DictItem;
 import com.weiran.platform.domain.dict.DictRepository;
+import java.util.Comparator;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
@@ -88,6 +89,7 @@ public class DictApplicationService implements DictService {
         this.requireDict(dictId);
         return this.dictRepository.findItems(dictId).stream()
                 .map(DictApplicationService::toView)
+                .sorted(Comparator.comparing(DictItemView::id).reversed())
                 .toList();
     }
 

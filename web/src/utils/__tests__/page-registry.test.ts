@@ -10,9 +10,15 @@ const SEED_COMPONENTS = [
     'system/departments/DepartmentsPage',
     'system/dicts/DictsPage',
     'system/configs/ConfigsPage',
+    'system/sms/SmsConfigsPage',
     'logs/LoginLogsPage',
     'logs/OperationLogsPage',
-    'cqt/site-config',
+    'system/media-library',
+    'demo/DemoListPage',
+    'demo/DemoNavigationPage',
+    'demo/DemoFieldsPage',
+    'demo/DemoAccessPage',
+    'demo/DemoConfigPage',
 ];
 
 describe('page-registry', () => {

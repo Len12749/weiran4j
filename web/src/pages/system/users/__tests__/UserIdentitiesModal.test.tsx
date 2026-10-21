@@ -35,7 +35,7 @@ const identity: UserIdentityView = {
 };
 
 const providersRoute = {
-    'GET /api/auth/providers': { passwordLoginEnabled: true, providers: [{ id: 'keycloak', type: 'oidc', name: '统一身份' }] },
+    'GET /api/system/auth/listProviders': { passwordLoginEnabled: true, providers: [{ id: 'keycloak', type: 'oidc', name: '统一身份' }] },
 };
 
 describe('UserIdentitiesModal', () => {
@@ -44,8 +44,8 @@ describe('UserIdentitiesModal', () => {
     it('列出该用户的外部身份；只剩一个时解绑确认提示可能无法登录', async () => {
         const { calls } = mockFetch({
             ...providersRoute,
-            'GET /api/users/2/identities': [identity],
-            'DELETE /api/users/2/identities/31': null,
+            'GET /api/system/user/listIdentities/2': [identity],
+            'DELETE /api/system/user/deleteIdentity/2/31': null,
         });
         renderWithProviders(<UserIdentitiesModal user={alice} onClose={() => undefined} />);
 
@@ -53,14 +53,14 @@ describe('UserIdentitiesModal', () => {
         fireEvent.click(screen.getByRole('button', { name: '解绑' }));
         const pop = await screen.findByText('这是该用户唯一的外部身份，解绑后该用户可能无法登录');
         fireEvent.click(within(pop.closest('.semi-popconfirm') as HTMLElement).getByRole('button', { name: '确定' }));
-        await waitFor(() => expect(calls.some((c) => c.method === 'DELETE' && c.path === '/api/users/2/identities/31')).toBe(true));
+        await waitFor(() => expect(calls.some((c) => c.method === 'DELETE' && c.path === '/api/system/user/deleteIdentity/2/31')).toBe(true));
     });
 
     it('手工绑定：必填校验后 POST {provider, externalId, displayName}', async () => {
         const { calls } = mockFetch({
             ...providersRoute,
-            'GET /api/users/2/identities': [],
-            'POST /api/users/2/identities': { id: 32 },
+            'GET /api/system/user/listIdentities/2': [],
+            'POST /api/system/user/createIdentity/2': { id: 32 },
         });
         renderWithProviders(<UserIdentitiesModal user={alice} onClose={() => undefined} />);
 
@@ -78,7 +78,7 @@ describe('UserIdentitiesModal', () => {
 
         await waitFor(() =>
             expect(calls.find((c) => c.method === 'POST')).toMatchObject({
-                path: '/api/users/2/identities',
+                path: '/api/system/user/createIdentity/2',
                 body: { provider: 'keycloak', externalId: 'alice-sub', displayName: 'Alice' },
             }),
         );
@@ -89,15 +89,15 @@ describe('UsersPage「外部身份」行操作', () => {
     afterEach(() => vi.unstubAllGlobals());
 
     const listRoutes = {
-        'GET /api/users': page([alice], 1),
-        'GET /api/dicts/code/sys_user_gender/items': [],
-        'GET /api/dicts/code/sys_common_status/items': [],
-        'GET /api/departments': [],
-        'GET /api/roles/options': [],
+        'GET /api/system/user/list': page([alice], 1),
+        'GET /api/system/dict/listItemsByCode/sys_user_gender': [],
+        'GET /api/system/dict/listItemsByCode/sys_common_status': [],
+        'GET /api/system/department/list': [],
+        'GET /api/system/role/listOptions': [],
     };
 
     it('有 system:user:identity 时显示，点击打开弹窗', async () => {
-        mockFetch({ ...listRoutes, ...providersRoute, 'GET /api/users/2/identities': [identity] });
+        mockFetch({ ...listRoutes, ...providersRoute, 'GET /api/system/user/listIdentities/2': [identity] });
         renderWithProviders(<UsersPage />, { permissions: ['system:user:identity'] });
 
         fireEvent.click(await screen.findByRole('button', { name: '外部身份' }));

@@ -41,7 +41,7 @@ export function ReviewTable<T extends object>({ name, path, filters = {}, column
     const { columns: settled, columnSettings } = useColumnSettings(name, allColumns);
     const { columns: displayed } = useActionsColumn(settled, actions ?? (() => []));
     return <>
-        <SearchToolbar searchIconOnly resetIconOnly tools={<>{columnSettings}{tools}</>} leading={leading} onSearch={() => { onSearch?.(); setPage(1); }} onReset={() => { onReset?.(); setPage(1); }} onRefresh={() => void query.refetch()} refreshing={query.isFetching}><span style={{ display: 'contents' }} onKeyDown={(event) => { if (event.key === 'Enter' && event.target instanceof HTMLInputElement) { onSearch?.(); setPage(1); } }}>{search}</span></SearchToolbar>
+        <SearchToolbar tools={<>{columnSettings}{tools}</>} leading={leading} onSearch={() => { onSearch?.(); setPage(1); }} onReset={() => { onReset?.(); setPage(1); }} onRefresh={() => void query.refetch()} refreshing={query.isFetching}><span style={{ display: 'contents' }} onKeyDown={(event) => { if (event.key === 'Enter' && event.target instanceof HTMLInputElement) { onSearch?.(); setPage(1); } }}>{search}</span></SearchToolbar>
         {query.isError && <Banner type="danger" description={query.error.message} />}
         <Table<T> {...tableProps} rowKey={rowKey} columns={displayed} dataSource={displayedRows} loading={query.isFetching} pagination={false} scroll={{ x: tableScrollX(displayed) }} {...(rowSelection ? { rowSelection: { ...rowSelection, onChange: (keys, rows) => rowSelection.onChange(keys ?? [], rows ?? []) } } : {})} />
         {total > 0 && <Pagination style={{ marginTop: 16, justifyContent: 'flex-end' }} currentPage={page} pageSize={pageSize} total={total} onPageChange={setPage} />}

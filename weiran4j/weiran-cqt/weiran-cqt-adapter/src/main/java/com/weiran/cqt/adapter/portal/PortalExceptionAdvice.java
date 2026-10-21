@@ -16,7 +16,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
- * 前台接口的异常出口：HTTP 恒为 200，body {@code code} 取五位错误码的前三位（如 40100 → 401）。
+ * 前台接口的异常出口：HTTP 恒为 200，body {@code code} 取错误码对应的 HTTP 状态。
  *
  * <p>只作用于标了 {@link PortalController} 的 Controller，优先级高于框架的 {@link GlobalExceptionHandler}。
  * 错误码与提示语的判定**委托给框架处理器**（业务异常、参数校验、请求格式、未预期异常的口径与后台一致，
@@ -50,7 +50,7 @@ public class PortalExceptionAdvice {
         }
         final ResponseEntity<?> translated = this.translate(ex, request);
         final PortalResult<Void> body = translated.getBody() instanceof final ErrorResponse response
-                ? PortalResult.fail(response.code() / 100, response.message())
+                ? PortalResult.fail(translated.getStatusCode().value(), response.message())
                 : PortalResult.fail(CommonErrors.INTERNAL_ERROR.httpStatus(), CommonErrors.INTERNAL_ERROR.message());
         return ResponseEntity.ok(body);
     }

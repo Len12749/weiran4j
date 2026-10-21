@@ -15,23 +15,17 @@ final class SdkAliyunSmsGateway implements AliyunSmsGateway {
     private final Client client;
     private final RuntimeOptions runtimeOptions;
 
-    SdkAliyunSmsGateway(final SystemSmsProperties properties) {
-        final int connectTimeoutMillis =
-                SdkAliyunSmsGateway.toMillis(properties.connectTimeout(), "WEIRAN_SYSTEM_SMS_CONNECT_TIMEOUT");
-        final int readTimeoutMillis =
-                SdkAliyunSmsGateway.toMillis(properties.readTimeout(), "WEIRAN_SYSTEM_SMS_READ_TIMEOUT");
+    SdkAliyunSmsGateway(final SystemSmsProperties.Aliyun properties) {
         try {
             this.client = new Client(new Config()
                     .setAccessKeyId(properties.accessKeyId())
                     .setAccessKeySecret(properties.accessKeySecret())
-                    .setEndpoint(SdkAliyunSmsGateway.ENDPOINT)
-                    .setConnectTimeout(connectTimeoutMillis)
-                    .setReadTimeout(readTimeoutMillis));
+                    .setEndpoint(SdkAliyunSmsGateway.ENDPOINT));
         } catch (final Exception exception) {
             throw new IllegalStateException(
                     "阿里云短信客户端初始化失败: " + exception.getClass().getSimpleName());
         }
-        this.runtimeOptions = SdkAliyunSmsGateway.runtimeOptions(connectTimeoutMillis, readTimeoutMillis);
+        this.runtimeOptions = SdkAliyunSmsGateway.runtimeOptions();
     }
 
     SdkAliyunSmsGateway(final Client client, final RuntimeOptions runtimeOptions) {
@@ -39,12 +33,8 @@ final class SdkAliyunSmsGateway implements AliyunSmsGateway {
         this.runtimeOptions = runtimeOptions;
     }
 
-    static RuntimeOptions runtimeOptions(final int connectTimeoutMillis, final int readTimeoutMillis) {
-        return new RuntimeOptions()
-                .setAutoretry(false)
-                .setMaxAttempts(1)
-                .setConnectTimeout(connectTimeoutMillis)
-                .setReadTimeout(readTimeoutMillis);
+    static RuntimeOptions runtimeOptions() {
+        return new RuntimeOptions().setAutoretry(false).setMaxAttempts(1);
     }
 
     @Override
@@ -59,17 +49,5 @@ final class SdkAliyunSmsGateway implements AliyunSmsGateway {
                 this.runtimeOptions);
         final SendSmsResponseBody body = response == null ? null : response.getBody();
         return body == null ? new Reply(null, null) : new Reply(body.getCode(), body.getRequestId());
-    }
-
-    static int toMillis(final String timeoutSeconds, final String variableName) {
-        try {
-            final int seconds = Integer.parseInt(timeoutSeconds);
-            if (seconds < 1) {
-                throw new IllegalStateException("短信超时配置无效: " + variableName);
-            }
-            return Math.multiplyExact(seconds, 1000);
-        } catch (final ArithmeticException | NumberFormatException exception) {
-            throw new IllegalStateException("短信超时配置无效: " + variableName);
-        }
     }
 }

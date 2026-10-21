@@ -52,7 +52,7 @@ class MenuTest {
     }
 
     @Test
-    @DisplayName("按类型字符串解析，非法值抛 40000")
+    @DisplayName("按类型字符串解析，非法值抛 100001")
     void parsesType() {
         assertThatCode(() -> MenuType.of("directory")).doesNotThrowAnyException();
         assertThatThrownBy(() -> MenuType.of("page")).isInstanceOf(BizException.class);

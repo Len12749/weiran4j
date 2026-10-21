@@ -50,6 +50,18 @@ const menus: MenuNode[] = [
     },
 ];
 
+const demoMenu: MenuNode = {
+    ...menuBase,
+    id: 14,
+    title: '组件演示',
+    type: 'directory',
+    path: '/demo',
+    icon: 'Puzzle',
+    children: [
+        { ...menuBase, id: 15, parentId: 14, title: '列表与筛选', type: 'menu', path: '/demo/list', component: 'demo/DemoListPage' },
+    ],
+};
+
 describe('App 路由', () => {
     afterEach(() => vi.unstubAllGlobals());
 
@@ -61,7 +73,7 @@ describe('App 路由', () => {
 
     it('已登录：按菜单渲染侧边栏与首页', async () => {
         signIn();
-        mockFetch({ 'GET /api/auth/me': me, 'GET /api/auth/menus': menus, 'GET /api/dicts/code/sys_user_gender/items': [] });
+        mockFetch({ 'GET /api/system/auth/getCurrentUser': me, 'GET /api/system/auth/listCurrentMenus': menus, 'GET /api/system/dict/listItemsByCode/sys_user_gender': [] });
         renderWithProviders(<App />, { route: '/' });
         expect(await screen.findByText(/欢迎使用/)).toBeInTheDocument();
         expect(screen.getAllByText('系统管理').length).toBeGreaterThan(0);
@@ -69,7 +81,7 @@ describe('App 路由', () => {
 
     it('菜单组件在前端不存在时渲染占位而不崩溃', async () => {
         signIn();
-        mockFetch({ 'GET /api/auth/me': me, 'GET /api/auth/menus': menus });
+        mockFetch({ 'GET /api/system/auth/getCurrentUser': me, 'GET /api/system/auth/listCurrentMenus': menus });
         renderWithProviders(<App />, { route: '/system/todo' });
         expect(await screen.findByText('页面不存在')).toBeInTheDocument();
         expect(screen.getByText(/system\/todo\/TodoPage/)).toBeInTheDocument();
@@ -77,16 +89,34 @@ describe('App 路由', () => {
 
     it('未知路径渲染 404', async () => {
         signIn();
-        mockFetch({ 'GET /api/auth/me': me, 'GET /api/auth/menus': menus });
+        mockFetch({ 'GET /api/system/auth/getCurrentUser': me, 'GET /api/system/auth/listCurrentMenus': menus });
         renderWithProviders(<App />, { route: '/no/such/page' });
         expect(await screen.findByText('404 页面不存在')).toBeInTheDocument();
     });
 
-    it('/api/auth/me 返回 40100 时清会话回登录页', async () => {
+    it('旧组件演示地址只在有新菜单路由时跳转', async () => {
         signIn();
         mockFetch({
-            'GET /api/auth/me': () => Response.json({ code: 40100, message: '登录已失效', data: null }, { status: 401 }),
-            'GET /api/auth/menus': menus,
+            'GET /api/system/auth/getCurrentUser': me,
+            'GET /api/system/auth/listCurrentMenus': [...menus, demoMenu],
+            'GET /api/system/dict/listItemsByCode/sys_common_status': [],
+        });
+        renderWithProviders(<App />, { route: '/system/components-demo' });
+        expect(await screen.findByText('使用本地示例数据，操作仅影响当前页面')).toBeInTheDocument();
+    });
+
+    it('没有新菜单路由时旧地址保持 404', async () => {
+        signIn();
+        mockFetch({ 'GET /api/system/auth/getCurrentUser': me, 'GET /api/system/auth/listCurrentMenus': menus });
+        renderWithProviders(<App />, { route: '/system/components-demo' });
+        expect(await screen.findByText('404 页面不存在')).toBeInTheDocument();
+    });
+
+    it('/api/system/auth/getCurrentUser 返回 100101 时清会话回登录页', async () => {
+        signIn();
+        mockFetch({
+            'GET /api/system/auth/getCurrentUser': () => Response.json({ code: 100101, message: '登录已失效', data: null }, { status: 401 }),
+            'GET /api/system/auth/listCurrentMenus': menus,
         });
         renderWithProviders(<App />, { route: '/dashboard' });
         expect(await screen.findByRole('button', { name: '登录' })).toBeInTheDocument();

@@ -20,7 +20,7 @@ class SdkAliyunSmsGatewayTest {
     @DisplayName("SDK 请求携带手机号签名模板参数并映射响应")
     void sendsSdkRequestAndMapsResponse() throws Exception {
         final Client client = org.mockito.Mockito.mock(Client.class);
-        final RuntimeOptions options = SdkAliyunSmsGateway.runtimeOptions(3000, 5000);
+        final RuntimeOptions options = SdkAliyunSmsGateway.runtimeOptions();
         final SendSmsResponseBody body = new SendSmsResponseBody().setCode("OK").setRequestId("request-1");
         when(client.sendSmsWithOptions(any(SendSmsRequest.class), any(RuntimeOptions.class)))
                 .thenReturn(new SendSmsResponse().setBody(body));
@@ -44,12 +44,10 @@ class SdkAliyunSmsGatewayTest {
     @Test
     @DisplayName("SDK 自动重试关闭且最多调用一次")
     void disablesSdkRetries() {
-        final RuntimeOptions options = SdkAliyunSmsGateway.runtimeOptions(3000, 5000);
+        final RuntimeOptions options = SdkAliyunSmsGateway.runtimeOptions();
 
         assertThat(options.getAutoretry()).isFalse();
         assertThat(options.getMaxAttempts()).isEqualTo(1);
-        assertThat(options.getConnectTimeout()).isEqualTo(3000);
-        assertThat(options.getReadTimeout()).isEqualTo(5000);
     }
 
     @Test

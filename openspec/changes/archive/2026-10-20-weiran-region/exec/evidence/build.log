@@ -1,0 +1,6 @@
+2026-10-19 | L7 build verification
+
+Command: (cd weiran4j && JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew assemble --no-daemon) && pnpm --filter @weiran/web build
+Result: PASS
+- Gradle assemble: BUILD SUCCESSFUL (49 actionable tasks; 13 executed, 36 up-to-date).
+- Frontend: TypeScript build and Vite production build completed successfully.

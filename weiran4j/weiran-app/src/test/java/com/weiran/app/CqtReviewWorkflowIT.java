@@ -117,7 +117,7 @@ class CqtReviewWorkflowIT extends CqtIntegrationTestSupport {
                 "SELECT id FROM cqt_review_assignments WHERE phase_id=? ORDER BY id", Long.class, phase);
         assertThat(tasks).hasSize(4);
         final long outsiderId = this.create(
-                "/api/users",
+                "/api/system/user/create",
                 admin,
                 Map.of("username", name, "nickname", name, "password", "Passw0rd1", "roleIds", List.of(1)));
         assertThat(outsiderId).isNotEqualTo(1);

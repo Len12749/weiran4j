@@ -128,15 +128,15 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     @Test
     @DisplayName("站点配置管理受权限保护并保留原始内容且独立映射")
     void managesRawSiteConfig() {
-        CqtIntegrationTestSupport.assertError(this.get("/api/cqt/site-config", null), HttpStatus.UNAUTHORIZED, 40100);
+        CqtIntegrationTestSupport.assertError(this.get("/api/cqt/site-config", null), HttpStatus.UNAUTHORIZED, 100101);
 
         final String admin = this.adminToken();
         CqtIntegrationTestSupport.assertError(
-                this.put("/api/cqt/site-config", admin, Map.of()), HttpStatus.BAD_REQUEST, 40000);
+                this.put("/api/cqt/site-config", admin, Map.of()), HttpStatus.BAD_REQUEST, 100001);
         CqtIntegrationTestSupport.assertError(
                 this.put("/api/cqt/site-config", admin, Map.of("items", java.util.Collections.singletonList(null))),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         final ResponseEntity<JsonNode> getResponse = this.get("/api/cqt/site-config", admin);
         IntegrationTestSupport.assertOk(getResponse);
         final JsonNode initialItems = IntegrationTestSupport.data(getResponse).path("items");
@@ -211,7 +211,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                         .path("list"))
                 .isEmpty();
         CqtIntegrationTestSupport.assertError(
-                this.post("/api/cqt/experts", null, expert), HttpStatus.UNAUTHORIZED, 40100);
+                this.post("/api/cqt/experts", null, expert), HttpStatus.UNAUTHORIZED, 100101);
         final ResponseEntity<JsonNode> showcase = this.post(
                 "/api/cqt/showcases",
                 admin,
@@ -245,25 +245,25 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     void rejectsInvalidContent() {
         final String admin = this.adminToken();
         CqtIntegrationTestSupport.assertError(
-                this.post("/api/cqt/experts", admin, Map.of()), HttpStatus.BAD_REQUEST, 40000);
+                this.post("/api/cqt/experts", admin, Map.of()), HttpStatus.BAD_REQUEST, 100001);
         CqtIntegrationTestSupport.assertError(
                 this.post(
                         "/api/cqt/experts",
                         admin,
                         Map.of("name", "甲", "image", "javascript:alert(1)", "content", "简介")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         CqtIntegrationTestSupport.assertError(
                 this.post("/api/cqt/showcases", admin, Map.of("title", "甲", "image", "/a.png", "category", "UNKNOWN")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         CqtIntegrationTestSupport.assertError(
                 this.post(
                         "/api/cqt/resources",
                         admin,
                         Map.of("title", "甲", "category", "SCRIPT_PAPER", "fileUrl", "//evil.test/a", "fileName", "a")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
         assertThat(IntegrationTestSupport.body(this.get("/api-web/content/resources?category=UNKNOWN", null))
                         .path("code")
                         .asInt())
@@ -324,25 +324,25 @@ class CqtWebIT extends CqtIntegrationTestSupport {
 
         IntegrationTestSupport.assertOk(this.delete("/api/cqt/news/" + secondId, admin));
         CqtIntegrationTestSupport.assertError(
-                this.get("/api/cqt/news/" + secondId, admin), HttpStatus.NOT_FOUND, 40400);
-        CqtIntegrationTestSupport.assertError(this.post("/api/cqt/news", null, first), HttpStatus.UNAUTHORIZED, 40100);
+                this.get("/api/cqt/news/" + secondId, admin), HttpStatus.NOT_FOUND, 100002);
+        CqtIntegrationTestSupport.assertError(this.post("/api/cqt/news", null, first), HttpStatus.UNAUTHORIZED, 100101);
         CqtIntegrationTestSupport.assertError(
                 this.post(
                         "/api/cqt/news",
                         admin,
                         Map.of("title", " ", "image", "", "showOnHome", false, "sort", 0, "content", "x")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
     }
 
     @Test
     @DisplayName("后台图片上传要求更新权限、只允许图片扩展名并返回可访问 URL")
     void uploadsSiteConfigImage() {
         CqtIntegrationTestSupport.assertError(
-                this.uploadSiteConfigImage(null, "photo.png"), HttpStatus.UNAUTHORIZED, 40100);
+                this.uploadSiteConfigImage(null, "photo.png"), HttpStatus.UNAUTHORIZED, 100101);
         final String admin = this.adminToken();
         CqtIntegrationTestSupport.assertError(
-                this.uploadSiteConfigImage(admin, "script.svg"), HttpStatus.BAD_REQUEST, 40000);
+                this.uploadSiteConfigImage(admin, "script.svg"), HttpStatus.BAD_REQUEST, 100001);
 
         final ResponseEntity<JsonNode> response = this.uploadSiteConfigImage(admin, "photo.png");
         IntegrationTestSupport.assertOk(response);
@@ -357,7 +357,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     @DisplayName("动态首图上传校验图片扩展名并返回文件地址")
     void uploadsNewsImage() {
         final String admin = this.adminToken();
-        CqtIntegrationTestSupport.assertError(this.uploadNewsImage(admin, "cover.svg"), HttpStatus.BAD_REQUEST, 40000);
+        CqtIntegrationTestSupport.assertError(this.uploadNewsImage(admin, "cover.svg"), HttpStatus.BAD_REQUEST, 100001);
         final ResponseEntity<JsonNode> response = this.uploadNewsImage(admin, "cover.png");
         IntegrationTestSupport.assertOk(response);
         assertThat(IntegrationTestSupport.data(response).path("url").asText())
@@ -819,15 +819,17 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     @DisplayName("前后台令牌互不通用")
     void portalAndAdminTokensAreSeparate() {
         final String portalToken = this.portalToken(this.registerPersonal(), CqtIntegrationTestSupport.PASSWORD);
-        IntegrationTestSupport.assertError(this.get("/api/auth/me", portalToken), HttpStatus.UNAUTHORIZED, 40100);
+        IntegrationTestSupport.assertError(
+                this.get("/api/system/auth/getCurrentUser", portalToken), HttpStatus.UNAUTHORIZED, 100101);
 
         CqtWebIT.assertPortalError(this.get("/api-web/__test/me", this.adminToken()), 401, "登录失效,请重新登录");
     }
 
     @Test
-    @DisplayName("后台接口错误语义不变：无令牌 → HTTP 401 + 40100")
+    @DisplayName("后台接口错误语义不变：无令牌 → HTTP 401 + 100101")
     void adminErrorsUnchanged() {
-        IntegrationTestSupport.assertError(this.get("/api/auth/me", null), HttpStatus.UNAUTHORIZED, 40100);
+        IntegrationTestSupport.assertError(
+                this.get("/api/system/auth/getCurrentUser", null), HttpStatus.UNAUTHORIZED, 100101);
     }
 
     @Test

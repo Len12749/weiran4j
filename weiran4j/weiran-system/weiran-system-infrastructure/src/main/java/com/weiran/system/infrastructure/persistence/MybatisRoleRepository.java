@@ -83,8 +83,7 @@ public class MybatisRoleRepository implements RoleRepository {
                                 .or()
                                 .like(SysRoleDO::getCode, Likes.escape(keyword)))
                 .eq(status != null, SysRoleDO::getStatus, status == null ? null : status.value())
-                .orderByAsc(SysRoleDO::getSort)
-                .orderByAsc(SysRoleDO::getId);
+                .orderByDesc(SysRoleDO::getId);
         return MybatisPages.toResult(
                 this.roleMapper.selectPage(MybatisPages.of(pageQuery), wrapper),
                 pageQuery,

@@ -28,14 +28,14 @@ const alice: UserView = { ...admin, id: 2, username: 'alice', nickname: '爱丽�
 
 function baseRoutes() {
     return {
-        'GET /api/users': page([admin, alice], 2),
-        'GET /api/dicts/code/sys_user_gender/items': [
+        'GET /api/system/user/list': page([admin, alice], 2),
+        'GET /api/system/dict/listItemsByCode/sys_user_gender': [
             { id: 1, dictId: 1, label: '男', value: 'male', color: 'blue', sort: 1, status: 'enabled', remark: null },
             { id: 2, dictId: 1, label: '女', value: 'female', color: 'pink', sort: 2, status: 'enabled', remark: null },
         ],
-        'GET /api/dicts/code/sys_common_status/items': [],
-        'GET /api/departments': [],
-        'GET /api/roles/options': [
+        'GET /api/system/dict/listItemsByCode/sys_common_status': [],
+        'GET /api/system/department/list': [],
+        'GET /api/system/role/listOptions': [
             { id: 1, name: '超级管理员', code: 'super_admin' },
             { id: 2, name: '编辑', code: 'editor' },
         ],
@@ -53,7 +53,7 @@ describe('UsersPage', () => {
         expect(screen.getByText('admin')).toBeInTheDocument();
         // 性别走字典 sys_user_gender 渲染成中文标签
         expect(await screen.findByText('女')).toBeInTheDocument();
-        const listCall = calls.find((c) => c.path === '/api/users');
+        const listCall = calls.find((c) => c.path === '/api/system/user/list');
         expect(listCall?.search).toBe('?page=1&pageSize=20');
     });
 
@@ -76,13 +76,19 @@ describe('UsersPage', () => {
         await screen.findByText('alice');
 
         fireEvent.change(screen.getByPlaceholderText('用户名 / 昵称 / 手机'), { target: { value: 'ali' } });
-        fireEvent.click(screen.getByRole('button', { name: '查询' }));
+        const toolbar = document.querySelector('.search-toolbar') as HTMLElement;
+        expect(within(toolbar).getByRole('button', { name: '搜索' })).toHaveTextContent('');
+        expect(within(toolbar).getByRole('button', { name: '重置' })).toHaveTextContent('');
+        fireEvent.click(within(toolbar).getByRole('button', { name: '搜索' }));
 
-        await waitFor(() => expect(calls.some((c) => c.path === '/api/users' && c.search.includes('keyword=ali'))).toBe(true));
+        await waitFor(() => expect(calls.some((c) => c.path === '/api/system/user/list' && c.search.includes('keyword=ali'))).toBe(true));
+        fireEvent.click(within(toolbar).getByRole('button', { name: '重置' }));
+        expect(screen.getByPlaceholderText('用户名 / 昵称 / 手机')).toHaveValue('');
+        await waitFor(() => expect(screen.queryByRole('group', { name: '已选条件' })).toBeNull());
     });
 
     it('内置用户的删除按钮禁用；删除普通用户调用 DELETE', async () => {
-        const { calls } = mockFetch({ ...baseRoutes(), 'DELETE /api/users/2': null });
+        const { calls } = mockFetch({ ...baseRoutes(), 'DELETE /api/system/user/delete/2': null });
         renderWithProviders(<UsersPage />);
         await screen.findByText('alice');
 
@@ -94,11 +100,11 @@ describe('UsersPage', () => {
         const popup = confirm.closest('.semi-popconfirm') as HTMLElement;
         fireEvent.click(within(popup).getByRole('button', { name: /确定/ }));
 
-        await waitFor(() => expect(calls.some((c) => c.method === 'DELETE' && c.path === '/api/users/2')).toBe(true));
+        await waitFor(() => expect(calls.some((c) => c.method === 'DELETE' && c.path === '/api/system/user/delete/2')).toBe(true));
     });
 
-    it('新增用户：提交后 POST /api/users，请求体字段符合契约', async () => {
-        const { calls } = mockFetch({ ...baseRoutes(), 'POST /api/users': { id: 3 } });
+    it('新增用户：提交后 POST /api/system/user/create，请求体字段符合契约', async () => {
+        const { calls } = mockFetch({ ...baseRoutes(), 'POST /api/system/user/create': { id: 3 } });
         renderWithProviders(<UsersPage />);
         await screen.findByText('alice');
 
@@ -111,8 +117,8 @@ describe('UsersPage', () => {
         // Modal 底部按钮在 jsdom 下按 role+name 匹配不到，按可见文字找
         fireEvent.click(inputs.getByText('确定').closest('button')!);
 
-        await waitFor(() => expect(calls.some((c) => c.method === 'POST' && c.path === '/api/users')).toBe(true));
-        const post = calls.find((c) => c.method === 'POST' && c.path === '/api/users');
+        await waitFor(() => expect(calls.some((c) => c.method === 'POST' && c.path === '/api/system/user/create')).toBe(true));
+        const post = calls.find((c) => c.method === 'POST' && c.path === '/api/system/user/create');
         expect(post?.body).toMatchObject({
             username: 'bob',
             nickname: '鲍勃',
@@ -135,7 +141,7 @@ describe('UsersPage', () => {
         // 按查询参数真实过滤：keyword 按用户名包含，status=disabled 时只剩 alice
         const routes = () => ({
             ...baseRoutes(),
-            'GET /api/users': (_: unknown, url: URL) => {
+            'GET /api/system/user/list': (_: unknown, url: URL) => {
                 const keyword = url.searchParams.get('keyword');
                 const status = url.searchParams.get('status');
                 const list = [admin, alice].filter(
@@ -143,14 +149,14 @@ describe('UsersPage', () => {
                 );
                 return page(list, list.length);
             },
-            'GET /api/dicts/code/sys_common_status/items': [
+            'GET /api/system/dict/listItemsByCode/sys_common_status': [
                 { id: 11, dictId: 2, label: '启用', value: 'enabled', color: 'green', sort: 1, status: 'enabled', remark: null },
                 { id: 12, dictId: 2, label: '禁用', value: 'disabled', color: 'grey', sort: 2, status: 'enabled', remark: null },
             ],
         });
         const conditionTexts = () =>
             [...document.querySelectorAll('.search-conditions__text')].map((e) => e.textContent);
-        const lastListSearch = (calls: { path: string; search: string }[]) => calls.filter((c) => c.path === '/api/users').at(-1)?.search;
+        const lastListSearch = (calls: { path: string; search: string }[]) => calls.filter((c) => c.path === '/api/system/user/list').at(-1)?.search;
 
         it('「新增用户」是工具栏第一个控件', async () => {
             mockFetch(routes());
@@ -172,7 +178,7 @@ describe('UsersPage', () => {
             // Semi Select 要点容器才展开；选项里带 aria-label="tick" 的勾选图标，可访问名称是「tick 禁用」，所以用正则
             fireEvent.click(within(document.querySelector('.search-toolbar') as HTMLElement).getByText('状态').closest('.semi-select') as HTMLElement);
             fireEvent.click(await screen.findByRole('option', { name: /禁用/ }));
-            fireEvent.click(screen.getByRole('button', { name: /查询/ }));
+            fireEvent.click(within(document.querySelector('.search-toolbar') as HTMLElement).getByRole('button', { name: '搜索' }));
             await waitFor(() => expect(conditionTexts()).toEqual(['关键字：ali', '状态：禁用']));
             await waitFor(() => expect(lastListSearch(calls)).toBe('?page=1&pageSize=20&keyword=ali&status=disabled'));
 
@@ -198,7 +204,7 @@ describe('UsersPage', () => {
             fireEvent.change(screen.getByPlaceholderText('用户名 / 昵称 / 手机'), { target: { value: 'ali' } });
             fireEvent.click(within(document.querySelector('.search-toolbar') as HTMLElement).getByText('状态').closest('.semi-select') as HTMLElement);
             fireEvent.click(await screen.findByRole('option', { name: /启用/ }));
-            fireEvent.click(screen.getByRole('button', { name: /查询/ }));
+            fireEvent.click(within(document.querySelector('.search-toolbar') as HTMLElement).getByRole('button', { name: '搜索' }));
             const group = await screen.findByRole('group', { name: '已选条件' });
             await waitFor(() => expect(screen.queryByText('admin')).toBeNull());
             fireEvent.click(within(group).getByRole('button', { name: '清空' }));
@@ -291,9 +297,9 @@ describe('UsersPage', () => {
             await screen.findByText('alice');
             const tools = document.querySelector('.search-toolbar__tools') as HTMLElement;
             expect(within(tools).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['列设置', '刷新']);
-            const before = calls.filter((c) => c.path === '/api/users').length;
+            const before = calls.filter((c) => c.path === '/api/system/user/list').length;
             fireEvent.click(within(tools).getByRole('button', { name: '刷新' }));
-            await waitFor(() => expect(calls.filter((c) => c.path === '/api/users').length).toBe(before + 1));
+            await waitFor(() => expect(calls.filter((c) => c.path === '/api/system/user/list').length).toBe(before + 1));
             expect(lastListSearch(calls)).toBe('?page=1&pageSize=20');
         });
     });

@@ -21,7 +21,7 @@ const PROVIDERS_STALE_TIME = 10 * 60 * 1000;
 export function useProviders() {
     return useQuery({
         queryKey: identityKeys.providers,
-        queryFn: () => http.get<ProvidersView>('/api/auth/providers', { silent: true }),
+        queryFn: () => http.get<ProvidersView>('/api/system/auth/listProviders', { silent: true }),
         staleTime: PROVIDERS_STALE_TIME,
     });
 }
@@ -31,16 +31,16 @@ export function useMyIdentities() {
     const session = useSession();
     return useQuery({
         queryKey: [...identityKeys.mine, session],
-        queryFn: () => http.get<UserIdentityView[]>('/api/auth/identities'),
+        queryFn: () => http.get<UserIdentityView[]>('/api/system/auth/listCurrentIdentities'),
         enabled: !!session,
     });
 }
 
-/** 本人解绑；没有本地密码且只剩这一个时后端返回 40901，由 request 层 Toast */
+/** 本人解绑；没有本地密码且只剩这一个时后端返回 100004，由 request 层 Toast */
 export function useUnbindMyIdentity() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => http.delete<null>(`/api/auth/identities/${id}`),
+        mutationFn: (id: number) => http.delete<null>(`/api/system/auth/deleteCurrentIdentity/${id}`),
         onSuccess: () => qc.invalidateQueries({ queryKey: identityKeys.mine }),
     });
 }
@@ -49,14 +49,14 @@ export function useUnbindMyIdentity() {
 export function useUserIdentities(userId: number) {
     return useQuery({
         queryKey: identityKeys.ofUser(userId),
-        queryFn: () => http.get<UserIdentityView[]>(`/api/users/${userId}/identities`),
+        queryFn: () => http.get<UserIdentityView[]>(`/api/system/user/listIdentities/${userId}`),
     });
 }
 
 export function useBindUserIdentity(userId: number) {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (body: BindIdentityRequest) => http.post<IdResult>(`/api/users/${userId}/identities`, body),
+        mutationFn: (body: BindIdentityRequest) => http.post<IdResult>(`/api/system/user/createIdentity/${userId}`, body),
         onSuccess: () => qc.invalidateQueries({ queryKey: identityKeys.ofUser(userId) }),
     });
 }
@@ -64,7 +64,7 @@ export function useBindUserIdentity(userId: number) {
 export function useUnbindUserIdentity(userId: number) {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (identityId: number) => http.delete<null>(`/api/users/${userId}/identities/${identityId}`),
+        mutationFn: (identityId: number) => http.delete<null>(`/api/system/user/deleteIdentity/${userId}/${identityId}`),
         onSuccess: () => qc.invalidateQueries({ queryKey: identityKeys.ofUser(userId) }),
     });
 }
@@ -74,21 +74,21 @@ export function useUnbindUserIdentity(userId: number) {
  * `redirect` 必须是站内路径；后端还会再做一次规范化，非法时按 `/` 处理。
  */
 export function ssoAuthorizeUrl(providerId: string, { redirect, mode }: { redirect: string; mode: 'login' | 'bind' }): string {
-    return `${config.apiBaseUrl}/api/auth/sso/${encodeURIComponent(providerId)}/authorize?redirect=${encodeURIComponent(redirect)}&mode=${mode}`;
+    return `${config.apiBaseUrl}/api/system/auth/authorizeSso/${encodeURIComponent(providerId)}?redirect=${encodeURIComponent(redirect)}&mode=${mode}`;
 }
 
 /** 回调失败时 URL 上 `ssoError=<code>` 的提示文案（契约 §4、§6.1） */
 export function ssoErrorMessage(code: string): string {
     switch (code) {
-        case '40102':
+        case '110102':
             return '外部身份校验失败，请重新登录';
-        case '40303':
+        case '110104':
             return '账号未开通，请联系管理员';
-        case '40301':
+        case '110103':
             return '账号已禁用';
-        case '40100':
+        case '100101':
             return '请先登录';
-        case '40901':
+        case '100004':
             return '该外部账号已绑定其他用户';
         default:
             return `外部登录失败（错误码 ${code}）`;

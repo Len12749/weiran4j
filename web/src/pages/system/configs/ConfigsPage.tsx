@@ -1,8 +1,9 @@
 import { Button, Dropdown, Empty, Form, Modal, Pagination, Space, Tag, Toast, Tooltip } from '@douyinfe/semi-ui';
 import type { FormApi } from '@douyinfe/semi-ui/lib/es/form';
-import { Eye, EyeOff, MoreHorizontal, Pencil, Plus, RefreshCw, Settings, Trash2 } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { Eye, EyeOff, MoreHorizontal, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { PageContainer } from '@/components/PageContainer';
+import { parseConfigFieldOptions, SystemConfigGroupForm } from '@/components/SystemConfigGroupForm';
 import { NavListItem, NavListPanel } from '@/components/NavListPanel';
 import { Permission } from '@/components/Permission';
 import {
@@ -28,6 +29,8 @@ interface ConfigMetadataForm {
     description: string;
 }
 
+type ConfigDomain = 'config_system' | 'config_sms';
+
 const FIELD_OPTIONS = [
     { label: '单行输入', value: 'input' },
     { label: '多行文本', value: 'textarea' },
@@ -35,6 +38,8 @@ const FIELD_OPTIONS = [
     { label: '开关', value: 'switch' },
     { label: '下拉选择', value: 'select' },
     { label: 'JSON', value: 'json' },
+    { label: '单图上传', value: 'image' },
+    { label: '富文本', value: 'richtext' },
 ];
 
 function configType(fieldType: ConfigFieldType): ConfigSaveRequest['configType'] {
@@ -44,47 +49,9 @@ function configType(fieldType: ConfigFieldType): ConfigSaveRequest['configType']
     return 'string';
 }
 
-function parseOptions(value: string): Array<{ label: string; value: string }> {
-    if (!value.trim()) return [];
-    try {
-        const options: unknown = JSON.parse(value);
-        if (!Array.isArray(options)) return [];
-        return options.filter((option: unknown): option is { label: string; value: string } => {
-            if (typeof option !== 'object' || option === null) return false;
-            const candidate = option as Record<string, unknown>;
-            return typeof candidate.label === 'string' && typeof candidate.value === 'string';
-        });
-    } catch {
-        return [];
-    }
-}
-
-function toTextValue(value: unknown): string {
-    return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value) : '';
-}
-
-function validateField(record: ConfigView, value: unknown): string | null {
-    const text = record.fieldType === 'switch' ? String(Boolean(value)) : toTextValue(value);
-    if (record.required && !text.trim()) return '此项必填';
-    if (record.fieldType === 'number' && text.trim() && (text.trim() !== text || Number.isNaN(Number(text)))) {
-        return '请输入合法数字';
-    }
-    if (record.fieldType === 'switch' && text !== 'true' && text !== 'false') return '请选择开或关';
-    if (record.fieldType === 'json') {
-        try {
-            JSON.parse(text);
-        } catch {
-            return 'JSON 格式不正确';
-        }
-    }
-    if (record.fieldType === 'select' && text && !parseOptions(record.fieldOptions ?? '').some((option) => option.value === text)) {
-        return '请选择有效选项';
-    }
-    return null;
-}
-
 function ConfigMetadataModal({
     record,
+    domain,
     defaultGroup,
     groups,
     canDelete,
@@ -92,6 +59,7 @@ function ConfigMetadataModal({
     onClose,
 }: {
     record: ConfigView | null;
+    domain: ConfigDomain;
     defaultGroup?: { key: string; label: string } | undefined;
     groups: Array<{ key: string; label: string }>;
     canDelete: boolean;
@@ -154,7 +122,7 @@ function ConfigMetadataModal({
                     api.current = formApi;
                 }}
                 initValues={{
-                    configKey: record?.configKey ?? 'system.',
+                    configKey: record?.configKey ?? `${domain === 'config_sms' ? 'sms' : 'system'}.${defaultGroup?.key ?? 'general'}.`,
                     configValue: record?.configValue ?? '',
                     groupKey: record?.groupKey ?? defaultGroup?.key ?? 'general',
                     fieldType: record?.fieldType ?? 'input',
@@ -170,7 +138,22 @@ function ConfigMetadataModal({
                     label="配置键"
                     maxLength={128}
                     disabled={record?.isBuiltin ?? false}
-                    rules={[{ required: true, message: '请输入配置键' }, { pattern: /^system\.[\w.-]+$/, message: '配置键必须以 system. 开头' }]}
+                    rules={[
+                        { required: true, message: '请输入配置键' },
+                        {
+                            validator: (_rule: unknown, value: unknown) => {
+                                const key = typeof value === 'string' ? value.trim() : '';
+                                const groupKey = api.current?.getValue('groupKey');
+                                if (record && key === record.configKey && groupKey === record.groupKey) return true;
+                                const parts = key.split('.');
+                                return parts.length === 3
+                                    && parts[0] === (domain === 'config_sms' ? 'sms' : 'system')
+                                    && parts[1] === groupKey
+                                    && /^[a-z][a-z0-9_-]*$/.test(parts[2] ?? '');
+                            },
+                            message: '配置键须为 {范围}.{分组}.{配置项}，且分组与所选配置分组一致',
+                        },
+                    ]}
                 />
                 <Form.Select
                     field="groupKey"
@@ -182,14 +165,14 @@ function ConfigMetadataModal({
                 <Form.Select field="fieldType" label="表单字段" optionList={FIELD_OPTIONS} style={{ width: '100%' }} />
                 <Form.TextArea
                     field="fieldOptions"
-                    label="下拉选项 JSON"
+                    label="下拉选项 JSON（仅下拉选择使用）"
                     rows={3}
                     placeholder={'[{"label":"选项一","value":"one"}]'}
                     rules={[
                         {
                             validator: (_rule: unknown, value: unknown) => {
                                 if (api.current?.getValue('fieldType') !== 'select' || !value) return true;
-                                return parseOptions(typeof value === 'string' ? value : '').length > 0;
+                                return parseConfigFieldOptions(typeof value === 'string' ? value : '').length > 0;
                             },
                             message: '请输入有效的选项数组 JSON',
                         },
@@ -209,10 +192,12 @@ function ConfigMetadataModal({
 
 function ConfigGroupModal({
     record,
+    domain,
     onClose,
     onCreated,
 }: {
     record: ConfigGroupView | null;
+    domain: ConfigDomain;
     onClose: () => void;
     onCreated: (key: string) => void;
 }) {
@@ -226,10 +211,10 @@ function ConfigGroupModal({
         if (!value) return;
         const key = record?.key ?? value.key.trim();
         if (record) {
-            await updateGroup.mutateAsync({ key, body: { label: value.label.trim() } });
+            await updateGroup.mutateAsync({ key, body: { label: value.label.trim() }, groupKey: domain });
             Toast.success('配置分组已更新');
         } else {
-            await createGroup.mutateAsync({ key, label: value.label.trim() });
+            await createGroup.mutateAsync({ key, label: value.label.trim(), ...(domain === 'config_sms' ? { groupKey: domain } : {}) });
             Toast.success('配置分组已创建');
         }
         onCreated(key);
@@ -270,124 +255,11 @@ function ConfigGroupModal({
     );
 }
 
-function ConfigGroupPanel({
-    records,
-    canEdit,
-    showSettings,
-    onEdit,
-}: {
-    records: ConfigView[];
-    canEdit: boolean;
-    showSettings: boolean;
-    onEdit: (record: ConfigView) => void;
-}) {
-    const api = useRef<FormApi<Record<string, unknown>> | null>(null);
-    const save = useSaveConfig();
-    const initValues = useMemo(
-        () => Object.fromEntries(records.map((record) => [String(record.id), record.fieldType === 'switch' ? record.configValue === 'true' : record.configValue])),
-        [records],
-    );
-
-    const submit = async () => {
-        const values = await api.current?.validate();
-        if (!values) return;
-        for (const record of records) {
-            const raw = values[String(record.id)];
-            const error = validateField(record, raw);
-            if (error) {
-                Toast.error(`${record.description || record.configKey}：${error}`);
-                return;
-            }
-        }
-        await Promise.all(
-            records.map((record) => {
-                const value = values[String(record.id)];
-                const body: ConfigSaveRequest = {
-                    configKey: record.configKey,
-                    configValue: record.fieldType === 'switch' ? String(Boolean(value)) : toTextValue(value),
-                    configType: record.configType,
-                    groupKey: record.groupKey,
-                    fieldType: record.fieldType,
-                    fieldOptions: record.fieldOptions,
-                    required: record.required,
-                    description: record.description,
-                };
-                return save.mutateAsync({ id: record.id, body });
-            }),
-        );
-        Toast.success('分组配置已保存');
-    };
-
-    return (
-        <Form<Record<string, unknown>>
-            style={{ width: '100%' }}
-            getFormApi={(formApi) => {
-                api.current = formApi;
-            }}
-            initValues={initValues}
-            labelPosition="top"
-        >
-            <Space vertical align="start" style={{ width: '100%' }} spacing={20}>
-                {records.map((record) => {
-                    const field = String(record.id);
-                    const label = (
-                        <div className="config-field-title">
-                            {canEdit && showSettings && (
-                                <Button
-                                    className="config-field-title__edit"
-                                    theme="borderless"
-                                    size="small"
-                                    icon={<Settings size={14} />}
-                                    aria-label={`字段设置：${record.description || record.configKey}`}
-                                    onClick={(event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        onEdit(record);
-                                    }}
-                                />
-                            )}
-                            <span>{record.description || '未命名配置项'}</span>
-                            {record.isBuiltin && <Tag size="small" color="blue">内置</Tag>}
-                        </div>
-                    );
-                    const common = {
-                        field,
-                        label,
-                        disabled: !canEdit,
-                        rules: record.required ? [{ required: true, message: '此项必填' }] : [],
-                    };
-                    return (
-                        <div key={record.id} style={{ width: '100%' }}>
-                            {record.fieldType === 'textarea' ? (
-                                <Form.TextArea {...common} rows={3} maxLength={4096} />
-                            ) : record.fieldType === 'number' ? (
-                                <Form.Input {...common} type="number" />
-                            ) : record.fieldType === 'switch' ? (
-                                <Form.Switch {...common} />
-                            ) : record.fieldType === 'select' ? (
-                                <Form.Select {...common} optionList={parseOptions(record.fieldOptions ?? '')} style={{ width: '100%' }} />
-                            ) : record.fieldType === 'json' ? (
-                                <Form.TextArea {...common} rows={5} maxLength={4096} />
-                            ) : (
-                                <Form.Input {...common} maxLength={4096} />
-                            )}
-                        </div>
-                    );
-                })}
-                {canEdit && (
-                    <Button type="primary" theme="solid" loading={save.isPending} onClick={() => void submit().catch(() => undefined)}>
-                        保存本组
-                    </Button>
-                )}
-            </Space>
-        </Form>
-    );
-}
-
-export default function ConfigsPage() {
+export default function ConfigsPage({ domain = 'config_system' }: { domain?: ConfigDomain }) {
     const { hasAnyPermission } = usePermission();
     const { data } = useConfigAll();
     const { data: groupCatalog = [], isFetching: isFetchingGroups, refetch: refetchGroups } = useConfigGroups();
+    const domainGroups = groupCatalog.filter((group) => group.groupKey === domain);
     const deleteConfig = useDeleteConfig();
     const deleteConfigGroup = useDeleteConfigGroup();
     const [editing, setEditing] = useState<ConfigView | null | undefined>(undefined);
@@ -403,12 +275,14 @@ export default function ConfigsPage() {
     const canEdit = hasAnyPermission('system:config:update');
     const canDelete = hasAnyPermission('system:config:delete');
     const canCreate = hasAnyPermission('system:config:create');
-    const filteredGroups = groupCatalog.filter((group) => `${group.label} ${group.key}`.toLowerCase().includes(groupKeyword.toLowerCase()));
+    const filteredGroups = domainGroups.filter((group) => `${group.label} ${group.key}`.toLowerCase().includes(groupKeyword.toLowerCase()));
     const pageCount = Math.max(1, Math.ceil(filteredGroups.length / pageSize));
     const currentPage = Math.min(page, pageCount);
     const pageGroups = filteredGroups.slice((currentPage - 1) * pageSize, currentPage * pageSize);
     const selectedGroup = pageGroups.find((group) => group.key === activeGroup) ?? pageGroups[0] ?? null;
-    const selectedRecords = selectedGroup ? (data ?? []).filter((record) => record.groupKey === selectedGroup.key) : [];
+    const selectedRecords = selectedGroup
+        ? (data ?? []).filter((record) => record.groupKey === selectedGroup.key && record.configKey.startsWith(domain === 'config_sms' ? 'sms.' : 'system.'))
+        : [];
 
     const searchGroups = () => {
         setGroupKeyword(groupDraft.trim());
@@ -430,7 +304,7 @@ export default function ConfigsPage() {
             okText: '删除',
             okButtonProps: { type: 'danger', theme: 'solid' },
             onOk: () =>
-                deleteConfigGroup.mutateAsync(group.key).then(() => {
+                deleteConfigGroup.mutateAsync({ key: group.key, groupKey: domain }).then(() => {
                     setActiveGroup(null);
                     Toast.success('配置分组已删除');
                 }),
@@ -484,7 +358,7 @@ export default function ConfigsPage() {
                         placeholder: '名称 / 编码',
                         onEnterPress: searchGroups,
                     }}
-                    loading={isFetchingGroups && groupCatalog.length === 0}
+                    loading={isFetchingGroups && domainGroups.length === 0}
                     emptyText={groupKeyword ? '没有匹配的配置分组' : '暂无配置分组'}
                     footer={
                         <Pagination
@@ -555,7 +429,7 @@ export default function ConfigsPage() {
             </div>
             <PageContainer
                 title={
-                    selectedGroup?.label ?? '系统配置'
+                    selectedGroup?.label ?? (domain === 'config_sms' ? '短信配置' : '系统配置')
                 }
                 extra={
                     <Permission code="system:config:create">
@@ -569,7 +443,7 @@ export default function ConfigsPage() {
                 {!selectedGroup ? (
                     <Empty title="暂无配置分组" description="请使用左侧分组菜单新增配置分组" style={{ padding: 48 }} />
                 ) : (
-                    <ConfigGroupPanel
+                    <SystemConfigGroupForm
                         key={`${selectedGroup.key}-${selectedRecords.map((record) => record.id).join('-')}`}
                         records={selectedRecords}
                         canEdit={canEdit}
@@ -582,8 +456,9 @@ export default function ConfigsPage() {
             {editing !== undefined && (
                 <ConfigMetadataModal
                     record={editing}
+                    domain={domain}
                     defaultGroup={selectedGroup ?? undefined}
-                    groups={groupCatalog}
+                    groups={domainGroups}
                     canDelete={canDelete}
                     onDelete={removeConfig}
                     onClose={() => setEditing(undefined)}
@@ -592,12 +467,13 @@ export default function ConfigsPage() {
             {creatingGroup && (
                 <ConfigGroupModal
                     record={null}
+                    domain={domain}
                     onClose={() => setCreatingGroup(false)}
                     onCreated={(key) => {
                         setGroupDraft('');
                         setGroupKeyword('');
-                        const createdIndex = groupCatalog.findIndex((group) => group.key === key);
-                        setPage(Math.ceil(((createdIndex >= 0 ? createdIndex : groupCatalog.length) + 1) / pageSize));
+                        const createdIndex = domainGroups.findIndex((group) => group.key === key);
+                        setPage(Math.ceil(((createdIndex >= 0 ? createdIndex : domainGroups.length) + 1) / pageSize));
                         setActiveGroup(key);
                     }}
                 />
@@ -605,6 +481,7 @@ export default function ConfigsPage() {
             {editingGroup && (
                 <ConfigGroupModal
                     record={editingGroup}
+                    domain={domain}
                     onClose={() => setEditingGroup(undefined)}
                     onCreated={(key) => {
                         setGroupKeyword('');

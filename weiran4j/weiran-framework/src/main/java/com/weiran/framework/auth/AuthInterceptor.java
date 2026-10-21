@@ -24,7 +24,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
  *
  * <p>流程：取令牌（{@code Authorization: Bearer} 优先，其次 {@value AuthCookies#TOKEN_COOKIE} Cookie）→
  * {@link TokenAuthenticator} → 非 {@link PublicApi} 且未登录抛 401 → 以 Cookie 认证的写请求做 CSRF 双提交校验（不通过抛 403 /
- * 40302）→ 不满足 {@link RequiresPermission} 抛 403 → 写入 {@link CurrentUser}。
+ * 100103）→ 不满足 {@link RequiresPermission} 抛 403 → 写入 {@link CurrentUser}。
  * 异常由全局异常处理器统一输出（拦截器运行在 DispatcherServlet 内，能被 {@code @ExceptionHandler} 接到）。
  *
  * <p>CSRF 只查「Cookie 认证 + 非公开接口 + 写方法」：Bearer 头不会被浏览器自动附带，不存在跨站伪造；
@@ -64,7 +64,7 @@ public class AuthInterceptor implements HandlerInterceptor {
     public boolean preHandle(
             final HttpServletRequest request, final HttpServletResponse response, final Object handler) {
         if (!(handler instanceof final HandlerMethod handlerMethod)) {
-            // 静态资源、404 等非 Controller 处理器：交给后续流程（通常是 NoResourceFound → 40400）。
+            // 静态资源、404 等非 Controller 处理器：交给后续流程（通常是 NoResourceFound → 100002）。
             return true;
         }
         final Credential credential = AuthInterceptor.credential(request);

@@ -16,3 +16,6 @@ set
     description = '系统标题'
 where config_key = 'system.site.title';
 
+delete from sys_role_menu where menu_id in (12, 121, 122);
+delete from sys_menu where id = 12;
+drop table sys_site_config;

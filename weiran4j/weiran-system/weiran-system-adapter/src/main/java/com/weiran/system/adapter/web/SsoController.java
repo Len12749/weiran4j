@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 流程状态在签名的 {@value AuthCookies#SSO_COOKIE} Cookie 里；令牌只通过 HttpOnly Cookie 交付，不出现在任何 URL 里。
  */
 @RestController
-@RequestMapping("/api/auth/sso/{provider}")
+@RequestMapping("/api/system/auth")
 public class SsoController {
 
     private final ExternalLoginService externalLoginService;
@@ -43,7 +43,7 @@ public class SsoController {
 
     /** 发起外部登录 / 绑定。 */
     @PublicApi
-    @GetMapping("/authorize")
+    @GetMapping("/authorizeSso/{provider}")
     public void authorize(
             @PathVariable final String provider,
             @RequestParam(required = false) final @Nullable String redirect,
@@ -60,7 +60,7 @@ public class SsoController {
 
     /** 提供方回调。 */
     @PublicApi
-    @GetMapping("/callback")
+    @GetMapping("/callbackSso/{provider}")
     public void callback(
             @PathVariable final String provider,
             @RequestParam final Map<String, String> params,

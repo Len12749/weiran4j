@@ -11,7 +11,7 @@ status: "active"
 
 ### Requirement: [FR-001] 统一响应包络
 
-所有 `/api/**` 接口 **MUST** 以统一包络返回。成功时 **MUST** 为 `{code, message, data}`,`code` 为数字 `0`,**MUST NOT** 带其它键。失败时 **MUST** 为 `{code, message, data, requestId}`:`code` 为五位数字错误码,前三位等于 HTTP 状态码;`data` 为 `null`;`requestId` 与该响应的 `X-Request-Id` 头相同。
+所有 `/api/**` 接口 **MUST** 以统一包络返回。成功时 **MUST** 为 `{code, message, data}`,`code` 为数字 `0`,**MUST NOT** 带其它键。失败时 **MUST** 为 `{code, message, data, requestId}`:`code` 为六位数字错误码，依次表示服务、资源、错误各两位，HTTP 状态由错误定义独立指定;`data` 为 `null`;`requestId` 与该响应的 `X-Request-Id` 头相同。
 
 #### Scenario: 成功响应的业务码是数字 0
 - **WHEN** 已登录用户调用 `GET /api/auth/me`
@@ -20,22 +20,22 @@ status: "active"
 
 #### Scenario: 参数校验失败
 - **WHEN** 调用 `POST /api/auth/login` 且 `username` 为空
-- **THEN** 返回 HTTP 400,`code` 为 `40000`,`requestId` 等于响应头 `X-Request-Id`
-- **判据**:响应状态 400、`$.code == 40000`,且 `$.requestId` 与响应头相等
+- **THEN** 返回 HTTP 400,`code` 为 `100001`,`requestId` 等于响应头 `X-Request-Id`
+- **判据**:响应状态 400、`$.code == 100001`,且 `$.requestId` 与响应头相等
 
 #### Scenario: 拦截器拒绝时的失败体也带请求号
 - **WHEN** 不带令牌调用 `GET /api/auth/me`,以及无权限用户调用 `GET /api/users`
-- **THEN** 分别返回 40100 与 40300,两个响应体都带非空的 `requestId`,且与各自的响应头一致
+- **THEN** 分别返回 100101 与 100102,两个响应体都带非空的 `requestId`,且与各自的响应头一致
 - **判据**:集成测试断言两次响应的 `$.requestId` 都等于各自的 `X-Request-Id` 头
 
 ### Requirement: [FR-002] 登录与账号枚举防护
 
-登录接口 **MUST** 对「用户名不存在」与「密码错误」返回同一错误码 `40101` 与同一 message,两种情况都要执行一次 BCrypt 校验,且无论成败都写入 `sys_login_log`。
+登录接口 **MUST** 对「用户名不存在」与「密码错误」返回同一错误码 `110101` 与同一 message,两种情况都要执行一次 BCrypt 校验,且无论成败都写入 `sys_login_log`。
 只校验凭据的入口(`AuthService.authenticate`)**MUST** 遵守同样的规则;登录接口 **MUST** 复用它,而不是另写一份凭据校验。
 
 #### Scenario: 用户名不存在与密码错误不可区分
 - **WHEN** 分别用不存在的用户名、存在的用户名 + 错误密码调用登录
-- **THEN** 两次均返回 HTTP 401、`code` 为 `40101`、message 相同
+- **THEN** 两次均返回 HTTP 401、`code` 为 `110101`、message 相同
 - **判据**:集成测试比对两次响应的 `code` 与 `message` 完全相等
 
 #### Scenario: 内置管理员可登录
@@ -51,27 +51,27 @@ status: "active"
 
 #### Scenario: 改密后旧令牌失效
 - **WHEN** 用户调用 `PUT /api/auth/password` 成功后,再用旧令牌调用 `GET /api/auth/me`
-- **THEN** 返回 HTTP 401、`code` 为 `40100`
-- **判据**:集成测试断言旧令牌请求 `$.code == 40100`
+- **THEN** 返回 HTTP 401、`code` 为 `100101`
+- **判据**:集成测试断言旧令牌请求 `$.code == 100101`
 
 #### Scenario: 其他实例的吊销在本实例立即生效
 - **WHEN** 用户持有有效令牌并成功调用一次 `GET /api/auth/me`(本实例已缓存其快照),随后**绕过应用服务**直接在库中把该用户的 `token_version` 加 1(或把 `status` 改为 `disabled`)
-- **THEN** 该用户的下一次请求返回 HTTP 401、`code` 为 `40100`
-- **判据**:集成测试用 `JdbcTemplate` 直接改库,不调用任何缓存失效方法,断言下一次请求 `$.code == 40100`
+- **THEN** 该用户的下一次请求返回 HTTP 401、`code` 为 `100101`
+- **判据**:集成测试用 `JdbcTemplate` 直接改库,不调用任何缓存失效方法,断言下一次请求 `$.code == 100101`
 
 ### Requirement: [FR-004] 接口权限校验
 
-标注 `@RequiresPermission` 的接口 **MUST** 拒绝未持有对应权限码的已登录用户（HTTP 403、`code` 为 `40300`），未登录请求 **MUST** 返回 HTTP 401；持有 `super_admin` 角色者放行一切。
+标注 `@RequiresPermission` 的接口 **MUST** 拒绝未持有对应权限码的已登录用户（HTTP 403、`code` 为 `100102`），未登录请求 **MUST** 返回 HTTP 401；持有 `super_admin` 角色者放行一切。
 
 #### Scenario: 无权限用户访问用户列表
 - **WHEN** 一个未绑定任何角色的用户调用 `GET /api/users`
-- **THEN** 返回 HTTP 403、`code` 为 `40300`
-- **判据**:集成测试断言 `$.code == 40300`
+- **THEN** 返回 HTTP 403、`code` 为 `100102`
+- **判据**:集成测试断言 `$.code == 100102`
 
 #### Scenario: 未登录访问受保护接口
 - **WHEN** 不带 `Authorization` 头调用 `GET /api/auth/me`
-- **THEN** 返回 HTTP 401、`code` 为 `40100`
-- **判据**:响应状态 401 且 `$.code == 40100`
+- **THEN** 返回 HTTP 401、`code` 为 `100101`
+- **判据**:响应状态 401 且 `$.code == 100101`
 
 ### Requirement: [FR-005] 菜单驱动路由
 
@@ -84,12 +84,12 @@ status: "active"
 
 ### Requirement: [FR-006] 树结构防环
 
-菜单与部门的更新 **MUST** 拒绝把节点的 `parentId` 设为自身或其后代（HTTP 409、`code` 为 `40901`）；删除有子节点的菜单/部门 **MUST** 被拒绝。
+菜单与部门的更新 **MUST** 拒绝把节点的 `parentId` 设为自身或其后代（HTTP 409、`code` 为 `100004`）；删除有子节点的菜单/部门 **MUST** 被拒绝。
 
 #### Scenario: 部门挂到自己的后代下
 - **WHEN** 把部门 A 的 `parentId` 更新为 A 的子部门 B
-- **THEN** 返回 `code` 为 `40901`，A 的父节点不变
-- **判据**:集成测试断言 `$.code == 40901` 且随后查询 A 的 `parentId` 未变
+- **THEN** 返回 `code` 为 `100004`，A 的父节点不变
+- **判据**:集成测试断言 `$.code == 100004` 且随后查询 A 的 `parentId` 未变
 
 ### Requirement: [FR-007] 内置数据保护
 
@@ -97,8 +97,8 @@ status: "active"
 
 #### Scenario: 删除内置角色被拒绝
 - **WHEN** 调用 `DELETE /api/roles/{super_admin 的 id}`
-- **THEN** 返回 `code` 为 `40901`，角色仍存在
-- **判据**:集成测试断言 `$.code == 40901` 且随后 `GET /api/roles/{id}` 的 `code == 0`
+- **THEN** 返回 `code` 为 `100004`，角色仍存在
+- **判据**:集成测试断言 `$.code == 100004` 且随后 `GET /api/roles/{id}` 的 `code == 0`
 
 ### Requirement: [FR-008] 操作审计
 
@@ -112,7 +112,7 @@ status: "active"
 ### Requirement: [FR-009] 令牌签发方与受众校验
 
 本地签发的 JWT **MUST** 携带 `iss` 与 `aud`,取值来自配置(默认均为 `weiran4j`)。
-认证 **MUST** 按 `iss` 选择对应的校验器;`iss` 缺失、无对应校验器或 `aud` 不含本系统的令牌 **MUST** 被视为无效(HTTP 401、`code` 为 `40100`)。
+认证 **MUST** 按 `iss` 选择对应的校验器;`iss` 缺失、无对应校验器或 `aud` 不含本系统的令牌 **MUST** 被视为无效(HTTP 401、`code` 为 `100101`)。
 
 #### Scenario: 新签发令牌带签发方与受众
 - **WHEN** 以 `X-Auth-Mode: token` 登录,解码返回的 `accessToken` 载荷
@@ -121,8 +121,8 @@ status: "active"
 
 #### Scenario: 签发方或受众不符的令牌被拒
 - **WHEN** 用同一密钥签发 `iss` 缺失、`iss = "other"`、`aud = "other"` 的三个令牌,分别以 Bearer 头调用 `GET /api/auth/me`
-- **THEN** 三次均返回 HTTP 401、`code` 为 `40100`
-- **判据**:测试断言三次响应的 `$.code == 40100`
+- **THEN** 三次均返回 HTTP 401、`code` 为 `100101`
+- **判据**:测试断言三次响应的 `$.code == 100101`
 
 ### Requirement: [FR-010] 令牌交付与携带方式
 
@@ -162,19 +162,19 @@ status: "active"
 
 ### Requirement: [FR-011] CSRF 双提交校验
 
-由认证 Cookie 完成认证的 `POST` / `PUT` / `PATCH` / `DELETE` 请求 **MUST** 带 `X-CSRF-Token` 请求头,且其值与 `weiran_csrf` Cookie 完全相等;否则 **MUST** 返回 HTTP 403、`code` 为 `40302`,并且不执行业务逻辑。
+由认证 Cookie 完成认证的 `POST` / `PUT` / `PATCH` / `DELETE` 请求 **MUST** 带 `X-CSRF-Token` 请求头,且其值与 `weiran_csrf` Cookie 完全相等;否则 **MUST** 返回 HTTP 403、`code` 为 `100103`,并且不执行业务逻辑。
 `GET` / `HEAD` / `OPTIONS` 请求和由 Bearer 头认证的请求 **MUST NOT** 做此校验。
 前端 **MUST** 在每个写请求上自动带上该头。
 
 #### Scenario: Cookie 认证的写请求缺少 CSRF 头
 - **WHEN** 只带两个 Cookie、不带 `X-CSRF-Token` 调用 `PUT /api/auth/profile`
-- **THEN** 返回 HTTP 403、`code` 为 `40302`,随后 `/api/auth/me` 的昵称未变
-- **判据**:集成测试断言 `$.code == 40302` 并复查资料未变
+- **THEN** 返回 HTTP 403、`code` 为 `100103`,随后 `/api/auth/me` 的昵称未变
+- **判据**:集成测试断言 `$.code == 100103` 并复查资料未变
 
 #### Scenario: CSRF 头与 Cookie 不一致
 - **WHEN** 带两个 Cookie,`X-CSRF-Token` 填一个不同的值,调用 `PUT /api/auth/profile`
-- **THEN** 返回 HTTP 403、`code` 为 `40302`
-- **判据**:集成测试断言 `$.code == 40302`
+- **THEN** 返回 HTTP 403、`code` 为 `100103`
+- **判据**:集成测试断言 `$.code == 100103`
 
 #### Scenario: Bearer 头认证的写请求不查 CSRF
 - **WHEN** 以 `X-Auth-Mode: token` 登录,用 Bearer 头、不带 CSRF 头调用 `PUT /api/auth/profile`
@@ -188,7 +188,7 @@ status: "active"
 
 ### Requirement: [FR-012] 只校验凭据的认证入口
 
-`AuthService` **MUST** 提供 `authenticate(username, password, client)`:凭据有效且账号启用时返回用户标识,**MUST NOT** 签发令牌,也 **MUST NOT** 写成功登录日志;失败时 **MUST** 写失败登录日志,用户名不存在与密码错误都抛 `40101`,账号禁用抛 `40301`。
+`AuthService` **MUST** 提供 `authenticate(username, password, client)`:凭据有效且账号启用时返回用户标识,**MUST NOT** 签发令牌,也 **MUST NOT** 写成功登录日志;失败时 **MUST** 写失败登录日志,用户名不存在与密码错误都抛 `110101`,账号禁用抛 `110103`。
 
 #### Scenario: 校验成功不产生令牌与成功日志
 - **WHEN** 用正确的凭据调用 `authenticate`
@@ -197,5 +197,79 @@ status: "active"
 
 #### Scenario: 校验失败写失败日志
 - **WHEN** 用不存在的用户名调用 `authenticate`
-- **THEN** 抛出 `code` 为 `40101` 的异常,并写一条失败的登录日志
+- **THEN** 抛出 `code` 为 `110101` 的异常,并写一条失败的登录日志
 - **判据**:应用层单测断言异常码,以及 `append` 被以失败状态调用一次
+
+### Requirement: [FR-013] 分组式系统配置表单
+
+字典与系统配置分组 **MUST** 共用 `sys_group` 表，且不得保留独立 `sys_dict` 主表。`sys_group.type` **MUST** 支持 `config` 与 `dict`，唯一键为 `(type, group_key, code)`；既有字典记录迁移后为 `type=dict`，配置分组为 `type=config`。系统配置组使用 `group_key=config_system`，短信配置组使用 `group_key=config_sms`，两者允许同名编码。字典项继续存于 `sys_dict_item`，数据库列 `group_id` 引用对应 `type=dict` 的组 ID；既有 HTTP 字段 `dictId` 保持兼容。字典 API **MUST** 只查询和修改 `dict` 类型组，配置 API **MUST** 只查询和引用 `config` 类型组。系统配置页面 **MUST** 在左侧展示适用于系统配置的启用配置组导航，在右侧展示当前组选中的配置项及其表单；短信配置项使用 `sms.` 键前缀并由独立短信配置页面展示，不能出现在系统配置表单中。每个配置项的表单字段类型、选项与必填规则 **MUST** 决定控件渲染和前后端校验。支持单行输入、多行文本、数字、布尔开关、下拉选择和 JSON 字段，值类型必须与字段类型兼容。配置键 **MUST** 遵循 `{range}.{group}.{value}`，其中 `range` 为 `system` 或 `sms`，`group` 与配置项所属 `sys_group.code` 相同，`value` 为组内编码；新建配置及修改配置键或分组时必须校验。既有不合规自定义键允许原位改值。内置配置 **MUST** 保留键名且不可删除。内置标题配置 **MUST** 使用 `system.general.title` 并归属系统配置的 `general` 组；系统配置 **MUST NOT** 保留 `site` 组。匿名配置读取 **MUST** 只允许 `system.general.title`，且不隐式改变前端展示。系统站点内容配置及其存储表 **MUST NOT** 存在。
+
+#### Scenario: 配置 API 统一使用 system 路径
+- **WHEN** 客户端访问配置列表、分组、全量、详情、写入或公开读取接口
+- **THEN** 请求通过 `/api/system/config/{action}[/{id}]` 路由处理
+- **判据**:所有 ConfigController 路由均为 `/api/system/config/{action}[/{id}]` 结构，前端不再请求 `/api/configs/**`；不存在挂在 `/api/system/config` 根路径的接口
+
+#### Scenario: 按类型查询配置组并显示双栏页面
+- **WHEN** 管理员打开系统配置页面
+- **THEN** 左侧显示启用的系统配置组，右侧显示当前分组的非短信配置项，并按配置元数据渲染字段控件和必填/选项校验；`config_sms` 短信配置域不显示在此页面
+- **判据**:`GET /api/system/config/listGroups` 仍返回 `config` 类型启用组；页面隐藏短信模板专用组与 `sms.` 配置项
+
+#### Scenario: 从配置侧栏新增分组
+- **WHEN** 有配置创建权限的管理员从分组侧栏新增一个分组
+- **THEN** 分组以 `type=config`、启用状态保存，并在刷新后显示且自动选中
+- **判据**:`createGroup` 拒绝非法或重复编码；字典 API 不返回该分组
+
+#### Scenario: 新增配置项默认沿用当前分组
+- **WHEN** 管理员选中一个配置分组并点击新增配置项
+- **THEN** 新增表单的分组字段默认选中该组
+- **判据**:表单提交时 `groupKey` 等于当前选中分组编码
+
+#### Scenario: 配置项标题与字段设置操作
+- **WHEN** 管理员查看右侧配置项表单
+- **THEN** 配置键不在页面标题中展示，内置状态以标签显示；字段设置入口使用设置图标并紧随必填标记，且仅在鼠标悬停或键盘聚焦标题时绝对定位显示，不占据标题布局空间；删除按钮在字段设置弹窗内始终可见
+- **判据**:配置项标题显示说明文案；编辑弹窗中无删除权限或记录为内置项时删除按钮置灰，其他情况可用
+
+#### Scenario: 新增配置项放在分组标题栏
+- **WHEN** 管理员查看配置项分组内容
+- **THEN** 新增配置项按钮与当前分组标题位于同一行并靠右显示，按钮包含添加图标
+- **判据**:按钮位于 `PageContainer` 标题栏的 `extra` 区域并受创建权限控制
+
+#### Scenario: 配置分组显示元数据并编辑名称
+- **WHEN** 管理员查看配置分组侧栏或选中一个分组
+- **THEN** 侧栏条目显示创建时间和内置状态并提供受更新/删除权限控制的编辑和删除操作；右侧只显示分组名称，不重复时间、内置或可删除状态
+- **判据**:`listGroups` 返回 `createdAt`、`isBuiltin`、`canDelete`；`updateGroup/{key}` 只允许修改名称，编码不变；内置或仍有配置项的分组标记为不可删除
+
+#### Scenario: 配置分组列表沿用字典列表交互
+- **WHEN** 管理员查看系统配置左侧分组列表
+- **THEN** 列表使用与字典列表相同的名称/编码搜索、回车提交、分页和每页条数控制；条目选择、元信息布局、标题栏操作菜单及响应式宽度保持一致
+- **判据**:搜索清空后回车恢复完整分组列表；分页切换后默认选中当前页第一组；创建分组后自动选中并定位到新分组所在页
+
+#### Scenario: 删除空的自定义配置分组
+- **WHEN** 有删除权限的管理员删除一个非内置且没有配置项的分组
+- **THEN** 系统删除该分组并刷新分组列表
+- **判据**:`DELETE /api/system/config/deleteGroup/{key}` 成功；内置分组或含配置项的分组返回 100004；无删除权限返回 100102
+
+#### Scenario: 配置项使用共享分组
+- **WHEN** 管理员新增带 `system.` 键前缀的配置项并选择一个启用的 `config` 分组
+- **THEN** 配置项被保存并显示在该分组表单中
+- **判据**:重新查询后字段元数据完整保留；无效、停用或 `dict` 类型分组会被服务端拒绝
+
+#### Scenario: 字典与配置共用分组表并按类型隔离
+- **WHEN** 数据库迁移从既有版本升级
+- **THEN** 原字典记录保留 ID 并迁入 `sys_group`，标记 `type=dict`；新增配置分组标记 `type=config`
+- **判据**:`sys_dict` 表不存在；`sys_group` 唯一约束包含 `type,group_key,code`；`sys_dict_item.group_id` 保留原关联值并关联原字典 ID
+
+#### Scenario: 字典 API 只操作 dict 类型分组
+- **WHEN** 字典列表、编码查询、创建、修改或删除被调用
+- **THEN** 这些操作只作用于 `type=dict` 记录，字典项仍按对应组 ID 查询
+- **判据**:字典 API 不返回配置组；配置组 CRUD 不会被字典 API 修改或删除
+
+#### Scenario: 用户分组提供手机号验证码登录开关
+- **WHEN** 数据库迁移创建内置系统配置
+- **THEN** `system.user.enable_phone_login` 以 `user` 分组的布尔开关呈现，初始值为 `false`
+- **判据**:系统配置接口返回该内置配置，用户组页面显示关闭状态
+
+#### Scenario: 移除站点内容配置
+- **WHEN** 管理员使用当前版本数据库迁移
+- **THEN** 站点内容配置菜单与 `sys_site_config` 表被移除
+- **判据**:菜单不再返回站点配置，数据库不存在该表

@@ -1,0 +1,14 @@
+$ vitest run
+
+ RUN  v5.0.2 /Users/duoli/Projects/duoli-weiran4j/web
+
+
+ Test Files  33 passed (33)
+      Tests  278 passed (278)
+   Start at  21:06:56
+   Duration  18.96s (transform 35%, import 27%, tests 21%, environment 14%, setup 4%)
+
+     Import  938 modules were evaluated 17256 times · 42.16s total, 27% of tracked time
+             ~2.56s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
+             learn more: https://vitest.dev/guide/improving-performance#test-isolation
+

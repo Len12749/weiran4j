@@ -35,8 +35,17 @@ export interface LoginRequest {
     password: string;
 }
 
+export interface PhoneLoginCodeRequest {
+    phone: string;
+}
+
+export interface PhoneLoginRequest {
+    phone: string;
+    code: string;
+}
+
 /**
- * POST /api/auth/login 的响应（契约 §6.1）。默认模式下令牌只走 HttpOnly Cookie，
+ * POST /api/system/auth/login 的响应（契约 §6.1）。默认模式下令牌只走 HttpOnly Cookie，
  * `accessToken` 为 null 或缺省，前端两种都按「没有」处理、也不读它；`X-Auth-Mode: token` 时才有值（给非浏览器客户端）。
  */
 export interface LoginResult {
@@ -58,7 +67,7 @@ export interface CurrentUserView {
     departmentName: string | null;
     roles: string[];
     permissions: string[];
-    /** false = 没有本地密码（外部身份自动开通的用户）：密码登录、锁屏校验一律 40101，不能改密码 */
+    /** false = 没有本地密码（外部身份自动开通的用户）：密码登录、锁屏校验一律 110101，不能改密码 */
     hasPassword: boolean;
 }
 
@@ -75,17 +84,17 @@ export interface PasswordChangeRequest {
     newPassword: string;
 }
 
-/** PUT /api/auth/favorite-menus：全量覆盖；重复 id 静默去重保序，去重后 ≤ 50 */
+/** PUT /api/system/auth/updateFavoriteMenus：全量覆盖；重复 id 静默去重保序，去重后 ≤ 50 */
 export interface FavoriteMenusSaveRequest {
     menuIds: number[];
 }
 
-/** POST /api/auth/verify-password：锁屏解锁；错误返回 40101，不影响会话 */
+/** POST /api/system/auth/verifyPassword：锁屏解锁；错误返回 110101，不影响会话 */
 export interface VerifyPasswordRequest {
     password: string;
 }
 
-/** POST /api/auth/logout 的响应：会话来自配置了登出的外部身份提供方时为其登出地址，前端整页跳转；否则 null */
+/** POST /api/system/auth/logout 的响应：会话来自配置了登出的外部身份提供方时为其登出地址，前端整页跳转；否则 null */
 export interface LogoutResult {
     ssoLogoutUrl: string | null;
 }
@@ -100,13 +109,14 @@ export interface ProviderView {
     name: string;
 }
 
-/** GET /api/auth/providers（公开）：只含已启用的提供方 */
+/** GET /api/system/auth/listProviders（公开）：只含已启用的提供方 */
 export interface ProvidersView {
     passwordLoginEnabled: boolean;
+    phoneLoginEnabled?: boolean;
     providers: ProviderView[];
 }
 
-/** 已绑定的外部身份：本人 `/api/auth/identities`，管理员 `/api/users/{id}/identities` 结构相同 */
+/** 已绑定的外部身份：本人 `/api/system/auth/listCurrentIdentities`，管理员 `/api/system/user/listIdentities/{id}` 结构相同 */
 export interface UserIdentityView {
     id: number;
     provider: string;
@@ -116,7 +126,7 @@ export interface UserIdentityView {
     createdAt: string;
 }
 
-/** POST /api/users/{id}/identities：管理员手工绑定 */
+/** POST /api/system/user/createIdentity/{id} */
 export interface BindIdentityRequest {
     provider: string;
     externalId: string;
@@ -181,7 +191,7 @@ export interface UserView {
     updatedAt: string;
 }
 
-/** `GET /api/users` 查询参数（契约 §6.2）：`keyword` 为三列模糊的快速搜索，其余为高级筛选的单字段条件 */
+/** `GET /api/system/user/list` 查询参数（契约 §6.2）：`keyword` 为三列模糊的快速搜索，其余为高级筛选的单字段条件 */
 export interface UserQuery extends PageQuery {
     keyword?: string;
     status?: Status;
@@ -217,6 +227,14 @@ export interface UserCreateRequest {
 }
 
 export type UserUpdateRequest = Omit<UserCreateRequest, 'username' | 'password'>;
+
+/** PUT /api/system/user/updateAccountField/{id}：管理员单字段设置账号标识 */
+export type UserAccountField = 'username' | 'phone' | 'email';
+
+export interface UserAccountFieldUpdateRequest {
+    field: UserAccountField;
+    value: string;
+}
 
 export interface UserOption {
     id: number;
@@ -350,6 +368,7 @@ export interface DictSaveRequest {
 
 export interface DictItemView {
     id: number;
+    /** HTTP compatibility field; persisted as sys_dict_item.group_id. */
     dictId: number;
     label: string;
     value: string;
@@ -371,9 +390,10 @@ export interface DictItemSaveRequest {
 /* ---------- 系统配置 ---------- */
 
 export type ConfigType = 'string' | 'number' | 'boolean' | 'json';
-export type ConfigFieldType = 'input' | 'textarea' | 'number' | 'switch' | 'select' | 'json';
+export type ConfigFieldType = 'input' | 'textarea' | 'number' | 'switch' | 'select' | 'json' | 'image' | 'richtext';
 
 export interface ConfigGroupView {
+    groupKey: string;
     key: string;
     label: string;
     isBuiltin: boolean;
@@ -382,6 +402,7 @@ export interface ConfigGroupView {
 }
 
 export interface ConfigGroupSaveRequest {
+    groupKey?: 'config_system' | 'config_sms';
     key: string;
     label: string;
 }
@@ -420,8 +441,83 @@ export interface ConfigSaveRequest {
     description?: string | null;
 }
 
-/* ---------- CQT 站点配置 ---------- */
+/* ---------- 系统媒体库 ---------- */
 
+export interface SystemMediaImageUpload {
+    url: string;
+    name: string;
+    path: string;
+    size: number;
+}
+
+export interface SystemMediaImageView {
+    id: number;
+    originalName: string;
+    url: string;
+    size: number;
+    createdAt: string;
+}
+
+export interface SystemMediaImageQuery extends PageQuery {
+    keyword?: string;
+}
+
+/* ---------- 日志 ---------- */
+
+export interface LoginLogView {
+    id: number;
+    userId: number | null;
+    username: string;
+    ip: string | null;
+    browser: string | null;
+    os: string | null;
+    userAgent: string | null;
+    eventType: 'login' | 'logout';
+    status: 'success' | 'fail';
+    message: string | null;
+    createdAt: string;
+}
+
+export interface LoginLogQuery extends PageQuery {
+    username?: string;
+    status?: 'success' | 'fail';
+    eventType?: 'login' | 'logout';
+    startTime?: string;
+    endTime?: string;
+}
+
+/** 契约 §6.9 未逐字段列出，按 §5 sys_operation_log 列的 camelCase 形式 */
+export interface OperationLogView {
+    id: number;
+    userId: number | null;
+    username: string | null;
+    module: string;
+    description: string;
+    method: string;
+    path: string;
+    requestBody?: string | null;
+    responseCode: number;
+    success: boolean;
+    errorMessage: string | null;
+    durationMs: number;
+    ip: string | null;
+    userAgent: string | null;
+    createdAt: string;
+}
+
+export interface OperationLogQuery extends PageQuery {
+    username?: string;
+    module?: string;
+    success?: boolean;
+    startTime?: string;
+    endTime?: string;
+}
+
+export interface IdResult {
+    id: number;
+}
+
+// 下游赛事管理契约
 export interface SiteConfigAdminItem {
     key: string;
     label: string;
@@ -480,60 +576,7 @@ export type CqtNewsImageUpload = SiteConfigImageUpload;
 
 /* ---------- 日志 ---------- */
 
-export interface LoginLogView {
-    id: number;
-    userId: number | null;
-    username: string;
-    ip: string | null;
-    browser: string | null;
-    os: string | null;
-    userAgent: string | null;
-    eventType: 'login' | 'logout';
-    status: 'success' | 'fail';
-    message: string | null;
-    createdAt: string;
-}
 
-export interface LoginLogQuery extends PageQuery {
-    username?: string;
-    status?: 'success' | 'fail';
-    eventType?: 'login' | 'logout';
-    startTime?: string;
-    endTime?: string;
-}
-
-/** 契约 §6.9 未逐字段列出，按 §5 sys_operation_log 列的 camelCase 形式 */
-export interface OperationLogView {
-    id: number;
-    userId: number | null;
-    username: string | null;
-    module: string;
-    description: string;
-    method: string;
-    path: string;
-    requestBody?: string | null;
-    responseCode: number;
-    success: boolean;
-    errorMessage: string | null;
-    durationMs: number;
-    ip: string | null;
-    userAgent: string | null;
-    createdAt: string;
-}
-
-export interface OperationLogQuery extends PageQuery {
-    username?: string;
-    module?: string;
-    success?: boolean;
-    startTime?: string;
-    endTime?: string;
-}
-
-export interface IdResult {
-    id: number;
-}
-
-/* 常青藤独立内容管理 */
 export interface CqtExpertSaveRequest {
     name: string; image: string; content: string; showOnHome: boolean; enabled: boolean; sort: number;
 }

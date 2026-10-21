@@ -1,11 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { http } from '@/utils/request';
-import { useSession } from '@/utils/session';
+import { refreshSession, useSession } from '@/utils/session';
+import { unlockScreen } from '@/hooks/useLockScreen';
 import type {
     CurrentUserView,
     FavoriteMenusSaveRequest,
     MenuNode,
     PasswordChangeRequest,
+    LoginResult,
+    PhoneLoginCodeRequest,
+    PhoneLoginRequest,
     ProfileUpdateRequest,
     VerifyPasswordRequest,
 } from '@/types/api';
@@ -16,11 +20,31 @@ export const authKeys = {
     favoriteMenus: ['auth', 'favorite-menus'] as const,
 };
 
+/** 公开发送短信验证码；登录页负责校验手机号与展示错误。 */
+export function useSendPhoneLoginCode() {
+    return useMutation({
+        mutationFn: (body: PhoneLoginCodeRequest) => http.post<null>('/api/system/auth/sendPhoneCode', body, { silent: true }),
+    });
+}
+
+/** 手机号验证码登录，成功后按密码登录相同的会话刷新流程处理。 */
+export function usePhoneLogin() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (body: PhoneLoginRequest) => http.post<LoginResult>('/api/system/auth/loginWithPhoneCode', body, { silent: true }),
+        onSuccess: () => {
+            qc.clear();
+            unlockScreen();
+            refreshSession();
+        },
+    });
+}
+
 export function useMe() {
     const session = useSession();
     return useQuery({
         queryKey: [...authKeys.me, session],
-        queryFn: () => http.get<CurrentUserView>('/api/auth/me', { silent: true }),
+        queryFn: () => http.get<CurrentUserView>('/api/system/auth/getCurrentUser', { silent: true }),
         enabled: !!session,
         staleTime: Infinity,
     });
@@ -30,7 +54,7 @@ export function useMyMenus() {
     const session = useSession();
     return useQuery({
         queryKey: [...authKeys.menus, session],
-        queryFn: () => http.get<MenuNode[]>('/api/auth/menus', { silent: true }),
+        queryFn: () => http.get<MenuNode[]>('/api/system/auth/listCurrentMenus', { silent: true }),
         enabled: !!session,
         staleTime: Infinity,
     });
@@ -39,14 +63,14 @@ export function useMyMenus() {
 export function useUpdateProfile() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (body: ProfileUpdateRequest) => http.put<null>('/api/auth/profile', body),
+        mutationFn: (body: ProfileUpdateRequest) => http.put<null>('/api/system/auth/updateProfile', body),
         onSuccess: () => qc.invalidateQueries({ queryKey: authKeys.me }),
     });
 }
 
 export function useChangePassword() {
     return useMutation({
-        mutationFn: (body: PasswordChangeRequest) => http.put<null>('/api/auth/password', body),
+        mutationFn: (body: PasswordChangeRequest) => http.put<null>('/api/system/auth/updatePassword', body),
     });
 }
 
@@ -55,7 +79,7 @@ export function useFavoriteMenus(enabled = true) {
     const session = useSession();
     return useQuery({
         queryKey: [...authKeys.favoriteMenus, session],
-        queryFn: () => http.get<number[]>('/api/auth/favorite-menus', { silent: true }),
+        queryFn: () => http.get<number[]>('/api/system/auth/listFavoriteMenus', { silent: true }),
         enabled: enabled && !!session,
         staleTime: Infinity,
     });
@@ -76,7 +100,7 @@ export function useSaveFavoriteMenus() {
     return useMutation({
         mutationKey,
         scope: { id: 'favorite-menus' },
-        mutationFn: (menuIds: number[]) => http.put<null>('/api/auth/favorite-menus', { menuIds } satisfies FavoriteMenusSaveRequest),
+        mutationFn: (menuIds: number[]) => http.put<null>('/api/system/auth/updateFavoriteMenus', { menuIds } satisfies FavoriteMenusSaveRequest),
         onMutate: async (menuIds) => {
             await qc.cancelQueries({ queryKey: key });
             const previous = qc.getQueryData<number[]>(key);
@@ -90,10 +114,10 @@ export function useSaveFavoriteMenus() {
     });
 }
 
-/** 锁屏解锁：校验当前用户密码。错误码 40101 不清会话（见 utils/request.ts），由锁屏自己提示 */
+/** 锁屏解锁：校验当前用户密码。错误码 110101 不清会话（见 utils/request.ts），由锁屏自己提示 */
 export function useVerifyPassword() {
     return useMutation({
         mutationFn: (password: string) =>
-            http.post<null>('/api/auth/verify-password', { password } satisfies VerifyPasswordRequest, { silent: true }),
+            http.post<null>('/api/system/auth/verifyPassword', { password } satisfies VerifyPasswordRequest, { silent: true }),
     });
 }

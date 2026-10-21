@@ -43,6 +43,6 @@ class LoginUserTest {
         assertThatThrownBy(CurrentUser::require)
                 .isInstanceOfSatisfying(
                         BizException.class,
-                        ex -> assertThat(ex.getErrorCode().code()).isEqualTo(40100));
+                        ex -> assertThat(ex.getErrorCode().code()).isEqualTo(100101));
     }
 }

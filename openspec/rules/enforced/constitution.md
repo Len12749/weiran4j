@@ -126,8 +126,8 @@ JWT 携带 `ver`，认证时与库中值比对，且令牌版本与账号状态*
 
 ### CP-11 · 错误码归属决定 HTTP 状态，不靠 Controller 判断
 
-错误的 HTTP 状态由 `ErrorCode.httpStatus()` 决定（五位错误码的前三位即 HTTP 状态，见
-`weiran-framework` 的 `CommonErrors`），由 `weiran-framework` 的全局异常处理器统一输出。
+错误的 HTTP 状态由 `ErrorCode.httpStatus()` 独立决定，六位错误码仅标识服务、资源与错误，
+由 `weiran-framework` 的全局异常处理器统一输出。
 Controller 不得手写状态码，也不得捕获业务异常自行转换。
 
 **为什么**：状态码一旦在 Controller 里手写，同一个错误在不同入口就会返回不同状态，
@@ -169,19 +169,21 @@ Controller 不得手写状态码，也不得捕获业务异常自行转换。
 
 ### CP-14 · 错误码按号段分配，业务不得占用框架与基座的号段
 
-错误码是五位：前三位 = HTTP 状态，**后两位 = 序号**（如 `40901` 的序号是 `01`）。序号按下表分段，
-同一 HTTP 状态下不同段的码互不冲突：
+错误码是六位十进制数字，格式为 `{服务两位}{资源两位}{错误两位}`，HTTP 状态由 `ErrorCode.httpStatus()`
+独立指定。服务号不得以 `0` 开头，以保证 JSON 数字仍保留六位。服务号按下表分配，同一服务内的
+资源号及错误号由模块维护，同一 `{服务, 资源}` 下错误号不得重复：
 
-| 序号段 | 归属 | 定义位置 |
+| 服务号 | 归属 | 定义位置 |
 | --- | --- | --- |
-| `00`–`19` | 框架与基座（通用码） | `weiran-framework` 的 `CommonErrors`，唯一登记处 |
-| `20`–`99` | 业务模块 | 各业务模块自己的 `*-api` 里（`enum implements ErrorCode`），**每个模块在 `weiran4j/docs/business-modules.md` 领一段并登记** |
+| `10` | 框架通用码 | `weiran-framework` 的 `CommonErrors`；资源 `00` 为通用操作、`01` 为认证与请求安全 |
+| `11` | system 基座 | `weiran-system-api` 的 `SystemAuthErrors`；资源 `01` 为认证 |
+| `12` | 地区业务 | `weiran-region-api` 的 `RegionErrors`；资源 `01` 为行政区划 |
+| 其它已登记号码 | 业务模块 | 各业务模块的 `*-api` 中定义 `enum implements ErrorCode`，在 `weiran4j/docs/business-modules.md` 登记唯一服务号与资源号 |
 
-业务优先复用 `CommonErrors` 并在 `BizException` 里写具体提示语；只有前端需要按码分支处理时才新增码。
-新增码前先在 `business-modules.md` 登记，登记的段不得跨模块重叠。
+业务优先复用 `CommonErrors` 并在 `BizException` 里写具体提示语；需要稳定地区分业务场景时，在所属服务与资源下新增码。
+新增服务号和资源号前先在 `business-modules.md` 登记，不得跨模块重叠。
 
-**为什么**：两个业务各自取 `40902` 不会有任何编译错误，只会让前端按码分支的逻辑把两个不同错误当成同一个。
-序号只有两位，共 100 个，不分段几个业务就会撞满。
+**为什么**：两个模块使用同一个服务号和资源号时，错误号可能碰撞，前端会把不同错误当成同一个。
 
 ### CP-15 · 权限码、菜单 id 与 Flyway 模块段按层隔离
 

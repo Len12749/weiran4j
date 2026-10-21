@@ -24,7 +24,7 @@ class HierarchyTest {
     private final Hierarchy hierarchy = Hierarchy.of(Map.of(1L, 0L, 2L, 1L, 3L, 1L, 4L, 2L, 5L, 4L, 6L, 0L));
 
     @Test
-    @DisplayName("父节点是自己时拒绝并返回 40901")
+    @DisplayName("父节点是自己时拒绝并返回 100004")
     void rejectsSelfAsParent() {
         assertThatThrownBy(() -> this.hierarchy.ensureValidParent(2L, 2L, "部门"))
                 .isInstanceOfSatisfying(
@@ -52,7 +52,7 @@ class HierarchyTest {
     }
 
     @Test
-    @DisplayName("父节点不存在返回 40000")
+    @DisplayName("父节点不存在返回 100001")
     void rejectsMissingParent() {
         assertThatThrownBy(() -> this.hierarchy.ensureValidParent(2L, 99L, "部门"))
                 .isInstanceOfSatisfying(

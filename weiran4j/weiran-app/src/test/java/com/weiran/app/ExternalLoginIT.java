@@ -190,7 +190,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
         String keycloak(final String provider, final String mode, final String username, final String password)
                 throws IOException, InterruptedException {
             final HttpResponse<String> authorize =
-                    this.app("/api/auth/sso/" + provider + "/authorize?redirect=%2Fsystem%2Fusers&mode=" + mode);
+                    this.app("/api/system/auth/authorizeSso/" + provider + "?redirect=%2Fsystem%2Fusers&mode=" + mode);
             assertThat(authorize.statusCode()).isEqualTo(302);
             final String authUrl = authorize.headers().firstValue("Location").orElseThrow();
             if (!authUrl.startsWith("http://localhost:" + KEYCLOAK.getMappedPort(8080))) {
@@ -219,7 +219,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
 
         /** 把提供方给的回调地址（公开地址）换成本服务地址并请求，返回本服务回调的 Location。 */
         String callback(final String publicCallback) throws IOException, InterruptedException {
-            assertThat(publicCallback).startsWith(PUBLIC_BASE + "/api/auth/sso/");
+            assertThat(publicCallback).startsWith(PUBLIC_BASE + "/api/system/auth/callbackSso/");
             final HttpResponse<String> response = this.app(publicCallback.substring(PUBLIC_BASE.length()));
             assertThat(response.statusCode()).isEqualTo(302);
             return response.headers().firstValue("Location").orElseThrow();
@@ -227,7 +227,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
 
         JsonNode me() throws IOException, InterruptedException {
             return ExternalLoginIT.this.objectMapper.readTree(
-                    this.app("/api/auth/me").body());
+                    this.app("/api/system/auth/getCurrentUser").body());
         }
 
         HttpHeaders authHeaders() {
@@ -258,7 +258,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
 
     private long createLocalUser(final String username) {
         return this.create(
-                "/api/users",
+                "/api/system/user/create",
                 this.adminToken(),
                 Map.of(
                         "username",
@@ -274,7 +274,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
     @Test
     @DisplayName("providers 公开返回三个提供方与 passwordLoginEnabled=false，不含任何密钥与地址")
     void listsProviders() {
-        final ResponseEntity<JsonNode> response = this.get("/api/auth/providers", null);
+        final ResponseEntity<JsonNode> response = this.get("/api/system/auth/listProviders", null);
         IntegrationTestSupport.assertOk(response);
         final JsonNode data = IntegrationTestSupport.data(response);
         assertThat(data.path("passwordLoginEnabled").asBoolean(true)).isFalse();
@@ -288,7 +288,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
         final String username = IntegrationTestSupport.unique("alice");
         final long userId = this.createLocalUser(username);
         IntegrationTestSupport.assertOk(this.post(
-                "/api/users/" + userId + "/identities",
+                "/api/system/user/createIdentity/" + userId,
                 this.adminToken(),
                 Map.of("provider", "kc", "externalId", ALICE_SUB)));
 
@@ -304,20 +304,20 @@ class ExternalLoginIT extends IntegrationTestSupport {
         assertThat(new String(Base64.getUrlDecoder().decode(jwt.split("\\.", -1)[1]), StandardCharsets.UTF_8))
                 .contains("\"idp\":\"kc\"");
 
-        // 本上下文关闭了密码登录：普通用户 40304（不论密码对错），内置超管照常
-        IntegrationTestSupport.assertError(this.login(username, "Passw0rd1"), HttpStatus.FORBIDDEN, 40304);
+        // 本上下文关闭了密码登录：普通用户 110105（不论密码对错），内置超管照常
+        IntegrationTestSupport.assertError(this.login(username, "Passw0rd1"), HttpStatus.FORBIDDEN, 110105);
         IntegrationTestSupport.assertOk(
                 this.login(IntegrationTestSupport.ADMIN, IntegrationTestSupport.ADMIN_PASSWORD));
 
         final ResponseEntity<JsonNode> logout =
-                this.exchange(HttpMethod.POST, "/api/auth/logout", browser.authHeaders(), Map.of());
+                this.exchange(HttpMethod.POST, "/api/system/auth/logout", browser.authHeaders(), Map.of());
         IntegrationTestSupport.assertOk(logout);
         assertThat(IntegrationTestSupport.data(logout).path("ssoLogoutUrl").asText())
                 .contains("/realms/" + REALM + "/protocol/openid-connect/logout")
                 .contains("post_logout_redirect_uri="
                         + URLEncoder.encode(PUBLIC_BASE + "/login", StandardCharsets.UTF_8));
-        final ResponseEntity<JsonNode> adminLogout =
-                this.exchange(HttpMethod.POST, "/api/auth/logout", ExternalLoginIT.bearer(this.adminToken()), Map.of());
+        final ResponseEntity<JsonNode> adminLogout = this.exchange(
+                HttpMethod.POST, "/api/system/auth/logout", ExternalLoginIT.bearer(this.adminToken()), Map.of());
         assertThat(IntegrationTestSupport.data(adminLogout).path("ssoLogoutUrl").isNull())
                 .isTrue();
 
@@ -328,26 +328,26 @@ class ExternalLoginIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("OIDC：未绑定且未开启自动开通 40303；篡改 state 40102 且不下发认证 Cookie")
+    @DisplayName("OIDC：未绑定且未开启自动开通 110104；篡改 state 110102 且不下发认证 Cookie")
     void oidcRejectsUnboundAndTampered() throws Exception {
-        assertThat(new Browser().keycloak("kc", "login", "bob", "bob-pass")).isEqualTo("/login?ssoError=40303");
+        assertThat(new Browser().keycloak("kc", "login", "bob", "bob-pass")).isEqualTo("/login?ssoError=110104");
 
         final Browser browser = new Browser();
-        final HttpResponse<String> authorize = browser.app("/api/auth/sso/kc/authorize?redirect=%2F");
+        final HttpResponse<String> authorize = browser.app("/api/system/auth/authorizeSso/kc?redirect=%2F");
         final String state = ExternalLoginIT.queryParam(
                 URI.create(authorize.headers().firstValue("Location").orElseThrow())
                         .getRawQuery(),
                 "state");
         assertThat(state).isNotBlank();
-        assertThat(browser.callback(PUBLIC_BASE + "/api/auth/sso/kc/callback?code=x&state=forged"))
-                .isEqualTo("/login?ssoError=40102");
+        assertThat(browser.callback(PUBLIC_BASE + "/api/system/auth/callbackSso/kc?code=x&state=forged"))
+                .isEqualTo("/login?ssoError=110102");
         assertThat(browser.appCookies).doesNotContainKey(AuthCookies.TOKEN_COOKIE);
     }
 
     @Test
     @DisplayName("OIDC 自动开通：第一次登录建出没有本地密码、带默认角色的用户，第二次命中同一用户")
     void oidcAutoProvisions() throws Exception {
-        this.create("/api/roles", this.adminToken(), Map.of("name", "SSO 访客", "code", "sso_viewer"));
+        this.create("/api/system/role/create", this.adminToken(), Map.of("name", "SSO 访客", "code", "sso_viewer"));
         final Browser first = new Browser();
         assertThat(first.keycloak("kc-auto", "login", "carol", "carol-pass")).isEqualTo("/system/users");
         final JsonNode me = first.me().path("data");
@@ -362,45 +362,49 @@ class ExternalLoginIT extends IntegrationTestSupport {
 
         // 没有本地密码：本人不能解绑唯一的外部身份（防锁死）
         final ResponseEntity<JsonNode> mine =
-                this.exchange(HttpMethod.GET, "/api/auth/identities", second.authHeaders(), null);
+                this.exchange(HttpMethod.GET, "/api/system/auth/listCurrentIdentities", second.authHeaders(), null);
         final long identityId =
                 IntegrationTestSupport.data(mine).get(0).path("id").asLong();
         IntegrationTestSupport.assertError(
-                this.exchange(HttpMethod.DELETE, "/api/auth/identities/" + identityId, second.authHeaders(), null),
+                this.exchange(
+                        HttpMethod.DELETE,
+                        "/api/system/auth/deleteCurrentIdentity/" + identityId,
+                        second.authHeaders(),
+                        null),
                 HttpStatus.CONFLICT,
-                40901);
+                100004);
     }
 
     @Test
-    @DisplayName("CAS：模拟 CAS 验票成功则登录（service 与跳转时一致）；验票失败 40102 并写失败日志")
+    @DisplayName("CAS：模拟 CAS 验票成功则登录（service 与跳转时一致）；验票失败 110102 并写失败日志")
     void casLogin() throws Exception {
         final String username = IntegrationTestSupport.unique("casuser");
         final long userId = this.createLocalUser(username);
         IntegrationTestSupport.assertOk(this.post(
-                "/api/users/" + userId + "/identities",
+                "/api/system/user/createIdentity/" + userId,
                 this.adminToken(),
                 Map.of("provider", "cas", "externalId", username)));
 
         final Browser browser = new Browser();
-        final String authorize = browser.app("/api/auth/sso/cas/authorize?redirect=%2Fdashboard")
+        final String authorize = browser.app("/api/system/auth/authorizeSso/cas?redirect=%2Fdashboard")
                 .headers()
                 .firstValue("Location")
                 .orElseThrow();
         final String service = ExternalLoginIT.queryParam(URI.create(authorize).getRawQuery(), "service");
-        assertThat(service).startsWith(PUBLIC_BASE + "/api/auth/sso/cas/callback?state=");
+        assertThat(service).startsWith(PUBLIC_BASE + "/api/system/auth/callbackSso/cas?state=");
         assertThat(browser.callback(service + "&ticket=ST-ok-" + username)).isEqualTo("/dashboard");
         assertThat(browser.me().path("data").path("id").asLong()).isEqualTo(userId);
         assertThat(ExternalLoginIT.queryParam(CAS_REQUESTS.get(CAS_REQUESTS.size() - 1), "service"))
                 .isEqualTo(service);
 
         final Browser failed = new Browser();
-        final String failedAuthorize = failed.app("/api/auth/sso/cas/authorize")
+        final String failedAuthorize = failed.app("/api/system/auth/authorizeSso/cas")
                 .headers()
                 .firstValue("Location")
                 .orElseThrow();
         final String failedService =
                 ExternalLoginIT.queryParam(URI.create(failedAuthorize).getRawQuery(), "service");
-        assertThat(failed.callback(failedService + "&ticket=ST-bad")).isEqualTo("/login?ssoError=40102");
+        assertThat(failed.callback(failedService + "&ticket=ST-bad")).isEqualTo("/login?ssoError=110102");
         final Integer fails = this.jdbc.queryForObject(
                 "SELECT COUNT(*) FROM sys_login_log WHERE status = 'fail' AND message LIKE '%cas%' AND message NOT LIKE '%ST-%'",
                 Integer.class);
@@ -408,24 +412,24 @@ class ExternalLoginIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("本人绑定：已登录用户以 bind 模式完成 CAS 登录后，该外部身份绑定到自己；已绑给别人时 40901")
+    @DisplayName("本人绑定：已登录用户以 bind 模式完成 CAS 登录后，该外部身份绑定到自己；已绑给别人时 100004")
     void bindsOwnIdentity() throws Exception {
         final String username = IntegrationTestSupport.unique("binder");
         final long userId = this.createLocalUser(username);
         final String other = IntegrationTestSupport.unique("other");
         final long otherId = this.createLocalUser(other);
         IntegrationTestSupport.assertOk(this.post(
-                "/api/users/" + otherId + "/identities",
+                "/api/system/user/createIdentity/" + otherId,
                 this.adminToken(),
                 Map.of("provider", "cas", "externalId", other)));
         // 普通用户不能用密码登录（本上下文关闭了），先用 CAS 登录一个已绑定的身份
         IntegrationTestSupport.assertOk(this.post(
-                "/api/users/" + userId + "/identities",
+                "/api/system/user/createIdentity/" + userId,
                 this.adminToken(),
                 Map.of("provider", "cas", "externalId", username)));
         final Browser browser = new Browser();
         browser.callback(ExternalLoginIT.queryParam(
-                        URI.create(browser.app("/api/auth/sso/cas/authorize")
+                        URI.create(browser.app("/api/system/auth/authorizeSso/cas")
                                         .headers()
                                         .firstValue("Location")
                                         .orElseThrow())
@@ -435,7 +439,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
 
         final String newId = IntegrationTestSupport.unique("ext");
         final String bindService = ExternalLoginIT.queryParam(
-                URI.create(browser.app("/api/auth/sso/cas/authorize?mode=bind")
+                URI.create(browser.app("/api/system/auth/authorizeSso/cas?mode=bind")
                                 .headers()
                                 .firstValue("Location")
                                 .orElseThrow())
@@ -443,7 +447,7 @@ class ExternalLoginIT extends IntegrationTestSupport {
                 "service");
         assertThat(browser.callback(bindService + "&ticket=ST-ok-" + newId)).isEqualTo("/profile?bound=cas");
         final ResponseEntity<JsonNode> mine =
-                this.exchange(HttpMethod.GET, "/api/auth/identities", browser.authHeaders(), null);
+                this.exchange(HttpMethod.GET, "/api/system/auth/listCurrentIdentities", browser.authHeaders(), null);
         assertThat(IntegrationTestSupport.data(mine).findValuesAsText("externalId"))
                 .contains(username, newId);
         assertThat(browser.me().path("data").path("id").asLong())
@@ -451,43 +455,43 @@ class ExternalLoginIT extends IntegrationTestSupport {
                 .isEqualTo(userId);
 
         final String conflictService = ExternalLoginIT.queryParam(
-                URI.create(browser.app("/api/auth/sso/cas/authorize?mode=bind")
+                URI.create(browser.app("/api/system/auth/authorizeSso/cas?mode=bind")
                                 .headers()
                                 .firstValue("Location")
                                 .orElseThrow())
                         .getRawQuery(),
                 "service");
-        assertThat(browser.callback(conflictService + "&ticket=ST-ok-" + other)).isEqualTo("/profile?ssoError=40901");
+        assertThat(browser.callback(conflictService + "&ticket=ST-ok-" + other)).isEqualTo("/profile?ssoError=100004");
     }
 
     @Test
-    @DisplayName("管理员接口：无权限 40300；同一外部身份重复绑定 40901；删除用户连带删除绑定")
+    @DisplayName("管理员接口：无权限 100102；同一外部身份重复绑定 100004；删除用户连带删除绑定")
     void adminIdentityEndpoints() throws Exception {
         final String username = IntegrationTestSupport.unique("victim");
         final long userId = this.createLocalUser(username);
         IntegrationTestSupport.assertOk(this.post(
-                "/api/users/" + userId + "/identities",
+                "/api/system/user/createIdentity/" + userId,
                 this.adminToken(),
                 Map.of("provider", "cas", "externalId", username)));
         IntegrationTestSupport.assertError(
                 this.post(
-                        "/api/users/" + userId + "/identities",
+                        "/api/system/user/createIdentity/" + userId,
                         this.adminToken(),
                         Map.of("provider", "cas", "externalId", username)),
                 HttpStatus.CONFLICT,
-                40901);
+                100004);
         IntegrationTestSupport.assertError(
                 this.post(
-                        "/api/users/" + userId + "/identities",
+                        "/api/system/user/createIdentity/" + userId,
                         this.adminToken(),
                         Map.of("provider", "nope", "externalId", "x")),
                 HttpStatus.BAD_REQUEST,
-                40000);
+                100001);
 
         // 无权限用户（经 CAS 登录，没有任何角色）
         final Browser browser = new Browser();
         browser.callback(ExternalLoginIT.queryParam(
-                        URI.create(browser.app("/api/auth/sso/cas/authorize")
+                        URI.create(browser.app("/api/system/auth/authorizeSso/cas")
                                         .headers()
                                         .firstValue("Location")
                                         .orElseThrow())
@@ -495,11 +499,11 @@ class ExternalLoginIT extends IntegrationTestSupport {
                         "service")
                 + "&ticket=ST-ok-" + username);
         IntegrationTestSupport.assertError(
-                this.exchange(HttpMethod.GET, "/api/users/" + userId + "/identities", browser.authHeaders(), null),
+                this.exchange(HttpMethod.GET, "/api/system/user/listIdentities/" + userId, browser.authHeaders(), null),
                 HttpStatus.FORBIDDEN,
-                40300);
+                100102);
 
-        IntegrationTestSupport.assertOk(this.delete("/api/users/" + userId, this.adminToken()));
+        IntegrationTestSupport.assertOk(this.delete("/api/system/user/delete/" + userId, this.adminToken()));
         final Integer left = this.jdbc.queryForObject(
                 "SELECT COUNT(*) FROM sys_user_identity WHERE user_id = ?", Integer.class, userId);
         assertThat(left).isZero();

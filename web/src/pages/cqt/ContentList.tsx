@@ -42,7 +42,7 @@ export function ContentList({ resource }: { resource: ContentResource }) {
     const { columns: settled, columnSettings } = useColumnSettings(`cqt/${resource}`, columns);
     const { columns: visible } = useActionsColumn(settled, actions);
     return <PageContainer>
-        <SearchToolbar searchIconOnly resetIconOnly tools={columnSettings} onSearch={search}
+        <SearchToolbar tools={columnSettings} onSearch={search}
             onReset={() => { const empty = { keyword: '', category: '', status: '' }; setDraft(empty); setFilters(empty); setPage(1); }}
             onRefresh={() => void query.refetch()} refreshing={query.isFetching}
             leading={<Permission code={`${permission}:create`}><Button theme="solid" onClick={() => void navigate(`/cqt/${resource}/create`)}>新增{config.name}</Button></Permission>}>

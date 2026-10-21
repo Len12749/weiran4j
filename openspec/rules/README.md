@@ -27,22 +27,24 @@ rules/
 > ⚠️ 这两份的**路径被 `openspec/check.mjs` 硬编码**(`constitutionPrinciples()` /
 > `profileItems()`)。移动或改名必须同步改代码,改完跑 `node openspec/check.mjs` 确认。
 
-### `advisory/` —— 无机械校验,只靠 `AGENTS.md` 索引表唤起
+### `advisory/` —— 由 `AGENTS.md` 索引表唤起,部分规则另有机械校验
 
 | 文件 | 管什么 |
 |---|---|
 | [`components.md`](advisory/components.md) | **可复用的前端公共组件**(先查再造);新增未登记会被 `components-registry` 拦 |
 | [`list-view.md`](advisory/list-view.md) | **列表页(搜索栏 + 表格)的约定**:工具栏布局、高级筛选、已选条件、表头 / 操作列 / 列宽预算 / 列设置 |
+| [`api-design.md`](advisory/api-design.md) | **HTTP API 路由命名**:新增接口遵循 `/api/{module}/{resource}/{action}`；新增非规范路由由 `api-route-convention` 按 HEAD 存量基线拦截 |
 | [`pitfalls.md`](advisory/pitfalls.md) | **流水线各层踩过的坑**(L0–L10 分节) |
 | [`toolchain.md`](advisory/toolchain.md) | **工具行为与代码库欠账**:前三者都装不下的既有事实 |
 
-> 这两份的条目必须满足两个门槛:**真踩过** + **写清症状**。理由见下方决策流程的 ⑤⑥。
-> 它们没有守卫,唯一的唤起途径是 `AGENTS.md` 的索引表 ——
+> `pitfalls.md` 与 `toolchain.md` 的条目必须满足两个门槛:**真踩过** + **写清症状**。理由见下方决策流程的 ⑤⑥。
+> 未被机械守卫覆盖的规则,唯一的唤起途径是 `AGENTS.md` 的索引表 ——
 > 而那张表本身由 `REPO/rules-index-dangling` / `REPO/rules-index-missing` 兜底:
 > 移动文件、或往这里加一份新文档而忘了登记,都会当场转红。
 
 > `advisory/components.md` 是个例外:它的「新增未登记」方向由 `guards/components-registry.mjs`
 > (`REPO/components-unregistered`)机械兜底,但条目**内容**是否准确仍没有守卫。
+> `advisory/api-design.md` 的新增路由判定由 `guards/api-route-convention.mjs` 兜底；存量接口按当前 HEAD 的 method + path 精确兼容,不要求一次性迁移。
 
 ## 新规则该写到哪 —— 决策流程
 
@@ -138,7 +140,7 @@ rules/
 「条目具体说了什么」才在这里。** agent 即使一次都不打开它们,也无法跳过那一层 ——
 最坏是回答得潦草,而潦草会在 L3 人闸暴露。
 
-`advisory/` 下的两份没有这层机制,改由项目根 `AGENTS.md`(每次会话自动加载)的
+`advisory/` 下未被守卫覆盖的规则,改由项目根 `AGENTS.md`(每次会话自动加载)的
 「规则索引」给出**触发条件** —— 触发条件本身被注入,你据此决定要不要打开。
 
 > 完整论证见 `openspec/design/pipeline.md` 的「提示词来自哪(决定了规范该住在哪)」。

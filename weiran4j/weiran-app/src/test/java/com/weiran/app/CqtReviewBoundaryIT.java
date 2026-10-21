@@ -88,7 +88,7 @@ class CqtReviewBoundaryIT extends CqtIntegrationTestSupport {
         final String admin = this.adminToken();
         final String username = IntegrationTestSupport.unique("boundary");
         final long reviewer = this.create(
-                "/api/users",
+                "/api/system/user/create",
                 admin,
                 Map.of("username", username, "nickname", username, "password", "Passw0rd1", "roleIds", List.of(1)));
         final Fixture f = this.fixture(reviewer, "FROZEN");

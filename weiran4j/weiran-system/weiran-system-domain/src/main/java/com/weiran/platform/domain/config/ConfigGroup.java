@@ -5,6 +5,7 @@ import org.jspecify.annotations.Nullable;
 
 /** 可用于系统配置的分组。 */
 public record ConfigGroup(
+        String groupKey,
         String key,
         String label,
         int sort,

@@ -127,7 +127,13 @@ export default function DepartmentsPage() {
     const deleteDepartment = useDeleteDepartment();
     const [target, setTarget] = useState<Target | null>(null);
 
-    const tree = useMemo(() => pruneEmptyChildren(data ?? []), [data]);
+    const tree = useMemo(() => {
+        const sortSiblings = (nodes: DepartmentNode[]): DepartmentNode[] =>
+            pruneEmptyChildren(nodes)
+                .map((node) => ({ ...node, ...(node.children ? { children: sortSiblings(node.children) } : {}) }))
+                .sort((a, b) => b.id - a.id);
+        return sortSiblings(data ?? []);
+    }, [data]);
     const allKeys = useMemo(() => flattenTree(tree).map((d) => d.id), [tree]);
     // 展开状态受控：null 表示全部展开（默认），「展开树状」按钮在全部展开与全部收起间切换
     const [expandedKeys, setExpandedKeys] = useState<number[] | null>(null);
@@ -148,7 +154,8 @@ export default function DepartmentsPage() {
         : [];
 
     const columns: ColumnProps<DepartmentNode>[] = [
-        { title: '部门名称', dataIndex: 'name', width: 220 },
+        { title: 'ID', dataIndex: 'id', width: 180 },
+        { title: '部门名称', dataIndex: 'name' },
         { title: '部门编码', dataIndex: 'code', width: 120 },
         { title: '负责人', dataIndex: 'leaderName', width: 100, render: (v: string | null) => v || '—' },
         { title: '联系电话', dataIndex: 'phone', width: 120, render: (v: string | null) => v || '—' },

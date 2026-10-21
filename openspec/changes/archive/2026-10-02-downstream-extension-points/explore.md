@@ -62,7 +62,7 @@ updated_at: "2026-10-02"
 | NullAway / `@NullMarked` | AGENTS.md「写 Java 代码时」 | 新注解在已 `@NullMarked` 的包里,不涉及可空 |
 | classpath import 不支持通配 | Spring Boot `spring.config.import` | 只能一份 `application-biz.yml` |
 | import 的文件优先级高于导入者 | Spring Boot ConfigData 语义 | biz 文件能覆盖 `application.yml`,profile 文件与环境变量仍更高——契约写明 |
-| `@RestControllerAdvice(basePackages="com.weiran")` 覆盖 `com.weiran.cqt` | `ApiResponseBodyAdvice.java:30` | 必须有显式的跳过标记,改 basePackages 不可行 |
+| `@RestControllerAdvice(basePackages="com.weiran")` 覆盖 `com.weiran.demo` | `ApiResponseBodyAdvice.java:30` | 必须有显式的跳过标记,改 basePackages 不可行 |
 | 组件守卫用 `includes` 宽松匹配 | `components-registry.mjs:84` | 拼接两份文本即可,语义不变 |
 | 宪法 CP-7 | constitution.md | 不新增、不改 Flyway 脚本 |
 

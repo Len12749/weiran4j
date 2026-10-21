@@ -93,7 +93,7 @@ class RequestIdFilterTest {
     @Test
     @DisplayName("访问日志：一行 INFO，含方法、路径、状态、耗时、用户、IP，不含查询参数的值")
     void logsAccessWithoutQueryValues() throws Exception {
-        final MockHttpServletRequest request = new MockHttpServletRequest("PUT", "/api/auth/profile");
+        final MockHttpServletRequest request = new MockHttpServletRequest("PUT", "/api/system/auth/updateProfile");
         request.setQueryString("x=secret");
         request.setParameter("x", "secret");
         request.setRemoteAddr("10.0.0.8");
@@ -104,7 +104,7 @@ class RequestIdFilterTest {
         final ILoggingEvent event = this.appender.list.get(0);
         assertThat(event.getLevel()).isEqualTo(Level.INFO);
         assertThat(event.getFormattedMessage())
-                .startsWith("PUT /api/auth/profile 200 ")
+                .startsWith("PUT /api/system/auth/updateProfile 200 ")
                 .contains("ms user=7 ip=10.0.0.8")
                 .doesNotContain("secret");
     }
@@ -112,7 +112,7 @@ class RequestIdFilterTest {
     @Test
     @DisplayName("未登录记 user=-；健康检查只打 DEBUG；非 /api 路径不打访问日志")
     void levelsAndScope() throws Exception {
-        this.run(new MockHttpServletRequest("GET", "/api/auth/me"), new ArrayList<>());
+        this.run(new MockHttpServletRequest("GET", "/api/system/auth/getCurrentUser"), new ArrayList<>());
         this.run(new MockHttpServletRequest("GET", "/api/health"), new ArrayList<>());
         this.run(new MockHttpServletRequest("GET", "/index.html"), new ArrayList<>());
 

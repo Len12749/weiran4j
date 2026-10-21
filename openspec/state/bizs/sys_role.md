@@ -58,10 +58,10 @@
 | 字段 | 前端控件 | 前端校验 | 后端校验 | DB 列 / 类型 |
 | --- | --- | --- | --- | --- |
 | 角色名称 | `Form.Input` | 必填；`maxLength=64` | `@NotBlank` `@Size(max=64)` | `name varchar(64)` |
-| 角色编码 | `Form.Input`，内置角色 `disabled` | 必填；`/^[a-z][a-z0-9_]{1,63}$/` | `@NotBlank` `@Size(max=64)`；领域 `Role.validateCode` 同一正则，否则 40000；查重 40900「角色编码已存在」；内置角色改编码 40901 | `code varchar(64)` 唯一 |
+| 角色编码 | `Form.Input`，内置角色 `disabled` | 必填；`/^[a-z][a-z0-9_]{1,63}$/` | `@NotBlank` `@Size(max=64)`；领域 `Role.validateCode` 同一正则，否则 100001；查重 100003「角色编码已存在」；内置角色改编码 100004 | `code varchar(64)` 唯一 |
 | 描述 | `Form.TextArea` | `maxLength=256` | `@Size(max=256)`；空白存 `null` | `description varchar(256) null` |
 | 排序 | `Form.InputNumber` | `min=0` | 可空；新增空值 0，编辑空值保持原值；不限下限 | `sort int` 默认 0 |
-| 状态 ❌ | `Form.RadioGroup`（启用/禁用），**内置角色也可选禁用** | 无 | 新增空值 `enabled`，编辑空值保持原值；内置角色禁用 40901「内置角色不可禁用」 | `status varchar(16)` 默认 `enabled` |
+| 状态 ❌ | `Form.RadioGroup`（启用/禁用），**内置角色也可选禁用** | 无 | 新增空值 `enabled`，编辑空值保持原值；内置角色禁用 100004「内置角色不可禁用」 | `status varchar(16)` 默认 `enabled` |
 
 `is_builtin` 只能由种子写入；审计列自动填充。
 
@@ -70,16 +70,16 @@
 - 数据：全量菜单树 `GET /api/menus`（含按钮、含禁用）+ 角色详情 `GET /api/roles/{id}` 的 `menuIds`。
 - `Tree` 以 `checkRelation="unRelated"` 模式渲染，联动由 `applyMenuCheck` 自己算：勾选一个节点连带勾上全部后代与全部祖先；
   取消一个节点连带取消全部后代，祖先保持不变。另有「全选」「清空」按钮与「已选 N 项」计数。
-- 提交体 `{menuIds:number[]}`，可包含目录节点；后端 `@NotNull`，每个 ID 必须存在，否则 40000「menuIds: 包含不存在的菜单」。
+- 提交体 `{menuIds:number[]}`，可包含目录节点；后端 `@NotNull`，每个 ID 必须存在，否则 100001「menuIds: 包含不存在的菜单」。
 
 ## 3. 动作
 
 | 按钮 | 接口 | 权限码 | `@OperationLog` | 业务规则 / 错误码 |
 | --- | --- | --- | --- | --- |
 | 新增角色（工具栏最左） | `POST /api/roles` → `{id}` | `system:role:create` | ✅ 角色管理 / 新增角色 | 见 §2；`is_builtin=false` |
-| 编辑（行） | `PUT /api/roles/{id}` | `system:role:update` | ✅ 修改角色 | 404 角色不存在；内置角色改编码或禁用 40901；编码查重 40900；成功后全部授权快照失效 |
+| 编辑（行） | `PUT /api/roles/{id}` | `system:role:update` | ✅ 修改角色 | 404 角色不存在；内置角色改编码或禁用 100004；编码查重 100003；成功后全部授权快照失效 |
 | 分配权限（行） | `PUT /api/roles/{id}/menus` | `system:role:assign-menu` | ✅ 分配菜单 | 全量覆盖 `sys_role_menu`（先删后插，去重后按 ID 排序）；成功后全部授权快照失效 |
-| 删除（行「操作」列，确认后执行；窄屏（< 992px）收在「…」菜单里） | `DELETE /api/roles/{id}` | `system:role:delete` | ✅ 删除角色 | 内置角色 40901「内置角色不可删除」；仍有用户绑定 40901「角色下仍有 N 个用户，请先解除绑定」；同时删 `sys_role_menu`。前端只对内置角色禁用按钮；有用户时确认框仅提示人数，确认后由后端拒绝 |
+| 删除（行「操作」列，确认后执行；窄屏（< 992px）收在「…」菜单里） | `DELETE /api/roles/{id}` | `system:role:delete` | ✅ 删除角色 | 内置角色 100004「内置角色不可删除」；仍有用户绑定 100004「角色下仍有 N 个用户，请先解除绑定」；同时删 `sys_role_menu`。前端只对内置角色禁用按钮；有用户时确认框仅提示人数，确认后由后端拒绝 |
 | —（下拉数据源） | `GET /api/roles/options` | 仅登录 | — | 启用角色 `[{id, name, code}]`，按 `sort`、`id`；用户表单在用 |
 | —（详情） | `GET /api/roles/{id}` | `system:role:list` | — | `RoleView` + `menuIds`（升序）；分配权限侧滑在用 |
 
@@ -107,11 +107,11 @@
   `authKeys.me` 与 `authKeys.menus` 为 `staleTime: Infinity` 且无人失效。症状：管理员修改了自己所属角色的菜单或状态后，
   侧边栏与 `Permission` 控制的按钮仍按旧授权显示，点击时后端按新授权返回 403；刷新页面或重新登录后才一致。
 - **#02 🔴 P3 内置角色编辑弹窗仍可选「禁用」，提交后才被拒**
-  `RoleFormModal` 只对内置角色禁用了「角色编码」，状态单选可改；后端 `Role.withDetails` 对内置角色禁用返回 40901
+  `RoleFormModal` 只对内置角色禁用了「角色编码」，状态单选可改；后端 `Role.withDetails` 对内置角色禁用返回 100004
   「内置角色不可禁用」。对照：用户表单对内置用户的状态单选是 `disabled` 的。
 - **#03 ❓ P3 契约 §6.3 未记载的后端规则（与代码不符，以代码为准）**
-  契约只写「内置角色 code 不可改」「内置角色不能删；有用户绑定时 40901」。代码另有：内置角色不可禁用（40901）；
-  分配菜单时 `menuIds` 含不存在的菜单返回 40000；只有启用角色参与授权。契约需补记。
+  契约只写「内置角色 code 不可改」「内置角色不能删；有用户绑定时 100004」。代码另有：内置角色不可禁用（100004）；
+  分配菜单时 `menuIds` 含不存在的菜单返回 100001；只有启用角色参与授权。契约需补记。
 
 ## 7. changelog
 

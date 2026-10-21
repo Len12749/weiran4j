@@ -50,8 +50,8 @@ export function useCreateConfigGroup() {
 export function useUpdateConfigGroup() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: ({ key, body }: { key: string; body: ConfigGroupUpdateRequest }) =>
-            http.put<null>(`/api/system/config/updateGroup/${key}`, body),
+        mutationFn: ({ key, body, groupKey }: { key: string; body: ConfigGroupUpdateRequest; groupKey?: string }) =>
+            http.put<null>(`/api/system/config/updateGroup/${key}${groupKey === 'config_sms' ? '?groupKey=config_sms' : ''}`, body),
         onSuccess: () => qc.invalidateQueries({ queryKey: [...configKeys.all, 'groups'] }),
     });
 }
@@ -59,7 +59,8 @@ export function useUpdateConfigGroup() {
 export function useDeleteConfigGroup() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (key: string) => http.delete<null>(`/api/system/config/deleteGroup/${key}`),
+        mutationFn: ({ key, groupKey }: { key: string; groupKey?: string }) =>
+            http.delete<null>(`/api/system/config/deleteGroup/${key}${groupKey === 'config_sms' ? '?groupKey=config_sms' : ''}`),
         onSuccess: () => qc.invalidateQueries({ queryKey: configKeys.all }),
     });
 }

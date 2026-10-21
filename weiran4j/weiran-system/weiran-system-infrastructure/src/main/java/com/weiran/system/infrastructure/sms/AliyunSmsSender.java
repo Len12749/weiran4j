@@ -3,6 +3,7 @@ package com.weiran.system.infrastructure.sms;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weiran.system.domain.sms.SmsSendOutcome;
 import com.weiran.system.domain.sms.SmsSender;
+import com.weiran.system.domain.sms.SmsSettings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,20 +18,26 @@ public final class AliyunSmsSender implements SmsSender {
     private static final String CODE_RATE_LIMITED = "isv.BUSINESS_LIMIT_CONTROL";
     private static final String CODE_INVALID_NUMBER = "isv.MOBILE_NUMBER_ILLEGAL";
 
-    private final SystemSmsProperties properties;
+    private final SmsSettings smsSettings;
     private final AliyunSmsGateway gateway;
     private final ObjectMapper objectMapper;
 
-    AliyunSmsSender(
-            final SystemSmsProperties properties, final AliyunSmsGateway gateway, final ObjectMapper objectMapper) {
-        this.properties = properties;
+    AliyunSmsSender(final SmsSettings smsSettings, final AliyunSmsGateway gateway, final ObjectMapper objectMapper) {
+        this.smsSettings = smsSettings;
         this.gateway = gateway;
         this.objectMapper = objectMapper;
     }
 
-    public static AliyunSmsSender create(final SystemSmsProperties properties, final ObjectMapper objectMapper) {
-        AliyunSmsSender.requireComplete(properties);
-        return new AliyunSmsSender(properties, new SdkAliyunSmsGateway(properties), objectMapper);
+    public static AliyunSmsSender create(
+            final SystemSmsProperties properties, final SmsSettings smsSettings, final ObjectMapper objectMapper) {
+        final SystemSmsProperties.Aliyun aliyun = properties.aliyun();
+        AliyunSmsSender.requireComplete(aliyun);
+        return new AliyunSmsSender(smsSettings, new SdkAliyunSmsGateway(aliyun), objectMapper);
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return !this.smsSettings.signName().isBlank();
     }
 
     @Override
@@ -39,8 +46,13 @@ public final class AliyunSmsSender implements SmsSender {
             final String phone, final String templateCode, final Map<String, String> templateParameters) {
         final AliyunSmsGateway.Reply reply;
         try {
+            final String signName = this.smsSettings.signName();
+            if (signName.isBlank()) {
+                AliyunSmsSender.log.warn("阿里云短信签名未在系统配置中设置");
+                return SmsSendOutcome.FAILED;
+            }
             final String templateParam = this.objectMapper.writeValueAsString(templateParameters);
-            reply = this.gateway.send(phone, this.properties.signName(), templateCode, templateParam);
+            reply = this.gateway.send(phone, signName, templateCode, templateParam);
         } catch (final Exception exception) {
             AliyunSmsSender.log.warn(
                     "阿里云短信调用异常 phone={} error={}",
@@ -63,28 +75,17 @@ public final class AliyunSmsSender implements SmsSender {
         return outcome;
     }
 
-    private static void requireComplete(final SystemSmsProperties properties) {
+    private static void requireComplete(final SystemSmsProperties.Aliyun properties) {
         final List<String> missing = new ArrayList<>();
         if (properties.accessKeyId().isBlank()) {
-            missing.add("WEIRAN_SYSTEM_SMS_ACCESS_KEY_ID");
+            missing.add("WEIRAN_SMS_ALIYUN_ACCESS_KEY_ID");
         }
         if (properties.accessKeySecret().isBlank()) {
-            missing.add("WEIRAN_SYSTEM_SMS_ACCESS_KEY_SECRET");
-        }
-        if (properties.signName().isBlank()) {
-            missing.add("WEIRAN_SYSTEM_SMS_SIGN_NAME");
-        }
-        if (properties.connectTimeout().isBlank()) {
-            missing.add("WEIRAN_SYSTEM_SMS_CONNECT_TIMEOUT");
-        }
-        if (properties.readTimeout().isBlank()) {
-            missing.add("WEIRAN_SYSTEM_SMS_READ_TIMEOUT");
+            missing.add("WEIRAN_SMS_ALIYUN_ACCESS_KEY_SECRET");
         }
         if (!missing.isEmpty()) {
             throw new IllegalStateException("阿里云短信配置不完整或无效，检查环境变量: " + String.join(", ", missing));
         }
-        SdkAliyunSmsGateway.toMillis(properties.connectTimeout(), "WEIRAN_SYSTEM_SMS_CONNECT_TIMEOUT");
-        SdkAliyunSmsGateway.toMillis(properties.readTimeout(), "WEIRAN_SYSTEM_SMS_READ_TIMEOUT");
     }
 
     private static SmsSendOutcome classify(final @Nullable String code) {

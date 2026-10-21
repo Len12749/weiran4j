@@ -5,7 +5,7 @@ import { App } from '@/App';
 import { LOCK_STORAGE_KEY } from '@/hooks/useLockScreen';
 import { defaultPreferences, type UserPreferences } from '@/hooks/usePreferences';
 import { savePreferences } from '@/lib/preferences-storage';
-import { mockFetch, openPreferences, page, renderWithProviders, type MockHandler } from '@/test/helpers';
+import { mockFetch, openPreferences, renderWithProviders, type MockHandler } from '@/test/helpers';
 import type { CurrentUserView, MenuNode } from '@/types/api';
 import { signIn } from '@/test/session';
 import { getSession } from '@/utils/session';
@@ -78,12 +78,13 @@ function renderAuthed(route: string, prefs: Partial<UserPreferences> = {}, extra
     signIn(1);
     savePreferences({ ...defaultPreferences, ...prefs }, 1);
     const fetch = mockFetch({
-        'GET /api/auth/me': me,
-        'GET /api/auth/menus': menus,
-        'GET /api/auth/preferences': null,
-        'PUT /api/auth/preferences': null,
-        'GET /api/configs': page([]),
-        'GET /api/auth/favorite-menus': [],
+        'GET /api/system/auth/getCurrentUser': me,
+        'GET /api/system/auth/listCurrentMenus': menus,
+        'GET /api/system/auth/getPreferences': null,
+        'PUT /api/system/auth/updatePreferences': null,
+        'GET /api/system/config/listAll': [],
+        'GET /api/system/config/listGroups': [],
+        'GET /api/system/auth/listFavoriteMenus': [],
         ...extra,
     });
     return { ...renderWithProviders(<App />, { route }), fetch };
@@ -245,10 +246,10 @@ describe('页签风格与动画、路由动画', () => {
 });
 
 describe('enablePageCache', () => {
-    const keyword = () => screen.getByPlaceholderText<HTMLInputElement>('配置键 / 描述');
+    const keyword = () => screen.getByPlaceholderText<HTMLInputElement>('名称 / 编码');
 
     async function typeAndSwitchBack() {
-        fireEvent.change(await screen.findByPlaceholderText('配置键 / 描述'), { target: { value: 'site' } });
+        fireEvent.change(await screen.findByPlaceholderText('名称 / 编码'), { target: { value: 'site' } });
         expect(keyword().value).toBe('site');
         fireEvent.click(screen.getByRole('tab', { name: /首页/ }));
         await titleIs('首页');
@@ -272,7 +273,7 @@ describe('enablePageCache', () => {
 
     it('滚动位置在离开前按页记下（不在旧页已隐藏后再读），切回时恢复', async () => {
         renderAuthed('/system/configs', { enablePageCache: true, tabAnimation: 'none' });
-        await screen.findByPlaceholderText('配置键 / 描述');
+        await screen.findByPlaceholderText('名称 / 编码');
         const content = document.querySelector('.admin-content') as HTMLElement;
         // 模拟浏览器：缓存页被隐藏（display:none）后内容变矮，scrollTop 被钳到 0
         let raw = 0;
@@ -303,7 +304,7 @@ describe('enablePageCache', () => {
 
     it('enableTabs=false 时不缓存', async () => {
         renderAuthed('/system/configs', { enablePageCache: true, enableTabs: false });
-        fireEvent.change(await screen.findByPlaceholderText('配置键 / 描述'), { target: { value: 'site' } });
+        fireEvent.change(await screen.findByPlaceholderText('名称 / 编码'), { target: { value: 'site' } });
         fireEvent.click(within(document.querySelector('.admin-sidebar') as HTMLElement).getByText('用户管理'));
         await titleIs('用户管理');
         fireEvent.click(within(document.querySelector('.admin-sidebar') as HTMLElement).getByText('参数配置'));
@@ -391,7 +392,7 @@ describe('showFavorites', () => {
         await titleIs('用户管理');
         expect(screen.queryByRole('button', { name: '收藏此页' })).toBeNull();
         expect(screen.queryByRole('button', { name: '我的收藏' })).toBeNull();
-        expect(fetch.calls.some((c) => c.path === '/api/auth/favorite-menus')).toBe(false);
+        expect(fetch.calls.some((c) => c.path === '/api/system/auth/listFavoriteMenus')).toBe(false);
     });
 
     it('面包屑星标收藏当前页（乐观更新 + PUT 全量），顶栏入口列出收藏并可跳转、移除', async () => {
@@ -400,17 +401,17 @@ describe('showFavorites', () => {
             '/system/a',
             { showFavorites: true },
             {
-                'GET /api/auth/favorite-menus': () => saved,
-                'PUT /api/auth/favorite-menus': (init: RequestInit) => {
+                'GET /api/system/auth/listFavoriteMenus': () => saved,
+                'PUT /api/system/auth/updateFavoriteMenus': (init: RequestInit) => {
                     saved = (JSON.parse(init.body as string) as { menuIds: number[] }).menuIds;
                     return null;
                 },
             },
         );
-        await waitFor(() => expect(fetch.calls.some((c) => c.path === '/api/auth/favorite-menus')).toBe(true));
+        await waitFor(() => expect(fetch.calls.some((c) => c.path === '/api/system/auth/listFavoriteMenus')).toBe(true));
         fireEvent.click(await screen.findByRole('button', { name: '收藏此页' }));
         expect(await screen.findByRole('button', { name: '取消收藏' })).toHaveAttribute('aria-pressed', 'true');
-        await waitFor(() => expect(fetch.calls.find((c) => c.method === 'PUT' && c.path === '/api/auth/favorite-menus')?.body).toEqual({ menuIds: [4, 3] }));
+        await waitFor(() => expect(fetch.calls.find((c) => c.method === 'PUT' && c.path === '/api/system/auth/updateFavoriteMenus')?.body).toEqual({ menuIds: [4, 3] }));
 
         fireEvent.click(screen.getByRole('button', { name: '我的收藏' }));
         const panel = await screen.findByLabelText('我的收藏', { selector: '.admin-favorites' });
@@ -419,7 +420,7 @@ describe('showFavorites', () => {
         await titleIs('角色管理');
 
         fireEvent.click(screen.getByRole('button', { name: '移除收藏 角色管理' }));
-        await waitFor(() => expect(fetch.calls.filter((c) => c.method === 'PUT' && c.path === '/api/auth/favorite-menus').at(-1)?.body).toEqual({ menuIds: [3] }));
+        await waitFor(() => expect(fetch.calls.filter((c) => c.method === 'PUT' && c.path === '/api/system/auth/updateFavoriteMenus').at(-1)?.body).toEqual({ menuIds: [3] }));
     });
 
     it('收藏列表没加载成功（GET 失败）时不出星标与入口，不会用单个 id 全量覆盖服务端', async () => {
@@ -427,23 +428,23 @@ describe('showFavorites', () => {
             '/system/a',
             { showFavorites: true },
             {
-                'GET /api/auth/favorite-menus': () => Response.json({ code: 50000, message: '服务异常', data: null }, { status: 500 }),
-                'PUT /api/auth/favorite-menus': null,
+                'GET /api/system/auth/listFavoriteMenus': () => Response.json({ code: 100005, message: '服务异常', data: null }, { status: 500 }),
+                'PUT /api/system/auth/updateFavoriteMenus': null,
             },
         );
         await titleIs('用户管理');
-        await waitFor(() => expect(fetch.calls.some((c) => c.path === '/api/auth/favorite-menus')).toBe(true));
+        await waitFor(() => expect(fetch.calls.some((c) => c.path === '/api/system/auth/listFavoriteMenus')).toBe(true));
         await new Promise((r) => setTimeout(r, 50));
         expect(screen.queryByRole('button', { name: '收藏此页' })).toBeNull();
         expect(screen.queryByRole('button', { name: '我的收藏' })).toBeNull();
-        expect(fetch.calls.some((c) => c.method === 'PUT' && c.path === '/api/auth/favorite-menus')).toBe(false);
+        expect(fetch.calls.some((c) => c.method === 'PUT' && c.path === '/api/system/auth/updateFavoriteMenus')).toBe(false);
     });
 
     it('保存失败回滚：星标回到未收藏', async () => {
         renderAuthed(
             '/system/a',
             { showFavorites: true },
-            { 'PUT /api/auth/favorite-menus': () => Response.json({ code: 40000, message: '菜单不可收藏', data: null }, { status: 400 }) },
+            { 'PUT /api/system/auth/updateFavoriteMenus': () => Response.json({ code: 100001, message: '菜单不可收藏', data: null }, { status: 400 }) },
         );
         fireEvent.click(await screen.findByRole('button', { name: '收藏此页' }));
         await waitFor(() => expect(screen.getByRole('button', { name: '收藏此页' })).toHaveAttribute('aria-pressed', 'false'));
@@ -460,8 +461,8 @@ describe('showFavorites', () => {
 
 describe('enableLockScreen', () => {
     const verifyRoute = (ok: boolean) => ({
-        'POST /api/auth/verify-password': () =>
-            ok ? Response.json({ code: 0, message: 'ok', data: null }) : Response.json({ code: 40101, message: '密码错误', data: null }, { status: 401 }),
+        'POST /api/system/auth/verifyPassword': () =>
+            ok ? Response.json({ code: 0, message: 'ok', data: null }) : Response.json({ code: 110101, message: '密码错误', data: null }, { status: 401 }),
     });
 
     it('关闭时没有锁屏按钮，Alt+L 无效', async () => {
@@ -475,7 +476,7 @@ describe('enableLockScreen', () => {
     it('顶栏按钮锁定；密码错误提示「密码错误」且不清会话；正确密码解锁', async () => {
         let ok = false;
         const { fetch } = renderAuthed('/dashboard', { enableLockScreen: true }, {
-            'POST /api/auth/verify-password': () => verifyRoute(ok)['POST /api/auth/verify-password'](),
+            'POST /api/system/auth/verifyPassword': () => verifyRoute(ok)['POST /api/system/auth/verifyPassword'](),
         });
         fireEvent.click(await screen.findByRole('button', { name: '锁屏' }));
         const lock = await screen.findByRole('dialog', { name: '屏幕已锁定' });
@@ -488,7 +489,7 @@ describe('enableLockScreen', () => {
         expect(await within(lock).findByRole('alert')).toHaveTextContent('密码错误');
         expect(getSession()).toBe('1.test');
         expect(screen.getByRole('dialog', { name: '屏幕已锁定' })).toBeInTheDocument();
-        expect(fetch.calls.find((c) => c.path === '/api/auth/verify-password')?.body).toEqual({ password: 'wrong' });
+        expect(fetch.calls.find((c) => c.path === '/api/system/auth/verifyPassword')?.body).toEqual({ password: 'wrong' });
 
         ok = true;
         fireEvent.change(within(lock).getByLabelText('登录密码'), { target: { value: 'admin123' } });
@@ -502,7 +503,7 @@ describe('enableLockScreen', () => {
         const user = userEvent.setup();
         let ok = false;
         renderAuthed('/dashboard', { enableLockScreen: true }, {
-            'POST /api/auth/verify-password': () => verifyRoute(ok)['POST /api/auth/verify-password'](),
+            'POST /api/system/auth/verifyPassword': () => verifyRoute(ok)['POST /api/system/auth/verifyPassword'](),
         });
         await user.click(await screen.findByRole('button', { name: '锁屏' }));
         const lock = await screen.findByRole('dialog', { name: '屏幕已锁定' });
@@ -524,7 +525,7 @@ describe('enableLockScreen', () => {
         fireEvent.change(input, { target: { value: 'admin123' } });
         fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', keyCode: 13 });
         await waitFor(() => expect(screen.queryByRole('dialog', { name: '屏幕已锁定' })).toBeNull());
-        expect(fetch.calls.filter((c) => c.path === '/api/auth/verify-password')).toHaveLength(1);
+        expect(fetch.calls.filter((c) => c.path === '/api/system/auth/verifyPassword')).toHaveLength(1);
     });
 
     it('锁定时已打开的浮层（portal 到 body）也被 inert；解锁后恢复', async () => {
@@ -563,7 +564,7 @@ describe('enableLockScreen', () => {
 
     it('锁屏里「重新登录」退出当前账号并解除锁定', async () => {
         sessionStorage.setItem(LOCK_STORAGE_KEY, '1');
-        renderAuthed('/dashboard', { enableLockScreen: true }, { 'POST /api/auth/logout': null });
+        renderAuthed('/dashboard', { enableLockScreen: true }, { 'POST /api/system/auth/logout': null });
         const lock = await screen.findByRole('dialog', { name: '屏幕已锁定' });
         fireEvent.click(within(lock).getByRole('button', { name: '重新登录' }));
         await waitFor(() => expect(getSession()).toBeNull());

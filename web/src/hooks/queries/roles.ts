@@ -13,7 +13,7 @@ export const roleKeys = {
 export function useRoleList(query: RoleQuery) {
     return useQuery({
         queryKey: roleKeys.list(query),
-        queryFn: () => http.get<PageResult<RoleView>>(`/api/roles${toQueryString(query)}`),
+        queryFn: () => http.get<PageResult<RoleView>>(`/api/system/role/list${toQueryString(query)}`),
         placeholderData: keepPreviousData,
     });
 }
@@ -21,7 +21,7 @@ export function useRoleList(query: RoleQuery) {
 export function useRoleDetail(id: number | null) {
     return useQuery({
         queryKey: roleKeys.detail(id ?? 0),
-        queryFn: () => http.get<RoleDetail>(`/api/roles/${id}`),
+        queryFn: () => http.get<RoleDetail>(`/api/system/role/get/${id}`),
         enabled: id !== null,
         staleTime: 0,
     });
@@ -30,7 +30,7 @@ export function useRoleDetail(id: number | null) {
 export function useRoleOptions() {
     return useQuery({
         queryKey: roleKeys.options,
-        queryFn: () => http.get<RoleOption[]>('/api/roles/options'),
+        queryFn: () => http.get<RoleOption[]>('/api/system/role/listOptions'),
         staleTime: LOOKUP_STALE_TIME,
     });
 }
@@ -39,7 +39,7 @@ export function useSaveRole() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ id, body }: { id?: number | undefined; body: RoleSaveRequest }) =>
-            id === undefined ? http.post<IdResult>('/api/roles', body) : http.put<null>(`/api/roles/${id}`, body),
+            id === undefined ? http.post<IdResult>('/api/system/role/create', body) : http.put<null>(`/api/system/role/update/${id}`, body),
         onSuccess: () => qc.invalidateQueries({ queryKey: roleKeys.all }),
     });
 }
@@ -47,7 +47,7 @@ export function useSaveRole() {
 export function useDeleteRole() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => http.delete<null>(`/api/roles/${id}`),
+        mutationFn: (id: number) => http.delete<null>(`/api/system/role/delete/${id}`),
         onSuccess: () => qc.invalidateQueries({ queryKey: roleKeys.all }),
     });
 }
@@ -55,7 +55,7 @@ export function useDeleteRole() {
 export function useAssignRoleMenus() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, menuIds }: { id: number; menuIds: number[] }) => http.put<null>(`/api/roles/${id}/menus`, { menuIds }),
+        mutationFn: ({ id, menuIds }: { id: number; menuIds: number[] }) => http.put<null>(`/api/system/role/assignMenus/${id}`, { menuIds }),
         onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: roleKeys.detail(v.id) }),
     });
 }
