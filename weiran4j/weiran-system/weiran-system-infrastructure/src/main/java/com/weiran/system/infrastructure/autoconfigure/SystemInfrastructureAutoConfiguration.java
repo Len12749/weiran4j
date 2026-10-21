@@ -74,47 +74,44 @@ public class SystemInfrastructureAutoConfiguration {
             case "disabled" -> new DisabledSmsSender();
             case "log" -> new LogSmsSender(objectMapper);
             case "aliyun" -> AliyunSmsSender.create(properties, objectMapper);
-            default -> throw new IllegalStateException("短信模式无效，请检查 WEIRAN_SYSTEM_SMS_MODE（允许值：disabled、log、aliyun）");
+            default -> throw new IllegalStateException("短信模式无效，请检查 WEIRAN_SMS_MODE（允许值：disabled、log、aliyun）");
         };
     }
 
     @Bean
     @ConditionalOnMissingBean(FileStorage.class)
-    @ConditionalOnProperty(
-            prefix = "weiran.system.storage",
-            name = "mode",
-            havingValue = "disabled",
-            matchIfMissing = true)
+    @ConditionalOnProperty(prefix = "weiran.storage", name = "mode", havingValue = "disabled", matchIfMissing = true)
     public FileStorage systemDisabledFileStorage() {
         return new DisabledFileStorage();
     }
 
     @Bean
     @ConditionalOnMissingBean(FileStorage.class)
-    @ConditionalOnProperty(prefix = "weiran.system.storage", name = "mode", havingValue = "local")
+    @ConditionalOnProperty(prefix = "weiran.storage", name = "mode", havingValue = "local")
     public LocalFileStorage systemLocalFileStorage(final SystemStorageProperties properties) {
-        return new LocalFileStorage(properties.localRoot(), properties.localUrlPrefix());
+        return new LocalFileStorage(
+                properties.local().root(), properties.local().urlPrefix());
     }
 
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean(FileStorage.class)
-    @ConditionalOnProperty(prefix = "weiran.system.storage", name = "mode", havingValue = "oss")
-    public OssFileStorage systemOssFileStorage(final SystemStorageProperties properties) {
-        final SystemStorageProperties.Oss oss = properties.oss();
-        if (oss == null
-                || oss.endpoint() == null
-                || oss.bucket() == null
-                || oss.accessKeyId() == null
-                || oss.accessKeySecret() == null
-                || oss.publicBaseUrl() == null
-                || oss.endpoint().isBlank()
-                || oss.bucket().isBlank()
-                || oss.accessKeyId().isBlank()
-                || oss.accessKeySecret().isBlank()
-                || oss.publicBaseUrl().isBlank()) {
-            throw new IllegalStateException("OSS 存储配置不完整，请检查 WEIRAN_STORAGE_OSS_* 环境变量");
+    @ConditionalOnProperty(prefix = "weiran.storage", name = "mode", havingValue = "aliyun")
+    public OssFileStorage systemAliyunFileStorage(final SystemStorageProperties properties) {
+        final SystemStorageProperties.Aliyun aliyun = properties.aliyun();
+        if (aliyun == null
+                || aliyun.endpoint() == null
+                || aliyun.bucket() == null
+                || aliyun.accessKeyId() == null
+                || aliyun.accessKeySecret() == null
+                || aliyun.publicBaseUrl() == null
+                || aliyun.endpoint().isBlank()
+                || aliyun.bucket().isBlank()
+                || aliyun.accessKeyId().isBlank()
+                || aliyun.accessKeySecret().isBlank()
+                || aliyun.publicBaseUrl().isBlank()) {
+            throw new IllegalStateException("阿里云存储配置不完整，请检查 WEIRAN_STORAGE_ALIYUN_* 环境变量");
         }
-        return new OssFileStorage(oss);
+        return new OssFileStorage(aliyun);
     }
 
     /**

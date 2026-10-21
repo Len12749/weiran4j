@@ -28,7 +28,7 @@ status: "active"
 system **MUST** 支持 `disabled`、`log` 与 `aliyun` 三种短信模式，默认模式为 `disabled`；`disabled` 模式调用发送服务时 **MUST** 返回 `NOT_CONFIGURED` 且不得调用外部服务；`log` 模式 **MUST** 将短信模板代码与参数写入应用日志且不得调用外部服务，并返回 `LOGGED`。
 
 #### Scenario: 默认关闭短信发送
-- **WHEN** 未配置 `WEIRAN_SYSTEM_SMS_MODE`
+- **WHEN** 未配置 `WEIRAN_SMS_MODE`
 - **THEN** 短信模式为 `disabled`，业务调用得到 `NOT_CONFIGURED`
 - **判据**:默认配置上下文的发送结果为 `NOT_CONFIGURED`，假网关调用次数为 0。
 
@@ -44,7 +44,7 @@ system **MUST** 支持 `disabled`、`log` 与 `aliyun` 三种短信模式，默�
 
 #### Scenario: 阿里云超时配置
 - **WHEN** `aliyun` 模式使用连接或读取超时配置
-- **THEN** SDK 固定调用 `dysmsapi.aliyuncs.com`，连接/读取超时分别使用 `WEIRAN_SYSTEM_SMS_CONNECT_TIMEOUT` 与 `WEIRAN_SYSTEM_SMS_READ_TIMEOUT`，默认 3 秒和 5 秒
+- **THEN** SDK 固定调用 `dysmsapi.aliyuncs.com`，连接/读取超时分别使用 `weiran.sms.aliyun.connect-timeout` 与 `weiran.sms.aliyun.read-timeout`（环境变量 `WEIRAN_SMS_ALIYUN_CONNECT_TIMEOUT` 与 `WEIRAN_SMS_ALIYUN_READ_TIMEOUT`），默认 3 秒和 5 秒
 - **判据**:非正数或无法解析的超时配置使应用启动失败，并只报告配置项名称。
 
 ### Requirement: [FR-003] 阿里云 SendSms 请求
@@ -91,9 +91,9 @@ system **MUST** 支持 `disabled`、`log` 与 `aliyun` 三种短信模式，默�
 
 ### Requirement: [FR-006] 短信运行配置文档
 
-system 短信配置 **MUST** 只通过 `WEIRAN_SYSTEM_SMS_*` 环境变量注入；application 配置占位符、`.env.example` 与部署说明 **MUST** 保持一致。
+system 短信配置 **MUST** 绑定在 `weiran.sms` 下；模式使用 `weiran.sms.mode`，阿里云专属配置放在 `weiran.sms.aliyun.*`，通过 `WEIRAN_SMS_*` 环境变量注入；application 配置占位符、`.env.example` 与部署说明 **MUST** 保持一致。
 
 #### Scenario: 短信模式部署配置
 - **WHEN** 运维人员选择 `disabled`、`log` 或 `aliyun` 模式
-- **THEN** 文档列出三种模式的行为与安全影响，并列出阿里云所需变量及凭据管理要求；endpoint 使用固定默认值，不提供环境变量
+- **THEN** 文档列出三种模式的行为与安全影响，并列出 `WEIRAN_SMS_ALIYUN_*` 所需变量及凭据管理要求；endpoint 使用固定默认值，不提供环境变量
 - **判据**:`EnvExampleTest` 通过，且部署文档中的短信变量与 application.yml 和 `.env.example` 一致。

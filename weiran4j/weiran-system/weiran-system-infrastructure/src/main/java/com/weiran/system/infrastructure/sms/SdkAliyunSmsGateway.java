@@ -15,11 +15,11 @@ final class SdkAliyunSmsGateway implements AliyunSmsGateway {
     private final Client client;
     private final RuntimeOptions runtimeOptions;
 
-    SdkAliyunSmsGateway(final SystemSmsProperties properties) {
+    SdkAliyunSmsGateway(final SystemSmsProperties.Aliyun properties) {
         final int connectTimeoutMillis =
-                SdkAliyunSmsGateway.toMillis(properties.connectTimeout(), "WEIRAN_SYSTEM_SMS_CONNECT_TIMEOUT");
+                SdkAliyunSmsGateway.toMillis(properties.connectTimeout(), "WEIRAN_SMS_ALIYUN_CONNECT_TIMEOUT");
         final int readTimeoutMillis =
-                SdkAliyunSmsGateway.toMillis(properties.readTimeout(), "WEIRAN_SYSTEM_SMS_READ_TIMEOUT");
+                SdkAliyunSmsGateway.toMillis(properties.readTimeout(), "WEIRAN_SMS_ALIYUN_READ_TIMEOUT");
         try {
             this.client = new Client(new Config()
                     .setAccessKeyId(properties.accessKeyId())

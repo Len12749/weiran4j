@@ -12,11 +12,11 @@ import java.util.Objects;
 /** 阿里云 OSS 文件存储。 */
 public final class OssFileStorage implements FileStorage, AutoCloseable {
 
-    private final SystemStorageProperties.Oss properties;
+    private final SystemStorageProperties.Aliyun properties;
     private final OSS client;
     private final String publicBaseUrl;
 
-    public OssFileStorage(final SystemStorageProperties.Oss properties) {
+    public OssFileStorage(final SystemStorageProperties.Aliyun properties) {
         this.properties = properties;
         this.publicBaseUrl = OssFileStorage.trimSlash(properties.publicBaseUrl());
         this.client = new OSSClientBuilder()

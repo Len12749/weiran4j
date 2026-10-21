@@ -17,7 +17,8 @@ class SystemSmsModeTest {
     @Test
     @DisplayName("disabled 模式保持默认关闭")
     void createsDisabledSender() {
-        final SystemSmsProperties properties = new SystemSmsProperties("disabled", "", "", "", "3", "5");
+        final SystemSmsProperties properties =
+                new SystemSmsProperties("disabled", new SystemSmsProperties.Aliyun("", "", "", "3", "5"));
 
         final SmsSender sender = this.configuration.systemSmsSender(properties, new ObjectMapper());
 
@@ -27,7 +28,8 @@ class SystemSmsModeTest {
     @Test
     @DisplayName("log 模式装配日志 sender 且不要求阿里云凭据")
     void createsLogSenderWithoutCloudCredentials() {
-        final SystemSmsProperties properties = new SystemSmsProperties("log", "", "", "", "3", "5");
+        final SystemSmsProperties properties =
+                new SystemSmsProperties("log", new SystemSmsProperties.Aliyun("", "", "", "3", "5"));
 
         final SmsSender sender = this.configuration.systemSmsSender(properties, new ObjectMapper());
 

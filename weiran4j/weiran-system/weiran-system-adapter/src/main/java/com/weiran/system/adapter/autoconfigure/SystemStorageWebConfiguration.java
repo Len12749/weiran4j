@@ -9,15 +9,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /** 本地开发模式下提供已上传图片的静态访问。 */
 @Configuration
-@ConditionalOnProperty(prefix = "weiran.system.storage", name = "mode", havingValue = "local")
+@ConditionalOnProperty(prefix = "weiran.storage", name = "mode", havingValue = "local")
 public class SystemStorageWebConfiguration implements WebMvcConfigurer {
 
     private final Path localRoot;
     private final String localUrlPrefix;
 
     public SystemStorageWebConfiguration(
-            @Value("${weiran.system.storage.local-root}") final Path localRoot,
-            @Value("${weiran.system.storage.local-url-prefix}") final String localUrlPrefix) {
+            @Value("${weiran.storage.local.root}") final Path localRoot,
+            @Value("${weiran.storage.local.url-prefix}") final String localUrlPrefix) {
         this.localRoot = localRoot;
         this.localUrlPrefix = localUrlPrefix;
     }

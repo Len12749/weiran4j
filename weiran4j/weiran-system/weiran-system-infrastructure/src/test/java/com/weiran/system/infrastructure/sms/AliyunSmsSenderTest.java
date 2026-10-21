@@ -17,8 +17,8 @@ import org.slf4j.LoggerFactory;
 
 class AliyunSmsSenderTest {
 
-    private static final SystemSmsProperties PROPERTIES =
-            new SystemSmsProperties("aliyun", "access-id", "access-secret", "示例签名", "3", "5");
+    private static final SystemSmsProperties.Aliyun PROPERTIES =
+            new SystemSmsProperties.Aliyun("access-id", "access-secret", "示例签名", "3", "5");
 
     @Test
     @DisplayName("成功请求将模板参数序列化后交给网关")
@@ -105,23 +105,24 @@ class AliyunSmsSenderTest {
     @Test
     @DisplayName("阿里云模式缺少密钥时报告环境变量名且不暴露密钥")
     void rejectsMissingCredentialsWithoutLeakingSecrets() {
-        final SystemSmsProperties incomplete = new SystemSmsProperties("aliyun", "", "secret-value", "签名", "3", "5");
+        final SystemSmsProperties incomplete =
+                new SystemSmsProperties("aliyun", new SystemSmsProperties.Aliyun("", "secret-value", "签名", "3", "5"));
 
         assertThatThrownBy(() -> AliyunSmsSender.create(incomplete, new ObjectMapper()))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("WEIRAN_SYSTEM_SMS_ACCESS_KEY_ID")
+                .hasMessageContaining("WEIRAN_SMS_ALIYUN_ACCESS_KEY_ID")
                 .hasMessageNotContaining("secret-value");
     }
 
     @Test
     @DisplayName("无效超时配置只暴露配置项名称")
     void rejectsInvalidTimeoutWithoutLeakingValue() {
-        final SystemSmsProperties invalid =
-                new SystemSmsProperties("aliyun", "id", "secret", "签名", "secret-timeout", "5");
+        final SystemSmsProperties invalid = new SystemSmsProperties(
+                "aliyun", new SystemSmsProperties.Aliyun("id", "secret", "签名", "secret-timeout", "5"));
 
         assertThatThrownBy(() -> AliyunSmsSender.create(invalid, new ObjectMapper()))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("WEIRAN_SYSTEM_SMS_CONNECT_TIMEOUT")
+                .hasMessageContaining("WEIRAN_SMS_ALIYUN_CONNECT_TIMEOUT")
                 .hasMessageNotContaining("secret-timeout");
     }
 
