@@ -78,7 +78,7 @@ describe('UserIdentitiesModal', () => {
 
         await waitFor(() =>
             expect(calls.find((c) => c.method === 'POST')).toMatchObject({
-                path: '/api/system/user/listIdentities/2',
+                path: '/api/system/user/createIdentity/2',
                 body: { provider: 'keycloak', externalId: 'alice-sub', displayName: 'Alice' },
             }),
         );
