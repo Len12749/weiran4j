@@ -18,7 +18,7 @@ class AuthIT extends IntegrationTestSupport {
     @Test
     @DisplayName("健康检查无需登录，统一响应 code 为数字 0")
     void healthIsPublic() {
-        final ResponseEntity<JsonNode> response = this.get("/api-nbackend/health", null);
+        final ResponseEntity<JsonNode> response = this.get("/api-backend/n/health", null);
 
         IntegrationTestSupport.assertOk(response);
         assertThat(IntegrationTestSupport.data(response).path("status").asText())
@@ -133,14 +133,14 @@ class AuthIT extends IntegrationTestSupport {
                 this.get("/api-backend/system/auth/getCurrentUser", null), HttpStatus.UNAUTHORIZED, 100101);
         IntegrationTestSupport.assertError(
                 this.get("/api-backend/system/user/list", "not-a-jwt"), HttpStatus.UNAUTHORIZED, 100101);
-        IntegrationTestSupport.assertOk(this.get("/api-nbackend/health", "not-a-jwt"));
+        IntegrationTestSupport.assertOk(this.get("/api-backend/n/health", "not-a-jwt"));
     }
 
     @Test
     @DisplayName("请求体校验失败返回 100001，提示语为「字段: 中文提示」")
     void validationMessage() {
         final ResponseEntity<JsonNode> response =
-                this.post("/api-nbackend/system/auth/login", null, Map.of("password", "x"));
+                this.post("/api-backend/n/system/auth/login", null, Map.of("password", "x"));
 
         IntegrationTestSupport.assertError(response, HttpStatus.BAD_REQUEST, 100001);
         assertThat(IntegrationTestSupport.body(response).path("message").asText())

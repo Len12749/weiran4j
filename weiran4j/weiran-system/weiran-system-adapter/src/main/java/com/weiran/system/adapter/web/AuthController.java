@@ -83,7 +83,7 @@ public class AuthController {
 
     /** 登录。 */
     @PublicApi
-    @PostMapping("/api-nbackend/system/auth/login")
+    @PostMapping("/api-backend/n/system/auth/login")
     public LoginResponse login(
             @Valid @RequestBody final LoginRequest request,
             final HttpServletRequest http,
@@ -110,7 +110,7 @@ public class AuthController {
 
     /** 登录页需要的认证方式：外部身份提供方与密码登录开关（不含任何密钥与地址）。 */
     @PublicApi
-    @GetMapping("/api-nbackend/system/auth/listProviders")
+    @GetMapping("/api-backend/n/system/auth/listProviders")
     public ProvidersView providers() {
         final ProvidersView providers = this.externalLoginService.providers();
         return new ProvidersView(

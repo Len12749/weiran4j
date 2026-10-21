@@ -1,5 +1,10 @@
 # 流程本身的修改记录
 
+## 2026-10-22 · 未鉴权入口收敛到同一 API 前缀下
+
+- 路由约定改为 `/api-{type}/{module}/...` 需要登录、`/api-{type}/n/{module}/...` 免用户鉴权；当前 `type=backend`。
+- `api-route-convention.mjs` 按可选的 `/n/` 段检查新路径，并拦截旧 `/api-nbackend/` 路由；同步 `project.json` 与 `design/check.md`。
+
 ## 2026-10-21 · API 路由守卫识别授权与公开入口
 
 - `api-route-convention.mjs` 改为扫描 `/api-backend/` 与 `/api-nbackend/`，并拦截重新出现的旧 `/api/` 路由；继续检查模块、资源、动作三段结构；健康探针例外迁到 `/api-nbackend/health`。

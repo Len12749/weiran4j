@@ -78,7 +78,7 @@
 | 删除配置分组 | `DELETE /api-backend/system/config/deleteGroup/{key}` | `system:config:delete` | ✅ 系统配置 / 删除配置分组 | 仅允许删除空的自定义分组；内置分组或仍有配置项时 100004 |
 | 编辑配置 | `PUT /api-backend/system/config/update/{id}` | `system:config:update` | ✅ 修改配置 | 404 配置不存在；内置项改键 100004；新值按新类型校验 |
 | 删除配置 | `DELETE /api-backend/system/config/delete/{id}` | `system:config:delete` | ✅ 删除配置 | 内置 100004「内置配置不可删除」 |
-| 公开读取 | `GET /api-nbackend/system/config/getPublic/{key}` | 免登录 | — | 键不是 `system.general.title` 100102「该配置不允许公开读取」；查不到 100002；按库里的真实键复核 |
+| 公开读取 | `GET /api-backend/n/system/config/getPublic/{key}` | 免登录 | — | 键不是 `system.general.title` 100102「该配置不允许公开读取」；查不到 100002；按库里的真实键复核 |
 | 详情 | `GET /api-backend/system/config/get/{id}` | `system:config:list` | — | 页面未调用 |
 
 ## 4. 用到的公共组件
@@ -90,7 +90,7 @@
 - 配置写入后没有缓存层，公开接口每次查库。
 - 系统配置页面按 `sys_group(type=config,group_key=config_system)` 分组；短信页面按 `group_key=config_sms` 分组。配置键遵循 `{range}.{group}.{value}`，其中 `range=system/sms`、`group=sys_config.group_key=sys_group.code`；新建或变更键、分组时校验。已有不合规的自定义键允许原位改值。`field_type`、`field_options`、`required` 控制表单渲染和校验。匿名读取仅允许 `system.general.title`。
 - 短信配置由 `/system/sms` 菜单进入共用的 `ConfigsPage`，传入 `config_sms` 后只呈现短信域分组及 `sms.*` 配置项：`sms.general.sign_name` 位于 `general` 组，`sms.system_tpl.captcha_local` 与 `sms.system_tpl.captcha_aliyun` 位于 `system_tpl` 组。分组与配置项管理共用同一页面流程，分组写接口按配置域定位。
-- 登录页通过公开 `/api-nbackend/system/auth/listProviders` 获取手机号登录状态；后端只有在 `system.user.enable_phone_login=true`、短信发送模式可用且当前模式的验证码模板有效时才返回 `phoneLoginEnabled=true`。`local` 模式的 `sms.system_tpl.captcha_local` 是短信正文，必须包含 `${code}`；发码时替换并写入应用日志。`aliyun` 模式的 `sms.system_tpl.captcha_aliyun` 是已审核模板 CODE。
+- 登录页通过公开 `/api-backend/n/system/auth/listProviders` 获取手机号登录状态；后端只有在 `system.user.enable_phone_login=true`、短信发送模式可用且当前模式的验证码模板有效时才返回 `phoneLoginEnabled=true`。`local` 模式的 `sms.system_tpl.captcha_local` 是短信正文，必须包含 `${code}`；发码时替换并写入应用日志。`aliyun` 模式的 `sms.system_tpl.captcha_aliyun` 是已审核模板 CODE。
 - 站点标题仍取自构建期环境变量 `VITE_APP_TITLE`（见 #02）；`web/src` 不直接调用公开配置接口。
 - 内置配置只保护「键不可改、不可删」，值与表单配置都可以改。
 - 组件演示 `/demo/config` 使用本地示例数据复用 `SystemConfigGroupForm`，八种字段各一条；示例保存与图片预览不写入后端。
@@ -104,7 +104,7 @@
   「configValue: 不是合法的 number 值」。
 
 - **#02 🔴 P3 种子配置 `system.general.title` 前端仍未读取**
-  `GET /api-nbackend/system/config/getPublic/{key}` 为其开放免登录读取；
+  `GET /api-backend/n/system/config/getPublic/{key}` 为其开放免登录读取；
   但前端 `config.ts` 的 `appTitle` 来自 `import.meta.env.VITE_APP_TITLE`（缺省 `Weiran Admin`），全仓无调用公开配置接口之处。
   症状：在系统配置页修改 `system.general.title` 后，登录页与顶栏标题不变。
 

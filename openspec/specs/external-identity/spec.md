@@ -13,7 +13,7 @@ status: "active"
 
 ### Requirement: [FR-001] 提供方列表
 
-系统 **MUST** 通过公开接口 `GET /api-nbackend/auth/providers` 返回已启用的提供方 `[{id, type, name}]` 与 `passwordLoginEnabled`。**MUST NOT** 返回任何密钥或提供方的内部地址。
+系统 **MUST** 通过公开接口 `GET /api-backend/n/auth/providers` 返回已启用的提供方 `[{id, type, name}]` 与 `passwordLoginEnabled`。**MUST NOT** 返回任何密钥或提供方的内部地址。
 
 #### Scenario: 列出已配置的提供方
 - **WHEN** 配置了一个 OIDC 提供方和一个 CAS 提供方后,未登录调用该接口
@@ -91,7 +91,7 @@ CAS 登录 **MUST** 使用 CAS 3.0 的 `/p3/serviceValidate`(`format=JSON`)验�
 
 ### Requirement: [FR-006] 流程状态与重定向安全
 
-authorize 与 callback 之间的流程状态 **MUST** 存在签名 Cookie `weiran_sso` 中:HttpOnly、`SameSite=Lax`、`Path=/api-nbackend/auth/sso`、10 分钟有效。被篡改或过期 **MUST** 视为校验失败(110102)。
+authorize 与 callback 之间的流程状态 **MUST** 存在签名 Cookie `weiran_sso` 中:HttpOnly、`SameSite=Lax`、`Path=/api-backend/n/auth/sso`、10 分钟有效。被篡改或过期 **MUST** 视为校验失败(110102)。
 `redirect` **MUST** 只接受以单个 `/` 开头的站内路径,其它值 **MUST** 改为 `/`。
 
 #### Scenario: 开放重定向被阻止

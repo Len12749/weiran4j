@@ -20,7 +20,7 @@ export function useAuth() {
 
     const login = useCallback(async (body: LoginRequest) => {
         // 密码错误是 110101，不走会话失效分支；错误提示由登录页自己展示
-        const res = await http.post<LoginResult>('/api-nbackend/system/auth/login', body, { silent: true });
+        const res = await http.post<LoginResult>('/api-backend/n/system/auth/login', body, { silent: true });
         qc.clear();
         // 会话过期被踢回登录页时锁屏标记还留着，重新登录后不应再锁
         unlockScreen();

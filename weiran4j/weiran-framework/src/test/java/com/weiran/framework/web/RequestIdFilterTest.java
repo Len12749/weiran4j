@@ -114,13 +114,13 @@ class RequestIdFilterTest {
     @DisplayName("未登录记 user=-；健康检查只打 DEBUG；非 /api 路径不打访问日志")
     void levelsAndScope() throws Exception {
         this.run(new MockHttpServletRequest("GET", "/api-backend/system/auth/getCurrentUser"), new ArrayList<>());
-        this.run(new MockHttpServletRequest("GET", "/api-nbackend/health"), new ArrayList<>());
+        this.run(new MockHttpServletRequest("GET", "/api-backend/n/health"), new ArrayList<>());
         this.run(new MockHttpServletRequest("GET", "/index.html"), new ArrayList<>());
 
         assertThat(this.appender.list).hasSize(2);
         assertThat(this.appender.list.get(0).getFormattedMessage()).contains("user=-");
         assertThat(this.appender.list.get(0).getLevel()).isEqualTo(Level.INFO);
-        assertThat(this.appender.list.get(1).getFormattedMessage()).startsWith("GET /api-nbackend/health ");
+        assertThat(this.appender.list.get(1).getFormattedMessage()).startsWith("GET /api-backend/n/health ");
         assertThat(this.appender.list.get(1).getLevel()).isEqualTo(Level.DEBUG);
     }
 }

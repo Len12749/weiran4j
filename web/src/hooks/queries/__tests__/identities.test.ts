@@ -4,7 +4,7 @@ import { ssoAuthorizeUrl, ssoErrorMessage } from '../identities';
 describe('ssoAuthorizeUrl', () => {
     it('拼出 authorize 地址，redirect 与提供方 id 做 URL 编码', () => {
         expect(ssoAuthorizeUrl('keycloak', { redirect: '/system/users?a=1&b=中', mode: 'login' })).toBe(
-            '/api-nbackend/system/auth/authorizeSso/keycloak?redirect=%2Fsystem%2Fusers%3Fa%3D1%26b%3D%E4%B8%AD&mode=login',
+            '/api-backend/n/system/auth/authorizeSso/keycloak?redirect=%2Fsystem%2Fusers%3Fa%3D1%26b%3D%E4%B8%AD&mode=login',
         );
         expect(ssoAuthorizeUrl('a/b', { redirect: '/profile', mode: 'bind' })).toBe('/api-backend/system/auth/authorizeSso/a%2Fb?redirect=%2Fprofile&mode=bind');
     });

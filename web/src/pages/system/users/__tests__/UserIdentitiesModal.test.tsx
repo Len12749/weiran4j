@@ -35,7 +35,7 @@ const identity: UserIdentityView = {
 };
 
 const providersRoute = {
-    'GET /api-nbackend/system/auth/listProviders': { passwordLoginEnabled: true, providers: [{ id: 'keycloak', type: 'oidc', name: '统一身份' }] },
+    'GET /api-backend/n/system/auth/listProviders': { passwordLoginEnabled: true, providers: [{ id: 'keycloak', type: 'oidc', name: '统一身份' }] },
 };
 
 describe('UserIdentitiesModal', () => {

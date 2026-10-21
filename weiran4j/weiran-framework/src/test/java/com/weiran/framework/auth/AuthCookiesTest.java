@@ -59,7 +59,7 @@ class AuthCookiesTest {
     }
 
     @Test
-    @DisplayName("外部登录流程 Cookie：HttpOnly、SameSite=Lax、Path=/api-nbackend/system/auth/callbackSso、10 分钟；清除时 Max-Age=0")
+    @DisplayName("外部登录流程 Cookie：HttpOnly、SameSite=Lax、Path=/api-backend/n/system/auth/callbackSso、10 分钟；清除时 Max-Age=0")
     void ssoStateCookie() {
         final AuthCookies cookies = new AuthCookies(new AuthCookieProperties(true));
         final ResponseCookie state = cookies.ssoState("signed");
@@ -67,11 +67,11 @@ class AuthCookiesTest {
         assertThat(state.getValue()).isEqualTo("signed");
         assertThat(state.isHttpOnly()).isTrue();
         assertThat(state.getSameSite()).isEqualTo("Lax");
-        assertThat(state.getPath()).isEqualTo("/api-nbackend/system/auth/callbackSso");
+        assertThat(state.getPath()).isEqualTo("/api-backend/n/system/auth/callbackSso");
         assertThat(state.getMaxAge()).isEqualTo(Duration.ofMinutes(10));
         assertThat(state.isSecure()).isTrue();
         assertThat(cookies.clearSsoState().getMaxAge()).isZero();
-        assertThat(cookies.clearSsoState().getPath()).isEqualTo("/api-nbackend/system/auth/callbackSso");
+        assertThat(cookies.clearSsoState().getPath()).isEqualTo("/api-backend/n/system/auth/callbackSso");
     }
 
     @Test

@@ -75,7 +75,7 @@ abstract class IntegrationTestSupport {
         headers.set(AuthCookies.AUTH_MODE_HEADER, AuthCookies.AUTH_MODE_TOKEN);
         return this.exchange(
                 HttpMethod.POST,
-                "/api-nbackend/system/auth/login",
+                "/api-backend/n/system/auth/login",
                 headers,
                 Map.of("username", username, "password", password));
     }
@@ -84,7 +84,7 @@ abstract class IntegrationTestSupport {
     ResponseEntity<JsonNode> loginWithCookies(final String username, final String password) {
         return this.exchange(
                 HttpMethod.POST,
-                "/api-nbackend/system/auth/login",
+                "/api-backend/n/system/auth/login",
                 new HttpHeaders(),
                 Map.of("username", username, "password", password));
     }
