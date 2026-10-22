@@ -5,108 +5,48 @@ status: "active"
 # cqt-site-config Specification
 
 ## Purpose
-本能力长期负责常青藤前台的站点配置：站点文案、联系方式、协议正文、证书可见性开关等配置项在 `cqt_setting` 表中的存储口径，
-以及前台通过 `GET /api-web/product/getconfig` 一次取得全部配置时的键名映射与清洗规则，保证 uniapp 各页面读取的键名与取值形状稳定。
+
+常青藤站点文案、联系方式、协议正文和证书展示配置由基座系统配置管理；uniapp 仍通过 `GET /api-web/product/getconfig` 读取稳定的 22 键响应。
 
 ## Requirements
 
 ### Requirement: [FR-001] 站点配置存储
 
-站点配置 **MUST** 存放在表 `cqt_setting`，其列与原统一库 `cqtxj2026.sc_setting` 一致：
-`id`、`ident`（配置项编号）、`name`、`contents`（文本）、`created_at`、`updated_at`、`deleted_at`、`key`。
-表结构 **MUST** 只由 Flyway 脚本创建；原库数据 **MUST** 通过独立导入脚本迁入，**MUST NOT** 写进 Flyway 脚本。
+站点配置 **MUST** 存放在 `sys_config` 的 `cqt_site` 分组，配置键为 `system.cqt_site.<前台键名>`。Flyway **MUST** 取旧 `cqt_setting` 中每个 ident 最大 id 行的原始内容，生成 22 个配置项后删除旧表。旧库导入脚本 **MUST** 直接写入系统配置，不再重建旧表。已发布的旧 Flyway 脚本 **MUST NOT** 修改。
 
-#### Scenario: 空库迁移后表结构一致
-- **WHEN** 应用在空库上启动完成 Flyway 迁移
-- **THEN** 存在表 `cqt_setting`，列名与类型与 `sc_setting` 一致，且表内无数据
-- **判据**:集成测试查询 `information_schema.columns` 断言 8 个列名，`SELECT COUNT(*)` 在测试插入前为 0
+#### Scenario: 空库完成迁移
+- **WHEN** 应用在空库上完成 Flyway 迁移
+- **THEN** `sys_config` 存在 22 个 `cqt_site` 配置项，且不存在 `cqt_setting` 表
+- **判据**:集成测试检查配置项数量和 `information_schema.tables`
 
-#### Scenario: 导入脚本从原库迁入
-- **WHEN** 在同一 MySQL 实例上同时存在 `cqtxj2026` 与目标库时执行 `scripts/biz/import/cqt_setting.sql`
-- **THEN** `cqt_setting` 的行数与 `cqtxj2026.sc_setting` 一致，重复执行不产生重复行
-- **判据**:执行后两表 `COUNT(*)` 相等；再执行一次计数不变
+#### Scenario: 已有数据完成迁移
+- **WHEN** 同一 ident 有多行或值含 HTML
+- **THEN** 系统配置保存 id 最大行的完整原始值，富文本不被 4096 字符限制截断
+- **判据**:迁移测试核对最新行及长富文本内容
 
 ### Requirement: [FR-002] 前台站点配置接口
 
-`GET /api-web/product/getconfig` **MUST** 免登录，返回的 `data` **MUST** 恰好包含以下 22 个键，取值来自 `cqt_setting` 中 `ident` 对应行的 `contents`：
-`guanyuwomen`→2、`user_agreement`→71、`yinsixieyi`→3、`about_us`→4、`dizhi`→7、`shouji`→8、`weixin`→9、`youxiang`→10、
-`gongsijieshao`→15、`hezuohuoban`→16、`dasaijieshao`→17、`mianzexieyi`→18、`shouhoufuwu`→19、`shangwuhezuo`→20、
-`gongzuoshijian`→21、`dasaizhangcheng`→22、`gongzhonghao`→23、`shouyeimage`→66、`certificate_visibility`→67、
-`sheng_certificate_visibility`→68、`teacher_org_certificate_competition_id`→69、`guo_certificate_visibility`→70。
-只读取 `ident` 在 1–100 之间的行。同一 `ident` 多行时取 `id` 最大的一行。
+`GET /api-web/product/getconfig` **MUST** 免登录并返回既有 22 个键。富文本字段返回原始 HTML；其它文本去除 HTML 标签并去掉首尾空白；`gongzhonghao` 有值时返回单元素原值数组，否则返回空数组。系统配置值为空时，普通键返回 `null`。
 
-富文本键 `guanyuwomen`、`user_agreement`、`yinsixieyi`、`about_us`、`gongsijieshao`、`hezuohuoban`、`dasaijieshao`、`mianzexieyi`、`shouhoufuwu`、`shangwuhezuo`、`dasaizhangcheng` **MUST** 返回原始 HTML；其它字符串按现有规则去除 HTML 标签与首尾空白；`gongzhonghao` 仍返回原始值数组。
-
-#### Scenario: 返回全部 22 个键
-- **WHEN** 请求 `GET /api-web/product/getconfig`
-- **THEN** `data` 的键集合恰为上述 22 个
-- **判据**:集成测试断言 `$.data` 的字段名集合与上表相等
-
-#### Scenario: 缺行的配置项为 null
-- **WHEN** `cqt_setting` 中不存在 `ident = 9` 的行
-- **THEN** `data.weixin` 为 `null`，接口仍返回 `code` 200
-- **判据**:集成测试断言 `$.data.weixin` 为 JSON null
+#### Scenario: 后台修改后前台立即读取
+- **WHEN** 管理员通过系统配置页面更新 `system.cqt_site.guanyuwomen`
+- **THEN** 前台 `guanyuwomen` 返回新 HTML，其他 21 个键的名称与形状不变
+- **判据**:HTTP 集成测试通过系统配置 API 更新，再断言前台响应
 
 ### Requirement: [FR-003] 站点配置清洗规则
 
-除 `gongzhonghao` 外，取值为字符串的配置项 **MUST** 去除全部 HTML 标签（形如 `<…>` 的片段）并去掉首尾空白后返回；
-`contents` 为 NULL 的配置项 **MUST** 返回 `null`。
-`gongzhonghao` **MUST** 返回数组：`contents` 非空时为只含该原值（不去标签）的单元素数组，为空或缺行时为空数组。
+富文本字段返回原始 HTML；普通文本去除 HTML 标签并去掉首尾空白；`gongzhonghao` 有值时返回单元素原值数组，否则返回空数组。系统配置值为空时，普通键返回 `null`。
 
-#### Scenario: 去除 HTML 标签
-- **WHEN** `ident = 7` 的 `contents` 为 `<p>北京市 <b>东城区</b></p> `
-- **THEN** `data.dizhi` 为 `北京市 东城区`
-- **判据**:单元测试与集成测试均断言该值
-
-#### Scenario: 公众号字段为数组
-- **WHEN** `ident = 23` 的 `contents` 为 `/uploads/qr.png`；以及该行不存在时
-- **THEN** 前者 `data.gongzhonghao` 为 `["/uploads/qr.png"]`，后者为 `[]`
-- **判据**:单元测试断言两种情形的数组内容
+#### Scenario: 保留前台取值形状
+- **WHEN** 配置项含 HTML、空值或公众号图片地址
+- **THEN** 各字段按上述规则转换
+- **判据**:单元测试和 HTTP 集成测试断言响应值
 
 ### Requirement: [FR-004] 站点配置后台表单
 
-后台 **MUST** 提供独立的 CQT 站点配置页面和受权限保护的读取、保存接口；管理端读写 `cqt_setting.contents` 原始值，保存按 ident 更新最大 id 行，只有该 ident 无记录时才新建行。`guanyuwomen` 使用 ident 2，`user_agreement` 使用 ident 71。部署迁移和旧库导入 **MUST** 将现有 ident 2 最大 id 行的内容复制为 ident 71 初始值；ident 2 缺行时不得臆造默认内容。保存 **MUST** 记录操作日志。
+后台 **MUST** 在“系统配置”页面的“常青藤站点”分组展示并编辑 22 项。富文本和单图字段使用系统配置组件及系统媒体上传；旧 CQT 站点配置页面、管理接口、菜单与权限 **MUST** 移除。原有授权角色 **MUST** 获得相应的系统配置查看、修改和图片上传权限。
 
-站点配置页面 **MUST** 按类别使用 Tab 展示；介绍与协议内容 **MUST** 使用可编辑富文本，支持上传并插入图片。后台图片上传 **MUST** 需要 `cqt:site-config:update` 权限，仅允许 jpg/jpeg/png/gif，单张最大 10 MB，并复用 CQT 文件存储。富文本 HTML **MUST** 原样保存，公开配置接口对富文本键返回原始 HTML，其它文本字段保持既有清洗行为。
-
-富文本编辑器 **MUST** 支持粘贴剪贴板中的图片文件；粘贴图片须先经上述后台上传接口上传，再将返回 URL 插入当前编辑位置。普通文本粘贴 **MUST** 继续使用编辑器默认行为。
-
-#### Scenario: 初始化独立协议配置
-- **WHEN** 运行新迁移或重复执行旧库导入脚本，ident 2 至少有一行且 ident 71 尚未初始化
-- **THEN** ident 71 初始内容与 ident 2 最大 id 行一致，后续修改任一 ident 不影响另一项
-- **判据**:数据库断言两个 ident 的初始 `contents` 相同，更新一个 ident 后另一项内容保持不变；重复运行导入不产生多余行
-
-#### Scenario: 后台保存保留原始内容
-- **WHEN** 有 `cqt:site-config:update` 权限的管理员提交包含 HTML 的原始内容
-- **THEN** 管理端保存该原始 `contents`；若为富文本键，前台 GET 返回原始 HTML，否则继续执行既有清洗
-- **判据**:管理 GET 返回原始标签；公开 GET 对富文本保留 HTML、对普通文本去标签，且操作日志记录该次保存
-
-#### Scenario: 富文本中插入已上传图片
-- **WHEN** 有更新权限的管理员在富文本编辑器上传 jpg/jpeg/png/gif 图片并保存配置
-- **THEN** 图片经后台受权限保护的上传接口写入当前 CQT 文件存储，编辑器以图片 URL 保存 HTML
-- **AND** 公开配置接口对富文本字段返回包含该图片的 HTML
-- **判据**:后台上传无权限时被拒绝；有权限时返回文件 URL；保存后公开 GET 保留图片标签和 URL
-
-#### Scenario: 按类别切换配置 Tab
-- **WHEN** 管理员查看站点配置页面
-- **THEN** 配置分为站点介绍、协议与服务、联系方式、首页素材与证书四个 Tab
-- **AND** 切换 Tab 后各字段仍保留表单值并可全量保存
-- **判据**:前端测试验证类别 Tab 切换与跨 Tab 全量提交
-
-#### Scenario: 粘贴图片上传并插入
-- **WHEN** 管理员将剪贴板中的图片粘贴到富文本编辑器
-- **THEN** 编辑器使用权限受保护的图片上传接口保存图片，并在当前光标处插入返回的图片 URL
-- **AND** 非图片文本粘贴继续由编辑器默认处理
-- **判据**:前端测试断言粘贴图片触发上传并渲染返回 URL，普通文本粘贴不触发图片上传
-
-#### Scenario: 未授权用户不能管理站点配置
-- **WHEN** 未登录或缺少对应 `cqt:site-config:list` / `cqt:site-config:update` 权限的用户调用管理读写接口
-- **THEN** 请求分别返回认证失败或权限拒绝，数据库内容不变
-- **判据**:HTTP 集成测试断言未授权状态码及 `cqt_setting.contents` 未改变
-
-公众号图片gongzhonghao与首页图片shouyeimage **MUST** 使用SingleImageUpload，支持历史路径回显、原图预览、删除清空及上传重试。图片地址仍保存在原contents字段，上传期间不得保存，保存期间不得变更图片；移除不物理删除存储对象。
-
-#### Scenario: 配置图片上传与清空
-- **WHEN** 管理员编辑公众号图片和首页图片
-- **THEN** 旧图回显，上传返回URL写入对应原字段，删除后可保存为空；预览不触发上传
-- **判据**:静态复核组件绑定与互斥，后续授权后运行浏览器上传验收
+#### Scenario: 站点配置进入系统配置
+- **WHEN** 有原站点配置权限的管理员登录
+- **THEN** 可进入系统配置的常青藤站点分组编辑配置并上传图片
+- **判据**:迁移脚本核对菜单和角色权限，前端使用动态系统配置表单

@@ -33,7 +33,7 @@
 
 ## 4. 用到的公共组件
 
-首图使用 `SingleImageUpload`：96px 方形点击/拖放上传、图标预览、右上角圆形删除；预览使用 Semi 图片查看器，每次打开默认以原图尺寸 100% 显示。后台富文本编辑器复用 `SiteConfigRichEditor`。
+首图使用系统配置同款 `FileUpload`：支持点击/拖放上传、预览、移除，限制 jpg/jpeg/png/gif 和 10 MB。后台富文本编辑器复用 `SiteConfigRichEditor`。
 
 ## 5. 说明与建议
 
@@ -46,6 +46,9 @@
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序）。
+
+**2026-10-23**
+- 首图改用系统配置同款 `FileUpload`，保存时等待上传完成。
 
 **2026-10-16**
 - 首图上传、预览、删除抽为受控公共组件 `SingleImageUpload`，上传入口与图片操作分离。

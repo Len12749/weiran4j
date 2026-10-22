@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import org.jspecify.annotations.Nullable;
 
-/** 本地目录存储（{@code weiran.cqt.storage.mode=local}，仅开发 / 测试）：写入 {@code <root>/<对象名>}，经 {@code /uploads/**} 访问。 */
+/** 本地目录存储（{@code weiran.storage.mode=local}，仅开发 / 测试）：写入 system 配置的目录与 URL 前缀。 */
 public final class LocalFileStorage implements FileStorage {
 
     private final Path root;

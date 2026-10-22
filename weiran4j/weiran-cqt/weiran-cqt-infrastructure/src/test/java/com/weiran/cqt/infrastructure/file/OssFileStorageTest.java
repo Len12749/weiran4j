@@ -99,14 +99,14 @@ class OssFileStorageTest {
     void validatesConfig() {
         assertThatThrownBy(() -> OssFileStorage.create(OssFileStorageTest.config(" ")))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("WEIRAN_CQT_OSS_BUCKET")
+                .hasMessageContaining("WEIRAN_STORAGE_ALIYUN_BUCKET")
                 .hasMessageNotContaining(OssFileStorageTest.SECRET_VALUE)
-                .hasMessageNotContaining("WEIRAN_CQT_OSS_ENDPOINT");
+                .hasMessageNotContaining("WEIRAN_STORAGE_ALIYUN_ENDPOINT");
         assertThatThrownBy(() -> OssFileStorage.requireComplete(new CqtProperties.Oss("", "", "", "", "")))
-                .hasMessageContaining("WEIRAN_CQT_OSS_ACCESS_KEY_ID")
-                .hasMessageContaining("WEIRAN_CQT_OSS_ACCESS_KEY_SECRET")
-                .hasMessageContaining("WEIRAN_CQT_OSS_ENDPOINT")
-                .hasMessageContaining("WEIRAN_CQT_OSS_PUBLIC_BASE_URL");
+                .hasMessageContaining("WEIRAN_STORAGE_ALIYUN_ACCESS_KEY_ID")
+                .hasMessageContaining("WEIRAN_STORAGE_ALIYUN_ACCESS_KEY_SECRET")
+                .hasMessageContaining("WEIRAN_STORAGE_ALIYUN_ENDPOINT")
+                .hasMessageContaining("WEIRAN_STORAGE_ALIYUN_PUBLIC_BASE_URL");
 
         final OssFileStorage storage = OssFileStorage.create(OssFileStorageTest.config("cqt-bucket"));
         assertThat(storage).isNotNull();

@@ -521,21 +521,6 @@ export interface IdResult {
 }
 
 // 下游赛事管理契约
-export interface SiteConfigAdminItem {
-    key: string;
-    label: string;
-    ident: number;
-    contents: string | null;
-}
-
-export interface SiteConfigAdminResponse {
-    items: SiteConfigAdminItem[];
-}
-
-export interface SiteConfigSaveRequest {
-    items: Array<Pick<SiteConfigAdminItem, 'key' | 'contents'>>;
-}
-
 export interface SiteConfigImageUpload {
     url: string;
     name: string;
@@ -592,7 +577,7 @@ export interface CqtShowcaseSaveRequest {
 export interface CqtShowcaseView extends CqtShowcaseSaveRequest { id: number; createdAt: string; updatedAt: string }
 export type CqtResourceCategory = 'SCRIPT_PAPER' | 'DRAMA_MATERIAL';
 export interface CqtResourceSaveRequest {
-    title: string; category: CqtResourceCategory; fileUrl: string; fileName: string; content: string; enabled: boolean; sort: number;
+    title: string; category: CqtResourceCategory; materialUrl: string; content: string; enabled: boolean; sort: number;
 }
 export interface CqtResourceView extends CqtResourceSaveRequest { id: number; createdAt: string; updatedAt: string }
 export interface CqtContentQuery extends PageQuery { keyword?: string; category?: string; enabled?: boolean }
@@ -637,7 +622,7 @@ export interface CqtReviewPreview {
 export type CqtCompetitionMode = 'SHARED' | 'SEPARATE';
 export type CqtCompetitionStatus = 0 | 1 | 2;
 export interface CqtCompetitionBody {
-    name: string; edition: string; year: number; description: string | null; nationalEntryMode: CqtCompetitionMode;
+    name: string; edition: string | null; year: number | null; description: string | null; nationalEntryMode: CqtCompetitionMode;
     registrationStart: string | null; registrationEnd: string | null; provinceReviewStart: string | null; provinceReviewEnd: string | null;
     nationalReviewStart: string | null; nationalReviewEnd: string | null; resultPublishTime: string | null;
     provinceCertificateTemplate: string | null; nationalCertificateTemplate: string | null; teacherOrgCertificateTemplate: string | null;

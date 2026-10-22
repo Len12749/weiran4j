@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 import com.weiran.cqt.api.error.CqtErrors;
 import com.weiran.cqt.domain.sms.SmsCode;
 import com.weiran.cqt.domain.sms.SmsCodeStore;
-import com.weiran.cqt.domain.sms.SmsIpCounter;
 import com.weiran.framework.error.BizException;
 import com.weiran.framework.error.CommonErrors;
 import com.weiran.platform.api.config.ConfigService;
@@ -33,9 +32,7 @@ class SmsApplicationServiceTest {
 
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-04T00:00:00Z"), ZoneOffset.UTC);
 
-    private static final String IP = "203.0.113.9";
-
-    private static final String TEMPLATE_KEY = "system.user.cqt_sms_template_code";
+    private static final String TEMPLATE_KEY = "sms.system_tpl.captcha_local";
 
     /** 内存存储。 */
     private static final class MapStore implements SmsCodeStore {
@@ -58,28 +55,14 @@ class SmsApplicationServiceTest {
         }
     }
 
-    /** 内存 IP 计数（不过期）。 */
-    private static final class MapCounter implements SmsIpCounter {
-
-        private final Map<String, Integer> counts = new HashMap<>();
-
-        @Override
-        public int sentWithinHour(final String ip) {
-            return this.counts.getOrDefault(ip, 0);
-        }
-
-        @Override
-        public void recordSent(final String ip) {
-            this.counts.merge(ip, 1, Integer::sum);
-        }
-    }
-
     /** 可控的 system 发送服务。 */
     private static final class ScriptedSystemSmsService implements SmsService {
 
         private final Deque<SmsSendResult> outcomes = new ArrayDeque<>();
 
         private @Nullable String lastCode;
+
+        private @Nullable String lastTemplate;
 
         private boolean available = true;
 
@@ -97,21 +80,18 @@ class SmsApplicationServiceTest {
         @Override
         public SmsSendResult send(final SmsSendCommand command) {
             this.lastCode = command.templateParameters().get("code");
+            this.lastTemplate = command.templateCode();
             return this.outcomes.isEmpty() ? SmsSendResult.SENT : this.outcomes.pollFirst();
         }
     }
 
-    private static SmsApplicationService service(
-            final SmsCodeStore store,
-            final SmsIpCounter counter,
-            final int ipLimit,
-            final ScriptedSystemSmsService sender) {
+    private static SmsApplicationService service(final SmsCodeStore store, final ScriptedSystemSmsService sender) {
         final ConfigService configService = mock(ConfigService.class);
         when(configService.all())
                 .thenReturn(List.of(new ConfigView(
                         1L,
                         SmsApplicationServiceTest.TEMPLATE_KEY,
-                        "TEST_TEMPLATE",
+                        "验证码 ${code}",
                         "string",
                         "user",
                         "input",
@@ -121,8 +101,7 @@ class SmsApplicationServiceTest {
                         true,
                         null,
                         null)));
-        return new SmsApplicationService(
-                store, configService, sender, counter, SmsApplicationServiceTest.CLOCK, ipLimit);
+        return new SmsApplicationService(store, configService, sender, SmsApplicationServiceTest.CLOCK, "local");
     }
 
     private static void assertError(final Runnable action, final Object errorCode) {
@@ -139,8 +118,7 @@ class SmsApplicationServiceTest {
         sender.available = false;
 
         SmsApplicationServiceTest.assertError(
-                () -> SmsApplicationServiceTest.service(store, new MapCounter(), 10, sender)
-                        .send("15533716215", IP),
+                () -> SmsApplicationServiceTest.service(store, sender).send("15533716215"),
                 CqtErrors.SMS_NOT_CONFIGURED);
         assertThat(store.codes).isEmpty();
     }
@@ -150,9 +128,10 @@ class SmsApplicationServiceTest {
     void sendsWithSystemTemplateAndVerifiesOnce() {
         final MapStore store = new MapStore();
         final ScriptedSystemSmsService sender = new ScriptedSystemSmsService(SmsSendResult.LOGGED);
-        final SmsApplicationService service = SmsApplicationServiceTest.service(store, new MapCounter(), 10, sender);
+        final SmsApplicationService service = SmsApplicationServiceTest.service(store, sender);
 
-        assertThat(service.send("15533716215", IP).code()).isNull();
+        assertThat(service.send("15533716215").code()).isNull();
+        assertThat(sender.lastTemplate).isEqualTo("验证码 ${code}");
         final String code = String.valueOf(sender.lastCode);
         assertThat(code).matches("\\d{6}");
         service.verify("15533716215", code);
@@ -161,20 +140,17 @@ class SmsApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("系统发送失败后回滚验证码、不占冷却或 IP 额度；随后可重发")
+    @DisplayName("系统发送失败后回滚验证码、不占冷却；随后可重发")
     void failureRollsBack() {
         final MapStore store = new MapStore();
-        final MapCounter counter = new MapCounter();
         final ScriptedSystemSmsService sender = new ScriptedSystemSmsService(SmsSendResult.FAILED, SmsSendResult.SENT);
-        final SmsApplicationService service = SmsApplicationServiceTest.service(store, counter, 10, sender);
+        final SmsApplicationService service = SmsApplicationServiceTest.service(store, sender);
 
-        SmsApplicationServiceTest.assertError(() -> service.send("15533716215", IP), CqtErrors.SMS_SEND_FAILED);
+        SmsApplicationServiceTest.assertError(() -> service.send("15533716215"), CqtErrors.SMS_SEND_FAILED);
         final String failedCode = String.valueOf(sender.lastCode);
         assertThat(store.codes).isEmpty();
-        assertThat(counter.sentWithinHour(IP)).isZero();
 
-        service.send("15533716215", IP);
-        assertThat(counter.sentWithinHour(IP)).isEqualTo(1);
+        service.send("15533716215");
         if (!failedCode.equals(sender.lastCode)) {
             SmsApplicationServiceTest.assertError(
                     () -> service.verify("15533716215", failedCode), CqtErrors.SMS_CODE_INVALID);
@@ -185,13 +161,10 @@ class SmsApplicationServiceTest {
     @DisplayName("系统短信供应商错误映射为前台频控或手机号格式错误")
     void mapsProviderOutcomes() {
         final SmsApplicationService service = SmsApplicationServiceTest.service(
-                new MapStore(),
-                new MapCounter(),
-                10,
-                new ScriptedSystemSmsService(SmsSendResult.RATE_LIMITED, SmsSendResult.INVALID_NUMBER));
+                new MapStore(), new ScriptedSystemSmsService(SmsSendResult.RATE_LIMITED, SmsSendResult.INVALID_NUMBER));
 
-        SmsApplicationServiceTest.assertError(() -> service.send("15533716215", IP), CqtErrors.SMS_TOO_FREQUENT);
-        assertThatThrownBy(() -> service.send("15533716215", IP)).isInstanceOfSatisfying(BizException.class, ex -> {
+        SmsApplicationServiceTest.assertError(() -> service.send("15533716215"), CqtErrors.SMS_TOO_FREQUENT);
+        assertThatThrownBy(() -> service.send("15533716215")).isInstanceOfSatisfying(BizException.class, ex -> {
             assertThat(ex.getErrorCode()).isEqualTo(CommonErrors.BAD_REQUEST);
             assertThat(ex.getMessage()).isEqualTo("手机号格式不正确");
         });

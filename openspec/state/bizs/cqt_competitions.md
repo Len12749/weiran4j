@@ -25,13 +25,14 @@
 
 ## 1. 列表
 
-后台按名称、年份、状态过滤并分页，year/id倒序；查询与重置图标、列设置与刷新，无高级筛选。前台 `competitionlists` 按年份、ID 倒序，可按 `status`、`name` 过滤。
+后台按名称、年份、状态过滤并分页，year/id倒序；列表首列固定显示赛事 ID，另有查询与重置图标、列设置与刷新，无高级筛选。前台 `competitionlists` 按年份、ID 倒序，可按 `status`、`name` 过滤。
 
 ## 2. 字段与表单
 
 | 列 | 说明 |
 | --- | --- |
 | `status` | 1 启用（可报名）、0 停用草稿、2 已结束（2026 届） |
+| `edition` / `year` | 历史赛事保留；新赛事不再填写，可为空，编辑历史赛事时保留原值 |
 | `registration_start` / `registration_end` | 报名时间窗，空为不限 |
 | `national_entry_mode` | 创建后固定；SHARED 省国赛共用作品（前台报名记 BOTH）；SEPARATE 分别报名（前台记 PROVINCIAL，国赛作品走导入） |
 | `version` | 编辑及状态CAS版本；成功递增，旧版本409 |
@@ -54,7 +55,7 @@
 
 ## 4. 用到的公共组件
 
-PageContainer、SearchToolbar、ColumnSettings、TableActions、Permission、Semi Form/DatePicker/SideSheet、SingleImageUpload、usePageTabs。
+PageContainer、SearchToolbar、ColumnSettings、TableActions、Permission、Semi Form/DatePicker/RadioGroup/SideSheet、SingleImageUpload、usePageTabs。新增/编辑赛事的报名、省审、国审时间使用日期时间范围控件；成绩公布使用单个日期时间控件。
 
 ## 5. 说明与建议
 
@@ -70,6 +71,10 @@ PageContainer、SearchToolbar、ColumnSettings、TableActions、Permission、Sem
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-22**
+- 赛事列表首列显示固定的赛事 ID，方便定位新建记录。
+- 新增赛事表单移除届次、年份输入，创建时写入空值；历史值编辑时保留。三组开始/结束时间改为范围选择，省国赛模式改为单选。
 
 **2026-10-18**
 - **#05 ✅ P2 三类证书模板统一单图上传（`cqt-competition-admin` 用户追加）**

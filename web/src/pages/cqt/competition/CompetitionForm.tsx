@@ -7,9 +7,14 @@ import { PageContainer } from '@/components/PageContainer';
 import { usePageTabs } from '@/hooks/usePageTabs';
 import { useSaveCompetition, useUploadCompetitionImage } from '@/hooks/queries/cqt-competitions';
 import { ApiError } from '@/utils/request';
+import { DATE_TIME_FORMAT } from '@/utils/date';
 import type { CqtCompetitionAdminView, CqtCompetitionBody, CqtCompetitionMode } from '@/types/api';
 const required = [{ required: true, message: '此项必填' }];
-const dates = ['registrationStart', 'registrationEnd', 'provinceReviewStart', 'provinceReviewEnd', 'nationalReviewStart', 'nationalReviewEnd', 'resultPublishTime'] as const;
+const windows = [
+    { field: 'registrationRange', start: 'registrationStart', end: 'registrationEnd', label: '报名时间' },
+    { field: 'provinceReviewRange', start: 'provinceReviewStart', end: 'provinceReviewEnd', label: '省审时间（计划）' },
+    { field: 'nationalReviewRange', start: 'nationalReviewStart', end: 'nationalReviewEnd', label: '国审时间（计划）' },
+] as const;
 const templates = ['provinceCertificateTemplate', 'nationalCertificateTemplate', 'teacherOrgCertificateTemplate'] as const;
 const text = (value: unknown) => typeof value === 'string' ? value.trim() : '';
 function templateUrl(value: unknown) {
@@ -27,8 +32,10 @@ function templateUrl(value: unknown) {
 }
 export default function CompetitionForm({ record, onReload }: { record?: CqtCompetitionAdminView; onReload?: () => void }) {
     const [original] = useState(record);
-    const [initial] = useState<Record<string, unknown>>(() => ({ name: '', edition: '', year: new Date().getFullYear(), nationalEntryMode: 'SHARED', ...record,
-        ...Object.fromEntries(dates.map((field) => [field, record?.[field] ? new Date(record[field]) : undefined])) }));
+    const [initial] = useState<Record<string, unknown>>(() => ({ name: '', nationalEntryMode: 'SHARED', ...record,
+        ...Object.fromEntries(windows.map(({ field, start, end }) => [field,
+            record?.[start] && record?.[end] ? [new Date(record[start]), new Date(record[end])] : undefined])),
+        resultPublishTime: record?.resultPublishTime ? new Date(record.resultPublishTime) : undefined }));
     const api = useRef<FormApi<Record<string, unknown>> | null>(null); const submitting = useRef(false); const active = useRef(true);
     const save = useSaveCompetition(); const upload = useUploadCompetitionImage();
     const [images, setImages] = useState(() => Object.fromEntries(templates.map((field) => [field, record?.[field] ?? ''])));
@@ -46,19 +53,30 @@ export default function CompetitionForm({ record, onReload }: { record?: CqtComp
         submitting.current = true; setPending(true); setError(''); setConflict(false);
         try {
             const values = await api.current?.validate(); if (!values || !active.current) return;
-            const name = text(values.name); const edition = text(values.edition); const year = Number(values.year);
-            if (!name || !edition || !Number.isInteger(year) || year < 1900 || year > 9999) throw new Error('请填写有效名称、届次及年份');
+            const name = text(values.name);
+            if (!name) throw new Error('请输入赛事名称');
             const description = typeof values.description === 'string' && values.description !== '' ? values.description : null;
             if (description && new TextEncoder().encode(description).length > 65535) throw new Error('说明内容过长');
-            const times = Object.fromEntries(dates.map((field) => {
-                const value = values[field]; if (!value) return [field, null];
+            const parseTime = (value: unknown) => {
+                if (!value) return null;
                 const parsed = dayjs(value as string | Date); if (!parsed.isValid()) throw new Error('计划时间无效');
-                return [field, parsed.format('YYYY-MM-DDTHH:mm:ss')];
-            })) as Pick<CqtCompetitionBody, typeof dates[number]>;
-            for (const [start, end] of [['registrationStart', 'registrationEnd'], ['provinceReviewStart', 'provinceReviewEnd'], ['nationalReviewStart', 'nationalReviewEnd']] as const) {
+                return parsed.format(DATE_TIME_FORMAT);
+            };
+            const times = {} as Pick<CqtCompetitionBody, 'registrationStart' | 'registrationEnd' | 'provinceReviewStart' | 'provinceReviewEnd' | 'nationalReviewStart' | 'nationalReviewEnd' | 'resultPublishTime'>;
+            for (const { field, start, end } of windows) {
+                const range = values[field];
+                if (range && (!Array.isArray(range) || range.length !== 2 || !range[0] || !range[1])) throw new Error('请选择完整的时间范围');
+                if (!range && original && Boolean(original[start]) !== Boolean(original[end])) {
+                    times[start] = parseTime(original[start]); times[end] = parseTime(original[end]);
+                    continue;
+                }
+                times[start] = Array.isArray(range) ? parseTime(range[0]) : null;
+                times[end] = Array.isArray(range) ? parseTime(range[1]) : null;
                 if (times[start] && times[end] && times[start] > times[end]) throw new Error('开始时间不能晚于对应结束时间');
             }
-            const body: CqtCompetitionBody = { name, edition, year, description, nationalEntryMode: original?.nationalEntryMode ?? values.nationalEntryMode as CqtCompetitionMode, ...times,
+            times.resultPublishTime = parseTime(values.resultPublishTime);
+            const body: CqtCompetitionBody = { name, edition: original?.edition ?? null, year: original?.year ?? null, description,
+                nationalEntryMode: original?.nationalEntryMode ?? values.nationalEntryMode as CqtCompetitionMode, ...times,
                 provinceCertificateTemplate: templateUrl(values.provinceCertificateTemplate), nationalCertificateTemplate: templateUrl(values.nationalCertificateTemplate), teacherOrgCertificateTemplate: templateUrl(values.teacherOrgCertificateTemplate) };
             await save.mutateAsync(original ? { id: original.id, body, expectedVersion: original.version } : { body });
             if (active.current) { Toast.success('赛事已保存'); closeCurrentAndGo('/cqt/competitions', true); }
@@ -74,12 +92,11 @@ export default function CompetitionForm({ record, onReload }: { record?: CqtComp
         <Form<Record<string, unknown>> initValues={initial} disabled={pending} labelPosition="top" getFormApi={(value) => { api.current = value; }}>
             <Typography.Title heading={5}>基本信息</Typography.Title>
             <Form.Input field="name" label="赛事名称" maxLength={300} rules={[{ required: true, whitespace: true, message: '请输入赛事名称' }]} />
-            <Form.Input field="edition" label="届次" maxLength={50} rules={[{ required: true, whitespace: true, message: '请输入届次' }]} />
-            <Form.InputNumber field="year" label="年份" min={1900} max={9999} precision={0} rules={required} />
-            <Form.Select field="nationalEntryMode" label="省国赛模式（创建后固定）" disabled={!!original || pending} optionList={[{ value: 'SHARED', label: '共用作品' }, { value: 'SEPARATE', label: '分别报名' }]} rules={required} />
+            <Form.RadioGroup field="nationalEntryMode" label="省国赛模式（创建后固定）" disabled={!!original || pending} options={[{ value: 'SHARED', label: '共用作品' }, { value: 'SEPARATE', label: '分别报名' }]} rules={required} />
             <Form.TextArea field="description" label="说明" autosize={{ minRows: 4, maxRows: 10 }} />
             <Typography.Title heading={5}>时间安排</Typography.Title>
-            {dates.map((field, index) => <Form.DatePicker key={field} field={field} label={['报名开始', '报名截止', '省审开始（计划）', '省审结束（计划）', '国审开始（计划）', '国审结束（计划）', '成绩公布（计划）'][index]} type="dateTime" showClear style={{ width: '100%' }} />)}
+            {windows.map(({ field, label }) => <Form.DatePicker key={field} field={field} label={label} type="dateTimeRange" showClear style={{ width: '100%' }} />)}
+            <Form.DatePicker field="resultPublishTime" label="成绩公布（计划）" type="dateTime" showClear style={{ width: '100%' }} />
             <Typography.Title heading={5}>证书模板</Typography.Title>
             {templates.map((field, index) => <div key={field} style={{ margin: '16px 0' }}>
                 <Typography.Paragraph>{['省赛证书模板', '国赛证书模板', '教师/组织证书模板'][index]}</Typography.Paragraph>

@@ -70,8 +70,7 @@ public class MybatisResourceRepository implements ResourceRepository {
                 row.getId(),
                 row.getTitle(),
                 row.getCategory(),
-                row.getFileUrl(),
-                row.getFileName(),
+                row.getMaterialUrl(),
                 row.getContent(),
                 Boolean.TRUE.equals(row.getEnabled()),
                 row.getSort(),
@@ -83,8 +82,7 @@ public class MybatisResourceRepository implements ResourceRepository {
         final CqtResourceDO row = new CqtResourceDO();
         row.setTitle(value.title());
         row.setCategory(value.category());
-        row.setFileUrl(value.fileUrl());
-        row.setFileName(value.fileName());
+        row.setMaterialUrl(value.materialUrl());
         row.setContent(value.content());
         row.setEnabled(value.enabled());
         row.setSort(value.sort());

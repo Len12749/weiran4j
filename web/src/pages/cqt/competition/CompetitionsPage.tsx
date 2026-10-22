@@ -19,7 +19,8 @@ export default function CompetitionsPage() {
     const query = useCompetitionList({ ...applied, page, pageSize }); const status = useCompetitionStatus();
     const search = () => { setApplied({ ...draft, keyword: draft.keyword.trim() }); setPage(1); };
     const columns: ColumnProps<CqtCompetitionAdminView>[] = [
-        { title: '赛事名称', dataIndex: 'name', width: 240 }, { title: '年份', dataIndex: 'year', width: 80 }, { title: '届次', dataIndex: 'edition', width: 100 },
+        { title: 'ID', dataIndex: 'id', width: 174, fixed: 'left' },
+        { title: '赛事名称', dataIndex: 'name' }, { title: '年份', dataIndex: 'year', width: 80 }, { title: '届次', dataIndex: 'edition', width: 100 },
         { title: '省国赛模式', dataIndex: 'nationalEntryMode', width: 140, render: (value: string) => value === 'SHARED' ? '共用作品' : '分别报名' },
         { title: '报名开始', dataIndex: 'registrationStart', width: 158, render: (value: string | null) => value?.replace('T', ' ') ?? '不限' },
         { title: '报名截止', dataIndex: 'registrationEnd', width: 158, render: (value: string | null) => value?.replace('T', ' ') ?? '不限' },

@@ -14,7 +14,6 @@ import com.weiran.cqt.api.competition.CategoryView;
 import com.weiran.cqt.api.competition.CompetitionQueryService;
 import com.weiran.cqt.api.sms.SmsSendResult;
 import com.weiran.cqt.api.sms.SmsService;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,15 +55,11 @@ public class AuthController {
         return PortalResult.ok(id == null ? List.of() : this.competitionQueryService.firstCategories(id));
     }
 
-    /**
-     * 发送短信验证码。客户端 IP 取 {@code remoteAddr}：经 Tomcat 原生转发头处理（{@code server.forward-headers-strategy: native}），
-     * 只有内网代理转发的 {@code X-Forwarded-For} 才被采信；不用框架 {@code ClientIpResolver}，它信任可伪造的头，只适合日志。
-     */
+    /** 发送短信验证码。 */
     @PortalPublic
     @GetMapping("/sendSms")
-    public PortalResult<Map<String, Object>> sendSms(
-            @RequestParam(required = false) final @Nullable String phone, final HttpServletRequest request) {
-        final SmsSendResult result = this.smsService.send(phone, request.getRemoteAddr());
+    public PortalResult<Map<String, Object>> sendSms(@RequestParam(required = false) final @Nullable String phone) {
+        final SmsSendResult result = this.smsService.send(phone);
         final Map<String, Object> data = new LinkedHashMap<>();
         data.put("sent", result.sent());
         if (result.code() != null) {

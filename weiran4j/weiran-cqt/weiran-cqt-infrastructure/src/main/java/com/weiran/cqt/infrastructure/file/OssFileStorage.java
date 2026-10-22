@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 
 /**
- * 阿里云 OSS 存储（{@code weiran.cqt.storage.mode=oss}）：Bucket 公共读，返回 {@code <公网前缀>/<对象名>}。
+ * 阿里云 OSS 存储（{@code weiran.storage.mode=aliyun}）：Bucket 公共读，返回 {@code <公网前缀>/<对象名>}。
  * 写入失败一律转成 {@link FileStorageException}，信息只含异常类名，不含凭据。
  */
 public final class OssFileStorage implements FileStorage, DisposableBean {
@@ -37,23 +37,23 @@ public final class OssFileStorage implements FileStorage, DisposableBean {
     static void requireComplete(final CqtProperties.Oss config) {
         final List<String> missing = new ArrayList<>();
         if (config.accessKeyId().isBlank()) {
-            missing.add("WEIRAN_CQT_OSS_ACCESS_KEY_ID");
+            missing.add("WEIRAN_STORAGE_ALIYUN_ACCESS_KEY_ID");
         }
         if (config.accessKeySecret().isBlank()) {
-            missing.add("WEIRAN_CQT_OSS_ACCESS_KEY_SECRET");
+            missing.add("WEIRAN_STORAGE_ALIYUN_ACCESS_KEY_SECRET");
         }
         if (config.bucket().isBlank()) {
-            missing.add("WEIRAN_CQT_OSS_BUCKET");
+            missing.add("WEIRAN_STORAGE_ALIYUN_BUCKET");
         }
         if (config.endpoint().isBlank()) {
-            missing.add("WEIRAN_CQT_OSS_ENDPOINT");
+            missing.add("WEIRAN_STORAGE_ALIYUN_ENDPOINT");
         }
         if (config.publicBaseUrl().isBlank()) {
-            missing.add("WEIRAN_CQT_OSS_PUBLIC_BASE_URL");
+            missing.add("WEIRAN_STORAGE_ALIYUN_PUBLIC_BASE_URL");
         }
         if (!missing.isEmpty()) {
             throw new IllegalStateException(
-                    "weiran.cqt.storage.mode=oss 但 OSS 配置不全，缺少环境变量: " + String.join(", ", missing));
+                    "weiran.storage.mode=aliyun 但 OSS 配置不全，缺少环境变量: " + String.join(", ", missing));
         }
     }
 

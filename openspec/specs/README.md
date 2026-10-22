@@ -19,7 +19,7 @@
 | [cqt-file-storage](cqt-file-storage/spec.md) | 3 | active | 本能力长期负责常青藤前台的文件上传与存储：谁可以上传、允许的文件类型与大小、文件在存储中的命名与归属、存储后端（阿里… |
 | [cqt-portal-api](cqt-portal-api/spec.md) | 4 | active | 本能力长期负责常青藤前台（uniapp）接口 `/api-web/**` 的公共约定：统一响应包络、错误语义（HTT… |
 | [cqt-review](cqt-review/spec.md) | 11 | active | 本能力负责常青藤赛事从作品初审到数值评分、汇总复核和晋级的后台评审流程，使管理员能配置明确的评分规则和评委范围，评委… |
-| [cqt-site-config](cqt-site-config/spec.md) | 4 | active | 本能力长期负责常青藤前台的站点配置：站点文案、联系方式、协议正文、证书可见性开关等配置项在 `cqt_setting… |
+| [cqt-site-config](cqt-site-config/spec.md) | 4 | active | 常青藤站点文案、联系方式、协议正文和证书展示配置由基座系统配置管理；uniapp 仍通过 `GET /api-web… |
 | [cqt-sms-verification](cqt-sms-verification/spec.md) | 5 | active | 本能力长期负责常青藤前台的短信验证码：给手机号发送验证码的频率与格式限制、验证码的有效期与一次性校验，并调用 sys… |
 | [deployment](deployment/spec.md) | 3 | active | 本能力长期负责「只依赖仓库里的产物就能部署一套可用环境」:环境变量清单与应用配置保持一致,容器镜像可构建、可运行, |
 | [downstream-extension](downstream-extension/spec.md) | 10 | active | 本能力长期负责「以 git fork 跟随 weiran4j 的下游项目,不修改任何上游文件即可扩展」的约定:业务模… |

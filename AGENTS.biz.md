@@ -74,23 +74,20 @@ pnpm dev:uniapp
 ## 部署与数据迁移
 
 - 环境变量：`WEIRAN_CQT_JWT_SECRET`（前台令牌密钥，≥ 32 字节，**必填**，缺失启动失败）、`WEIRAN_CQT_JWT_TTL`（可选，默认 `7d`）、
-  `WEIRAN_CQT_SMS_IP_HOURLY_LIMIT`（同一客户端 IP 每小时最多成功发送条数，默认 10，0 不限）、`WEIRAN_CQT_COMMITMENT_TEMPLATE_URL`（学校承诺书模板链接）。
+  `WEIRAN_CQT_COMMITMENT_TEMPLATE_URL`（学校承诺书模板链接）。
 - 短信发送由 system `SmsService` 统一处理：`WEIRAN_SMS_MODE` 选择 `disabled`、`local` 或 `aliyun`；阿里云凭据使用 `WEIRAN_SMS_ALIYUN_ACCESS_KEY_ID`、
-  `WEIRAN_SMS_ALIYUN_ACCESS_KEY_SECRET`，签名在后台短信配置页维护。常青藤验证码模板 CODE 在 `system.user.cqt_sms_template_code` 配置项维护；模板变量为 `code`，正文应注明 10 分钟有效。
-- 文件存储（change `cqt-file-upload`）：`WEIRAN_CQT_STORAGE_MODE`（默认 `disabled`，上传返回 503；`oss` 阿里云 OSS；`local` 本地目录，**仅开发 / 测试**，
-  经 `/uploads/**` 提供）。`oss` 必填 `WEIRAN_CQT_OSS_ACCESS_KEY_ID`、`WEIRAN_CQT_OSS_ACCESS_KEY_SECRET`、`WEIRAN_CQT_OSS_BUCKET`、
-  `WEIRAN_CQT_OSS_ENDPOINT`（如 `oss-cn-beijing.aliyuncs.com`）、`WEIRAN_CQT_OSS_PUBLIC_BASE_URL`（Bucket 公网地址或自定义域名），缺一项启动失败。
+  `WEIRAN_SMS_ALIYUN_ACCESS_KEY_SECRET`，签名和模板在后台短信配置页维护。前台与 system 手机登录共用 `sms.system_tpl.captcha_local` / `sms.system_tpl.captcha_aliyun`；模板变量为 `code`。
+- 文件存储（change `cqt-file-upload`）：使用 system 的 `WEIRAN_STORAGE_MODE`（默认 `disabled`，上传返回 503；`aliyun` 阿里云 OSS；`local` 本地目录，**仅开发 / 测试**）。
+  阿里云凭据统一使用 `WEIRAN_STORAGE_ALIYUN_*`；本地目录与访问前缀统一使用 `WEIRAN_STORAGE_LOCAL_*`，由 system 提供静态访问。
   Bucket 须为**公共读**（对象名含随机 UUID）；RAM 子账号只授该 Bucket 的写权限。上传单文件上限 1GB：**反向代理请求体上限 ≥ 1GB、读超时放宽**，
   服务器临时目录放在大盘（超过阈值的上传内容先落临时文件）。上传需前台登录：学校注册不再上传材料，注册后到「我的 → 学校认证」补交。
-- 短信 IP 限流依赖 `server.forward-headers-strategy: native`（`application-biz.yml`）：Tomcat 只采信内网 / 本机代理转发的 `X-Forwarded-For`。
-  **反向代理必须在内网并设置 `X-Forwarded-For`**，否则所有请求共用代理 IP 的额度（可配 `server.tomcat.remoteip.internal-proxies`）。
 - 第三方依赖版本登记在 `weiran4j/weiran-dependencies/biz-dependencies.gradle.kts`（D-013，下游独占）；业务模块引用时不写版本；
   不得约束框架已管理的依赖，传递依赖拉偏框架版本时 `:weiran-app:verifyFrameworkVersions` 会失败。
-- 验证码与短信 IP 计数都存在进程内，只支持单实例部署；多实例前要把 `SmsCodeStore`、`SmsIpCounter` 换成共享存储。
-  本地开发写进 gitignore 掉的 `weiran4j/config/application-local.yml`（`weiran.cqt.jwt.secret`、`weiran.system.sms.*`）。
+- 验证码存在进程内，只支持单实例部署；多实例前要把 `SmsCodeStore` 换成共享存储。
+  本地开发写进 gitignore 掉的 `weiran4j/config/application-local.yml`（`weiran.cqt.jwt.secret`、`weiran.sms.*`、`weiran.storage.*`）。
 - 数据：Flyway 建表；原统一库 `cqtxj2026` 的业务数据用 `scripts/biz/import/<表>.sql` 在切换时导入（源库与目标库同实例，可重复执行）。旧地区表不导入，旧账号与作品地区不迁移；用户在新地区树中重新选择，旧地区范围评委权限需重新配置。
-  导入前先看 `openspec/state/bizs/cqt_setting.md#01`：`cqtxj2026.sql` 导出文件的中文是双重编码乱码，生产库是否同样乱码未确认。
-  导入顺序：`cqt_setting.sql`、`cqt_portal_accounts.sql`、`cqt_competitions.sql`、`cqt_entries.sql`。旧账号和作品地区不迁移，需由用户在新地区树中重新选择。
+  导入前先看 `openspec/state/bizs/cqt_site_config.md#01`：`cqtxj2026.sql` 导出文件的中文是双重编码乱码，生产库是否同样乱码未确认。
+  导入顺序：应用先完成 Flyway 迁移，再执行 `cqt_setting.sql`（直接补入系统配置）、`cqt_portal_accounts.sql`、`cqt_competitions.sql`、`cqt_entries.sql`。旧账号和作品地区不迁移，需由用户在新地区树中重新选择。
   源库 `cqtxj2026` 须是执行过 FastAPI `migrations` 001–017 的最终形态（导入脚本按列名读取）。
 - 新一届赛事（change `cqt-signup`）：改 `scripts/biz/seed/competition_next.sql` 顶部变量（年份、届次、名称、报名时间、`national_entry_mode`）后执行；
   新赛事默认停用，确认无误后 `UPDATE cqt_competitions SET status = 1 WHERE ...` 开放报名；止血时改回 0。

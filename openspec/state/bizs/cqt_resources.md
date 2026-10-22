@@ -10,9 +10,9 @@
 
 ## 2. 字段与表单
 
-标题 title、类别 category、文件 fileUrl/fileName、说明 content、启用 enabled、排序 sort。通用字段 id/createdAt/updatedAt，表内保留审计信息。
+标题 title、上传资料 materialUrl、类别 category、说明 content、启用 enabled、排序 sort。通用字段 id/createdAt/updatedAt，表内保留审计信息。
 
-类别 SCRIPT_PAPER（剧本写作稿纸）或 DRAMA_MATERIAL（校园戏剧资料）；标题、文件地址和名称必填。 sort 必须非负；图片最大10MB，附件复用统一存储上传能力。URL仅支持 http/https 或本地绝对路径。
+类别 SCRIPT_PAPER（剧本写作稿纸）或 DRAMA_MATERIAL（校园戏剧资料）；标题和上传资料必填。`materialUrl` 保存上传后的地址，下载名称使用资料标题。历史 `file_url` 经新迁移更名为 `material_url`，`file_name` 删除。sort 必须非负；图片最大10MB，附件复用统一存储上传能力。URL仅支持 http/https 或本地绝对路径。
 
 ## 3. 动作
 
@@ -20,7 +20,7 @@
 
 ## 4. 用到的公共组件
 
-SearchToolbar、ColumnSettings、TableActions、PageContainer、usePageTabs；图片复用 SingleImageUpload，正文复用 SiteConfigRichEditor，附件使用 Semi Upload。
+SearchToolbar、ColumnSettings、TableActions、PageContainer、usePageTabs；资料文件复用系统配置同款 FileUpload，正文复用 SiteConfigRichEditor。
 
 ## 5. 说明与建议
 
@@ -31,6 +31,10 @@ SearchToolbar、ColumnSettings、TableActions、PageContainer、usePageTabs；�
 无。
 
 ## 7. changelog
+
+**2026-10-23**
+
+- 将 `fileUrl`、`fileName` 合并为单一 `materialUrl` 字段，追加 Flyway 迁移保留历史地址；表单复用系统配置的 `FileUpload`，前台下载改用资料标题命名。
 
 **2026-10-16**
 

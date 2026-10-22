@@ -67,7 +67,7 @@ class AuthIT extends IntegrationTestSupport {
 
         IntegrationTestSupport.assertOk(response);
         final JsonNode roots = IntegrationTestSupport.data(response);
-        assertThat(AuthIT.ids(roots)).contains(1L, 2L, 9L, 14L);
+        assertThat(AuthIT.ids(roots)).contains(1L, 2L, 9L).doesNotContain(14L);
         final JsonNode system = roots.get(1);
         assertThat(system.path("type").asText()).isEqualTo("directory");
         assertThat(AuthIT.ids(system.path("children"))).containsExactly(3L, 4L, 5L, 6L, 7L, 8L, 12L, 2000L, 13L);
@@ -87,6 +87,9 @@ class AuthIT extends IntegrationTestSupport {
         assertThat(regions.path("title").asText()).isEqualTo("行政区划");
         assertThat(regions.path("component").asText()).isEqualTo("system/regions/RegionsPage");
         assertThat(regions.path("permission").asText()).isEqualTo("region:list");
+        final Integer demoRows =
+                this.jdbc.queryForObject("SELECT COUNT(*) FROM sys_menu WHERE id BETWEEN 14 AND 19", Integer.class);
+        assertThat(demoRows).isZero();
     }
 
     @Test

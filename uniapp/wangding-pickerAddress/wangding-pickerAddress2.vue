@@ -9,6 +9,7 @@
 	import AllAddress from './data.js'
 
 	export default {
+		emits: ['address-selected'],
 		props: {
 			regions: {
 				type: Array,
@@ -81,8 +82,12 @@
 				this.selectedIds = selected.map(node => this.getCode(node))
 				return this
 			},
-			bindPickerChange() {
-				this.$emit('change', {
+			bindPickerChange(event) {
+				if (Array.isArray(event?.detail?.value)) {
+					this.value = event.detail.value
+					this.updateSourceDate().updateAddressDate()
+				}
+				this.$emit('address-selected', {
 					index: this.value,
 					data: this.selectedNames,
 					id: this.selectedIds,

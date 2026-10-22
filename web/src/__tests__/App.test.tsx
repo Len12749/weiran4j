@@ -82,7 +82,7 @@ describe('App 路由', () => {
         expect(await screen.findByText('404 页面不存在')).toBeInTheDocument();
     });
 
-    it('没有新菜单路由时旧地址保持 404', async () => {
+    it('已移除的演示地址保持 404', async () => {
         signIn();
         mockFetch({ 'GET /api-backend/system/auth/getCurrentUser': me, 'GET /api-backend/system/auth/listCurrentMenus': menus });
         renderWithProviders(<App />, { route: '/system/components-demo' });

@@ -27,8 +27,11 @@ public final class CompetitionConfigurationRules {
 
     public static CompetitionConfiguration validate(final CompetitionConfiguration v) {
         final String name = CompetitionConfigurationRules.required(v.name(), 300, "名称");
-        final String edition = CompetitionConfigurationRules.required(v.edition(), 50, "届次");
-        if (v.year() == null || v.year() < 1900 || v.year() > 9999) {
+        final String edition = CompetitionConfigurationRules.optional(v.edition());
+        if (edition != null && edition.length() > 50) {
+            throw BizException.badRequest("届次超过长度");
+        }
+        if (v.year() != null && (v.year() < 1900 || v.year() > 9999)) {
             throw BizException.badRequest("年份须为1900至9999");
         }
         if (v.nationalEntryMode() == null || !Set.of("SHARED", "SEPARATE").contains(v.nationalEntryMode())) {

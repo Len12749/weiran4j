@@ -4,7 +4,6 @@ import com.weiran.cqt.domain.account.PasswordHasher;
 import com.weiran.cqt.domain.file.FileStorage;
 import com.weiran.cqt.domain.portal.PortalTokenCodec;
 import com.weiran.cqt.domain.sms.SmsCodeStore;
-import com.weiran.cqt.domain.sms.SmsIpCounter;
 import com.weiran.cqt.infrastructure.file.LocalFileStorage;
 import com.weiran.cqt.infrastructure.file.OssFileStorage;
 import com.weiran.cqt.infrastructure.persistence.JdbcRegionRepository;
@@ -16,15 +15,14 @@ import com.weiran.cqt.infrastructure.persistence.MybatisNewsRepository;
 import com.weiran.cqt.infrastructure.persistence.MybatisResourceRepository;
 import com.weiran.cqt.infrastructure.persistence.MybatisSchoolImportTaskRepository;
 import com.weiran.cqt.infrastructure.persistence.MybatisSequenceGenerator;
-import com.weiran.cqt.infrastructure.persistence.MybatisSettingRepository;
 import com.weiran.cqt.infrastructure.persistence.MybatisShowcaseRepository;
 import com.weiran.cqt.infrastructure.security.BCryptPasswordHasher;
 import com.weiran.cqt.infrastructure.security.JjwtPortalTokenCodec;
 import com.weiran.cqt.infrastructure.sms.CaffeineSmsCodeStore;
-import com.weiran.cqt.infrastructure.sms.CaffeineSmsIpCounter;
 import java.nio.file.Path;
 import java.time.Clock;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -48,7 +46,6 @@ import org.springframework.context.annotation.Import;
     MybatisResourceRepository.class,
     MybatisShowcaseRepository.class,
     MybatisExpertRepository.class,
-    MybatisSettingRepository.class,
     MybatisAccountRepository.class,
     JdbcRegionRepository.class,
     MybatisCompetitionRepository.class,
@@ -81,30 +78,27 @@ public class CqtInfrastructureAutoConfiguration {
         return new CaffeineSmsCodeStore();
     }
 
-    /** 短信 IP 发送计数（进程内）。 */
+    /** 阿里云 OSS 文件存储，直接使用 system 的存储模式和凭据。 */
     @Bean
     @ConditionalOnMissingBean
-    public SmsIpCounter smsIpCounter(final Clock clock) {
-        return new CaffeineSmsIpCounter(clock);
+    @ConditionalOnProperty(prefix = "weiran.storage", name = "mode", havingValue = "aliyun")
+    public FileStorage ossFileStorage(
+            @Value("${weiran.storage.aliyun.access-key-id:}") final String accessKeyId,
+            @Value("${weiran.storage.aliyun.access-key-secret:}") final String accessKeySecret,
+            @Value("${weiran.storage.aliyun.bucket:}") final String bucket,
+            @Value("${weiran.storage.aliyun.endpoint:}") final String endpoint,
+            @Value("${weiran.storage.aliyun.public-base-url:}") final String publicBaseUrl) {
+        return OssFileStorage.create(
+                new CqtProperties.Oss(accessKeyId, accessKeySecret, bucket, endpoint, publicBaseUrl));
     }
 
-    /** 阿里云 OSS 文件存储，只在 {@code weiran.cqt.storage.mode=oss} 时注册；配置不全时启动失败，关闭时释放客户端。 */
+    /** 本地目录文件存储（仅开发 / 测试），使用 system 的目录与访问前缀。 */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "weiran.cqt.storage", name = "mode", havingValue = "oss")
-    public FileStorage ossFileStorage(final CqtProperties properties) {
-        return OssFileStorage.create(properties.storage().oss());
-    }
-
-    /** 本地目录文件存储（仅开发 / 测试），只在 {@code weiran.cqt.storage.mode=local} 时注册。 */
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "weiran.cqt.storage", name = "mode", havingValue = "local")
-    public FileStorage localFileStorage(final CqtProperties properties) {
-        final CqtProperties.Local local = properties.storage().local();
-        if (local.root().isBlank()) {
-            throw new IllegalStateException("weiran.cqt.storage.mode=local 但未配置 weiran.cqt.storage.local.root");
-        }
-        return new LocalFileStorage(Path.of(local.root()), local.urlPrefix());
+    @ConditionalOnProperty(prefix = "weiran.storage", name = "mode", havingValue = "local")
+    public FileStorage localFileStorage(
+            @Value("${weiran.storage.local.root:uploads}") final String root,
+            @Value("${weiran.storage.local.url-prefix:/system-uploads}") final String urlPrefix) {
+        return new LocalFileStorage(Path.of(root), urlPrefix);
     }
 }

@@ -31,7 +31,7 @@
 | 后端模块 | `weiran-system`；`ConfigController` → `ConfigApplicationService` → `MybatisConfigRepository` |
 | 接口前缀 | `/api-backend/system/config`；具体 HTTP 接口以 Springdoc OpenAPI 为准 |
 | 权限码 | `system:config:list` · `system:config:create` · `system:config:update` · `system:config:delete`；`GET /public/{key}` 为 `@PublicApi`（免登录） |
-| 种子 | `system.general.title` = `Weiran Admin`（`config_system/general`，string，内置）；`system.user.enable_phone_login` = `false`（`config_system/user`，boolean，内置）；`sms.general.sign_name`（`config_sms/general`）、`sms.system_tpl.captcha_local`、`sms.system_tpl.captcha_aliyun`（`config_sms/system_tpl`，string，内置，默认空）；`config_system` 含 `general`、`user`，`config_sms` 含 `general`、`system_tpl` |
+| 种子 | `system.general.title` = `Weiran Admin`（`config_system/general`，string，内置）；`system.user.enable_phone_login` = `false`（`config_system/user`，boolean，内置）；`sms.general.sign_name`（`config_sms/general`）、`sms.system_tpl.captcha_local`、`sms.system_tpl.captcha_aliyun`（`config_sms/system_tpl`，string，内置，默认空）；`config_system` 含 `general`、`user`、`cqt_site`，`config_sms` 含 `general`、`system_tpl` |
 
 ## 1. 可视化表单
 
@@ -93,7 +93,7 @@
 - 登录页通过公开 `/api-backend/n/system/auth/listProviders` 获取手机号登录状态；后端只有在 `system.user.enable_phone_login=true`、短信发送模式可用且当前模式的验证码模板有效时才返回 `phoneLoginEnabled=true`。`local` 模式的 `sms.system_tpl.captcha_local` 是短信正文，必须包含 `${code}`；发码时替换并写入应用日志。`aliyun` 模式的 `sms.system_tpl.captcha_aliyun` 是已审核模板 CODE。
 - 站点标题仍取自构建期环境变量 `VITE_APP_TITLE`（见 #02）；`web/src` 不直接调用公开配置接口。
 - 内置配置只保护「键不可改、不可删」，值与表单配置都可以改。
-- 组件演示 `/demo/config` 使用 `weiran-demo` 在 local/test 播种的 `demo` 分组，复用 `SystemConfigGroupForm` 展示八种字段各一条；多文件 URL 数组作为独立 JSON 配置保存。文件使用 system 资源上传，配置保存写入 `sys_config`；移除文件只清引用，未引用的文件可在资源库删除。
+- 常青藤站点配置位于 `cqt_site` 内置分组，22 项配置由旧表迁入；页面复用动态表单。
 - [系统配置说明](../../../docs/configuration.md)记录了分组和表单字段的使用方式。
 
 ## 6. 已知问题汇总
@@ -114,8 +114,8 @@
 
 **2026-10-22**
 - 图片上传入口改为与缩略图等尺寸并列；缩略图按长边等比适配，多图支持拖动和前后按钮排序，预览支持缩放。
-- 组件演示改用 local/test 专用的真实配置种子；图片上传走 system 媒体库，示例值保存到 `sys_config`，并显示服务端已保存值供校验。
-- 单图配置字段接入通用 `ImageUpload`，支持拖放、预览和失败重试；多图模式供业务表单复用。富文本字段接入通用 `RichTextEditor`，支持粘贴图片、多图上传、引用、撤销和重做。上传中禁用本组保存；配置值扩至 65535 字符，数据库字段改为 `mediumtext`。
+- 文件配置字段接入通用 `FileUpload`，支持拖放、预览和失败重试；富文本字段接入通用 `RichTextEditor`，支持粘贴图片、多图上传、引用、撤销和重做。上传中禁用本组保存；配置值扩至 65535 字符，数据库字段改为 `mediumtext`。
+- 常青藤站点 22 项配置迁入 `cqt_site` 分组。
 
 **2026-10-21**
 - `local` 验证码模板按 `${code}` 等参数渲染短信正文并记录日志；本地模板缺少 `${code}` 时手机号登录不可用。

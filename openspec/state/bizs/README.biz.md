@@ -9,7 +9,7 @@
 
 | 模块 | 表 | 文件 |
 | --- | --- | --- |
-| 前台站点配置 | `cqt_setting` | [`cqt_setting.md`](cqt_setting.md) |
+| 前台站点配置 | `sys_config` 的 `cqt_site` 分组 | [`cqt_site_config.md`](cqt_site_config.md) |
 | 大赛动态 | `cqt_news` | [`cqt_news.md`](cqt_news.md) |
 | 学术评审团 | `cqt_experts` | [`cqt_experts.md`](cqt_experts.md) |
 | 佳作欣赏 | `cqt_showcases` | [`cqt_showcases.md`](cqt_showcases.md) |

@@ -1,30 +1,34 @@
--- 站点配置导入：cqtxj2026.sc_setting → 当前库 cqt_setting（列一一对应，只改表名）。
---
--- 前提：源库 cqtxj2026 与目标库在同一 MySQL 实例；目标库已由应用启动时的 Flyway 建好 cqt_setting。
+-- 旧库站点配置首次导入到 sys_config。须先启动应用完成 Flyway 迁移。
+-- 已在后台编辑过的非空配置值不会被覆盖；生产库中文编码按原值保留。
 -- 执行：mysql -h <host> -u <user> -p <目标库> < scripts/biz/import/cqt_setting.sql
--- 可重复执行：按主键 id 覆盖更新，不产生重复行；源库删掉的行不会在目标库被删除。
-INSERT INTO cqt_setting (`id`, `ident`, `name`, `contents`, `created_at`, `updated_at`, `deleted_at`, `key`)
-SELECT `id`, `ident`, `name`, `contents`, `created_at`, `updated_at`, `deleted_at`, `key`
-FROM cqtxj2026.sc_setting
-ON DUPLICATE KEY UPDATE
-  `ident` = VALUES(`ident`),
-  `name` = VALUES(`name`),
-  `contents` = VALUES(`contents`),
-  `created_at` = VALUES(`created_at`),
-  `updated_at` = VALUES(`updated_at`),
-  `deleted_at` = VALUES(`deleted_at`),
-  `key` = VALUES(`key`);
+CREATE TEMPORARY TABLE cqt_site_import_map (config_name VARCHAR(64) PRIMARY KEY, ident INT NOT NULL);
+INSERT INTO cqt_site_import_map (config_name, ident) VALUES
+('guanyuwomen', 2), ('user_agreement', 71), ('yinsixieyi', 3), ('about_us', 4),
+('dizhi', 7), ('shouji', 8), ('weixin', 9), ('youxiang', 10),
+('gongsijieshao', 15), ('hezuohuoban', 16), ('dasaijieshao', 17),
+('mianzexieyi', 18), ('shouhoufuwu', 19), ('shangwuhezuo', 20),
+('gongzuoshijian', 21), ('dasaizhangcheng', 22), ('gongzhonghao', 23),
+('certificate_visibility', 67), ('sheng_certificate_visibility', 68),
+('guo_certificate_visibility', 70), ('teacher_org_certificate_competition_id', 69),
+('shouyeimage', 66);
 
--- 首次导入时为 user_agreement 复制当前 ident=2 的最新值；已存在 ident=71 时不覆盖，
--- 以免重复导入旧库时覆盖后台已经独立编辑的协议内容。
-INSERT INTO cqt_setting (`ident`, `name`, `contents`, `created_at`, `updated_at`, `deleted_at`, `key`)
-SELECT 71, source_row.`name`, source_row.`contents`, source_row.`created_at`, source_row.`updated_at`,
-       source_row.`deleted_at`, 'user_agreement'
-FROM (
-    SELECT `name`, `contents`, `created_at`, `updated_at`, `deleted_at`
-    FROM cqt_setting
-    WHERE `ident` = 2
-    ORDER BY `id` DESC
-    LIMIT 1
-) AS source_row
-WHERE NOT EXISTS (SELECT 1 FROM cqt_setting WHERE `ident` = 71);
+UPDATE sys_config AS target
+JOIN cqt_site_import_map AS definition
+  ON target.config_key = CONCAT('system.cqt_site.', definition.config_name)
+LEFT JOIN (
+  SELECT legacy.ident, legacy.contents
+  FROM cqtxj2026.sc_setting AS legacy
+  JOIN (SELECT ident, MAX(id) AS latest_id FROM cqtxj2026.sc_setting GROUP BY ident) AS latest
+    ON latest.ident = legacy.ident AND latest.latest_id = legacy.id
+) AS source ON source.ident = definition.ident
+LEFT JOIN (
+  SELECT legacy.contents
+  FROM cqtxj2026.sc_setting AS legacy
+  WHERE legacy.ident = 2
+  ORDER BY legacy.id DESC LIMIT 1
+) AS agreement_fallback ON definition.config_name = 'user_agreement'
+SET target.config_value = COALESCE(source.contents,
+  IF(definition.config_name = 'user_agreement', agreement_fallback.contents, NULL), '')
+WHERE target.config_value = '';
+
+DROP TEMPORARY TABLE cqt_site_import_map;

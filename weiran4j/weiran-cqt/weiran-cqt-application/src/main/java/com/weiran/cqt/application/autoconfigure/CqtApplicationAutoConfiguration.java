@@ -14,7 +14,6 @@ import com.weiran.cqt.application.file.FileUploadApplicationService;
 import com.weiran.cqt.application.news.NewsApplicationService;
 import com.weiran.cqt.application.portal.PortalAuthApplicationService;
 import com.weiran.cqt.application.region.RegionApplicationService;
-import com.weiran.cqt.application.setting.SiteConfigAdminApplicationService;
 import com.weiran.cqt.application.setting.SiteConfigApplicationService;
 import com.weiran.cqt.application.sms.SmsApplicationService;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -35,7 +34,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
     ShowcaseApplicationService.class,
     ExpertApplicationService.class,
     SiteConfigApplicationService.class,
-    SiteConfigAdminApplicationService.class,
     SmsApplicationService.class,
     AccountApplicationService.class,
     PortalAuthApplicationService.class,

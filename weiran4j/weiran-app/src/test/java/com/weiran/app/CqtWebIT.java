@@ -78,32 +78,23 @@ class CqtWebIT extends CqtIntegrationTestSupport {
 
     @BeforeEach
     void resetSettings() {
-        this.jdbc.update("DELETE FROM cqt_setting");
+        this.jdbc.update("UPDATE sys_config SET config_value = '' WHERE config_key LIKE 'system.cqt_site.%'");
         this.jdbc.update("DELETE FROM cqt_news");
         this.jdbc.update("DELETE FROM cqt_experts");
         this.jdbc.update("DELETE FROM cqt_showcases");
         this.jdbc.update("DELETE FROM cqt_resources");
         this.jdbc.update(
-                "INSERT INTO cqt_setting (ident, name, contents) VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?), (?, ?, ?), "
-                        + "(?, ?, ?), (?, ?, ?)",
-                2,
-                "关于我们",
-                "<p>关于我们原文</p>",
-                71,
-                "用户协议",
-                "<p>用户协议原文</p>",
-                7,
-                "地址",
-                "<p>北京市 <b>东城区</b></p> ",
-                23,
-                "公众号",
-                "/uploads/qr.png",
-                8,
-                "手机",
-                null,
-                101,
-                "超出范围",
-                "不应读取");
+                "UPDATE sys_config SET config_value = ? WHERE config_key = 'system.cqt_site.guanyuwomen'",
+                "<p>关于我们原文</p>");
+        this.jdbc.update(
+                "UPDATE sys_config SET config_value = ? WHERE config_key = 'system.cqt_site.user_agreement'",
+                "<p>用户协议原文</p>");
+        this.jdbc.update(
+                "UPDATE sys_config SET config_value = ? WHERE config_key = 'system.cqt_site.dizhi'",
+                "<p>北京市 <b>东城区</b></p> ");
+        this.jdbc.update(
+                "UPDATE sys_config SET config_value = ? WHERE config_key = 'system.cqt_site.gongzhonghao'",
+                "/uploads/qr.png");
     }
 
     @Test
@@ -126,57 +117,26 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("站点配置管理受权限保护并保留原始内容且独立映射")
+    @DisplayName("系统配置修改站点富文本后，前台读取新值")
     void managesRawSiteConfig() {
-        CqtIntegrationTestSupport.assertError(
-                this.get("/api-backend/cqt/site-config/get", null), HttpStatus.UNAUTHORIZED, 100101);
-
         final String admin = this.adminToken();
-        CqtIntegrationTestSupport.assertError(
-                this.put("/api-backend/cqt/site-config/update", admin, Map.of()), HttpStatus.BAD_REQUEST, 100001);
-        CqtIntegrationTestSupport.assertError(
-                this.put(
-                        "/api-backend/cqt/site-config/update",
-                        admin,
-                        Map.of("items", java.util.Collections.singletonList(null))),
-                HttpStatus.BAD_REQUEST,
-                100001);
-        final ResponseEntity<JsonNode> getResponse = this.get("/api-backend/cqt/site-config/get", admin);
-        IntegrationTestSupport.assertOk(getResponse);
-        final JsonNode initialItems = IntegrationTestSupport.data(getResponse).path("items");
-        assertThat(initialItems).hasSize(22);
-
-        final List<Map<String, Object>> updatedItems = new ArrayList<>();
-        initialItems.forEach(item -> {
-            final Map<String, Object> value = new LinkedHashMap<>();
-            final String key = item.path("key").asText();
-            value.put("key", key);
-            value.put(
-                    "contents",
-                    switch (key) {
-                        case "guanyuwomen" -> "<div>更新后的介绍</div>";
-                        case "user_agreement" -> "<p>更新后的协议</p>";
-                        default ->
-                            item.path("contents").isNull()
-                                    ? null
-                                    : item.path("contents").asText();
-                    });
-            updatedItems.add(value);
-        });
-        IntegrationTestSupport.assertOk(
-                this.put("/api-backend/cqt/site-config/update", admin, Map.of("items", updatedItems)));
-
+        final Long id = this.jdbc.queryForObject(
+                "SELECT id FROM sys_config WHERE config_key = 'system.cqt_site.guanyuwomen'", Long.class);
+        IntegrationTestSupport.assertOk(this.put(
+                "/api-backend/system/config/update/" + id,
+                admin,
+                Map.of(
+                        "configKey", "system.cqt_site.guanyuwomen",
+                        "configValue", "<div>更新后的介绍</div>",
+                        "configType", "string",
+                        "groupKey", "cqt_site",
+                        "fieldType", "richtext",
+                        "required", false)));
         final ResponseEntity<JsonNode> publicResponse = this.get("/api-web/product/getconfig", null);
         CqtWebIT.assertPortalOk(publicResponse);
         final JsonNode publicConfig = IntegrationTestSupport.data(publicResponse);
         assertThat(publicConfig.path("guanyuwomen").asText()).isEqualTo("<div>更新后的介绍</div>");
-        assertThat(publicConfig.path("user_agreement").asText()).isEqualTo("<p>更新后的协议</p>");
-
-        final ResponseEntity<JsonNode> rawResponse = this.get("/api-backend/cqt/site-config/get", admin);
-        IntegrationTestSupport.assertOk(rawResponse);
-        final JsonNode items = IntegrationTestSupport.data(rawResponse).path("items");
-        assertThat(CqtWebIT.rawContent(items, "guanyuwomen")).isEqualTo("<div>更新后的介绍</div>");
-        assertThat(CqtWebIT.rawContent(items, "user_agreement")).isEqualTo("<p>更新后的协议</p>");
+        assertThat(publicConfig.path("user_agreement").asText()).isEqualTo("<p>用户协议原文</p>");
     }
 
     @Test
@@ -230,16 +190,15 @@ class CqtWebIT extends CqtIntegrationTestSupport {
         final ResponseEntity<JsonNode> resource = this.post(
                 "/api-backend/cqt/resources/create",
                 admin,
-                Map.of(
-                        "title",
-                        "稿纸甲",
-                        "category",
-                        "SCRIPT_PAPER",
-                        "fileUrl",
-                        "/uploads/paper.pdf",
-                        "fileName",
-                        "paper.pdf"));
+                Map.of("title", "稿纸甲", "category", "SCRIPT_PAPER", "materialUrl", "/uploads/paper.pdf"));
         IntegrationTestSupport.assertOk(resource);
+        final JsonNode publicResource = IntegrationTestSupport.data(this.get(
+                "/api-web/content/resources/"
+                        + IntegrationTestSupport.data(resource).asLong(),
+                null));
+        assertThat(publicResource.path("materialUrl").asText()).isEqualTo("/uploads/paper.pdf");
+        assertThat(publicResource.has("fileUrl")).isFalse();
+        assertThat(publicResource.has("fileName")).isFalse();
         assertThat(IntegrationTestSupport.data(this.get("/api-web/content/resources?category=DRAMA_MATERIAL", null))
                         .path("list"))
                 .isEmpty();
@@ -269,7 +228,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                 this.post(
                         "/api-backend/cqt/resources/create",
                         admin,
-                        Map.of("title", "甲", "category", "SCRIPT_PAPER", "fileUrl", "//evil.test/a", "fileName", "a")),
+                        Map.of("title", "甲", "category", "SCRIPT_PAPER", "materialUrl", "//evil.test/a")),
                 HttpStatus.BAD_REQUEST,
                 100001);
         assertThat(IntegrationTestSupport.body(this.get("/api-web/content/resources?category=UNKNOWN", null))
@@ -343,24 +302,6 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                         Map.of("title", " ", "image", "", "showOnHome", false, "sort", 0, "content", "x")),
                 HttpStatus.BAD_REQUEST,
                 100001);
-    }
-
-    @Test
-    @DisplayName("后台图片上传要求更新权限、只允许图片扩展名并返回可访问 URL")
-    void uploadsSiteConfigImage() {
-        CqtIntegrationTestSupport.assertError(
-                this.uploadSiteConfigImage(null, "photo.png"), HttpStatus.UNAUTHORIZED, 100101);
-        final String admin = this.adminToken();
-        CqtIntegrationTestSupport.assertError(
-                this.uploadSiteConfigImage(admin, "script.svg"), HttpStatus.BAD_REQUEST, 100001);
-
-        final ResponseEntity<JsonNode> response = this.uploadSiteConfigImage(admin, "photo.png");
-        IntegrationTestSupport.assertOk(response);
-        final JsonNode image = IntegrationTestSupport.data(response);
-        assertThat(image.path("url").asText())
-                .startsWith("/uploads/cqt/user_files/")
-                .endsWith(".png");
-        assertThat(image.path("name").asText()).isEqualTo("photo.png");
     }
 
     @Test
@@ -744,11 +685,6 @@ class CqtWebIT extends CqtIntegrationTestSupport {
         zip.closeEntry();
     }
 
-    private ResponseEntity<JsonNode> uploadSiteConfigImage(
-            final @org.jspecify.annotations.Nullable String token, final String fileName) {
-        return this.uploadImage("/api-backend/cqt/site-config/uploadImage", token, fileName);
-    }
-
     private ResponseEntity<JsonNode> uploadNewsImage(
             final @org.jspecify.annotations.Nullable String token, final String fileName) {
         return this.uploadImage("/api-backend/cqt/news/uploadImage", token, fileName);
@@ -772,25 +708,16 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                 path, HttpMethod.POST, new org.springframework.http.HttpEntity<>(form, headers), JsonNode.class);
     }
 
-    private static String rawContent(final JsonNode items, final String key) {
-        for (final JsonNode item : items) {
-            if (item.path("key").asText().equals(key)) {
-                return item.path("contents").asText();
-            }
-        }
-        throw new AssertionError("站点配置项不存在: " + key);
-    }
-
     @Test
-    @DisplayName("cqt_setting 的列与原库 sc_setting 一致")
-    void settingTableMatchesLegacyColumns() {
-        final List<String> columns = this.jdbc.queryForList(
-                "SELECT column_name FROM information_schema.columns "
-                        + "WHERE table_schema = DATABASE() AND table_name = 'cqt_setting' ORDER BY ordinal_position",
-                String.class);
-
-        assertThat(columns)
-                .containsExactly("id", "ident", "name", "contents", "created_at", "updated_at", "deleted_at", "key");
+    @DisplayName("旧站点配置表已迁移并删除")
+    void settingTableRemoved() {
+        final Integer count = this.jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'cqt_setting'",
+                Integer.class);
+        assertThat(count).isZero();
+        final Integer configs = this.jdbc.queryForObject(
+                "SELECT COUNT(*) FROM sys_config WHERE config_key LIKE 'system.cqt_site.%'", Integer.class);
+        assertThat(configs).isEqualTo(22);
     }
 
     @Test

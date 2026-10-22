@@ -15,8 +15,7 @@ public class CqtResourceDO extends AuditableDO {
 
     private String title;
     private String category;
-    private String fileUrl;
-    private String fileName;
+    private String materialUrl;
     private String content;
     private Boolean enabled;
     private Integer sort;

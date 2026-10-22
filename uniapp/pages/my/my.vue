@@ -246,8 +246,18 @@
 									<view class='e1'>
 										<view class='leftText'>*<span style="color: #1F1F1F">身份类型</span></view>
 										<view class='sexBox e1'>
-											<view class='e1 pointer' @click="stud_credential_type='身份证号'">{{stud_credential_type==='身份证号'?'●':'○'}} 身份证号</view>
-											<view class='e1 pointer' @click="stud_credential_type='其他'">{{stud_credential_type==='其他'?'●':'○'}} 其他</view>
+											<view class='e1 pointer' @click="stud_credential_type='身份证号'">
+												<image class='icon' src='/static/local_assets/4c13961eb4a95d2e91bf44b8.png'
+													v-if="stud_credential_type==='身份证号'" />
+												<image class='icon' src='/static/local_assets/f5781ebba6ba4715e8294f13.png' v-else />
+												<view class='text'>身份证号</view>
+											</view>
+											<view class='e1 pointer' @click="stud_credential_type='其他'">
+												<image class='icon' src='/static/local_assets/4c13961eb4a95d2e91bf44b8.png'
+													v-if="stud_credential_type==='其他'" />
+												<image class='icon' src='/static/local_assets/f5781ebba6ba4715e8294f13.png' v-else />
+												<view class='text'>其他</view>
+											</view>
 										</view>
 									</view>
 									<view class='e1'>
@@ -258,11 +268,11 @@
 										</view>
 									</view>
 									<view class='e1'>
-										<view class='leftText'>*<span style="color: #1F1F1F">所在省市</span></view>
-						<pickerAddress :regions="regionTree" @change="bindPickerChange2">
+										<view class='leftText'>*<span style="color: #1F1F1F">所在地区</span></view>
+						<pickerAddress :regions="regionTree" @address-selected="bindPickerChange2">
 											<view class='long_box zzz2'>
 												<view class='input' v-if="stud_citieName">{{stud_citieName}}</view>
-												<view class='input' v-else style="color:#999999">请选择所在省市</view>
+												<view class='input' v-else style="color:#999999">请选择所在地区</view>
 											</view>
 						</pickerAddress>
 									</view>
@@ -305,11 +315,11 @@
 										</view>
 									</view>
 									<view class='e1'>
-										<view class='leftText'>*<span style="color: #1F1F1F">所在省市</span></view>
-						<pickerAddress :regions="regionTree" @change="bindPickerChange2">
+										<view class='leftText'>*<span style="color: #1F1F1F">所在地区</span></view>
+						<pickerAddress :regions="regionTree" @address-selected="bindPickerChange2">
 											<view class='long_box zzz2'>
 												<view class='input' v-if="stud_citieName">{{stud_citieName}}</view>
-												<view class='input' v-else style="color:#999999">请选择所在省市</view>
+												<view class='input' v-else style="color:#999999">请选择所在地区</view>
 											</view>
 						</pickerAddress>
 									</view>
@@ -721,7 +731,7 @@
 									</view>
 									<view class='e1' v-if="myInfo.type == 1">
 										<view class='leftText'>*<span style="color: #1F1F1F">赛区</span></view>
-						<pickerAddress :regions="regionTree" @change="bind_saiQ">
+						<pickerAddress :regions="regionTree" @address-selected="bind_saiQ">
 											<view class='long_box zzz2 pointer'>
 												<view class='e2 w100b'>
 													<view class='input' v-if="regionsname">{{ regionsname }}</view>
@@ -831,8 +841,20 @@
 													<view class='input-group e2'>
 														<text class='input-label'>身份类型</text>
 														<view class='sexBox e2 w100b' style="margin: 0;flex: 1;">
-															<view class='e1 pointer' @click="item.credential_type='身份证号'">{{item.credential_type==='身份证号'?'●':'○'}} 身份证号</view>
-															<view class='e1 pointer' @click="item.credential_type='其他'">{{item.credential_type==='其他'?'●':'○'}} 其他</view>
+															<view class='e1 ml10'>
+																<view class='e1 pointer' @click="item.credential_type='身份证号'">
+																	<image class='icon' src='/static/local_assets/4c13961eb4a95d2e91bf44b8.png'
+																		v-if="item.credential_type==='身份证号'" />
+																	<image class='icon' src='/static/local_assets/f5781ebba6ba4715e8294f13.png' v-else />
+																	<view class='text'>身份证号</view>
+																</view>
+																<view class='e1 pointer' @click="item.credential_type='其他'">
+																	<image class='icon' src='/static/local_assets/4c13961eb4a95d2e91bf44b8.png'
+																		v-if="item.credential_type==='其他'" />
+																	<image class='icon' src='/static/local_assets/f5781ebba6ba4715e8294f13.png' v-else />
+																	<view class='text'>其他</view>
+																</view>
+															</view>
 														</view>
 													</view>
 													<view class='input-group e2'>
@@ -2006,7 +2028,11 @@ import { schoolRequest, createImportPoller, importRows, importStateLabel, import
 				this.getcompetitionlists();
 			},
 			bindPickerChange2: function(e) {
-				this.stud_cities = e.id[0]
+				if (!this.regionTree.length || !e?.id?.[2]) {
+					uni.showToast({ title: '请选择完整的地区', icon: 'none' })
+					return
+				}
+				this.stud_cities = e.id[2]
 				this.stud_citieName = e.data.join('-')
 			},
 			bindPickerChange3: function(e) {

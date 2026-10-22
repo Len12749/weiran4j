@@ -40,7 +40,7 @@
 | `name` | `name_value` | 注册时去空白后至少 2 个字符 |
 | `type` | `user_type` | 1 个人、2 学校；注册后不可改 |
 | `idcard` + `credential_type` | `id_card_value` + `credential_type` | 个人：「身份证号」按 18 位 / 出生日期 / 校验位校验，「其他」≤ 200 字符；去空白转大写；同类型不得与其他个人账号重复。学校：`id_card_value` 存学校编号 |
-| `cities` | `region_id` | 行政区划主键（`region.id`）；`userinfo.cityname` 由此解析 |
+| `cities` | `region_id` | 注册与个人资料页选择省、市、区三级，保存第三级行政区划主键（`region.id`）；`userinfo.cityname` 由此解析 |
 | `status` | `audit_status` | 0 通过、1 审核中、2 驳回；个人注册即 0，学校注册为 1；驳回的学校改资料自动回 1；**本人不可改** |
 | `rejectreason` | `rejection_reason` | 本人不可改 |
 | `zhizhao` / `chengnuoshu` | `license_file` / `commitment_file` | 只存 URL 字符串；文件经 `POST /api-web/local-files/upload`（需登录，OSS 公共读）上传后由「学校认证」页通过 `updateuserinfo` 写入；学校注册时不再上传 |
@@ -50,7 +50,7 @@
 
 | 动作 | 接口 | 规则 / 错误 |
 | --- | --- | --- |
-| 发送验证码 | `GET sendSms?phone=` | 格式 400；同号 60 秒冷却 429；同一客户端 IP 每小时 10 条 429；system 短信服务不可用或系统配置模板 CODE 为空时 503；委托 system `SmsService` 发送，失败回滚验证码；响应不回显验证码；6 位、10 分钟有效、一次性、输错 5 次作废 |
+| 发送验证码 | `GET sendSms?phone=` | 格式 400；同号 60 秒冷却 429；system 短信服务不可用或当前模式的系统验证码模板为空时 503；委托 system `SmsService` 发送并采用其频控结果，失败回滚验证码；响应不回显验证码；6 位、10 分钟有效、一次性、输错 5 次作废 |
 | 登录 | `POST login`（手机号 + 密码 + 验证码） | 验证码错 401；账号不存在与密码错统一 400「手机号或密码错误」；手机号重复时取 `zhongxi` 优先、`id` 最小 |
 | 自动登录 | `POST autologin`（手机号 + 密码） | 同上，不要验证码（uniapp 注册后调用） |
 | 注册 | `POST register` | 先校验格式再消耗验证码；手机号已注册 / 证件号已注册 409 |
@@ -66,7 +66,7 @@
 ## 5. 说明与建议
 
 - 每个需登录的前台请求都会按主键查一次 `token_version`。
-- 验证码与短信 IP 计数存在进程内（Caffeine），只适用于单实例部署。
+- 验证码存在进程内（Caffeine），只适用于单实例部署；CQT 不再另做 IP 频控。
 
 ## 6. 已知问题汇总
 
@@ -78,12 +78,12 @@
 - **#03 🚧 P2 没有前台登录日志与登录失败次数限制**
   `sys_login_log` / `@OperationLog` 绑定后台用户，前台账号的登录、改资料、重置密码都没有审计记录；密码登录（`autologin`）没有失败次数限制。
 - **#04 ❓ P1 导入数据的中文乱码**
-  `cqtxj2026.sql` 导出文件里姓名、学校等中文同样是双重编码，见 [`cqt_setting.md#01`](cqt_setting.md)。
+  `cqtxj2026.sql` 导出文件里姓名、学校等中文同样是双重编码，见 [`cqt_site_config.md#01`](cqt_site_config.md)。
 
 - **#07 ❓ P0 system 阿里云短信尚未用本项目配置验证过**
   CQT 已委托 system `SmsService`，但本部署的 system 阿里云凭据、签名、模板和 RAM 权限尚未通过真实手机号验证。
   症状：模板 CODE、签名、AccessKey 权限或余额不正确时，前台 `sendSms` 返回 503/429，注册与找回密码不可用。
-  上线前按 `AGENTS.biz.md` 设置 system 短信环境变量，并在系统配置的用户组填写 CQT 模板 CODE；用测试手机号调用 `GET /api-web/auth/sendSms` 验证。
+  上线前按 `AGENTS.biz.md` 设置 system 短信环境变量，并在短信配置页填写共用的验证码模板 CODE；用测试手机号调用 `GET /api-web/auth/sendSms` 验证。
 
 - **#08 ⚠️ P2 学校注册时不再上传认证材料，审核时可能缺材料**
   change `cqt-file-upload` 起上传需登录，uniapp 注册页去掉了事业单位法人证书与承诺书上传，学校需在注册后到「我的 → 学校认证」补交。
@@ -97,11 +97,15 @@
 - **#11 ❓ P0 阿里云 OSS 上传尚未用真实凭据验证过**
   change `cqt-file-upload` 的 OSS 实现只经过假客户端单测与本地存储集成测试（用户决定延后）。
   症状：Bucket、Endpoint、公网前缀或 RAM 权限有误时，上线后所有上传返回 503「文件上传失败」，或返回的地址打不开（Bucket 非公共读）。
-  上线前按 `AGENTS.biz.md` 配好环境变量，用测试账号上传一个文件并在浏览器打开返回的 `url`。
+  上线前按 `AGENTS.biz.md` 配好 system 存储环境变量，用测试账号上传一个文件并在浏览器打开返回的 `url`。
 
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-22**
+- 修正注册与个人资料页地区选择：提交第三级区县的 `region.id`，地区未加载或三级选择不完整时不接受选择；注册时必须选择完整地区。
+- 前台验证码改用 system 本地/阿里云验证码模板，移除单独模板配置和 CQT IP 每小时上限；文件上传改用 system 存储模式、目录及 OSS 凭据。
 
 **2026-10-21**
 - **#05 ✅ P0 短信服务商未接入**

@@ -45,6 +45,8 @@ type FileUploadProps = {
     onUpload?: UploadFile;
     onUploadingChange?: (uploading: boolean) => void;
     maxFiles?: number;
+    allowedExtensions?: readonly string[];
+    maxFileSizeMB?: number;
 } & (
     | { multiple?: false; value: string; onChange: (value: string) => void }
     | { multiple: true; value: string[]; onChange: (value: string[]) => void }
@@ -52,7 +54,8 @@ type FileUploadProps = {
 
 /** 文件字段统一入口。默认上传到 system 资源库；业务可注入上传动作。 */
 export function FileUpload(props: FileUploadProps) {
-    const { disabled = false, onUpload, onUploadingChange, maxFiles = DEFAULT_MAX_FILES } = props;
+    const { disabled = false, onUpload, onUploadingChange, maxFiles = DEFAULT_MAX_FILES,
+        allowedExtensions = [...FILE_EXTENSIONS], maxFileSizeMB = MAX_FILE_SIZE_MB } = props;
     const upload = useUploadSystemFile();
     const inputRef = useRef<HTMLInputElement>(null);
     const busy = useRef(false);
@@ -98,7 +101,9 @@ export function FileUpload(props: FileUploadProps) {
                 Toast.warning(`最多上传 ${maxFiles} 个文件`);
                 break;
             }
-            const error = fileUploadError(file);
+            const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+            const error = !allowedExtensions.includes(extension) ? '不支持该文件类型'
+                : file.size === 0 || file.size > maxFileSizeMB * 1024 * 1024 ? `文件须大于 0 且不超过 ${maxFileSizeMB} MB` : null;
             if (error) {
                 Toast.error(error);
                 continue;
@@ -175,8 +180,8 @@ export function FileUpload(props: FileUploadProps) {
                     <span>{uploading ? '上传中…' : urls.length && !props.multiple ? '更换文件' : '上传文件'}</span>
                 </div>}
             </div>
-            {props.multiple && <small>每个文件不超过 {MAX_FILE_SIZE_MB} MB，最多 {maxFiles} 个（当前 {urls.length}/{maxFiles}）</small>}
-            <input ref={inputRef} hidden type="file" accept={[...FILE_EXTENSIONS].join(',')} multiple={props.multiple} onChange={(event) => { void uploadFiles(Array.from(event.currentTarget.files ?? [])); event.currentTarget.value = ''; }} />
+            {props.multiple && <small>每个文件不超过 {maxFileSizeMB} MB，最多 {maxFiles} 个（当前 {urls.length}/{maxFiles}）</small>}
+            <input ref={inputRef} hidden type="file" accept={allowedExtensions.join(',')} multiple={props.multiple} onChange={(event) => { void uploadFiles(Array.from(event.currentTarget.files ?? [])); event.currentTarget.value = ''; }} />
             {failed.length > 0 && (
                 <Button size="small" icon={<RotateCcw size={14} />} disabled={disabled || uploading} onClick={() => void uploadFiles(failed)}>
                     重试失败的文件（{failed.length}）

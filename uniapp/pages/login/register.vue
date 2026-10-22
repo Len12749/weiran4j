@@ -126,11 +126,11 @@
 						<view class='rightText'>注：本信息将导入证件制作系统，请务必填写准确</view>
 					</view>
 					<view class='e1'>
-						<view class='leftText'>*<span style="color: #1F1F1F">所在省市</span></view>
-						<pickerAddress :regions="regionTree" @change="change_area">
+						<view class='leftText'>*<span style="color: #1F1F1F">所在地区</span></view>
+						<pickerAddress :regions="regionTree" @address-selected="change_area">
 						<view class='long_box zzz2 pointer'>
 							<view class='e2 w100b'>
-								<view class="input" :style="info_city ? {color: '#333'} : {color: '#999'}">{{info_city || '请选择省市区'}}</view>
+								<view class="input" :style="info_city ? {color: '#333'} : {color: '#999'}">{{info_city || '请选择所在地区'}}</view>
 								<image class='icon' src='/static/local_assets/de02f8223a010b32f733b0e2.png' />
 							</view>
 						</view>
@@ -415,7 +415,13 @@
 				this.is_school = e
 			},
 			change_area(data) {
-				this.cities = data.id[0]
+				if (!this.regionTree.length || !data?.id?.[2]) {
+					this.cities = ''
+					this.info_city = ''
+					this.showToast('请选择完整的地区')
+					return
+				}
+				this.cities = data.id[2]
 				this.info_city = data.data.join('-')
 			},
 
@@ -480,6 +486,10 @@
 			queren() {
 				if (this.isXuan == false) {
 					this.showToast('请阅读并同意《用户协议》')
+					return
+				}
+				if (!this.cities) {
+					this.showToast('请选择完整的地区')
 					return
 				}
 				if (this.is_school == 1 && !this.schoolid) {

@@ -3,16 +3,14 @@ package com.weiran.cqt.api.content.resources;
 public record ResourceCommand(
         String title,
         String category,
-        String fileUrl,
-        String fileName,
+        String materialUrl,
         String content,
         @org.jspecify.annotations.Nullable Boolean enabled,
         int sort) {
     public ResourceCommand {
         title = java.util.Objects.requireNonNullElse(title, "").strip();
         category = java.util.Objects.requireNonNullElse(category, "");
-        fileUrl = java.util.Objects.requireNonNullElse(fileUrl, "");
-        fileName = java.util.Objects.requireNonNullElse(fileName, "");
+        materialUrl = java.util.Objects.requireNonNullElse(materialUrl, "");
         content = java.util.Objects.requireNonNullElse(content, "");
     }
 }

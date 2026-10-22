@@ -71,8 +71,7 @@ public class ResourceApplicationService implements ResourceService {
 
     private static Resource value(final ResourceCommand command) {
         ContentValidation.required(command.title(), "名称或标题", 255);
-        ContentValidation.url(command.fileUrl(), true);
-        ContentValidation.required(command.fileName(), "fileName", 255);
+        ContentValidation.url(command.materialUrl(), true);
         validateCategory(command.category());
         if (command.sort() < 0) {
             throw BizException.badRequest("排序值不能小于0");
@@ -81,8 +80,7 @@ public class ResourceApplicationService implements ResourceService {
                 0,
                 command.title(),
                 command.category(),
-                command.fileUrl(),
-                command.fileName(),
+                command.materialUrl(),
                 command.content(),
                 !Boolean.FALSE.equals(command.enabled()),
                 command.sort(),
@@ -95,8 +93,7 @@ public class ResourceApplicationService implements ResourceService {
                 value.id(),
                 value.title(),
                 value.category(),
-                value.fileUrl(),
-                value.fileName(),
+                value.materialUrl(),
                 value.content(),
                 value.enabled(),
                 value.sort(),

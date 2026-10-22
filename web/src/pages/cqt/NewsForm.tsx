@@ -1,7 +1,7 @@
 import { Button, Form, Space, Toast } from '@douyinfe/semi-ui';
 import type { FormApi } from '@douyinfe/semi-ui/lib/es/form';
 import { useRef, useState } from 'react';
-import { SingleImageUpload } from '@/components/SingleImageUpload';
+import { FileUpload } from '@/components/FileUpload';
 import { PageContainer } from '@/components/PageContainer';
 import { useCreateCqtNews, useUpdateCqtNews, useUploadCqtNewsImage } from '@/hooks/queries/cqt-news';
 import type { CqtNewsSaveRequest, CqtNewsView } from '@/types/api';
@@ -16,9 +16,11 @@ export function NewsForm({ target, onClose, onSaved }: { target: NewsTarget; onC
     const create = useCreateCqtNews();
     const update = useUpdateCqtNews();
     const uploadImage = useUploadCqtNewsImage();
+    const [uploading, setUploading] = useState(false);
     const isEdit = target.mode === 'edit';
 
     const submit = async () => {
+        if (uploading || uploadImage.isPending) return;
         const values = await api.current?.validate();
         if (!values) return;
         const body = { ...values, image, content };
@@ -45,9 +47,11 @@ export function NewsForm({ target, onClose, onSaved }: { target: NewsTarget; onC
         >
             <Form.Input field="title" label="标题" maxLength={255} rules={[{ required: true, message: '请输入标题' }]} />
             <Form.Input field="image" label="首图" rules={[{ required: true, message: '请上传首图' }]} style={{ display: 'none' }} />
-            <SingleImageUpload
+            <FileUpload
                 value={image}
-                upload={(file) => uploadImage.mutateAsync(file)}
+                allowedExtensions={['.jpg', '.jpeg', '.png', '.gif']}
+                onUpload={(file) => uploadImage.mutateAsync(file)}
+                onUploadingChange={setUploading}
                 onChange={(value) => {
                     setImage(value);
                     api.current?.setValue('image', value);
@@ -67,7 +71,7 @@ export function NewsForm({ target, onClose, onSaved }: { target: NewsTarget; onC
             />
         </Form>
     );
-    const saving = create.isPending || update.isPending;
+    const saving = create.isPending || update.isPending || uploading || uploadImage.isPending;
     const save = () => void submit().catch(() => undefined);
     return (
         <PageContainer

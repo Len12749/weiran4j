@@ -6,7 +6,6 @@ import com.weiran.cqt.api.sms.SmsService;
 import com.weiran.cqt.domain.account.Phones;
 import com.weiran.cqt.domain.sms.SmsCodePolicy;
 import com.weiran.cqt.domain.sms.SmsCodeStore;
-import com.weiran.cqt.domain.sms.SmsIpCounter;
 import com.weiran.framework.error.BizException;
 import com.weiran.framework.error.CommonErrors;
 import com.weiran.platform.api.config.ConfigService;
@@ -30,7 +29,9 @@ public class SmsApplicationService implements SmsService {
 
     private static final int CODE_BOUND = 1_000_000;
 
-    private static final String TEMPLATE_CONFIG_KEY = "system.user.cqt_sms_template_code";
+    private static final String LOCAL_TEMPLATE_CONFIG_KEY = "sms.system_tpl.captcha_local";
+
+    private static final String ALIYUN_TEMPLATE_CONFIG_KEY = "sms.system_tpl.captcha_aliyun";
 
     private final SmsCodeStore codeStore;
 
@@ -38,52 +39,43 @@ public class SmsApplicationService implements SmsService {
 
     private final com.weiran.system.api.sms.SmsService systemSmsService;
 
-    private final SmsIpCounter ipCounter;
-
     private final Clock clock;
 
-    private final int ipHourlyLimit;
+    private final String mode;
 
     private final SecureRandom random = new SecureRandom();
 
     /**
-     * 构造服务；短信模板来自系统配置，发送交由 system 短信服务。
-     *
-     * @param ipHourlyLimit 同一客户端 IP 每小时最多成功发送的条数，0 表示不限
+     * 构造服务；短信模板与发送方式均使用 system 配置。
      */
     public SmsApplicationService(
             final SmsCodeStore codeStore,
             final ConfigService configService,
             final com.weiran.system.api.sms.SmsService systemSmsService,
-            final SmsIpCounter ipCounter,
             final Clock clock,
-            final @Value("${weiran.cqt.sms.ip-hourly-limit:10}") int ipHourlyLimit) {
+            final @Value("${weiran.sms.mode:disabled}") String mode) {
         this.codeStore = codeStore;
         this.configService = configService;
         this.systemSmsService = systemSmsService;
-        this.ipCounter = ipCounter;
         this.clock = clock;
-        this.ipHourlyLimit = ipHourlyLimit;
+        this.mode = mode;
     }
 
     @Override
-    public synchronized SmsSendResult send(final @Nullable String rawPhone, final String clientIp) {
+    public synchronized SmsSendResult send(final @Nullable String rawPhone) {
         final String phone = Phones.require(rawPhone);
         if (!this.systemSmsService.isAvailable()) {
             throw new BizException(CqtErrors.SMS_NOT_CONFIGURED);
         }
         final String templateCode = this.configService.all().stream()
-                .filter(config -> SmsApplicationService.TEMPLATE_CONFIG_KEY.equals(config.configKey()))
+                .filter(config -> this.templateConfigKey().equals(config.configKey()))
                 .map(ConfigView::configValue)
                 .filter(value -> !value.isBlank())
+                .filter(value -> !"local".equals(this.mode) || value.contains("${code}"))
                 .findFirst()
                 .orElseThrow(() -> new BizException(CqtErrors.SMS_NOT_CONFIGURED));
         final Instant now = this.clock.instant();
         if (SmsCodePolicy.inCooldown(this.codeStore.get(phone).orElse(null), now)) {
-            throw new BizException(CqtErrors.SMS_TOO_FREQUENT);
-        }
-        if (SmsCodePolicy.ipLimitReached(this.ipCounter.sentWithinHour(clientIp), this.ipHourlyLimit)) {
-            SmsApplicationService.log.warn("短信发送达到 IP 上限 ip={} phone={}", clientIp, Phones.mask(phone));
             throw new BizException(CqtErrors.SMS_TOO_FREQUENT);
         }
         final String code = String.format(Locale.ROOT, "%06d", this.random.nextInt(SmsApplicationService.CODE_BOUND));
@@ -100,9 +92,14 @@ public class SmsApplicationService implements SmsService {
                 default -> new BizException(CqtErrors.SMS_SEND_FAILED);
             };
         }
-        this.ipCounter.recordSent(clientIp);
-        SmsApplicationService.log.info("已发送短信验证码 phone={} ip={}", Phones.mask(phone), clientIp);
+        SmsApplicationService.log.info("已发送短信验证码 phone={}", Phones.mask(phone));
         return new SmsSendResult(true, null);
+    }
+
+    private String templateConfigKey() {
+        return "aliyun".equals(this.mode)
+                ? SmsApplicationService.ALIYUN_TEMPLATE_CONFIG_KEY
+                : SmsApplicationService.LOCAL_TEMPLATE_CONFIG_KEY;
     }
 
     @Override

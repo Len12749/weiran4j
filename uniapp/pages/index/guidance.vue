@@ -98,7 +98,12 @@ import { contentAll, downloadContent } from '@/util/content.js';
                 } catch (error) { if (version === this.requestVersion) this.error = error.message; }
                 finally { if (version === this.requestVersion) this.loading = false; }
             },
-            downloadFile(file) { downloadContent(file.fileUrl, file.fileName); }
+            downloadFile(file) {
+                const path = String(file.materialUrl || '').split(/[?#]/)[0];
+                const filename = path.slice(path.lastIndexOf('/') + 1);
+                const extension = filename.match(/\.[a-z0-9]+$/i)?.[0] || '';
+                downloadContent(file.materialUrl, `${file.title || '指导资料'}${extension}`);
+            }
 
 		}
 	}

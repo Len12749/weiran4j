@@ -20,7 +20,7 @@
 
 ## 4. 用到的公共组件
 
-SearchToolbar、ColumnSettings、TableActions、PageContainer、usePageTabs；图片复用 SingleImageUpload，正文复用 SiteConfigRichEditor，附件使用 Semi Upload。
+SearchToolbar、ColumnSettings、TableActions、PageContainer、usePageTabs；照片复用系统配置同款 FileUpload，正文复用 SiteConfigRichEditor。
 
 ## 5. 说明与建议
 
@@ -31,6 +31,10 @@ SearchToolbar、ColumnSettings、TableActions、PageContainer、usePageTabs；�
 无。
 
 ## 7. changelog
+
+**2026-10-23**
+
+- 照片改用系统配置同款 `FileUpload`。
 
 **2026-10-16**
 

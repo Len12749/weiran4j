@@ -37,8 +37,8 @@ abstract class CqtIntegrationTestSupport extends IntegrationTestSupport {
     void configureSmsTemplate() {
         this.jdbc.update(
                 "UPDATE sys_config SET config_value = ? WHERE config_key = ?",
-                "TEST_SMS_TEMPLATE",
-                "system.user.cqt_sms_template_code");
+                "测试验证码 ${code}",
+                "sms.system_tpl.captcha_local");
     }
 
     /** 本次运行内唯一的手机号（139 开头）。 */

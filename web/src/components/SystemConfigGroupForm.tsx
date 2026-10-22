@@ -178,7 +178,7 @@ export function SystemConfigGroupForm({
                     return (
                         <div key={record.id} style={{ width: '100%' }}>
                             {record.fieldType === 'textarea' ? (
-                                <Form.TextArea {...common} rows={3} maxLength={4096} />
+                                <Form.TextArea {...common} rows={3} maxLength={65535} />
                             ) : record.fieldType === 'number' ? (
                                 <Form.Input {...common} type="number" />
                             ) : record.fieldType === 'switch' ? (
@@ -186,7 +186,7 @@ export function SystemConfigGroupForm({
                             ) : record.fieldType === 'select' ? (
                                 <Form.Select {...common} optionList={parseConfigFieldOptions(record.fieldOptions ?? '')} style={{ width: '100%' }} />
                             ) : record.fieldType === 'json' ? (
-                                <Form.TextArea {...common} rows={5} maxLength={4096} />
+                                <Form.TextArea {...common} rows={5} maxLength={65535} />
                             ) : record.fieldType === 'file' || record.fieldType === 'image' ? (
                                 <div>
                                     <Form.Input field={field} style={{ display: 'none' }} />
@@ -219,7 +219,7 @@ export function SystemConfigGroupForm({
                                     />
                                 </div>
                             ) : (
-                                <Form.Input {...common} maxLength={4096} />
+                                <Form.Input {...common} maxLength={65535} />
                             )}
                         </div>
                     );
