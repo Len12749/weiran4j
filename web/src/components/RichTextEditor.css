@@ -1,0 +1,5 @@
+.rich-text-editor { border: 1px solid var(--semi-color-border); border-radius: 6px; overflow: hidden; }
+.rich-text-editor__toolbar { padding: 6px; border-bottom: 1px solid var(--semi-color-border); background: var(--semi-color-fill-0); }
+.rich-text-editor__content .ProseMirror { min-height: 160px; padding: 12px; outline: none; }
+.rich-text-editor__content .ProseMirror p { margin: 0 0 8px; }
+.rich-text-editor__content .ProseMirror img { display: block; max-width: 100%; height: auto; }

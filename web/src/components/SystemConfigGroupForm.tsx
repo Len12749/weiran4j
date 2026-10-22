@@ -1,9 +1,9 @@
 import { Button, Form, Space, Tag, Toast } from '@douyinfe/semi-ui';
 import type { FormApi } from '@douyinfe/semi-ui/lib/es/form';
 import { Settings } from 'lucide-react';
-import { useMemo, useRef } from 'react';
-import { ConfigImageUpload } from '@/components/ConfigImageUpload';
-import { ConfigRichTextEditor } from '@/components/ConfigRichTextEditor';
+import { useMemo, useRef, useState } from 'react';
+import { ImageUpload } from '@/components/ImageUpload';
+import { RichTextEditor } from '@/components/RichTextEditor';
 import { useSaveConfig } from '@/hooks/queries/configs';
 import type { ConfigSaveRequest, ConfigView } from '@/types/api';
 
@@ -67,12 +67,20 @@ export function SystemConfigGroupForm({
 }) {
     const api = useRef<FormApi<Record<string, unknown>> | null>(null);
     const save = useSaveConfig();
+    const [uploading, setUploading] = useState(false);
+    const uploadingFields = useRef(new Set<number>());
+    const setFieldUploading = (id: number, active: boolean) => {
+        if (active) uploadingFields.current.add(id);
+        else uploadingFields.current.delete(id);
+        setUploading(uploadingFields.current.size > 0);
+    };
     const initValues = useMemo(
         () => Object.fromEntries(records.map((record) => [String(record.id), record.fieldType === 'switch' ? record.configValue === 'true' : record.configValue])),
         [records],
     );
 
     const submit = async () => {
+        if (uploadingFields.current.size > 0) return;
         const values = await api.current?.validate();
         if (!values) return;
         for (const record of records) {
@@ -158,11 +166,12 @@ export function SystemConfigGroupForm({
                                 <div>
                                     <Form.Input field={field} style={{ display: 'none' }} />
                                     <div style={{ marginBottom: 8 }}>{label}</div>
-                                    <ConfigImageUpload
+                                    <ImageUpload
                                         key={`${record.id}:${record.configValue}`}
                                         value={toStringValue(initValues[field])}
                                         disabled={!canEdit}
                                         {...(onUploadImage ? { onUpload: onUploadImage } : {})}
+                                        onUploadingChange={(active) => setFieldUploading(record.id, active)}
                                         onChange={(url) => {
                                             api.current?.setValue(field, url);
                                         }}
@@ -172,9 +181,13 @@ export function SystemConfigGroupForm({
                                 <div>
                                     <Form.Input field={field} style={{ display: 'none' }} />
                                     <div style={{ marginBottom: 8 }}>{label}</div>
-                                    <ConfigRichTextEditor
+                                    <RichTextEditor
+                                        key={record.id}
                                         value={toStringValue(initValues[field])}
                                         disabled={!canEdit}
+                                        label={record.description || record.configKey}
+                                        {...(onUploadImage ? { onUploadImage } : {})}
+                                        onUploadingChange={(active) => setFieldUploading(record.id, active)}
                                         onChange={(html) => {
                                             api.current?.setValue(field, html);
                                         }}
@@ -187,7 +200,7 @@ export function SystemConfigGroupForm({
                     );
                 })}
                 {canEdit && (
-                    <Button type="primary" theme="solid" loading={save.isPending} onClick={() => void submit().catch(() => undefined)}>
+                    <Button type="primary" theme="solid" loading={save.isPending} disabled={uploading} onClick={() => void submit().catch(() => undefined)}>
                         保存本组
                     </Button>
                 )}

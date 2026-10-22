@@ -181,7 +181,7 @@ function ConfigMetadataModal({
                 <Form.Input
                     field="configValue"
                     label="初始值 / 当前值"
-                    maxLength={4096}
+                    maxLength={65535}
                 />
                 <Form.Checkbox field="required" label="必填" />
                 <Form.TextArea field="description" label="说明" rows={2} maxLength={256} />

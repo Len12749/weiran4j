@@ -1,0 +1,117 @@
+import { Button, Space, Toast } from '@douyinfe/semi-ui';
+import Image from '@tiptap/extension-image';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { Bold, Heading2, ImagePlus, Italic, List, ListOrdered, Quote, Redo2, Undo2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useUploadSystemImage } from '@/hooks/queries/system-media';
+import { imageFileError } from './ImageUpload';
+import './RichTextEditor.css';
+
+interface RichTextEditorProps {
+    value: string;
+    disabled?: boolean;
+    label?: string;
+    onChange: (html: string) => void;
+    onUploadImage?: (file: File) => Promise<string | { url: string; name?: string }>;
+    onUploadingChange?: (uploading: boolean) => void;
+}
+
+/** 富文本统一入口。图片默认上传到 system 媒体库。 */
+export function RichTextEditor({ value, disabled = false, label = '富文本', onChange, onUploadImage, onUploadingChange }: RichTextEditorProps) {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const editorRef = useRef<ReturnType<typeof useEditor>>(null);
+    const pending = useRef(0);
+    const mounted = useRef(true);
+    const [uploading, setUploading] = useState(false);
+    const upload = useUploadSystemImage();
+
+    const insertImages = async (files: File[]) => {
+        const currentEditor = editorRef.current;
+        if (!currentEditor?.isEditable || files.length === 0) return;
+        const valid = files.filter((file) => {
+            const error = imageFileError(file);
+            if (error) Toast.error(error);
+            return !error;
+        });
+        if (valid.length === 0) return;
+        const position = currentEditor.state.selection.from;
+        pending.current += 1;
+        setUploading(true);
+        onUploadingChange?.(true);
+        try {
+            const results = await Promise.allSettled(valid.map(async (file) => {
+                const result = onUploadImage ? await onUploadImage(file) : await upload.mutateAsync(file);
+                const url = typeof result === 'string' ? result : result.url;
+                if (!url) throw new Error('上传未返回图片地址');
+                return { url, name: typeof result === 'string' ? file.name : result.name ?? file.name };
+            }));
+            const images = results.flatMap((result) => result.status === 'fulfilled'
+                ? [{ type: 'image', attrs: { src: result.value.url, alt: result.value.name } }]
+                : []);
+            if (results.some((result) => result.status === 'rejected') && onUploadImage) Toast.error('部分图片上传失败，请重试');
+            if (mounted.current && currentEditor.isEditable && images.length > 0) currentEditor.chain().focus().insertContentAt(position, images).run();
+        } finally {
+            pending.current -= 1;
+            if (mounted.current && pending.current === 0) {
+                setUploading(false);
+                onUploadingChange?.(false);
+            }
+        }
+    };
+
+    const editor = useEditor({
+        extensions: [StarterKit, Image.configure({ allowBase64: false })],
+        content: value,
+        editable: !disabled,
+        immediatelyRender: false,
+        onUpdate: ({ editor: current }) => onChange(current.getHTML()),
+        editorProps: {
+            attributes: { 'aria-label': label },
+            handlePaste: (_view, event) => {
+                const files = Array.from(event.clipboardData?.items ?? [])
+                    .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
+                    .map((item) => item.getAsFile())
+                    .filter((file): file is File => file !== null);
+                if (files.length === 0 || !editorRef.current?.isEditable) return false;
+                event.preventDefault();
+                void insertImages(files);
+                return true;
+            },
+        },
+    });
+
+    useEffect(() => {
+        mounted.current = true;
+        return () => { mounted.current = false; };
+    }, []);
+
+    useEffect(() => {
+        if (!editor) return;
+        editorRef.current = editor;
+        editor.setEditable(!disabled);
+        if (editor.getHTML() !== value) editor.commands.setContent(value || '', { emitUpdate: false });
+    }, [disabled, editor, value]);
+
+    if (!editor) return null;
+
+    return (
+        <div className="rich-text-editor">
+            <div className="rich-text-editor__toolbar" role="toolbar" aria-label={`${label}格式工具`}>
+                <Space spacing={4} wrap>
+                <Button size="small" theme={editor.isActive('bold') ? 'solid' : 'borderless'} icon={<Bold size={14} />} disabled={disabled} aria-label="粗体" onClick={() => editor.chain().focus().toggleBold().run()} />
+                <Button size="small" theme={editor.isActive('italic') ? 'solid' : 'borderless'} icon={<Italic size={14} />} disabled={disabled} aria-label="斜体" onClick={() => editor.chain().focus().toggleItalic().run()} />
+                <Button size="small" theme={editor.isActive('heading', { level: 2 }) ? 'solid' : 'borderless'} icon={<Heading2 size={14} />} disabled={disabled} aria-label="二级标题" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} />
+                <Button size="small" theme={editor.isActive('bulletList') ? 'solid' : 'borderless'} icon={<List size={14} />} disabled={disabled} aria-label="无序列表" onClick={() => editor.chain().focus().toggleBulletList().run()} />
+                <Button size="small" theme={editor.isActive('orderedList') ? 'solid' : 'borderless'} icon={<ListOrdered size={14} />} disabled={disabled} aria-label="有序列表" onClick={() => editor.chain().focus().toggleOrderedList().run()} />
+                <Button size="small" theme={editor.isActive('blockquote') ? 'solid' : 'borderless'} icon={<Quote size={14} />} disabled={disabled} aria-label="引用" onClick={() => editor.chain().focus().toggleBlockquote().run()} />
+                <Button size="small" theme="borderless" icon={<Undo2 size={14} />} disabled={disabled || !editor.can().undo()} aria-label="撤销" onClick={() => editor.chain().focus().undo().run()} />
+                <Button size="small" theme="borderless" icon={<Redo2 size={14} />} disabled={disabled || !editor.can().redo()} aria-label="重做" onClick={() => editor.chain().focus().redo().run()} />
+                <Button size="small" theme="borderless" icon={<ImagePlus size={14} />} loading={uploading} disabled={disabled || uploading} aria-label="上传并插入图片" onClick={() => inputRef.current?.click()} />
+                <input ref={inputRef} hidden type="file" accept=".jpg,.jpeg,.png,.gif" multiple onChange={(event) => { void insertImages(Array.from(event.currentTarget.files ?? [])); event.currentTarget.value = ''; }} />
+                </Space>
+            </div>
+            <EditorContent className="rich-text-editor__content" editor={editor} />
+        </div>
+    );
+}

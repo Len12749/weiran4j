@@ -19,7 +19,7 @@ import org.jspecify.annotations.Nullable;
  */
 public record SaveConfigRequest(
         @NotBlank @Size(max = 128) String configKey,
-        @NotNull @Size(max = 4096) String configValue,
+        @NotNull @Size(max = 65535) String configValue,
         @NotBlank String configType,
         @NotBlank @Size(max = 64) String groupKey,
         @NotBlank String fieldType,

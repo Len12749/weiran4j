@@ -54,7 +54,7 @@
 | 表单字段 | 单行 / 多行 / 数字 / 开关 / 下拉 / JSON / 单图 / 富文本 | 字段类型与值类型匹配；下拉选项为合法 JSON 数组；单图保存媒体 URL，富文本保存 HTML | `field_type varchar(16)`、`field_options varchar(2048)` |
 | 必填 | 开关 | 必填项不可为空 | `required tinyint(1)` |
 | 类型 | 随控件设置 | 只能 `string/number/boolean/json` | `config_type varchar(16)` 默认 `string` |
-| 配置值 | 由 `field_type` 渲染 | 最多 4096 字符，并按类型校验（见下） | `config_value varchar(4096)` 默认 `''` |
+| 配置值 | 由 `field_type` 渲染 | 最多 65535 字符，并按类型校验（见下） | `config_value mediumtext` 默认由应用层提供 |
 | 描述 | 多行输入 | 最多 256 字符 | `description varchar(256) null` |
 
 **按类型校验的口径**：
@@ -83,7 +83,7 @@
 
 ## 4. 用到的公共组件
 
-- `NavListPanel` / `NavListItem`（左栏）、`SystemConfigGroupForm`（分组动态配置表单）、`ConfigImageUpload`、`ConfigRichTextEditor`、`PageContainer`、`Permission`、Semi UI `Form`
+- `NavListPanel` / `NavListItem`（左栏）、`SystemConfigGroupForm`（分组动态配置表单）、`ImageUpload`、`RichTextEditor`、`PageContainer`、`Permission`、Semi UI `Form`
 
 ## 5. 说明与建议
 
@@ -111,6 +111,9 @@
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-22**
+- 单图配置字段接入通用 `ImageUpload`，支持拖放、预览和失败重试；多图模式供业务表单复用。富文本字段接入通用 `RichTextEditor`，支持粘贴图片、多图上传、引用、撤销和重做。上传中禁用本组保存；配置值扩至 65535 字符，数据库字段改为 `mediumtext`。
 
 **2026-10-21**
 - `local` 验证码模板按 `${code}` 等参数渲染短信正文并记录日志；本地模板缺少 `${code}` 时手机号登录不可用。

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ImageUpload } from '@/components/ImageUpload';
 import { NavListItem, NavListPanel } from '@/components/NavListPanel';
 import { PageContainer } from '@/components/PageContainer';
 import { SystemConfigGroupForm } from '@/components/SystemConfigGroupForm';
@@ -19,19 +20,12 @@ const EXAMPLES: ConfigView[] = [
 ];
 
 function localImagePreview(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            if (typeof reader.result === 'string') resolve(reader.result);
-            else reject(new Error('图片读取失败'));
-        };
-        reader.onerror = () => reject(new Error('图片读取失败'));
-        reader.readAsDataURL(file);
-    });
+    return Promise.resolve(URL.createObjectURL(file));
 }
 
 export default function DemoConfigPage() {
     const [records, setRecords] = useState(EXAMPLES);
+    const [images, setImages] = useState<string[]>([]);
 
     return (
         <div className="config-groups-layout">
@@ -51,6 +45,11 @@ export default function DemoConfigPage() {
                     onUploadImage={localImagePreview}
                     onSave={(values) => setRecords((current) => current.map((record, index) => ({ ...record, configValue: values[index]?.configValue ?? record.configValue })))}
                 />
+                <div style={{ marginTop: 24 }}>
+                    <strong>多图上传 · ImageUpload</strong>
+                    <p className="demo-page__hint">拖入或一次选择多张图片；仅在当前页面预览。</p>
+                    <ImageUpload multiple value={images} onChange={setImages} onUpload={localImagePreview} />
+                </div>
             </PageContainer>
         </div>
     );
