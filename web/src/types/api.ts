@@ -390,7 +390,7 @@ export interface DictItemSaveRequest {
 /* ---------- 系统配置 ---------- */
 
 export type ConfigType = 'string' | 'number' | 'boolean' | 'json';
-export type ConfigFieldType = 'input' | 'textarea' | 'number' | 'switch' | 'select' | 'json' | 'image' | 'richtext';
+export type ConfigFieldType = 'input' | 'textarea' | 'number' | 'switch' | 'select' | 'json' | 'file' | 'image' | 'richtext';
 
 export interface ConfigGroupView {
     groupKey: string;
@@ -443,23 +443,26 @@ export interface ConfigSaveRequest {
 
 /* ---------- 系统媒体库 ---------- */
 
-export interface SystemMediaImageUpload {
+export interface SystemMediaFileUpload {
     url: string;
     name: string;
     path: string;
     size: number;
 }
 
-export interface SystemMediaImageView {
+export interface SystemMediaFileView {
     id: number;
     originalName: string;
     url: string;
     size: number;
     createdAt: string;
+    category: 'image' | 'document' | 'archive';
+    references: string[];
 }
 
-export interface SystemMediaImageQuery extends PageQuery {
+export interface SystemMediaFileQuery extends PageQuery {
     keyword?: string;
+    category?: 'image' | 'document' | 'archive';
 }
 
 /* ---------- 日志 ---------- */

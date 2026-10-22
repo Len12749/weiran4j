@@ -38,7 +38,7 @@ const FIELD_OPTIONS = [
     { label: '开关', value: 'switch' },
     { label: '下拉选择', value: 'select' },
     { label: 'JSON', value: 'json' },
-    { label: '单图上传', value: 'image' },
+    { label: '单文件上传', value: 'file' },
     { label: '富文本', value: 'richtext' },
 ];
 
@@ -181,7 +181,7 @@ function ConfigMetadataModal({
                 <Form.Input
                     field="configValue"
                     label="初始值 / 当前值"
-                    maxLength={4096}
+                    maxLength={65535}
                 />
                 <Form.Checkbox field="required" label="必填" />
                 <Form.TextArea field="description" label="说明" rows={2} maxLength={256} />

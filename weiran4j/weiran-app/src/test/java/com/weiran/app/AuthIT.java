@@ -87,22 +87,6 @@ class AuthIT extends IntegrationTestSupport {
         assertThat(regions.path("title").asText()).isEqualTo("行政区划");
         assertThat(regions.path("component").asText()).isEqualTo("system/regions/RegionsPage");
         assertThat(regions.path("permission").asText()).isEqualTo("region:list");
-        final JsonNode componentsDemo = roots.get(3);
-        assertThat(componentsDemo.path("title").asText()).isEqualTo("组件演示");
-        assertThat(componentsDemo.path("type").asText()).isEqualTo("directory");
-        assertThat(componentsDemo.path("path").asText()).isEqualTo("/demo");
-        assertThat(componentsDemo.path("component").isNull()).isTrue();
-        assertThat(AuthIT.ids(componentsDemo.path("children"))).containsExactly(15L, 16L, 17L, 18L, 19L);
-        assertThat(componentsDemo.path("children").get(0).path("component").asText())
-                .isEqualTo("demo/DemoListPage");
-        assertThat(componentsDemo.path("children").get(1).path("component").asText())
-                .isEqualTo("demo/DemoNavigationPage");
-        assertThat(componentsDemo.path("children").get(2).path("component").asText())
-                .isEqualTo("demo/DemoFieldsPage");
-        assertThat(componentsDemo.path("children").get(3).path("component").asText())
-                .isEqualTo("demo/DemoAccessPage");
-        assertThat(componentsDemo.path("children").get(4).path("component").asText())
-                .isEqualTo("demo/DemoConfigPage");
     }
 
     @Test

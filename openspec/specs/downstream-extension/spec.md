@@ -24,9 +24,9 @@ Gradle 构建 **MUST** 把 `weiran4j/` 下名为 `weiran-<mod>`、且含 `weiran
 - **判据**:`projects` 输出中以 `weiran-` 开头、以五层后缀结尾的项目集合与改动前逐行一致
 
 #### Scenario: 新增五层齐全的目录即被收录
-- **WHEN** 新建 `weiran4j/weiran-demo/weiran-demo-{api,domain,application,infrastructure,adapter}/` 五个目录,不改任何 `.kts`
-- **THEN** 构建包含 `:weiran-demo-*` 五个项目,且 `weiran-app` 依赖 `:weiran-demo-adapter` 与 `:weiran-demo-infrastructure`
-- **判据**:`./gradlew projects` 列出五个项目;`./gradlew :weiran-app:dependencies --configuration runtimeClasspath` 含两条 `project :weiran-demo-*`
+- **WHEN** 新建 `weiran4j/weiran-example/weiran-example-{api,domain,application,infrastructure,adapter}/` 五个目录,不改任何 `.kts`
+- **THEN** 构建包含 `:weiran-example-*` 五个项目,且 `weiran-app` 依赖 `:weiran-example-adapter` 与 `:weiran-example-infrastructure`
+- **判据**:`./gradlew projects` 列出五个项目;`./gradlew :weiran-app:dependencies --configuration runtimeClasspath` 含两条 `project :weiran-example-*`
 
 ### Requirement: [FR-002] 五层不齐时构建失败
 

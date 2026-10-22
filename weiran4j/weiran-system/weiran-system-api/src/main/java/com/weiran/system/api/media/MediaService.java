@@ -6,12 +6,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.jspecify.annotations.Nullable;
 
-/** 图片资产管理服务。 */
+/** 文件资源管理服务。 */
 public interface MediaService {
 
-    ImageUploadView upload(String originalName, InputStream content, long size, long uploadedBy) throws IOException;
+    FileUploadView upload(String originalName, InputStream content, long size, long uploadedBy) throws IOException;
 
-    PageResult<MediaView> page(@Nullable String keyword, PageQuery pageQuery);
+    PageResult<MediaView> page(@Nullable String keyword, @Nullable String category, PageQuery pageQuery);
+
+    default PageResult<MediaView> page(final @Nullable String keyword, final PageQuery pageQuery) {
+        return this.page(keyword, null, pageQuery);
+    }
 
     void delete(long id);
 }

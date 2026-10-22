@@ -56,8 +56,8 @@
 | **DepartmentTreeSelect** | `components/DepartmentTreeSelect.tsx` | 筛选栏的部门树下拉;表单里用同文件导出的 `useDepartmentTreeData(disabledIds)` 喂给 `Form.TreeSelect` | 编辑部门时把「自己 + 后代」传进 `disabledIds`,否则前端能选、后端返回 `100004` |
 | **RegionSelect** | `components/RegionSelect.tsx` | 省市县级联选择器；受控值为字符串区划代码路径 `string[]`，数据取登录态 `/api-backend/region/area/getEnabledTree` | 只展示启用节点及启用祖先组成的路径；管理权限不是使用前提，lookup 失败遵循请求层提示 |
 | **IconPicker** | `components/IconPicker.tsx` | 菜单图标选择:弹层网格 + 搜索,可配合 Semi `withField` 当表单项 | 只含 `utils/icons.tsx` 白名单里的 lucide 图标;新图标先加进 `MENU_ICONS` |
-| **ConfigImageUpload** | `components/ConfigImageUpload.tsx` | 系统配置的单图字段:上传后保存媒体库返回的 URL,支持预览、更换和移除；`onUpload` 可替换上传动作供本地演示使用 | 限 jpg/jpeg/png/gif,最大 10 MB;默认上传依赖系统媒体上传权限 |
-| **ConfigRichTextEditor** | `components/ConfigRichTextEditor.tsx` + `ConfigRichTextEditor.css` | 系统配置的富文本字段,保存 HTML 字符串 | 工具栏提供粗体、斜体、二级标题及列表;编辑器由配置表单负责回写字段值 |
+| **FileUpload** | `components/FileUpload.tsx` + `FileUpload.css` | 通用文件上传，单文件值为 URL，多文件值为 URL 数组；支持拖放、图片预览、其他文件浏览器打开或下载、移除、失败重试；多文件可拖动或用箭头调整顺序 | 图片缩略图按原比例以长边适配方框，预览支持缩放；每个文件限 10 MB，多文件默认最多 9 个且满额隐藏上传入口；默认由 system 资源接口上传，业务可通过 `onUpload` 注入上传动作；移除只清引用 |
+| **RichTextEditor** | `components/RichTextEditor.tsx` + `RichTextEditor.css` | 通用富文本，保存 HTML，支持粘贴图片、多图上传、引用、撤销和重做 | 图片默认由 system 媒体接口上传，业务可通过 `onUploadImage` 注入上传动作；保存表单应在上传期间禁用提交 |
 | **SystemConfigGroupForm** | `components/SystemConfigGroupForm.tsx` | 系统配置分组的动态字段编辑器，按字段类型渲染控件、校验并保存分组配置；组件演示页也直接复用 | 调用方传 `ConfigView[]`、编辑权限与字段设置回调；默认用系统配置 Query hooks 保存，`onSave` / `onUploadImage` 可替换为本地演示动作 |
 
 ## 布局(`web/src/layouts/`)

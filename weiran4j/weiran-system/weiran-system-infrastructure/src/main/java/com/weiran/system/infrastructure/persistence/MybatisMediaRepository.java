@@ -44,11 +44,19 @@ public class MybatisMediaRepository implements MediaRepository {
     }
 
     @Override
-    public PageResult<MediaAsset> page(final @Nullable String keyword, final PageQuery pageQuery) {
+    public PageResult<MediaAsset> page(
+            final @Nullable String keyword, final @Nullable String category, final PageQuery pageQuery) {
         final LambdaQueryWrapper<SysMediaDO> query = new LambdaQueryWrapper<SysMediaDO>()
                 .like(keyword != null && !keyword.isBlank(), SysMediaDO::getOriginalName, keyword)
                 .orderByDesc(SysMediaDO::getCreatedAt)
                 .orderByDesc(SysMediaDO::getId);
+        if ("image".equals(category)) {
+            query.apply("LOWER(original_name) REGEXP '[.](jpg|jpeg|png|gif|webp)$'");
+        } else if ("archive".equals(category)) {
+            query.apply("LOWER(original_name) REGEXP '[.]zip$'");
+        } else if ("document".equals(category)) {
+            query.apply("LOWER(original_name) REGEXP '[.](pdf|txt|csv|doc|docx|xls|xlsx|ppt|pptx)$'");
+        }
         final Page<SysMediaDO> page = this.mapper.selectPage(new Page<>(pageQuery.page(), pageQuery.pageSize()), query);
         return new PageResult<>(
                 page.getRecords().stream().map(MybatisMediaRepository::toDomain).toList(),
