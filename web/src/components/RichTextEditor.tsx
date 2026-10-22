@@ -4,8 +4,8 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Bold, Heading2, ImagePlus, Italic, List, ListOrdered, Quote, Redo2, Undo2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { useUploadSystemImage } from '@/hooks/queries/system-media';
-import { imageFileError } from './ImageUpload';
+import { useUploadSystemFile } from '@/hooks/queries/system-media';
+import { imageFileError } from './FileUpload';
 import './RichTextEditor.css';
 
 interface RichTextEditorProps {
@@ -17,14 +17,14 @@ interface RichTextEditorProps {
     onUploadingChange?: (uploading: boolean) => void;
 }
 
-/** 富文本统一入口。图片默认上传到 system 媒体库。 */
+/** 富文本统一入口。图片默认上传到 system 资源库。 */
 export function RichTextEditor({ value, disabled = false, label = '富文本', onChange, onUploadImage, onUploadingChange }: RichTextEditorProps) {
     const inputRef = useRef<HTMLInputElement>(null);
     const editorRef = useRef<ReturnType<typeof useEditor>>(null);
     const pending = useRef(0);
     const mounted = useRef(true);
     const [uploading, setUploading] = useState(false);
-    const upload = useUploadSystemImage();
+    const upload = useUploadSystemFile();
 
     const insertImages = async (files: File[]) => {
         const currentEditor = editorRef.current;

@@ -51,7 +51,7 @@
 | --- | --- | --- | --- |
 | 配置键 | 输入；内置项不可改 | 必填、最多 128 字符、`{range}.{group}.{value}`；新建及改键/改组时校验分组一致；重复 100003；内置项改键 100004 | `config_key varchar(128)` 唯一 |
 | 分组 | 从启用的配置分组选择 | 必须是 `sys_group` 中已启用且 `type=config`、`group_key` 与配置键前缀对应的编码 | `group_key varchar(64)` |
-| 表单字段 | 单行 / 多行 / 数字 / 开关 / 下拉 / JSON / 单图 / 富文本 | 字段类型与值类型匹配；下拉选项为合法 JSON 数组；单图保存媒体 URL，富文本保存 HTML | `field_type varchar(16)`、`field_options varchar(2048)` |
+| 表单字段 | 单行 / 多行 / 数字 / 开关 / 下拉 / JSON / 单文件 / 富文本 | 字段类型与值类型匹配；下拉选项为合法 JSON 数组；单文件保存资源 URL，富文本保存 HTML | `field_type varchar(16)`、`field_options varchar(2048)` |
 | 必填 | 开关 | 必填项不可为空 | `required tinyint(1)` |
 | 类型 | 随控件设置 | 只能 `string/number/boolean/json` | `config_type varchar(16)` 默认 `string` |
 | 配置值 | 由 `field_type` 渲染 | 最多 65535 字符，并按类型校验（见下） | `config_value mediumtext` 默认由应用层提供 |
@@ -83,7 +83,7 @@
 
 ## 4. 用到的公共组件
 
-- `NavListPanel` / `NavListItem`（左栏）、`SystemConfigGroupForm`（分组动态配置表单）、`ImageUpload`、`RichTextEditor`、`PageContainer`、`Permission`、Semi UI `Form`
+- `NavListPanel` / `NavListItem`（左栏）、`SystemConfigGroupForm`（分组动态配置表单）、`FileUpload`、`RichTextEditor`、`PageContainer`、`Permission`、Semi UI `Form`
 
 ## 5. 说明与建议
 
@@ -93,7 +93,7 @@
 - 登录页通过公开 `/api-backend/n/system/auth/listProviders` 获取手机号登录状态；后端只有在 `system.user.enable_phone_login=true`、短信发送模式可用且当前模式的验证码模板有效时才返回 `phoneLoginEnabled=true`。`local` 模式的 `sms.system_tpl.captcha_local` 是短信正文，必须包含 `${code}`；发码时替换并写入应用日志。`aliyun` 模式的 `sms.system_tpl.captcha_aliyun` 是已审核模板 CODE。
 - 站点标题仍取自构建期环境变量 `VITE_APP_TITLE`（见 #02）；`web/src` 不直接调用公开配置接口。
 - 内置配置只保护「键不可改、不可删」，值与表单配置都可以改。
-- 组件演示 `/demo/config` 使用本地示例数据复用 `SystemConfigGroupForm`，八种字段各一条；示例保存与图片预览不写入后端。
+- 组件演示 `/demo/config` 使用 `weiran-demo` 在 local/test 播种的 `demo` 分组，复用 `SystemConfigGroupForm` 展示八种字段各一条；多文件 URL 数组作为独立 JSON 配置保存。文件使用 system 资源上传，配置保存写入 `sys_config`；移除文件只清引用，未引用的文件可在资源库删除。
 - [系统配置说明](../../../docs/configuration.md)记录了分组和表单字段的使用方式。
 
 ## 6. 已知问题汇总
@@ -113,6 +113,8 @@
 新条目插在本节最上方（按日期倒序，新在上）。
 
 **2026-10-22**
+- 图片上传入口改为与缩略图等尺寸并列；缩略图按长边等比适配，多图支持拖动和前后按钮排序，预览支持缩放。
+- 组件演示改用 local/test 专用的真实配置种子；图片上传走 system 媒体库，示例值保存到 `sys_config`，并显示服务端已保存值供校验。
 - 单图配置字段接入通用 `ImageUpload`，支持拖放、预览和失败重试；多图模式供业务表单复用。富文本字段接入通用 `RichTextEditor`，支持粘贴图片、多图上传、引用、撤销和重做。上传中禁用本组保存；配置值扩至 65535 字符，数据库字段改为 `mediumtext`。
 
 **2026-10-21**

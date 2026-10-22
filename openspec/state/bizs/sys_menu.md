@@ -123,6 +123,7 @@
 新条目插在本节最上方（按日期倒序，新在上）。
 
 **2026-10-22**
+- `weiran-demo` 的 local/test 迁移为配置演示播种独立的 `demo` 分组及示例值，页面通过真实 system 接口读写。
 - 演示菜单种子从 `weiran-app` 资源目录提取为可选 `weiran-demo` 模块，下游可不复制该模块及 `web/src/pages/demo/`。
 - 组件演示菜单从通用基座迁至 `weiran-app` 的 local/test 专用 Flyway 路径；通用系统迁移删除历史演示菜单，生产环境不再展示。
 

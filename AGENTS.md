@@ -81,7 +81,7 @@ duoli-weiran4j/                  # git 仓库根 = pnpm 工作区根 = openspec 
     │                            #   @OperationLog、MyBatis-Plus 配置与审计字段填充）。框架库不向下游传递（D-016）
     ├── weiran-system/           # 后台基座（DDD 五层）：身份与权限（认证 / 用户 / 角色 / 菜单 / 部门 / 登录日志，
     │                            #   Java 包 com.weiran.system）+ 平台能力（字典 / 系统配置 / 操作日志，包 com.weiran.platform）
-    ├── weiran-demo/             # 可选资源模块：仅 local/test 的组件演示菜单种子；下游可不复制
+    ├── weiran-demo/             # 可选资源模块：仅 local/test 的组件演示菜单与配置种子；下游可不复制
     ├── weiran-app/              # 可执行应用：依赖聚合 + application.yml + 集成测试
     └── docs/                    # 后端决策记录、接口契约与部署手册（02-部署.md）
 ```
@@ -93,7 +93,7 @@ duoli-weiran4j/                  # git 仓库根 = pnpm 工作区根 = openspec 
 
 ### 下游复制时的组件演示
 
-`weiran-demo` 是可选演示资源模块，不属于五层业务模块。下游复制本项目时可省略整个
+`weiran-demo` 是可选演示资源模块，不属于五层业务模块。它在 local/test 播种演示菜单和独立配置数据。下游复制本项目时可省略整个
 `weiran4j/weiran-demo/`，并且**无需复制 `web/src/pages/demo/` 下的演示页面**。
 `settings.gradle.kts` 和 `weiran-app` 只在模块存在时引入它；前端页面注册表允许缺少演示页。
 通用 `weiran-system` 中已发布的历史演示 Flyway 文件必须保留（CP-7），后续清理迁移会删除这些历史菜单；

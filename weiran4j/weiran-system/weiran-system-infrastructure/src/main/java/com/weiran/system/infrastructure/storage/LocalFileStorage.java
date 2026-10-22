@@ -1,5 +1,6 @@
 package com.weiran.system.infrastructure.storage;
 
+import com.weiran.system.domain.media.MediaFileTypes;
 import com.weiran.system.domain.storage.FileStorage;
 import com.weiran.system.domain.storage.FileStorage.StoredFile;
 import com.weiran.system.domain.storage.FileStorageException;
@@ -32,7 +33,7 @@ public final class LocalFileStorage implements FileStorage {
             Files.createDirectories(target.getParent());
             Files.copy(input, target);
         } catch (final IOException ex) {
-            throw new FileStorageException("图片上传失败，请稍后重试", ex);
+            throw new FileStorageException("文件上传失败，请稍后重试", ex);
         }
         return new StoredFile(this.urlPrefix + "/" + objectName, objectName, size);
     }
@@ -42,17 +43,18 @@ public final class LocalFileStorage implements FileStorage {
         try {
             Files.deleteIfExists(this.resolve(objectName));
         } catch (final IOException ex) {
-            throw new FileStorageException("图片删除失败，请稍后重试", ex);
+            throw new FileStorageException("文件删除失败，请稍后重试", ex);
         }
     }
 
     private Path resolve(final String objectName) {
-        if (!objectName.matches("media/[0-9]{6}/[0-9a-fA-F-]{36}\\.(jpg|jpeg|png|gif)")) {
-            throw new IllegalArgumentException("图片对象名无效");
+        if (!objectName.matches("media/[0-9]{6}/[0-9a-fA-F-]{36}\\.[a-z0-9]{2,5}")
+                || !MediaFileTypes.allowed(MediaFileTypes.extension(objectName))) {
+            throw new IllegalArgumentException("文件对象名无效");
         }
         final Path path = this.root.resolve(objectName).normalize();
         if (!path.startsWith(this.root)) {
-            throw new IllegalArgumentException("图片对象名越出存储目录");
+            throw new IllegalArgumentException("文件对象名越出存储目录");
         }
         return path;
     }
@@ -60,8 +62,8 @@ public final class LocalFileStorage implements FileStorage {
     static String newObjectName(final String originalName) {
         final int dot = originalName.lastIndexOf('.');
         final String extension = (dot < 0 ? "" : originalName.substring(dot + 1)).toLowerCase(Locale.ROOT);
-        if (!extension.matches("jpg|jpeg|png|gif")) {
-            throw new IllegalArgumentException("图片扩展名无效");
+        if (!MediaFileTypes.allowed(extension)) {
+            throw new IllegalArgumentException("文件扩展名无效");
         }
         return "media/" + YearMonth.now(Clock.systemUTC()).format(DateTimeFormatter.ofPattern("yyyyMM", Locale.ROOT))
                 + "/"

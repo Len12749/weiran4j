@@ -1,13 +1,16 @@
-import { Button, Card, Input, Modal, Pagination, Spin, Toast, Typography } from '@douyinfe/semi-ui';
-import { Copy, ImagePlus, RefreshCw, RotateCcw, Search as SearchIcon, Trash2 } from 'lucide-react';
+import { Button, Input, Modal, Select, Table, Tag, Toast, Typography } from '@douyinfe/semi-ui';
+import type { ColumnProps } from '@douyinfe/semi-ui/lib/es/table';
+import { FilePlus2, RefreshCw } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { useColumnSettings } from '@/components/ColumnSettings';
+import { fileUploadError, isImageUrl, openFileUrl } from '@/components/FileUpload';
 import { PageContainer } from '@/components/PageContainer';
 import { Permission } from '@/components/Permission';
-import { SearchToolbar } from '@/components/SearchToolbar';
-import { useDeleteSystemMediaImage, useSystemMediaImages, useUploadSystemImage } from '@/hooks/queries/system-media';
-import { useTableDefaults } from '@/hooks/useTableDefaults';
-import { ApiError } from '@/utils/request';
-import type { SystemMediaImageView } from '@/types/api';
+import { SearchToolbar, type SearchCondition } from '@/components/SearchToolbar';
+import { useActionsColumn, type TableAction } from '@/components/TableActions';
+import { useDeleteSystemMediaFile, useSystemMediaFiles, useUploadSystemFile } from '@/hooks/queries/system-media';
+import { tableScrollX, useTableDefaults } from '@/hooks/useTableDefaults';
+import type { SystemMediaFileQuery, SystemMediaFileView } from '@/types/api';
 import './media-library.css';
 
 interface UploadItem {
@@ -17,233 +20,134 @@ interface UploadItem {
     error: string | undefined;
 }
 
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
-const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif']);
-
-function validateImage(file: File): string | null {
-    const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
-    if (!IMAGE_EXTENSIONS.has(extension)) return '只支持 jpg、jpeg、png、gif 图片';
-    if (file.size > MAX_IMAGE_SIZE) return '图片不能超过 10 MB';
-    if (file.size === 0) return '图片文件为空';
-    return null;
-}
-
-function isReferenceConflict(error: unknown): error is ApiError {
-    return error instanceof ApiError && (error.status === 409 || error.code === 100004);
-}
-
-export default function SystemMediaLibraryPage() {
-    const inputRef = useRef<HTMLInputElement>(null);
-    const { pageSize: initialPageSize, pageSizeOpts } = useTableDefaults();
-    const [draft, setDraft] = useState('');
-    const [keyword, setKeyword] = useState('');
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(initialPageSize);
-    const [uploads, setUploads] = useState<UploadItem[]>([]);
-    const [preview, setPreview] = useState<SystemMediaImageView | null>(null);
-    const [deleting, setDeleting] = useState<SystemMediaImageView | null>(null);
-    const query = useSystemMediaImages({ page, pageSize, ...(keyword ? { keyword } : {}) });
-    const upload = useUploadSystemImage();
-    const remove = useDeleteSystemMediaImage();
-
-    const setItem = (key: string, update: Partial<UploadItem>) => {
-        setUploads((current) => current.map((item) => (item.key === key ? { ...item, ...update } : item)));
-    };
-
-    const uploadOne = async (item: UploadItem) => {
-        setItem(item.key, { state: 'uploading', error: undefined });
-        const validationError = validateImage(item.file);
-        if (validationError) {
-            setItem(item.key, { state: 'error', error: validationError });
-            return;
-        }
-        try {
-            await upload.mutateAsync(item.file);
-            setItem(item.key, { state: 'success', error: undefined });
-        } catch (error) {
-            setItem(item.key, { state: 'error', error: error instanceof Error ? error.message : '上传失败' });
-        }
-    };
-
-    const chooseFiles = (files: File[]) => {
-        const selected = files.map((file, index) => ({
-            key: `${Date.now()}-${index}-${file.name}-${file.lastModified}`,
-            file,
-            state: 'uploading' as const,
-            error: undefined,
-        }));
-        setUploads((current) => [...selected, ...current]);
-        void (async () => {
-            for (const item of selected) await uploadOne(item);
-        })();
-    };
-
-    const search = () => {
-        setKeyword(draft.trim());
-        setPage(1);
-    };
-
-    const resetSearch = () => {
-        setDraft('');
-        setKeyword('');
-        setPage(1);
-    };
-
-    const copyUrl = async (url: string) => {
-        try {
-            await navigator.clipboard.writeText(url);
-            Toast.success('图片链接已复制');
-        } catch {
-            Toast.error('复制失败，请检查浏览器剪贴板权限');
-        }
-    };
-
-    const confirmDelete = async () => {
-        if (!deleting) return;
-        try {
-            await remove.mutateAsync(deleting.id);
-            Toast.success('图片已删除');
-            setDeleting(null);
-        } catch (error) {
-            if (isReferenceConflict(error)) {
-                Toast.error('图片删除失败');
-            } else if (error instanceof Error) {
-                Toast.error(error.message);
-            } else {
-                Toast.error('删除失败');
-            }
-        }
-    };
-
-    return (
-        <PageContainer title="图片库">
-            <SearchToolbar
-                onSearch={search}
-                onReset={resetSearch}
-                onRefresh={() => void query.refetch()}
-                refreshing={query.isFetching}
-                conditions={keyword ? [{ key: 'keyword', label: '文件名', value: keyword, onRemove: resetSearch }] : []}
-                actions={
-                    <Permission code="system:media-library:upload">
-                        <Button type="primary" theme="solid" icon={<ImagePlus size={16} />} onClick={() => inputRef.current?.click()}>
-                            批量上传
-                        </Button>
-                    </Permission>
-                }
-            >
-                <Input
-                    prefix={<SearchIcon size={14} />}
-                    placeholder="按图片名称搜索"
-                    value={draft}
-                    onChange={setDraft}
-                    onEnterPress={search}
-                    showClear
-                    style={{ width: 240 }}
-                />
-            </SearchToolbar>
-            <input
-                ref={inputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/gif,.jpg,.jpeg,.png,.gif"
-                multiple
-                hidden
-                aria-label="选择图片"
-                onChange={(event) => {
-                    const files = Array.from(event.currentTarget.files ?? []);
-                    event.currentTarget.value = '';
-                    if (files.length) chooseFiles(files);
-                }}
-            />
-
-            {uploads.length > 0 && (
-                <section className="media-library__uploads" aria-label="上传结果">
-                    <div className="media-library__uploads-title">本次上传</div>
-                    {uploads.map((item) => (
-                        <div className="media-library__upload-row" key={item.key}>
-                            <span className="media-library__upload-name" title={item.file.name}>{item.file.name}</span>
-                            {item.state === 'uploading' ? (
-                                <Typography.Text type="tertiary">上传中</Typography.Text>
-                            ) : item.state === 'success' ? (
-                                <Typography.Text type="success">已上传</Typography.Text>
-                            ) : (
-                                <>
-                                    <Typography.Text type="danger">{item.error}</Typography.Text>
-                                    <Button size="small" icon={<RefreshCw size={14} />} onClick={() => void uploadOne(item)}>重试</Button>
-                                </>
-                            )}
-                        </div>
-                    ))}
-                </section>
-            )}
-
-            {query.isFetching && !query.data ? (
-                <div className="media-library__loading"><Spin /></div>
-            ) : query.isError && !query.data ? (
-                <div className="media-library__error">
-                    <Typography.Text type="danger">图片列表加载失败</Typography.Text>
-                    <Button icon={<RotateCcw size={14} />} onClick={() => void query.refetch()}>重试</Button>
-                </div>
-            ) : (
-                <>
-                    {query.data?.list.length ? (
-                        <div className="media-library__grid">
-                            {query.data.list.map((image) => (
-                                <Card key={image.id} className="media-library__card" bodyStyle={{ padding: 12 }}>
-                                    <button className="media-library__preview-button" type="button" onClick={() => setPreview(image)} aria-label={`预览 ${image.originalName}`}>
-                                        <img src={image.url} alt={image.originalName} loading="lazy" />
-                                    </button>
-                                    <Typography.Text ellipsis={{ showTooltip: true }} className="media-library__name">{image.originalName}</Typography.Text>
-                                    <Typography.Text type="tertiary" size="small">{formatBytes(image.size)} · {image.createdAt}</Typography.Text>
-                                    <div className="media-library__actions">
-                                        <Button size="small" icon={<Copy size={14} />} onClick={() => void copyUrl(image.url)}>复制链接</Button>
-                                        <Permission code="system:media-library:delete">
-                                            <Button size="small" type="danger" theme="borderless" icon={<Trash2 size={14} />} aria-label={`删除 ${image.originalName}`} onClick={() => setDeleting(image)} />
-                                        </Permission>
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="media-library__empty">{keyword ? '没有找到匹配的图片' : '还没有图片，上传后会显示在这里'}</div>
-                    )}
-                    <div className="media-library__pagination">
-                        <Pagination
-                            currentPage={page}
-                            pageSize={pageSize}
-                            total={query.data?.total ?? 0}
-                            pageSizeOpts={pageSizeOpts}
-                            onPageChange={setPage}
-                            onPageSizeChange={(size) => {
-                                setPageSize(size);
-                                setPage(1);
-                            }}
-                        />
-                    </div>
-                </>
-            )}
-
-            <Modal visible={preview !== null} title={preview?.originalName ?? '图片预览'} footer={null} onCancel={() => setPreview(null)}>
-                {preview && <img className="media-library__preview-image" src={preview.url} alt={preview.originalName} />}
-            </Modal>
-            <Modal
-                visible={deleting !== null}
-                title="删除图片"
-                onCancel={() => setDeleting(null)}
-                onOk={() => confirmDelete()}
-                okText="删除"
-                okButtonProps={{ type: 'danger', loading: remove.isPending }}
-                cancelText="取消"
-            >
-                <Typography.Paragraph>
-                    确定删除「{deleting?.originalName}」？
-                </Typography.Paragraph>
-            </Modal>
-        </PageContainer>
-    );
-}
+type Category = SystemMediaFileQuery['category'];
+const CATEGORY_OPTIONS = [
+    { label: '图片', value: 'image' },
+    { label: '文档', value: 'document' },
+    { label: '压缩包', value: 'archive' },
+];
 
 function formatBytes(size: number): string {
     if (size < 1024) return `${size} B`;
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export default function SystemMediaLibraryPage() {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const { tableProps, pageSize: initialPageSize, pageSizeOpts } = useTableDefaults();
+    const [draftKeyword, setDraftKeyword] = useState('');
+    const [draftCategory, setDraftCategory] = useState<Category>();
+    const [keyword, setKeyword] = useState('');
+    const [category, setCategory] = useState<Category>();
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(initialPageSize);
+    const [uploads, setUploads] = useState<UploadItem[]>([]);
+    const [preview, setPreview] = useState<SystemMediaFileView | null>(null);
+    const [deleting, setDeleting] = useState<SystemMediaFileView | null>(null);
+    const query = useSystemMediaFiles({ page, pageSize, ...(keyword ? { keyword } : {}), ...(category ? { category } : {}) });
+    const upload = useUploadSystemFile();
+    const remove = useDeleteSystemMediaFile();
+
+    const search = () => { setKeyword(draftKeyword.trim()); setCategory(draftCategory); setPage(1); };
+    const reset = () => { setDraftKeyword(''); setDraftCategory(undefined); setKeyword(''); setCategory(undefined); setPage(1); };
+    const conditions: SearchCondition[] = [
+        ...(keyword ? [{ key: 'keyword', label: '文件名', value: keyword, onRemove: () => { setKeyword(''); setDraftKeyword(''); setPage(1); } }] : []),
+        ...(category ? [{ key: 'category', label: '文件类型', value: CATEGORY_OPTIONS.find((option) => option.value === category)?.label ?? category, onRemove: () => { setCategory(undefined); setDraftCategory(undefined); setPage(1); } }] : []),
+    ];
+
+    const uploadOne = async (item: UploadItem) => {
+        setUploads((current) => current.map((row) => row.key === item.key ? { ...row, state: 'uploading', error: undefined } : row));
+        const error = fileUploadError(item.file);
+        if (error) {
+            setUploads((current) => current.map((row) => row.key === item.key ? { ...row, state: 'error', error } : row));
+            return;
+        }
+        try {
+            await upload.mutateAsync(item.file);
+            setUploads((current) => current.map((row) => row.key === item.key ? { ...row, state: 'success' } : row));
+        } catch (cause) {
+            setUploads((current) => current.map((row) => row.key === item.key ? { ...row, state: 'error', error: cause instanceof Error ? cause.message : '上传失败' } : row));
+        }
+    };
+    const chooseFiles = (files: File[]) => {
+        const selected: UploadItem[] = files.map((file, index) => ({ key: `${Date.now()}-${index}-${file.name}`, file, state: 'uploading', error: undefined }));
+        setUploads((current) => [...selected, ...current]);
+        void (async () => { for (const item of selected) await uploadOne(item); })();
+    };
+    const copyUrl = async (url: string) => {
+        try { await navigator.clipboard.writeText(url); Toast.success('链接已复制'); }
+        catch { Toast.error('复制失败，请检查浏览器剪贴板权限'); }
+    };
+    const deleteFile = async () => {
+        if (!deleting) return;
+        try {
+            await remove.mutateAsync(deleting.id);
+            Toast.success('文件已删除');
+            setDeleting(null);
+        } catch (cause) { Toast.error(cause instanceof Error ? cause.message : '删除失败'); }
+    };
+
+    const columns: ColumnProps<SystemMediaFileView>[] = [
+        { title: 'ID', dataIndex: 'id', width: 90 },
+        { title: '文件', dataIndex: 'originalName', width: 320, render: (_: unknown, row) => <div className="media-library__file-cell">
+            {isImageUrl(row.url) ? <img src={row.url} alt="" loading="lazy" /> : <span className="media-library__file-icon">文件</span>}
+            <span title={row.originalName}>{row.originalName}</span>
+        </div> },
+        { title: '类型', dataIndex: 'category', width: 90, render: (value: string) => CATEGORY_OPTIONS.find((option) => option.value === value)?.label ?? value },
+        { title: '大小', dataIndex: 'size', width: 110, render: (value: number) => formatBytes(value) },
+        { title: '引用位置', dataIndex: 'references', width: 290, render: (_: unknown, row) => row.references.length
+            ? <div className="media-library__references">{row.references.map((location) => <Tag key={location}>{location}</Tag>)}</div>
+            : <Typography.Text type="tertiary">未发现引用</Typography.Text> },
+        { title: '上传时间', dataIndex: 'createdAt', width: 190 },
+        { title: '操作', dataIndex: 'actions', width: 210, fixed: 'right' },
+    ];
+    const actionsOf = (row: SystemMediaFileView): TableAction[] => [
+        { key: 'open', label: row.category === 'image' ? '预览' : '打开/下载', onClick: () => row.category === 'image' ? setPreview(row) : openFileUrl(row.url) },
+        { key: 'copy', label: '复制链接', onClick: () => void copyUrl(row.url) },
+        { key: 'delete', label: '删除', danger: true, disabled: row.references.length > 0, permission: 'system:media-library:delete', onClick: () => setDeleting(row) },
+    ];
+    const { columns: settledColumns, columnSettings } = useColumnSettings('system/media-library', columns);
+    const { columns: tableColumns } = useActionsColumn(settledColumns, actionsOf);
+
+    return <PageContainer title="资源库">
+        <SearchToolbar
+            tools={columnSettings}
+            onSearch={search}
+            onReset={reset}
+            onRefresh={() => void query.refetch()}
+            refreshing={query.isFetching}
+            conditions={conditions}
+            actions={<Permission code="system:media-library:upload"><Button type="primary" theme="solid" icon={<FilePlus2 size={16} />} onClick={() => inputRef.current?.click()}>上传文件</Button></Permission>}
+        >
+            <Input placeholder="按文件名搜索" value={draftKeyword} onChange={setDraftKeyword} onEnterPress={search} showClear style={{ width: 210 }} />
+            <Select placeholder="文件类型" value={draftCategory} onChange={(value) => setDraftCategory(value as Category)} optionList={CATEGORY_OPTIONS} showClear style={{ width: 130 }} />
+        </SearchToolbar>
+        <input ref={inputRef} type="file" multiple hidden aria-label="选择文件" onChange={(event) => { const files = Array.from(event.currentTarget.files ?? []); event.currentTarget.value = ''; chooseFiles(files); }} />
+        {uploads.length > 0 && <section className="media-library__uploads" aria-label="上传结果">
+            <div className="media-library__uploads-title">本次上传 · 单文件不超过 10 MB</div>
+            {uploads.map((item) => <div className="media-library__upload-row" key={item.key}>
+                <span className="media-library__upload-name" title={item.file.name}>{item.file.name}</span>
+                {item.state === 'uploading' ? <Typography.Text type="tertiary">上传中</Typography.Text>
+                    : item.state === 'success' ? <Typography.Text type="success">已上传</Typography.Text>
+                        : <><Typography.Text type="danger">{item.error}</Typography.Text><Button size="small" icon={<RefreshCw size={14} />} onClick={() => void uploadOne(item)}>重试</Button></>}
+            </div>)}
+        </section>}
+        <Table<SystemMediaFileView>
+            {...tableProps}
+            rowKey="id"
+            columns={tableColumns}
+            dataSource={query.data?.list ?? []}
+            loading={query.isFetching}
+            scroll={{ x: tableScrollX(tableColumns) }}
+            pagination={{ currentPage: page, pageSize, pageSizeOpts, total: query.data?.total ?? 0, showSizeChanger: true, showTotal: true, onChange: (nextPage, nextSize) => { setPage(nextPage); setPageSize(nextSize); } }}
+        />
+        {query.isError && <Button onClick={() => void query.refetch()}>加载失败，点击重试</Button>}
+        <Modal visible={preview !== null} title={preview?.originalName ?? '图片预览'} footer={null} onCancel={() => setPreview(null)}>
+            {preview && <img className="media-library__preview-image" src={preview.url} alt={preview.originalName} />}
+        </Modal>
+        <Modal visible={deleting !== null} title="删除文件" onCancel={() => setDeleting(null)} onOk={() => void deleteFile()} okText="删除" okButtonProps={{ type: 'danger', loading: remove.isPending }}>
+            <Typography.Paragraph>确定删除「{deleting?.originalName}」？</Typography.Paragraph>
+        </Modal>
+    </PageContainer>;
 }

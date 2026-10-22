@@ -2,40 +2,40 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { toQueryString } from '@/lib/query';
 import { http } from '@/utils/request';
 import type {
-    SystemMediaImageQuery,
-    SystemMediaImageUpload,
-    SystemMediaImageView,
+    SystemMediaFileQuery,
+    SystemMediaFileUpload,
+    SystemMediaFileView,
     PageResult,
 } from '@/types/api';
 
 export const systemMediaKeys = {
     all: ['system-media'] as const,
-    page: (query: SystemMediaImageQuery) => [...systemMediaKeys.all, query] as const,
+    page: (query: SystemMediaFileQuery) => [...systemMediaKeys.all, query] as const,
 };
 
-export function uploadSystemImage(file: File) {
+export function uploadSystemFile(file: File) {
     const body = new FormData();
     body.append('file', file);
-    return http.post<SystemMediaImageUpload>('/api-backend/system/media/uploadImage', body);
+    return http.post<SystemMediaFileUpload>('/api-backend/system/media/uploadFile', body);
 }
 
-export function useSystemMediaImages(query: SystemMediaImageQuery) {
+export function useSystemMediaFiles(query: SystemMediaFileQuery) {
     return useQuery({
         queryKey: systemMediaKeys.page(query),
-        queryFn: () => http.get<PageResult<SystemMediaImageView>>(`/api-backend/system/mediaLibrary/list${toQueryString(query)}`),
+        queryFn: () => http.get<PageResult<SystemMediaFileView>>(`/api-backend/system/mediaLibrary/list${toQueryString(query)}`),
         placeholderData: keepPreviousData,
     });
 }
 
-export function useUploadSystemImage() {
+export function useUploadSystemFile() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: uploadSystemImage,
+        mutationFn: uploadSystemFile,
         onSuccess: () => queryClient.invalidateQueries({ queryKey: systemMediaKeys.all }),
     });
 }
 
-export function useDeleteSystemMediaImage() {
+export function useDeleteSystemMediaFile() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (id: number) => http.delete<null>(`/api-backend/system/mediaLibrary/delete/${id}`, { silent: true }),

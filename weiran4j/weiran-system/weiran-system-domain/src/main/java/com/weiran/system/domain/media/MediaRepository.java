@@ -10,7 +10,11 @@ public interface MediaRepository {
 
     MediaAsset save(MediaAsset asset);
 
-    PageResult<MediaAsset> page(@Nullable String keyword, PageQuery pageQuery);
+    PageResult<MediaAsset> page(@Nullable String keyword, @Nullable String category, PageQuery pageQuery);
+
+    default PageResult<MediaAsset> page(final @Nullable String keyword, final PageQuery pageQuery) {
+        return this.page(keyword, null, pageQuery);
+    }
 
     Optional<MediaAsset> findById(long id);
 

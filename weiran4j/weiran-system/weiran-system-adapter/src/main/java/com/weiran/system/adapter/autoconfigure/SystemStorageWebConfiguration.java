@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/** 本地开发模式下提供已上传图片的静态访问。 */
+/** 本地开发模式下提供已上传文件的静态访问。 */
 @Configuration
 @ConditionalOnProperty(prefix = "weiran.storage", name = "mode", havingValue = "local")
 public class SystemStorageWebConfiguration implements WebMvcConfigurer {

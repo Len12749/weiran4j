@@ -38,7 +38,7 @@ const FIELD_OPTIONS = [
     { label: '开关', value: 'switch' },
     { label: '下拉选择', value: 'select' },
     { label: 'JSON', value: 'json' },
-    { label: '单图上传', value: 'image' },
+    { label: '单文件上传', value: 'file' },
     { label: '富文本', value: 'richtext' },
 ];
 

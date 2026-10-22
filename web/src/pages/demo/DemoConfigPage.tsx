@@ -1,55 +1,98 @@
+import { Button, Spin, Toast, Typography } from '@douyinfe/semi-ui';
 import { useState } from 'react';
-import { ImageUpload } from '@/components/ImageUpload';
+import { Link } from 'react-router-dom';
+import { FileUpload } from '@/components/FileUpload';
 import { NavListItem, NavListPanel } from '@/components/NavListPanel';
 import { PageContainer } from '@/components/PageContainer';
 import { SystemConfigGroupForm } from '@/components/SystemConfigGroupForm';
+import { useConfigAll, useSaveConfig } from '@/hooks/queries/configs';
+import { usePermission } from '@/hooks/usePermission';
 import type { ConfigView } from '@/types/api';
 import './demo.css';
 
-const CREATED_AT = '2026-10-21 00:00:00';
+const DEMO_PREFIX = 'system.demo.';
+const MULTI_FILE_KEY = 'system.demo.images';
 
-const EXAMPLES: ConfigView[] = [
-    { id: 1, configKey: 'system.general.demo_input', configValue: 'Weiran Admin', configType: 'string', groupKey: 'general', fieldType: 'input', fieldOptions: null, required: true, description: '单行输入 · input', isBuiltin: false, createdAt: CREATED_AT, updatedAt: CREATED_AT },
-    { id: 2, configKey: 'system.general.demo_textarea', configValue: '多行文本示例\n可以输入较长的说明。', configType: 'string', groupKey: 'general', fieldType: 'textarea', fieldOptions: null, required: false, description: '多行文本 · textarea', isBuiltin: false, createdAt: CREATED_AT, updatedAt: CREATED_AT },
-    { id: 3, configKey: 'system.general.demo_number', configValue: '42', configType: 'number', groupKey: 'general', fieldType: 'number', fieldOptions: null, required: false, description: '数字 · number', isBuiltin: false, createdAt: CREATED_AT, updatedAt: CREATED_AT },
-    { id: 4, configKey: 'system.general.demo_switch', configValue: 'true', configType: 'boolean', groupKey: 'general', fieldType: 'switch', fieldOptions: null, required: false, description: '开关 · switch', isBuiltin: false, createdAt: CREATED_AT, updatedAt: CREATED_AT },
-    { id: 5, configKey: 'system.general.demo_select', configValue: 'local', configType: 'string', groupKey: 'general', fieldType: 'select', fieldOptions: '[{"label":"本地","value":"local"},{"label":"阿里云","value":"aliyun"}]', required: false, description: '下拉选择 · select', isBuiltin: false, createdAt: CREATED_AT, updatedAt: CREATED_AT },
-    { id: 6, configKey: 'system.general.demo_json', configValue: '{\n  "enabled": true,\n  "limit": 10\n}', configType: 'json', groupKey: 'general', fieldType: 'json', fieldOptions: null, required: false, description: 'JSON · json', isBuiltin: false, createdAt: CREATED_AT, updatedAt: CREATED_AT },
-    { id: 7, configKey: 'system.general.demo_image', configValue: '', configType: 'string', groupKey: 'general', fieldType: 'image', fieldOptions: null, required: false, description: '单图上传 · image', isBuiltin: false, createdAt: CREATED_AT, updatedAt: CREATED_AT },
-    { id: 8, configKey: 'system.general.demo_richtext', configValue: '<p><strong>富文本示例</strong>：支持标题、加粗和列表。</p>', configType: 'string', groupKey: 'general', fieldType: 'richtext', fieldOptions: null, required: false, description: '富文本 · richtext', isBuiltin: false, createdAt: CREATED_AT, updatedAt: CREATED_AT },
-];
+function readFiles(value: string): string[] {
+    try {
+        const parsed: unknown = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+    } catch {
+        return [];
+    }
+}
 
-function localImagePreview(file: File): Promise<string> {
-    return Promise.resolve(URL.createObjectURL(file));
+function DemoMultiFileField({ record, canEdit }: { record: ConfigView; canEdit: boolean }) {
+    const [files, setFiles] = useState(() => readFiles(record.configValue));
+    const [uploading, setUploading] = useState(false);
+    const save = useSaveConfig();
+
+    const saveFiles = async () => {
+        if (uploading) return;
+        await save.mutateAsync({
+            id: record.id,
+            body: {
+                configKey: record.configKey,
+                configValue: JSON.stringify(files),
+                configType: record.configType,
+                groupKey: record.groupKey,
+                fieldType: record.fieldType,
+                fieldOptions: record.fieldOptions,
+                required: record.required,
+                description: record.description,
+            },
+        });
+        Toast.success('多文件配置已保存');
+    };
+
+    return (
+        <section style={{ marginTop: 24 }}>
+            <strong>多文件上传 · FileUpload</strong>
+            <p className="demo-page__hint">选择或拖放后立即上传到 system 资源库；拖动文件或用箭头调整顺序。图片可缩放预览，其他文件在浏览器打开或下载。保存后 URL 数组写入 sys_config。</p>
+            <FileUpload multiple value={files} onChange={setFiles} disabled={!canEdit} onUploadingChange={setUploading} />
+            {canEdit && <Button style={{ marginTop: 12 }} type="primary" theme="solid" loading={save.isPending} disabled={uploading} onClick={() => void saveFiles().catch(() => undefined)}>保存多文件</Button>}
+            <p className="demo-page__hint">移除文件后请保存，以清除配置引用；未引用的文件仍在 <Link to="/system/media-library">资源库</Link> 中，可在那里永久删除。</p>
+        </section>
+    );
 }
 
 export default function DemoConfigPage() {
-    const [records, setRecords] = useState(EXAMPLES);
-    const [images, setImages] = useState<string[]>([]);
+    const query = useConfigAll();
+    const { hasPermission } = usePermission();
+    const records = (query.data ?? []).filter((record) => record.configKey.startsWith(DEMO_PREFIX));
+    const multiFile = records.find((record) => record.configKey === MULTI_FILE_KEY);
+    const fields = records.filter((record) => record.configKey !== MULTI_FILE_KEY);
+    const canEdit = hasPermission('system:config:update');
 
     return (
         <div className="config-groups-layout">
             <div className="config-groups-layout__master">
                 <NavListPanel
                     title="配置分组"
-                    dataSource={[{ key: 'general', label: '通用设置' }]}
+                    dataSource={[{ key: 'demo', label: '组件演示' }]}
                     renderItem={(group) => <NavListItem key={group.key} active primary={group.label} secondary={group.key} />}
                 />
             </div>
-            <PageContainer title="通用设置" extra={<span className="demo-page__hint">八种字段各一条；修改与保存仅影响当前页面</span>}>
-                <SystemConfigGroupForm
-                    records={records}
-                    canEdit
-                    showSettings={false}
-                    onEdit={() => undefined}
-                    onUploadImage={localImagePreview}
-                    onSave={(values) => setRecords((current) => current.map((record, index) => ({ ...record, configValue: values[index]?.configValue ?? record.configValue })))}
-                />
-                <div style={{ marginTop: 24 }}>
-                    <strong>多图上传 · ImageUpload</strong>
-                    <p className="demo-page__hint">拖入或一次选择多张图片；仅在当前页面预览。</p>
-                    <ImageUpload multiple value={images} onChange={setImages} onUpload={localImagePreview} />
-                </div>
+            <PageContainer title="组件演示配置" extra={<span className="demo-page__hint">local/test 示例数据，使用真实 system 配置和媒体接口</span>}>
+                {query.isPending ? <Spin /> : query.isError ? (
+                    <Typography.Text type="danger">配置读取失败；请确认账号具有系统配置查看权限。</Typography.Text>
+                ) : fields.length === 0 || !multiFile ? (
+                    <Typography.Text type="tertiary">演示配置尚未播种；请以 local/test profile 启动后端并应用 Flyway 迁移。</Typography.Text>
+                ) : (
+                    <>
+                        <SystemConfigGroupForm
+                            records={fields}
+                            canEdit={canEdit}
+                            showSettings={false}
+                            onEdit={() => undefined}
+                        />
+                        <DemoMultiFileField key={`${multiFile.id}:${multiFile.configValue}`} record={multiFile} canEdit={canEdit} />
+                        <details style={{ marginTop: 24 }}>
+                            <summary>查看已保存数据（从 sys_config 读取）</summary>
+                            <pre style={{ overflow: 'auto' }}>{JSON.stringify(records.map((record) => ({ key: record.configKey, value: record.configValue })), null, 2)}</pre>
+                        </details>
+                    </>
+                )}
             </PageContainer>
         </div>
     );

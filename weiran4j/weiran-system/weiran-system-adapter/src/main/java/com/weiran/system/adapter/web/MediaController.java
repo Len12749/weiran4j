@@ -7,7 +7,7 @@ import com.weiran.framework.log.OperationLog;
 import com.weiran.framework.page.PageQuery;
 import com.weiran.framework.page.PageResult;
 import com.weiran.framework.response.ApiResponse;
-import com.weiran.system.api.media.ImageUploadView;
+import com.weiran.system.api.media.FileUploadView;
 import com.weiran.system.api.media.MediaService;
 import com.weiran.system.api.media.MediaView;
 import java.io.IOException;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-/** 系统图片上传和媒体库管理接口。 */
+/** 系统文件上传和资源库管理接口。 */
 @RestController
 public class MediaController {
 
@@ -30,12 +30,12 @@ public class MediaController {
         this.service = service;
     }
 
-    @PostMapping("/api-backend/system/media/uploadImage")
+    @PostMapping({"/api-backend/system/media/uploadImage", "/api-backend/system/media/uploadFile"})
     @RequiresPermission("system:media-library:upload")
-    @OperationLog(module = "图片库", description = "上传图片")
-    public ImageUploadView upload(@RequestParam("file") final MultipartFile file) throws IOException {
+    @OperationLog(module = "资源库", description = "上传文件")
+    public FileUploadView upload(@RequestParam("file") final MultipartFile file) throws IOException {
         if (file.isEmpty() || file.getOriginalFilename() == null) {
-            throw BizException.badRequest("图片文件无效");
+            throw BizException.badRequest("文件无效");
         }
         return this.service.upload(
                 file.getOriginalFilename(),
@@ -49,13 +49,17 @@ public class MediaController {
     public PageResult<MediaView> page(
             @RequestParam(defaultValue = "1") final int page,
             @RequestParam(defaultValue = "20") final int pageSize,
-            @RequestParam(required = false) final @Nullable String keyword) {
-        return this.service.page(keyword, new PageQuery(page, pageSize));
+            @RequestParam(required = false) final @Nullable String keyword,
+            @RequestParam(required = false) final @Nullable String category) {
+        if (category != null && !category.matches("image|document|archive")) {
+            throw BizException.badRequest("文件类型无效");
+        }
+        return this.service.page(keyword, category, new PageQuery(page, pageSize));
     }
 
     @DeleteMapping("/api-backend/system/mediaLibrary/delete/{id}")
     @RequiresPermission("system:media-library:delete")
-    @OperationLog(module = "图片库", description = "删除图片")
+    @OperationLog(module = "资源库", description = "删除文件")
     public ApiResponse<Void> delete(@PathVariable final long id) {
         this.service.delete(id);
         return ApiResponse.ok();

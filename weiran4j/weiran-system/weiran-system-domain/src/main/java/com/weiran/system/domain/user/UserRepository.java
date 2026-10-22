@@ -23,6 +23,9 @@ public interface UserRepository {
     /** 按手机号查找。 */
     Optional<User> findByPhone(String phone);
 
+    /** 按资源 URL 批量查找使用该资源作为头像的用户 ID。 */
+    Map<String, List<Long>> findAvatarReferences(Collection<String> urls);
+
     /** 用户名是否已存在。 */
     boolean existsByUsername(String username);
 

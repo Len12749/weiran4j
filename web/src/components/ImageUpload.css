@@ -1,7 +1,0 @@
-.image-upload { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-.image-upload__list { display: flex; flex-wrap: wrap; gap: 8px; }
-.image-upload__item { display: flex; flex-direction: column; gap: 4px; }
-.image-upload__item img { width: 96px; height: 96px; object-fit: cover; border: 1px solid var(--semi-color-border); border-radius: 6px; }
-.image-upload__dropzone { display: flex; align-items: center; gap: 8px; min-width: 240px; min-height: 64px; padding: 12px; border: 1px dashed var(--semi-color-border); border-radius: 6px; cursor: pointer; }
-.image-upload__dropzone[aria-disabled='true'] { cursor: not-allowed; opacity: .55; }
-.image-upload__dropzone:not([aria-disabled='true']):hover { border-color: var(--semi-color-primary); }

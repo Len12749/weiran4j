@@ -78,6 +78,20 @@ public class MybatisUserRepository implements UserRepository {
     }
 
     @Override
+    public Map<String, List<Long>> findAvatarReferences(final Collection<String> urls) {
+        if (urls.isEmpty()) {
+            return Map.of();
+        }
+        return this.userMapper
+                .selectList(Wrappers.lambdaQuery(SysUserDO.class)
+                        .select(SysUserDO::getId, SysUserDO::getAvatar)
+                        .in(SysUserDO::getAvatar, urls))
+                .stream()
+                .collect(Collectors.groupingBy(
+                        SysUserDO::getAvatar, Collectors.mapping(SysUserDO::getId, Collectors.toList())));
+    }
+
+    @Override
     public boolean existsByUsername(final String username) {
         return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class).eq(SysUserDO::getUsername, username));
     }

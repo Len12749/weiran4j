@@ -3,6 +3,7 @@ package com.weiran.system.infrastructure.storage;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.model.ObjectMetadata;
+import com.weiran.system.domain.media.MediaFileTypes;
 import com.weiran.system.domain.storage.FileStorage;
 import com.weiran.system.domain.storage.FileStorage.StoredFile;
 import com.weiran.system.domain.storage.FileStorageException;
@@ -28,32 +29,29 @@ public final class OssFileStorage implements FileStorage, AutoCloseable {
         final String objectName = LocalFileStorage.newObjectName(originalName);
         final ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentLength(size);
-        final String extension =
-                originalName.substring(originalName.lastIndexOf('.') + 1).toLowerCase(java.util.Locale.ROOT);
-        metadata.setContentType(
-                switch (extension) {
-                    case "jpg", "jpeg" -> "image/jpeg";
-                    case "png" -> "image/png";
-                    case "gif" -> "image/gif";
-                    default -> "application/octet-stream";
-                });
+        final String extension = MediaFileTypes.extension(originalName);
+        metadata.setContentType(MediaFileTypes.contentType(extension));
+        if (!MediaFileTypes.image(extension) && !extension.equals("pdf") && !extension.equals("txt")) {
+            metadata.setContentDisposition("attachment");
+        }
         try {
             this.client.putObject(this.properties.bucket(), objectName, input, metadata);
         } catch (final RuntimeException ex) {
-            throw new FileStorageException("图片上传失败，请稍后重试", ex);
+            throw new FileStorageException("文件上传失败，请稍后重试", ex);
         }
         return new StoredFile(this.publicBaseUrl + "/" + objectName, objectName, size);
     }
 
     @Override
     public void delete(final String objectName) {
-        if (!Objects.requireNonNull(objectName).matches("media/[0-9]{6}/[0-9a-fA-F-]{36}\\.(jpg|jpeg|png|gif)")) {
-            throw new IllegalArgumentException("图片对象名无效");
+        if (!Objects.requireNonNull(objectName).matches("media/[0-9]{6}/[0-9a-fA-F-]{36}\\.[a-z0-9]{2,5}")
+                || !MediaFileTypes.allowed(MediaFileTypes.extension(objectName))) {
+            throw new IllegalArgumentException("文件对象名无效");
         }
         try {
             this.client.deleteObject(this.properties.bucket(), objectName);
         } catch (final RuntimeException ex) {
-            throw new FileStorageException("图片删除失败，请稍后重试", ex);
+            throw new FileStorageException("文件删除失败，请稍后重试", ex);
         }
     }
 

@@ -2,7 +2,7 @@ import { Button, Form, Space, Tag, Toast } from '@douyinfe/semi-ui';
 import type { FormApi } from '@douyinfe/semi-ui/lib/es/form';
 import { Settings } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
-import { ImageUpload } from '@/components/ImageUpload';
+import { FileUpload } from '@/components/FileUpload';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { useSaveConfig } from '@/hooks/queries/configs';
 import type { ConfigSaveRequest, ConfigView } from '@/types/api';
@@ -28,6 +28,29 @@ function toTextValue(value: unknown): string {
 
 function toStringValue(value: unknown): string {
     return typeof value === 'string' ? value : '';
+}
+
+function ConfigFileField({
+    value,
+    disabled,
+    onUpload,
+    onUploadingChange,
+    onChange,
+}: {
+    value: string;
+    disabled: boolean;
+    onUpload?: (file: File) => Promise<string>;
+    onUploadingChange: (active: boolean) => void;
+    onChange: (url: string) => void;
+}) {
+    const [currentValue, setCurrentValue] = useState(value);
+    return <FileUpload
+        value={currentValue}
+        disabled={disabled}
+        {...(onUpload ? { onUpload } : {})}
+        onUploadingChange={onUploadingChange}
+        onChange={(url) => { setCurrentValue(url); onChange(url); }}
+    />;
 }
 
 function validateField(record: ConfigView, value: unknown): string | null {
@@ -56,6 +79,7 @@ export function SystemConfigGroupForm({
     showSettings,
     onEdit,
     onSave,
+    onUploadFile,
     onUploadImage,
 }: {
     records: ConfigView[];
@@ -63,6 +87,7 @@ export function SystemConfigGroupForm({
     showSettings: boolean;
     onEdit: (record: ConfigView) => void;
     onSave?: (values: ConfigSaveRequest[]) => Promise<void> | void;
+    onUploadFile?: (file: File) => Promise<string>;
     onUploadImage?: (file: File) => Promise<string>;
 }) {
     const api = useRef<FormApi<Record<string, unknown>> | null>(null);
@@ -162,15 +187,15 @@ export function SystemConfigGroupForm({
                                 <Form.Select {...common} optionList={parseConfigFieldOptions(record.fieldOptions ?? '')} style={{ width: '100%' }} />
                             ) : record.fieldType === 'json' ? (
                                 <Form.TextArea {...common} rows={5} maxLength={4096} />
-                            ) : record.fieldType === 'image' ? (
+                            ) : record.fieldType === 'file' || record.fieldType === 'image' ? (
                                 <div>
                                     <Form.Input field={field} style={{ display: 'none' }} />
                                     <div style={{ marginBottom: 8 }}>{label}</div>
-                                    <ImageUpload
+                                    <ConfigFileField
                                         key={`${record.id}:${record.configValue}`}
                                         value={toStringValue(initValues[field])}
                                         disabled={!canEdit}
-                                        {...(onUploadImage ? { onUpload: onUploadImage } : {})}
+                                        {...(onUploadFile ? { onUpload: onUploadFile } : {})}
                                         onUploadingChange={(active) => setFieldUploading(record.id, active)}
                                         onChange={(url) => {
                                             api.current?.setValue(field, url);
