@@ -15,7 +15,7 @@
 
 本地短信模式需要把 `sms.system_tpl.captcha_local` 配置为包含 `${code}` 的短信正文，例如 `你的验证码是 ${code} , 5 分钟有效, 请不要告知他人`。发送时会将占位符替换为验证码，并把完整正文写入应用日志供联调。开启 `system.user.enable_phone_login` 后，登录页才会在发送器和模板均就绪时显示手机号登录。
 
-本仓库的 `weiran-app` 在 local/test profile 播种组件演示菜单；生产环境默认不加载。演示页的「配置表单」使用同一套表单展示八种字段类型各一条；示例值只保存在当前页面，图片在浏览器内预览。
+本仓库的可选 `weiran-demo` 模块在 local/test profile 播种组件演示菜单；下游可省略模块与 `web/src/pages/demo/`，生产环境默认不加载。演示页的「配置表单」使用同一套表单展示八种字段类型各一条；示例值只保存在当前页面，图片在浏览器内预览。
 
 匿名接口 `/api-backend/n/system/config/getPublic/{key}` 只允许 `system.general.title`。它不会自动改变前端显示；标题仍由构建变量 `VITE_APP_TITLE` 提供。
 

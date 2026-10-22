@@ -33,7 +33,7 @@
 | 后端模块 | `weiran-system`；`MenuController` → `MenuApplicationService` → `MybatisMenuRepository` |
 | 接口前缀 | `/api/menus`（管理）；`/api/auth/menus`（当前用户可见菜单树，`AuthController`） |
 | 权限码 | `system:menu:list` · `system:menu:create` · `system:menu:update` · `system:menu:delete` |
-| 种子 | 通用菜单 id 1–13 固定；组件演示 id 14–19 仅由 `weiran-app` 在 local/test 播种；按钮 id 100–125；前端与测试按 ID 引用 |
+| 种子 | 通用菜单 id 1–13 固定；组件演示 id 14–19 仅由可选 `weiran-demo` 在 local/test 播种；按钮 id 100–125；前端与测试按 ID 引用 |
 
 ## 1. 列表
 
@@ -123,6 +123,7 @@
 新条目插在本节最上方（按日期倒序，新在上）。
 
 **2026-10-22**
+- 演示菜单种子从 `weiran-app` 资源目录提取为可选 `weiran-demo` 模块，下游可不复制该模块及 `web/src/pages/demo/`。
 - 组件演示菜单从通用基座迁至 `weiran-app` 的 local/test 专用 Flyway 路径；通用系统迁移删除历史演示菜单，生产环境不再展示。
 
 **2026-10-21**

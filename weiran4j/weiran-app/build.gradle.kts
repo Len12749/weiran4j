@@ -38,6 +38,11 @@ dependencies {
     runtimeOnly("com.mysql:mysql-connector-j")
     developmentOnly(platform(project(":weiran-dependencies")))
     developmentOnly("org.springframework.boot:spring-boot-devtools")
+    // 可选演示种子：bootRun 与集成测试可见，生产 bootJar 不包含；下游可省略整个 weiran-demo 目录。
+    if (findProject(":weiran-demo") != null) {
+        developmentOnly(project(":weiran-demo"))
+        testRuntimeOnly(project(":weiran-demo"))
+    }
 
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:junit-jupiter")
