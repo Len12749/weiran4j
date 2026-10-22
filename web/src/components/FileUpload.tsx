@@ -1,32 +1,29 @@
 import { Button, ImagePreview, Toast } from '@douyinfe/semi-ui';
-import { ArrowLeft, ArrowRight, Eye, FileIcon, FilePlus2, RotateCcw, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, ArrowRight, Download, Eye, FilePlus2, Play, RotateCcw, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import { useUploadSystemFile } from '@/hooks/queries/system-media';
+import { openFileUrl } from '@/lib/file-url';
+import { FileTypeIcon, fileExtension, isImageFile, isPdfFile, isVideoFile } from './FileTypeIcon';
+import { PdfPreview } from './PdfPreview';
+import { VideoPreview } from './VideoPreview';
 import './FileUpload.css';
 
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp']);
-const FILE_EXTENSIONS = new Set([...IMAGE_EXTENSIONS, '.pdf', '.txt', '.csv', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip']);
+const VIDEO_EXTENSIONS = new Set(['.mp4', '.webm', '.mov']);
+const FILE_EXTENSIONS = new Set([...IMAGE_EXTENSIONS, ...VIDEO_EXTENSIONS, '.pdf', '.txt', '.csv', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip']);
 export const MAX_FILE_SIZE_MB = 10;
+export const MAX_VIDEO_SIZE_MB = 100;
 export const DEFAULT_MAX_FILES = 9;
 
 export function isImageUrl(url: string): boolean {
-    return IMAGE_EXTENSIONS.has(`.${url.split(/[?#]/)[0]?.split('.').pop()?.toLowerCase() ?? ''}`);
-}
-
-export function openFileUrl(url: string): void {
-    try {
-        const target = new URL(url, window.location.origin);
-        if (!['http:', 'https:'].includes(target.protocol)) throw new Error('invalid protocol');
-        window.open(target.href, '_blank', 'noopener,noreferrer');
-    } catch {
-        Toast.error('文件地址无效');
-    }
+    return isImageFile(url);
 }
 
 export function fileUploadError(file: File): string | null {
-    const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+    const extension = `.${fileExtension(file.name)}`;
     if (!FILE_EXTENSIONS.has(extension)) return '不支持该文件类型';
-    if (file.size === 0 || file.size > MAX_FILE_SIZE_MB * 1024 * 1024) return `文件须大于 0 且不超过 ${MAX_FILE_SIZE_MB} MB`;
+    const maxSize = VIDEO_EXTENSIONS.has(extension) ? MAX_VIDEO_SIZE_MB : MAX_FILE_SIZE_MB;
+    if (file.size === 0 || file.size > maxSize * 1024 * 1024) return `文件须大于 0 且不超过 ${maxSize} MB`;
     return null;
 }
 
@@ -61,7 +58,10 @@ export function FileUpload(props: FileUploadProps) {
     const [uploading, setUploading] = useState(false);
     const [failed, setFailed] = useState<File[]>([]);
     const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+    const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
+    const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
     const [dragIndex, setDragIndex] = useState<number | null>(null);
+    const [insertPosition, setInsertPosition] = useState<{ index: number; side: 'before' | 'after' } | null>(null);
     const urls = useMemo(() => props.multiple ? props.value : props.value ? [props.value] : [], [props.multiple, props.value]);
     const urlsRef = useRef(urls);
 
@@ -85,6 +85,13 @@ export function FileUpload(props: FileUploadProps) {
         if (!moved) return;
         next.splice(to, 0, moved);
         updateUrls(next);
+    };
+
+    const insertionAt = (event: DragEvent<HTMLDivElement>, index: number) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const side: 'before' | 'after' = event.clientX < rect.left + rect.width / 2 ? 'before' : 'after';
+        const slot = index + (side === 'after' ? 1 : 0);
+        return { side, slot, to: slot > (dragIndexRef.current ?? -1) ? slot - 1 : slot };
     };
 
     const uploadFiles = async (files: File[]) => {
@@ -123,39 +130,48 @@ export function FileUpload(props: FileUploadProps) {
 
     return (
         <div className="file-upload">
-            <div className="file-upload__grid">
+            <div className="file-upload__grid" onDragLeave={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect();
+                if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) setInsertPosition(null);
+            }}>
                 {urls.map((url, index) => (
                     <div
-                        className={`file-upload__item${dragIndex === index ? ' file-upload__item--dragging' : ''}`}
+                        className={`file-upload__item${dragIndex === index ? ' file-upload__item--dragging' : ''}${insertPosition?.index === index ? ` file-upload__item--insert-${insertPosition.side}` : ''}`}
                         key={`${url}:${index}`}
                         draggable={props.multiple && !disabled && !uploading}
                         onDragStart={(event) => {
                             dragIndexRef.current = index;
                             setDragIndex(index);
+                            setInsertPosition(null);
                             event.dataTransfer.effectAllowed = 'move';
                             event.dataTransfer.setData('text/plain', String(index));
                         }}
                         onDragOver={(event) => {
                             event.preventDefault();
                             event.dataTransfer.dropEffect = dragIndexRef.current !== null ? 'move' : 'copy';
+                            if (dragIndexRef.current !== null) {
+                                const insertion = insertionAt(event, index);
+                                setInsertPosition(insertion.to === dragIndexRef.current ? null : { index, side: insertion.side });
+                            }
                         }}
                         onDrop={(event) => {
                             event.preventDefault();
-                            if (dragIndexRef.current !== null) moveFile(dragIndexRef.current, index);
+                            if (dragIndexRef.current !== null) moveFile(dragIndexRef.current, insertionAt(event, index).to);
                             else void uploadFiles(Array.from(event.dataTransfer.files));
                             dragIndexRef.current = null;
                             setDragIndex(null);
+                            setInsertPosition(null);
                         }}
-                        onDragEnd={() => { dragIndexRef.current = null; setDragIndex(null); }}
+                        onDragEnd={() => { dragIndexRef.current = null; setDragIndex(null); setInsertPosition(null); }}
                         title={props.multiple ? '拖动文件可调整顺序' : undefined}
                     >
                         <div className="file-upload__frame">{isImageUrl(url)
                             ? <img src={url} alt={`已上传图片 ${index + 1}`} />
-                            : <FileIcon size={30} aria-label={`文件 ${index + 1}`} />}</div>
+                            : <FileTypeIcon name={url} />}</div>
                         <div className="file-upload__actions">
                             {props.multiple && <Button size="small" theme="borderless" icon={<ArrowLeft size={14} />} aria-label={`前移文件 ${index + 1}`} disabled={disabled || uploading || index === 0} onClick={() => moveFile(index, index - 1)} />}
-                            <Button size="small" icon={<Eye size={14} />} aria-label={`${isImageUrl(url) ? '预览图片' : '浏览或下载文件'} ${index + 1}`} onClick={() => isImageUrl(url) ? setPreviewIndex(index) : openFileUrl(url)} />
-                            <Button size="small" icon={<Trash2 size={14} />} aria-label={`移除文件 ${index + 1}`} disabled={disabled || uploading} onClick={() => updateUrls(urlsRef.current.filter((_, item) => item !== index))} />
+                            <Button size="small" icon={isImageUrl(url) || isPdfFile(url) ? <Eye size={14} /> : isVideoFile(url) ? <Play size={14} /> : <Download size={14} />} aria-label={`${isImageUrl(url) ? '预览图片' : isPdfFile(url) ? '预览 PDF' : isVideoFile(url) ? '播放视频' : '下载文件'} ${index + 1}`} onClick={() => isImageUrl(url) ? setPreviewIndex(index) : isPdfFile(url) ? setPreviewPdfUrl(url) : isVideoFile(url) ? setPreviewVideoUrl(url) : openFileUrl(url)} />
+                            <Button size="small" type="danger" theme="borderless" icon={<Trash2 size={14} />} aria-label={`移除文件 ${index + 1}`} disabled={disabled || uploading} onClick={() => updateUrls(urlsRef.current.filter((_, item) => item !== index))} />
                             {props.multiple && <Button size="small" theme="borderless" icon={<ArrowRight size={14} />} aria-label={`后移文件 ${index + 1}`} disabled={disabled || uploading || index === urls.length - 1} onClick={() => moveFile(index, index + 1)} />}
                         </div>
                     </div>
@@ -168,14 +184,25 @@ export function FileUpload(props: FileUploadProps) {
                     aria-disabled={disabled || uploading}
                     onClick={() => { if (!disabled && !uploading) inputRef.current?.click(); }}
                     onKeyDown={(event) => { if ((event.key === 'Enter' || event.key === ' ') && !disabled && !uploading) { event.preventDefault(); inputRef.current?.click(); } }}
-                    onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = dragIndexRef.current !== null ? 'none' : 'copy'; }}
-                    onDrop={(event) => { event.preventDefault(); if (dragIndexRef.current === null) void uploadFiles(Array.from(event.dataTransfer.files)); }}
+                    onDragOver={(event) => {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = dragIndexRef.current !== null ? 'move' : 'copy';
+                        if (dragIndexRef.current !== null) setInsertPosition(dragIndexRef.current === urls.length - 1 ? null : { index: urls.length - 1, side: 'after' });
+                    }}
+                    onDrop={(event) => {
+                        event.preventDefault();
+                        if (dragIndexRef.current !== null) moveFile(dragIndexRef.current, urls.length - 1);
+                        else void uploadFiles(Array.from(event.dataTransfer.files));
+                        dragIndexRef.current = null;
+                        setDragIndex(null);
+                        setInsertPosition(null);
+                    }}
                 >
                     <FilePlus2 size={20} />
                     <span>{uploading ? '上传中…' : urls.length && !props.multiple ? '更换文件' : '上传文件'}</span>
                 </div>}
             </div>
-            {props.multiple && <small>每个文件不超过 {MAX_FILE_SIZE_MB} MB，最多 {maxFiles} 个（当前 {urls.length}/{maxFiles}）</small>}
+            {props.multiple && <small>普通文件不超过 {MAX_FILE_SIZE_MB} MB，视频不超过 {MAX_VIDEO_SIZE_MB} MB；最多 {maxFiles} 个（当前 {urls.length}/{maxFiles}）</small>}
             <input ref={inputRef} hidden type="file" accept={[...FILE_EXTENSIONS].join(',')} multiple={props.multiple} onChange={(event) => { void uploadFiles(Array.from(event.currentTarget.files ?? [])); event.currentTarget.value = ''; }} />
             {failed.length > 0 && (
                 <Button size="small" icon={<RotateCcw size={14} />} disabled={disabled || uploading} onClick={() => void uploadFiles(failed)}>
@@ -183,6 +210,8 @@ export function FileUpload(props: FileUploadProps) {
                 </Button>
             )}
             {previewIndex !== null && urls[previewIndex] && <ImagePreview src={urls.filter(isImageUrl)} visible currentIndex={urls.filter(isImageUrl).indexOf(urls[previewIndex])} initialZoom={1} onChange={(index) => setPreviewIndex(urls.indexOf(urls.filter(isImageUrl)[index] ?? ''))} onVisibleChange={(visible) => { if (!visible) setPreviewIndex(null); }} />}
+            <VideoPreview url={previewVideoUrl} title="视频预览" onClose={() => setPreviewVideoUrl(null)} />
+            <PdfPreview url={previewPdfUrl} title="PDF 预览" onClose={() => setPreviewPdfUrl(null)} />
         </div>
     );
 }

@@ -48,7 +48,7 @@ function DemoMultiFileField({ record, canEdit }: { record: ConfigView; canEdit: 
     return (
         <section style={{ marginTop: 24 }}>
             <strong>多文件上传 · FileUpload</strong>
-            <p className="demo-page__hint">选择或拖放后立即上传到 system 资源库；拖动文件或用箭头调整顺序。图片可缩放预览，其他文件在浏览器打开或下载。保存后 URL 数组写入 sys_config。</p>
+            <p className="demo-page__hint">选择或拖放后立即上传到 system 资源库；拖动时显示插入位置，也可用箭头调整顺序。图片可缩放预览，PDF 可在当前页面预览，视频可在当前页面播放，其他文件点击下载图标。保存后 URL 数组写入 sys_config。</p>
             <FileUpload multiple value={files} onChange={setFiles} disabled={!canEdit} onUploadingChange={setUploading} />
             {canEdit && <Button style={{ marginTop: 12 }} type="primary" theme="solid" loading={save.isPending} disabled={uploading} onClick={() => void saveFiles().catch(() => undefined)}>保存多文件</Button>}
             <p className="demo-page__hint">移除文件后请保存，以清除配置引用；未引用的文件仍在 <Link to="/system/media-library">资源库</Link> 中，可在那里永久删除。</p>

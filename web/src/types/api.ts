@@ -456,13 +456,13 @@ export interface SystemMediaFileView {
     url: string;
     size: number;
     createdAt: string;
-    category: 'image' | 'document' | 'archive';
+    category: 'image' | 'video' | 'document' | 'archive';
     references: string[];
 }
 
 export interface SystemMediaFileQuery extends PageQuery {
     keyword?: string;
-    category?: 'image' | 'document' | 'archive';
+    category?: 'image' | 'video' | 'document' | 'archive';
 }
 
 /* ---------- 日志 ---------- */

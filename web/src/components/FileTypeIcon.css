@@ -1,0 +1,10 @@
+.file-type-icon { box-sizing: border-box; display: inline-flex; flex: none; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 8px; color: var(--file-icon-color); background: var(--file-icon-bg); }
+.file-type-icon__label { font-size: 10px; line-height: 1; font-weight: 700; letter-spacing: .02em; }
+.file-type-icon--video { --file-icon-color: #7045ba; --file-icon-bg: #f2ebff; }
+.file-type-icon--pdf { --file-icon-color: #d63838; --file-icon-bg: #fff0ee; }
+.file-type-icon--word { --file-icon-color: #185abd; --file-icon-bg: #eaf2ff; }
+.file-type-icon--presentation { --file-icon-color: #c65b25; --file-icon-bg: #fff0e7; }
+.file-type-icon--spreadsheet { --file-icon-color: #147d4c; --file-icon-bg: #e7f7ee; }
+.file-type-icon--archive { --file-icon-color: #92660c; --file-icon-bg: #fff5d9; }
+.file-type-icon--text { --file-icon-color: #566471; --file-icon-bg: #eef2f5; }
+.file-type-icon--file { --file-icon-color: #566471; --file-icon-bg: #eef2f5; }

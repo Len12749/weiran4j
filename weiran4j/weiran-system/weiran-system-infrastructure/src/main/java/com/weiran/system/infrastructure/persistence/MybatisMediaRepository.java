@@ -52,6 +52,8 @@ public class MybatisMediaRepository implements MediaRepository {
                 .orderByDesc(SysMediaDO::getId);
         if ("image".equals(category)) {
             query.apply("LOWER(original_name) REGEXP '[.](jpg|jpeg|png|gif|webp)$'");
+        } else if ("video".equals(category)) {
+            query.apply("LOWER(original_name) REGEXP '[.](mp4|webm|mov)$'");
         } else if ("archive".equals(category)) {
             query.apply("LOWER(original_name) REGEXP '[.]zip$'");
         } else if ("document".equals(category)) {

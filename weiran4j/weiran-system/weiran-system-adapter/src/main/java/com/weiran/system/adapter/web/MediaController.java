@@ -51,7 +51,7 @@ public class MediaController {
             @RequestParam(defaultValue = "20") final int pageSize,
             @RequestParam(required = false) final @Nullable String keyword,
             @RequestParam(required = false) final @Nullable String category) {
-        if (category != null && !category.matches("image|document|archive")) {
+        if (category != null && !category.matches("image|video|document|archive")) {
             throw BizException.badRequest("文件类型无效");
         }
         return this.service.page(keyword, category, new PageQuery(page, pageSize));
