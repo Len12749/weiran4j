@@ -20,17 +20,17 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
     @Test
     @DisplayName("sendSms：格式错误 400；验证码不回显；60 秒内重发 429")
     void sendSms() {
-        CqtAccountIT.assertPortalError(this.get("/api-web/auth/sendSms?phone=1234", null), 400, "手机号格式不正确");
+        CqtAccountIT.assertPortalError(this.get("/api-web/n/auth/sendSms?phone=1234", null), 400, "手机号格式不正确");
 
         final String phone = CqtIntegrationTestSupport.uniquePhone();
-        final ResponseEntity<JsonNode> first = this.get("/api-web/auth/sendSms?phone=" + phone, null);
+        final ResponseEntity<JsonNode> first = this.get("/api-web/n/auth/sendSms?phone=" + phone, null);
         CqtAccountIT.assertPortalOk(first);
         assertThat(IntegrationTestSupport.data(first).path("sent").asBoolean()).isTrue();
         assertThat(IntegrationTestSupport.data(first).has("code")
                         && !IntegrationTestSupport.data(first).path("code").isNull())
                 .isFalse();
 
-        CqtAccountIT.assertPortalError(this.get("/api-web/auth/sendSms?phone=" + phone, null), 429, "发送过于频繁，请稍后再试");
+        CqtAccountIT.assertPortalError(this.get("/api-web/n/auth/sendSms?phone=" + phone, null), 429, "发送过于频繁，请稍后再试");
     }
 
     @Test
@@ -39,7 +39,7 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
         final String phone = CqtIntegrationTestSupport.uniquePhone();
         final String idCard = CqtIntegrationTestSupport.uniqueIdCard();
         CqtAccountIT.assertPortalOk(this.post(
-                "/api-web/auth/register",
+                "/api-web/n/auth/register",
                 null,
                 CqtIntegrationTestSupport.personalForm(phone, idCard, this.smsCode(phone))));
 
@@ -99,7 +99,7 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
         form.put("chengnuoshu", "/uploads/commitment.pdf");
         form.put("password", CqtIntegrationTestSupport.PASSWORD);
         form.put("password_confirmation", CqtIntegrationTestSupport.PASSWORD);
-        CqtAccountIT.assertPortalOk(this.post("/api-web/auth/register", null, form));
+        CqtAccountIT.assertPortalOk(this.post("/api-web/n/auth/register", null, form));
 
         final JsonNode data = IntegrationTestSupport.data(
                 this.get("/api-web/auth/userinfo", this.portalToken(phone, CqtIntegrationTestSupport.PASSWORD)));
@@ -114,13 +114,13 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
         final String idCard = CqtIntegrationTestSupport.uniqueIdCard();
         final String phone = CqtIntegrationTestSupport.uniquePhone();
         CqtAccountIT.assertPortalOk(this.post(
-                "/api-web/auth/register",
+                "/api-web/n/auth/register",
                 null,
                 CqtIntegrationTestSupport.personalForm(phone, idCard, this.smsCode(phone))));
 
         CqtAccountIT.assertPortalError(
                 this.post(
-                        "/api-web/auth/register",
+                        "/api-web/n/auth/register",
                         null,
                         CqtIntegrationTestSupport.personalForm(
                                 phone, CqtIntegrationTestSupport.uniqueIdCard(), this.smsCode(phone))),
@@ -130,7 +130,7 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
         final String other = CqtIntegrationTestSupport.uniquePhone();
         CqtAccountIT.assertPortalError(
                 this.post(
-                        "/api-web/auth/register",
+                        "/api-web/n/auth/register",
                         null,
                         CqtIntegrationTestSupport.personalForm(other, idCard, this.smsCode(other))),
                 409,
@@ -140,14 +140,14 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
         final String third = CqtIntegrationTestSupport.uniquePhone();
         CqtAccountIT.assertPortalError(
                 this.post(
-                        "/api-web/auth/register",
+                        "/api-web/n/auth/register",
                         null,
                         CqtIntegrationTestSupport.personalForm(third, badChecksum, "x")),
                 400,
                 "身份证号校验位错误");
         CqtAccountIT.assertPortalError(
                 this.post(
-                        "/api-web/auth/register",
+                        "/api-web/n/auth/register",
                         null,
                         CqtIntegrationTestSupport.personalForm(
                                 third, CqtIntegrationTestSupport.uniqueIdCard(), "000000")),
@@ -161,7 +161,7 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
         final String phone = this.registerPersonal();
 
         final ResponseEntity<JsonNode> ok = this.post(
-                "/api-web/auth/login",
+                "/api-web/n/auth/login",
                 null,
                 Map.of(
                         "type",
@@ -181,14 +181,14 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
 
         CqtAccountIT.assertPortalError(
                 this.post(
-                        "/api-web/auth/login",
+                        "/api-web/n/auth/login",
                         null,
                         Map.of("phone", phone, "password", CqtIntegrationTestSupport.PASSWORD, "code", "000000")),
                 401,
                 "验证码错误");
 
         final ResponseEntity<JsonNode> unknown = this.post(
-                "/api-web/auth/autologin",
+                "/api-web/n/auth/autologin",
                 null,
                 Map.of(
                         "phone",
@@ -196,9 +196,46 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
                         "password",
                         CqtIntegrationTestSupport.PASSWORD));
         final ResponseEntity<JsonNode> wrongPassword =
-                this.post("/api-web/auth/autologin", null, Map.of("phone", phone, "password", "wrong-password"));
+                this.post("/api-web/n/auth/autologin", null, Map.of("phone", phone, "password", "wrong-password"));
         CqtAccountIT.assertPortalError(unknown, 400, "手机号或密码错误");
         CqtAccountIT.assertPortalError(wrongPassword, 400, "手机号或密码错误");
+    }
+
+    @Test
+    @DisplayName("登录页支持手机号 + 验证码、手机号 + 密码，验证码只能使用一次")
+    void loginWithEitherCredential() {
+        final String phone = this.registerPersonal();
+        final String code = this.smsCode(phone);
+
+        final ResponseEntity<JsonNode> byCode =
+                this.post("/api-web/n/auth/login", null, Map.of("phone", phone, "code", code));
+        CqtAccountIT.assertPortalOk(byCode);
+        CqtAccountIT.assertPortalOk(this.get(
+                "/api-web/auth/userinfo",
+                IntegrationTestSupport.data(byCode).path("access_token").asText()));
+        CqtAccountIT.assertPortalError(
+                this.post("/api-web/n/auth/login", null, Map.of("phone", phone, "code", code)), 401, "验证码错误");
+
+        final ResponseEntity<JsonNode> byPassword = this.post(
+                "/api-web/n/auth/login", null, Map.of("phone", phone, "password", CqtIntegrationTestSupport.PASSWORD));
+        CqtAccountIT.assertPortalOk(byPassword);
+        CqtAccountIT.assertPortalOk(this.get(
+                "/api-web/auth/userinfo",
+                IntegrationTestSupport.data(byPassword).path("access_token").asText()));
+        CqtAccountIT.assertPortalError(
+                this.post("/api-web/n/auth/login", null, Map.of("phone", phone, "password", "wrong-password")),
+                400,
+                "手机号或密码错误");
+    }
+
+    @Test
+    @DisplayName("验证码正确但手机号未注册时提示先注册，不提示密码错误")
+    void codeLoginRequiresAccount() {
+        final String phone = CqtIntegrationTestSupport.uniquePhone();
+        CqtAccountIT.assertPortalError(
+                this.post("/api-web/n/auth/login", null, Map.of("phone", phone, "code", this.smsCode(phone))),
+                404,
+                "用户信息不存在，请先注册");
     }
 
     @Test
@@ -213,7 +250,7 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
                 phone);
 
         CqtAccountIT.assertPortalOk(
-                this.post("/api-web/auth/autologin", null, Map.of("phone", phone, "password", "legacy123")));
+                this.post("/api-web/n/auth/autologin", null, Map.of("phone", phone, "password", "legacy123")));
     }
 
     @Test
@@ -258,17 +295,17 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
         final Map<String, Object> reset =
                 Map.of("phone", phone, "code", code, "password", "newpass1", "password_confirmation", "newpass1");
 
-        CqtAccountIT.assertPortalOk(this.post("/api-web/auth/resetPassword", null, reset));
+        CqtAccountIT.assertPortalOk(this.post("/api-web/n/auth/resetPassword", null, reset));
         CqtAccountIT.assertPortalError(this.get("/api-web/auth/userinfo", oldToken), 401, "登录失效,请重新登录");
         CqtAccountIT.assertPortalOk(this.get("/api-web/auth/userinfo", this.portalToken(phone, "newpass1")));
-        CqtAccountIT.assertPortalError(this.post("/api-web/auth/resetPassword", null, reset), 401, "验证码错误");
+        CqtAccountIT.assertPortalError(this.post("/api-web/n/auth/resetPassword", null, reset), 401, "验证码错误");
 
         final String other = this.registerPersonal();
         final String otherCode = this.smsCode(other);
         for (int i = 0; i < 5; i++) {
             CqtAccountIT.assertPortalError(
                     this.post(
-                            "/api-web/auth/resetPassword",
+                            "/api-web/n/auth/resetPassword",
                             null,
                             Map.of(
                                     "phone",
@@ -284,7 +321,7 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
         }
         CqtAccountIT.assertPortalError(
                 this.post(
-                        "/api-web/auth/resetPassword",
+                        "/api-web/n/auth/resetPassword",
                         null,
                         Map.of(
                                 "phone",
@@ -300,7 +337,7 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
 
         CqtAccountIT.assertPortalError(
                 this.post(
-                        "/api-web/auth/resetPassword",
+                        "/api-web/n/auth/resetPassword",
                         null,
                         Map.of("phone", other, "code", "x", "password", "123", "password_confirmation", "123")),
                 400,
@@ -308,7 +345,7 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
         final String nobody = CqtIntegrationTestSupport.uniquePhone();
         CqtAccountIT.assertPortalError(
                 this.post(
-                        "/api-web/auth/resetPassword",
+                        "/api-web/n/auth/resetPassword",
                         null,
                         Map.of(
                                 "phone",
@@ -326,7 +363,7 @@ class CqtAccountIT extends CqtIntegrationTestSupport {
     @Test
     @DisplayName("承诺书模板链接与赛区列表（公开）")
     void linkInfoAndRegions() {
-        final ResponseEntity<JsonNode> link = this.post("/api-web/auth/getlinkinfo", null, Map.of());
+        final ResponseEntity<JsonNode> link = this.post("/api-web/n/auth/getlinkinfo", null, Map.of());
         CqtAccountIT.assertPortalOk(link);
         assertThat(IntegrationTestSupport.data(link).asText())
                 .isEqualTo("https://example.com/commitment-template.docx");

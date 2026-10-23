@@ -8,15 +8,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.Locale;
 import java.util.OptionalLong;
 import org.jspecify.annotations.Nullable;
-import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * 前台接口认证拦截器，只注册在 {@code /api-web/**}。
+ * 前台接口认证拦截器，注册在 {@code /api-web/**}，排除 {@code /api-web/n/**}。
  *
- * <p>读 {@code Authorization: Bearer} → {@link PortalAuthService} 认证（令牌有效且版本与账号一致）→ 非 {@link PortalPublic} 且未登录时抛 401。
+ * <p>读 {@code Authorization: Bearer} → {@link PortalAuthService} 认证（令牌有效且版本与账号一致）→ 未登录时抛 401。
  * 两句提示语沿用原系统：uniapp 对它们不弹窗、只把登录态置为未登录。
  *
  * <p>{@code preHandle} 抛异常时本拦截器的 {@code afterCompletion} 不会被调用，所以账号只在检查全部通过后才写入 ThreadLocal。
@@ -41,12 +40,12 @@ public class PortalAuthInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(
             final HttpServletRequest request, final HttpServletResponse response, final Object handler) {
-        if (!(handler instanceof final HandlerMethod handlerMethod)) {
+        if (!(handler instanceof HandlerMethod)) {
             return true;
         }
         final String token = PortalAuthInterceptor.bearerToken(request);
         final OptionalLong accountId = token == null ? OptionalLong.empty() : this.authService.authenticate(token);
-        if (accountId.isEmpty() && !PortalAuthInterceptor.isPublic(handlerMethod)) {
+        if (accountId.isEmpty()) {
             throw new BizException(
                     CommonErrors.UNAUTHORIZED,
                     token == null
@@ -78,10 +77,5 @@ public class PortalAuthInterceptor implements HandlerInterceptor {
         final String token =
                 header.substring(PortalAuthInterceptor.BEARER_PREFIX.length()).trim();
         return token.isEmpty() ? null : token;
-    }
-
-    private static boolean isPublic(final HandlerMethod handlerMethod) {
-        return AnnotatedElementUtils.hasAnnotation(handlerMethod.getMethod(), PortalPublic.class)
-                || AnnotatedElementUtils.hasAnnotation(handlerMethod.getBeanType(), PortalPublic.class);
     }
 }

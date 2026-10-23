@@ -19,6 +19,12 @@
 						<!-- ================= 登录模式 ================= -->
 						<view v-if="!showForget" class="zzz3">
 							<view class='title1'>欢迎登录{{is_school==1?'学校':'学生'}}大赛报名 平台</view>
+							<view class="login-methods">
+								<view class="login-method pointer" :class="{ active: loginMethod === 'code' }"
+									@click="loginMethod = 'code'">验证码登录</view>
+								<view class="login-method pointer" :class="{ active: loginMethod === 'password' }"
+									@click="loginMethod = 'password'">密码登录</view>
+							</view>
 
 							<!-- 手机号 -->
 							<view class='inputsBox zzz3'>
@@ -31,7 +37,7 @@
 							</view>
 
 							<!-- 验证码 -->
-							<view class='inputsBox zzz3'>
+							<view v-if="loginMethod === 'code'" class='inputsBox zzz3'>
 								<view class='e2 inputBox'>
 									<input class='input code-input' type='number' v-model='code' placeholder='输入手机验证码'
 										placeholder-style='color:#999999' maxlength="6" />
@@ -42,8 +48,8 @@
 								</view>
 							</view>
 
-							<!-- 新增：密码输入框 (登录用) -->
-							<view class='inputsBox zzz3'>
+							<!-- 密码登录 -->
+							<view v-if="loginMethod === 'password'" class='inputsBox zzz3'>
 								<view class='e1 inputBox'>
 									<image class='images'
 										src='/static/local_assets/33f6e68b23c81dc261f90f88.png'
@@ -179,6 +185,8 @@
 				password: '', // 登录密码 / 新密码
 				confirmPassword: '', // 确认新密码
 				is_school: 1,
+				loginMethod: 'code',
+				isLoggingIn: false,
 
 				// 模式切换
 				showForget: false, // false: 登录模式，true: 忘记密码模式
@@ -220,28 +228,18 @@
 			toggleMode(isForget) {
 				this.showForget = isForget
 				this.isXuan = false
-				this.tel = ''
 				this.code = ''
 				this.password = ''
 				this.confirmPassword = ''
-				this.is_school = 1
-				this.isSending = false
-				this.countdown = 60
-				this.timer = null
-				if (!isForget) {
-					this.password = ''
-					this.confirmPassword = ''
-				} else {
-					this.password = ''
-					this.confirmPassword = ''
-					this.code = ''
-				}
+				this.isMing1 = 0
+				this.isMing2 = 0
+				this.isMing3 = 0
 			},
 
 			getConfig() {
 				this.GET({
 					name: '获取网站配置',
-					url: '/api/product/getconfig',
+					url: '/api/n/product/getconfig',
 					data: {}
 				}).then((res) => {
 					this.configData = res.data.data
@@ -261,16 +259,11 @@
 					return;
 				}
 
-				// 根据模式不同，type可以不同，这里假设 1=登录/注册，2=找回密码，具体看后端定义
-				// 如果后端不区分，保持 type: 1 即可
-				const type = this.showForget ? 2 : 1;
-
 				this.GET({
 					name: '发送验证码',
-					url: '/api/auth/sendSms',
+					url: '/api/n/auth/sendSms',
 					data: {
-						phone: this.tel,
-						type: type
+						phone: this.tel
 					}
 				}).then((res) => {
 					if (res.data.code === 200 || res.data.code === 0) {
@@ -305,24 +298,31 @@
 
 			// 登录逻辑
 			goLogin() {
+				if (this.isLoggingIn) return;
 				if (this.isXuan == false) {
 					this.showToast('请阅读并同意《用户协议》')
 					return
 				}
-				if (!this.tel || !this.password || !this.code) {
-					this.showToast('请填写完整登录信息');
+				if (!/^1[3-9]\d{9}$/.test(this.tel)) {
+					this.showToast('请输入正确的手机号');
 					return;
 				}
+				if (this.loginMethod === 'code' && !/^\d{6}$/.test(this.code)) {
+					this.showToast('请输入六位验证码');
+					return;
+				}
+				if (this.loginMethod === 'password' && !this.password) {
+					this.showToast('请输入登录密码');
+					return;
+				}
+				this.isLoggingIn = true;
 
 				this.POST({
-					name: '学生登录',
-					url: '/api/auth/login',
-					data: {
-						type: 1,
-						phone: this.tel,
-						password: this.password,
-						code: this.code,
-					}
+					name: '登录',
+					url: '/api/n/auth/login',
+					data: this.loginMethod === 'code'
+						? { phone: this.tel, code: this.code }
+						: { phone: this.tel, password: this.password }
 				}).then((res) => {
 					uni.showToast({
 						title: '登录成功',
@@ -341,6 +341,8 @@
 							})
 						}, 1000)
 					});
+				}).finally(() => {
+					this.isLoggingIn = false;
 				});
 			},
 
@@ -371,7 +373,7 @@
 				// 2. 调用接口
 				this.POST({
 					name: '找回密码',
-					url: '/api/auth/resetPassword',
+					url: '/api/n/auth/resetPassword',
 					data: {
 						phone: this.tel,
 						code: this.code,
@@ -387,10 +389,8 @@
 						})
 						// 成功后自动切回登录页
 						setTimeout(() => {
+							this.loginMethod = 'password';
 							this.toggleMode(false);
-							this.password = '';
-							this.confirmPassword = '';
-							this.code = '';
 						}, 2000);
 					} else {
 						uni.showToast({
@@ -409,6 +409,28 @@
 <style lang="scss" scoped>
 	page {
 		background-color: #e52402;
+	}
+
+	.login-methods {
+		display: flex;
+		width: 100%;
+		border-bottom: 1px solid #e8e8e8;
+		margin-bottom: 12rpx;
+	}
+
+	.login-method {
+		flex: 1;
+		padding: 16rpx 0;
+		text-align: center;
+		font-size: 28rpx;
+		color: #666;
+		border-bottom: 4rpx solid transparent;
+
+		&.active {
+			color: #e62402;
+			border-bottom-color: #e62402;
+			font-weight: 600;
+		}
 	}
 
 	/*  电脑端样式 */

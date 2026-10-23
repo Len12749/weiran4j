@@ -2,7 +2,7 @@
 export function contentGet(vm, resource, query = {}) {
     const search = Object.entries(query).filter(([, value]) => value !== undefined).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&');
     return new Promise((resolve, reject) => uni.request({
-        url: `${vm.config?.baseURL || ''}/api-web/content/${resource}${search ? '?' + search : ''}`,
+        url: `${vm.config?.baseURL || ''}/api-web/n/content/${resource}${search ? '?' + search : ''}`,
         method: 'GET',
         success: ({ statusCode, data }) => {
             if (statusCode >= 200 && statusCode < 300 && data?.code === 200 && data.data != null) {

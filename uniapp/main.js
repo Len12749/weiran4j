@@ -103,7 +103,7 @@ const getTokenHeader = () => {
 };
 
 // ==================== 请求封装 ====================
-// 页面与工具里的接口路径沿用旧写法 /api/...，发请求前统一改写成后端的 /api-web/...
+// 页面使用 /api/...（登录后）或 /api/n/...（公开），发请求前统一改写为 /api-web/...
 // 行政区划查询走未鉴权的 /api-backend/n/region/area/getEnabledTree。
 export const toWebApi = (url) => url.startsWith('/api-backend/n/region/area/getEnabledTree') ? url : url.replace(/^\/api\//, '/api-web/');
 
@@ -120,11 +120,12 @@ const requestPublic = (configObj, resolve, reject) => {
 		'/api/product/Competitionlist', '/api/product/ViewGrades', '/api/product/view-grades', '/api/competition/certificate'
 	].includes(url);
 	const regionLookup = url === '/api-backend/n/region/area/getEnabledTree';
+	const publicWeb = url.startsWith('/api/n/') || url.startsWith('/api-web/n/');
 	const fullHeader = {
 		'Content-Type': 'application/json',
 		version: 1,
 		'X-CQTXJ-Database': historicalLookup ? 'cqtxj2026' : 'cqtxj2027',
-		...(regionLookup ? {} : getTokenHeader()),
+		...(regionLookup || publicWeb ? {} : getTokenHeader()),
 		...header,
 	};
 
@@ -143,7 +144,7 @@ const requestPublic = (configObj, resolve, reject) => {
 	const requestBaseURL = ['/api/product/ViewGrades', '/api/product/view-grades'].includes(url)
 		? CONFIG.gradeApiBaseURL
 		: CONFIG.baseURL;
-	// 后端（mono4j weiran-cqt）给 uniapp 的接口统一挂在 /api-web/**，页面里仍写原来的 /api/...，在这里统一改写。
+	// 前台接口统一映射到 /api-web/**；/n/** 公开入口不携带令牌。
 	const fullRequestUrl = requestBaseURL + toWebApi(requestUrl);
 
 	uni.request({
@@ -167,7 +168,7 @@ const requestPublic = (configObj, resolve, reject) => {
 
 			if (res.data) {
 				if (res.data.code == 200) {
-					app.config.globalProperties.isLogin.value = true;
+					if (!regionLookup && !publicWeb) app.config.globalProperties.isLogin.value = true;
 					resolve(res);
 				} else if (regionLookup && res.data.code === 0) {
 					resolve(res);

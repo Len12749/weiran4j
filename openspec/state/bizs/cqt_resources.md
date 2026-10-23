@@ -2,7 +2,7 @@
 
 ## 0. 概要
 
-独立内容表 `cqt_resources`，属于 weiran-cqt content 子域。后台「站点资料 → 指导资料」`/cqt/resources`；管理接口 `/api-backend/cqt/resources`；公开接口 `/api-web/content/resources`。与大赛动态、另外两个内容模块的数据和 ID 互相独立。
+独立内容表 `cqt_resources`，属于 weiran-cqt content 子域。后台「站点资料 → 指导资料」`/cqt/resources`；管理接口 `/api-backend/cqt/resources`；公开接口 `/api-web/n/content/resources`。与大赛动态、另外两个内容模块的数据和 ID 互相独立。
 
 ## 1. 列表
 

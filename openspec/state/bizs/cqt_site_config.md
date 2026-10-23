@@ -8,7 +8,7 @@
 | --- | --- |
 | 存储 | `sys_config` 中 `system.cqt_site.*` 的 22 项；`cqt_setting` 已删除 |
 | 后台 | 系统管理 › 系统配置 › 常青藤站点 |
-| 前台 | `GET /api-web/product/getconfig`，保留旧 22 键响应 |
+| 前台 | `GET /api-web/n/product/getconfig`，保留旧 22 键响应 |
 | 权限 | `system:config:list/update`，图片上传用 `system:media-library:upload` |
 
 ## 1. 列表

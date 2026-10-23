@@ -144,7 +144,7 @@
 
 			this.GET({
 				name: '获取网站配置',
-				url: '/api/product/getconfig',
+				url: '/api/n/product/getconfig',
 				data: {}
 			}).then((res) => {
 				this.configData = res.data.data
@@ -180,7 +180,7 @@
 			get_index(page = 1) {
 				this.GET({
 					name: '大赛动态',
-					url: `/api/product/news?page=${page}&pageSize=${this.pageSize}`,
+					url: `/api/n/product/news?page=${page}&pageSize=${this.pageSize}`,
 					data: {}
 				}).then((res) => {
 					this.list1 = (res.data.data.list || []).map((item) => ({ ...item, created_at: item.createdAt || item.created_at }));
@@ -194,7 +194,7 @@
 				});
 				this.GET({
 					name: '大赛动态详情',
-					url: '/api/product/newsdetail?id=' + id,
+					url: '/api/n/product/newsdetail?id=' + id,
 					data: {}
 				}).then((res) => {
 					uni.hideLoading();

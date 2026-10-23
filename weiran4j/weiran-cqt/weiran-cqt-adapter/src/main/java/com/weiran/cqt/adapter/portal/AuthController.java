@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 /** 前台账号接口（沿用原系统 {@code /api/auth/*} 的路径与字段名）。 */
 @PortalController
-@RequestMapping("/api-web/auth")
+@RequestMapping("/api-web")
 public class AuthController {
 
     private final AccountService accountService;
@@ -47,8 +47,7 @@ public class AuthController {
     }
 
     /** 某赛事可报的一级赛项（公开；赛事不存在或未启用为空）。 */
-    @PortalPublic
-    @GetMapping("/getsecondcat")
+    @GetMapping("/n/auth/getsecondcat")
     public PortalResult<List<CategoryView>> getSecondCat(
             @RequestParam(value = "id", required = false) final @Nullable String competitionId) {
         final Long id = PortalParams.longOrNull(competitionId);
@@ -56,8 +55,7 @@ public class AuthController {
     }
 
     /** 发送短信验证码。 */
-    @PortalPublic
-    @GetMapping("/sendSms")
+    @GetMapping("/n/auth/sendSms")
     public PortalResult<Map<String, Object>> sendSms(@RequestParam(required = false) final @Nullable String phone) {
         final SmsSendResult result = this.smsService.send(phone);
         final Map<String, Object> data = new LinkedHashMap<>();
@@ -68,25 +66,22 @@ public class AuthController {
         return PortalResult.ok(data);
     }
 
-    /** 手机号 + 密码 + 验证码登录。 */
-    @PortalPublic
-    @PostMapping("/login")
+    /** 手机号 + 验证码或手机号 + 密码登录；兼容同时提交两者。 */
+    @PostMapping("/n/auth/login")
     public PortalResult<Map<String, Object>> login(@RequestBody final LoginRequest request) {
         return PortalResult.ok(
                 AuthController.token(this.accountService.login(request.phone(), request.password(), request.code())));
     }
 
     /** 手机号 + 密码登录（注册成功后自动登录）。 */
-    @PortalPublic
-    @PostMapping("/autologin")
+    @PostMapping("/n/auth/autologin")
     public PortalResult<Map<String, Object>> autologin(@RequestBody final LoginRequest request) {
         return PortalResult.ok(
                 AuthController.token(this.accountService.autologin(request.phone(), request.password())));
     }
 
     /** 注册个人或学校账号。 */
-    @PortalPublic
-    @PostMapping("/register")
+    @PostMapping("/n/auth/register")
     public PortalResult<Boolean> register(@RequestBody final RegisterRequest request) {
         this.accountService.register(new RegisterCommand(
                 PortalParams.integer("type", request.type()),
@@ -111,7 +106,7 @@ public class AuthController {
 
     /** 本人资料。 */
     @RequestMapping(
-            value = "/userinfo",
+            value = "/auth/userinfo",
             method = {RequestMethod.GET, RequestMethod.POST})
     public PortalResult<Map<String, @Nullable Object>> userinfo() {
         final AccountProfileView view =
@@ -141,7 +136,7 @@ public class AuthController {
     }
 
     /** 修改本人资料。 */
-    @PostMapping("/updateuserinfo")
+    @PostMapping("/auth/updateuserinfo")
     public PortalResult<Boolean> updateUserinfo(@RequestBody final UpdateProfileRequest request) {
         this.accountService.updateProfile(
                 PortalAccount.current().orElseThrow(),
@@ -163,8 +158,7 @@ public class AuthController {
     }
 
     /** 用短信验证码重置密码。 */
-    @PortalPublic
-    @PostMapping("/resetPassword")
+    @PostMapping("/n/auth/resetPassword")
     public PortalResult<Boolean> resetPassword(@RequestBody final ResetPasswordRequest request) {
         this.accountService.resetPassword(new ResetPasswordCommand(
                 request.phone(), request.code(), request.password(), request.passwordConfirmation()));
@@ -172,9 +166,8 @@ public class AuthController {
     }
 
     /** 承诺书模板链接。 */
-    @PortalPublic
     @RequestMapping(
-            value = "/getlinkinfo",
+            value = "/n/auth/getlinkinfo",
             method = {RequestMethod.GET, RequestMethod.POST})
     public PortalResult<String> getLinkInfo() {
         return PortalResult.ok(this.accountService.commitmentTemplateUrl());

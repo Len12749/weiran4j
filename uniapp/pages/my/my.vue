@@ -1528,7 +1528,7 @@ import { schoolRequest, createImportPoller, importRows, importStateLabel, import
 
 			this.GET({
 				name: '获取网站配置',
-				url: '/api/product/getconfig',
+				url: '/api/n/product/getconfig',
 				data: {}
 			}).then((res) => {
 				this.configData = res.data.data
@@ -1630,7 +1630,7 @@ import { schoolRequest, createImportPoller, importRows, importStateLabel, import
 			getZy() {
 				this.GET({
 					name: '获取专业',
-					url: '/api/competcategory/secondcategory?id=' + this.firstcatid + '&competition_id=' + this.saishiId,
+					url: '/api/n/competcategory/secondcategory?id=' + this.firstcatid + '&competition_id=' + this.saishiId,
 					data: {}
 				}).then((res) => {
 					this.zyList = res.data.data
@@ -1643,7 +1643,7 @@ import { schoolRequest, createImportPoller, importRows, importStateLabel, import
 				}
 				this.GET({
 					name: '获取组别',
-					url: `/api/competcategory/groups?competition_id=${this.saishiId}&firstcatid=${this.firstcatid}&secondcatid=${this.majorid || 0}`,
+					url: `/api/n/competcategory/groups?competition_id=${this.saishiId}&firstcatid=${this.firstcatid}&secondcatid=${this.majorid || 0}`,
 					data: {}
 				}).then((res) => {
 					this.zbList = res.data.data || [];
@@ -1656,7 +1656,7 @@ import { schoolRequest, createImportPoller, importRows, importStateLabel, import
 			getlinkinfo() {
 				this.POST({
 					name: '获取承诺书模版下载链接',
-					url: '/api/auth/getlinkinfo',
+					url: '/api/n/auth/getlinkinfo',
 					data: {}
 				}).then((res) => {
 					this.link_url = res.data.data
@@ -1665,7 +1665,7 @@ import { schoolRequest, createImportPoller, importRows, importStateLabel, import
 			getzipinfo() {
 				this.GET({
 					name: '获取ex模板下载链接',
-					url: '/api/auth/getexinfo',
+					url: '/api/n/auth/getexinfo',
 					data: {}
 				}).then((res) => {
 					this.excel_moban_url = res.data.data
@@ -1683,7 +1683,7 @@ import { schoolRequest, createImportPoller, importRows, importStateLabel, import
 			getsaiX() {
 				this.GET({
 					name: '赛项',
-					url: '/api/auth/getsecondcat?id=' + this.saishiId,
+					url: '/api/n/auth/getsecondcat?id=' + this.saishiId,
 					data: {}
 				}).then((res) => {
 					this.saiXList = res.data.data
@@ -2001,7 +2001,7 @@ import { schoolRequest, createImportPoller, importRows, importStateLabel, import
 			getcompetitionlists() {
 				this.GET({
 					name: '比赛事项列表页',
-					url: '/api/competcategory/competitionlists',
+					url: '/api/n/competcategory/competitionlists',
 					data: {
 						type: this.myInfo.type,
 						status: this.status,

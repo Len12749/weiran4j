@@ -219,7 +219,7 @@ class CqtSchoolImportProgressIT extends CqtIntegrationTestSupport {
         form.put("schoolid", "TEST-" + phone);
         form.put("password", CqtIntegrationTestSupport.PASSWORD);
         form.put("password_confirmation", CqtIntegrationTestSupport.PASSWORD);
-        CqtIntegrationTestSupport.assertPortalOk(this.post("/api-web/auth/register", null, form));
+        CqtIntegrationTestSupport.assertPortalOk(this.post("/api-web/n/auth/register", null, form));
         return phone;
     }
 }

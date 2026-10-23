@@ -6,7 +6,7 @@ status: "active"
 
 ## Purpose
 
-常青藤站点文案、联系方式、协议正文和证书展示配置由基座系统配置管理；uniapp 仍通过 `GET /api-web/product/getconfig` 读取稳定的 22 键响应。
+常青藤站点文案、联系方式、协议正文和证书展示配置由基座系统配置管理；uniapp 仍通过 `GET /api-web/n/product/getconfig` 读取稳定的 22 键响应。
 
 ## Requirements
 
@@ -26,7 +26,7 @@ status: "active"
 
 ### Requirement: [FR-002] 前台站点配置接口
 
-`GET /api-web/product/getconfig` **MUST** 免登录并返回既有 22 个键。富文本字段返回原始 HTML；其它文本去除 HTML 标签并去掉首尾空白；`gongzhonghao` 有值时返回单元素原值数组，否则返回空数组。系统配置值为空时，普通键返回 `null`。
+`GET /api-web/n/product/getconfig` **MUST** 免登录并返回既有 22 个键。富文本字段返回原始 HTML；其它文本去除 HTML 标签并去掉首尾空白；`gongzhonghao` 有值时返回单元素原值数组，否则返回空数组。系统配置值为空时，普通键返回 `null`。
 
 #### Scenario: 后台修改后前台立即读取
 - **WHEN** 管理员通过系统配置页面更新 `system.cqt_site.guanyuwomen`

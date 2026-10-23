@@ -12,8 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 /** 佳作欣赏公开查询；只公开启用项。 */
 @PortalController
-@PortalPublic
-@RequestMapping("/api-web/content/showcases")
+@RequestMapping("/api-web/n/content/showcases")
 public class ShowcasePortalController {
     private final ShowcaseService service;
 

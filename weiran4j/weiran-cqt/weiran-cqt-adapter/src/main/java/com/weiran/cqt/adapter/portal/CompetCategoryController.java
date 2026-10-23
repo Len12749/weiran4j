@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 /** 前台「赛事分类」接口组（沿用原系统 {@code /api/competcategory/*} 的分组名）。 */
 @PortalController
-@RequestMapping("/api-web/competcategory")
+@RequestMapping("/api-web")
 public class CompetCategoryController {
 
     private final CompetitionQueryService competitionQueryService;
@@ -34,9 +34,8 @@ public class CompetCategoryController {
     }
 
     /** 赛事列表（公开），可按 {@code status}、{@code name} 过滤。 */
-    @PortalPublic
     @RequestMapping(
-            value = "/competitionlists",
+            value = "/n/competcategory/competitionlists",
             method = {RequestMethod.GET, RequestMethod.POST})
     public PortalResult<List<Map<String, @Nullable Object>>> competitionLists(
             @RequestParam(value = "status", required = false) final @Nullable String status,
@@ -59,9 +58,8 @@ public class CompetCategoryController {
     }
 
     /** 某一级赛项下启用的二级赛项（公开；{@code competition_id} 参数忽略，赛项全局共用）。 */
-    @PortalPublic
     @RequestMapping(
-            value = "/secondcategory",
+            value = "/n/competcategory/secondcategory",
             method = {RequestMethod.GET, RequestMethod.POST})
     public PortalResult<List<CategoryView>> secondCategory(
             @RequestParam(value = "id", required = false) final @Nullable String id) {
@@ -70,8 +68,7 @@ public class CompetCategoryController {
     }
 
     /** 赛事、赛项适用的组别（公开）。 */
-    @PortalPublic
-    @GetMapping("/groups")
+    @GetMapping("/n/competcategory/groups")
     public PortalResult<List<GroupView>> groups(
             @RequestParam(value = "competition_id", required = false) final @Nullable String competitionId,
             @RequestParam(value = "firstcatid", required = false) final @Nullable String firstCategoryId,
@@ -83,7 +80,7 @@ public class CompetCategoryController {
     }
 
     /** 我的报名列表（需登录），返回 {@code {data, total}}。 */
-    @GetMapping("/productlists")
+    @GetMapping("/competcategory/productlists")
     public PortalResult<Map<String, Object>> productLists() {
         final List<Map<String, @Nullable Object>> rows = new ArrayList<>();
         for (final MyEntryView view :

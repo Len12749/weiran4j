@@ -55,7 +55,7 @@ class CqtSignupIT extends CqtIntegrationTestSupport {
     private String accountWithIdCard(final String idCard) {
         final String phone = CqtIntegrationTestSupport.uniquePhone();
         CqtSignupIT.assertPortalOk(this.post(
-                "/api-web/auth/register",
+                "/api-web/n/auth/register",
                 null,
                 CqtIntegrationTestSupport.personalForm(phone, idCard, this.smsCode(phone))));
         return this.portalToken(phone, CqtIntegrationTestSupport.PASSWORD);
@@ -84,24 +84,24 @@ class CqtSignupIT extends CqtIntegrationTestSupport {
     @DisplayName("赛事列表与过滤；停用赛事无可报赛项；二级赛项只含启用的；组别按赛项适用")
     void readsCompetitionConfig() {
         final List<Long> ids = new ArrayList<>();
-        IntegrationTestSupport.data(this.get("/api-web/competcategory/competitionlists", null))
+        IntegrationTestSupport.data(this.get("/api-web/n/competcategory/competitionlists", null))
                 .forEach(node -> ids.add(node.path("id").asLong()));
         assertThat(ids).containsSubsequence(DRAFT, SEPARATE, SHARED, PAST);
         final JsonNode enabled =
-                IntegrationTestSupport.data(this.get("/api-web/competcategory/competitionlists?status=1", null));
+                IntegrationTestSupport.data(this.get("/api-web/n/competcategory/competitionlists?status=1", null));
         enabled.forEach(node -> assertThat(node.path("status").asInt()).isEqualTo(1));
         assertThat(enabled.get(0).has("legacy_id")).isTrue();
 
-        assertThat(IntegrationTestSupport.data(this.get("/api-web/auth/getsecondcat?id=" + DRAFT, null))
+        assertThat(IntegrationTestSupport.data(this.get("/api-web/n/auth/getsecondcat?id=" + DRAFT, null))
                         .size())
                 .isZero();
         final List<Long> firsts = new ArrayList<>();
-        IntegrationTestSupport.data(this.get("/api-web/auth/getsecondcat?id=" + SHARED, null))
+        IntegrationTestSupport.data(this.get("/api-web/n/auth/getsecondcat?id=" + SHARED, null))
                 .forEach(node -> firsts.add(node.path("id").asLong()));
         assertThat(firsts).contains(9001L, 9002L);
 
         final JsonNode seconds =
-                IntegrationTestSupport.data(this.get("/api-web/competcategory/secondcategory?id=9001", null));
+                IntegrationTestSupport.data(this.get("/api-web/n/competcategory/secondcategory?id=9001", null));
         assertThat(seconds.size()).isEqualTo(1);
         assertThat(seconds.get(0).path("id").asLong()).isEqualTo(9011L);
         assertThat(seconds.get(0).path("pid").asLong()).isEqualTo(9001L);
@@ -109,18 +109,18 @@ class CqtSignupIT extends CqtIntegrationTestSupport {
 
         final List<String> groups1 = new ArrayList<>();
         IntegrationTestSupport.data(this.get(
-                        "/api-web/competcategory/groups?competition_id=" + SHARED + "&firstcatid=9001&secondcatid=0",
+                        "/api-web/n/competcategory/groups?competition_id=" + SHARED + "&firstcatid=9001&secondcatid=0",
                         null))
                 .forEach(node -> groups1.add(node.path("name").asText()));
         assertThat(groups1).containsExactly("初中组");
         final List<String> groups2 = new ArrayList<>();
         IntegrationTestSupport.data(this.get(
-                        "/api-web/competcategory/groups?competition_id=" + SHARED + "&firstcatid=9002&secondcatid=0",
+                        "/api-web/n/competcategory/groups?competition_id=" + SHARED + "&firstcatid=9002&secondcatid=0",
                         null))
                 .forEach(node -> groups2.add(node.path("name").asText()));
         assertThat(groups2).containsExactly("初中组", "专业组");
         assertThat(IntegrationTestSupport.data(
-                                this.get("/api-web/competcategory/groups?competition_id=" + SHARED, null))
+                                this.get("/api-web/n/competcategory/groups?competition_id=" + SHARED, null))
                         .size())
                 .isZero();
     }

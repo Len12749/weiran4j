@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.weiran.cqt.adapter.portal.PortalAccount;
 import com.weiran.cqt.adapter.portal.PortalController;
-import com.weiran.cqt.adapter.portal.PortalPublic;
 import com.weiran.cqt.adapter.portal.PortalResult;
 import com.weiran.cqt.application.entry.SchoolImportApplicationService;
 import com.weiran.cqt.domain.portal.PortalTokenCodec;
@@ -100,7 +99,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     @Test
     @DisplayName("getconfig 免登录：富文本保留 HTML、普通文本清洗、缺行为 null、公众号为数组")
     void getConfig() {
-        final ResponseEntity<JsonNode> response = this.get("/api-web/product/getconfig", null);
+        final ResponseEntity<JsonNode> response = this.get("/api-web/n/product/getconfig", null);
 
         CqtWebIT.assertPortalOk(response);
         final JsonNode data = IntegrationTestSupport.data(response);
@@ -132,7 +131,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                         "groupKey", "cqt_site",
                         "fieldType", "richtext",
                         "required", false)));
-        final ResponseEntity<JsonNode> publicResponse = this.get("/api-web/product/getconfig", null);
+        final ResponseEntity<JsonNode> publicResponse = this.get("/api-web/n/product/getconfig", null);
         CqtWebIT.assertPortalOk(publicResponse);
         final JsonNode publicConfig = IntegrationTestSupport.data(publicResponse);
         assertThat(publicConfig.path("guanyuwomen").asText()).isEqualTo("<div>更新后的介绍</div>");
@@ -148,31 +147,31 @@ class CqtWebIT extends CqtIntegrationTestSupport {
         final ResponseEntity<JsonNode> created = this.post("/api-backend/cqt/experts/create", admin, expert);
         IntegrationTestSupport.assertOk(created);
         final long id = IntegrationTestSupport.data(created).asLong();
-        final ResponseEntity<JsonNode> publicDetail = this.get("/api-web/content/experts/" + id, null);
+        final ResponseEntity<JsonNode> publicDetail = this.get("/api-web/n/content/experts/" + id, null);
         CqtWebIT.assertPortalOk(publicDetail);
         assertThat(IntegrationTestSupport.data(publicDetail).path("enabled").asBoolean())
                 .isTrue();
         assertThat(IntegrationTestSupport.data(publicDetail).path("showOnHome").asBoolean())
                 .isTrue();
-        final ResponseEntity<JsonNode> home = this.get("/api-web/content/experts?homeOnly=true", null);
+        final ResponseEntity<JsonNode> home = this.get("/api-web/n/content/experts?homeOnly=true", null);
         CqtWebIT.assertPortalOk(home);
         assertThat(IntegrationTestSupport.data(home).path("list")).hasSize(1);
-        assertThat(IntegrationTestSupport.body(this.get("/api-web/content/showcases/" + id, null))
+        assertThat(IntegrationTestSupport.body(this.get("/api-web/n/content/showcases/" + id, null))
                         .path("code")
                         .asInt())
                 .isEqualTo(404);
-        assertThat(IntegrationTestSupport.body(this.get("/api-web/content/resources/" + id, null))
+        assertThat(IntegrationTestSupport.body(this.get("/api-web/n/content/resources/" + id, null))
                         .path("code")
                         .asInt())
                 .isEqualTo(404);
         final Map<String, Object> disabled = new LinkedHashMap<>(expert);
         disabled.put("enabled", false);
         IntegrationTestSupport.assertOk(this.put("/api-backend/cqt/experts/update/" + id, admin, disabled));
-        assertThat(IntegrationTestSupport.body(this.get("/api-web/content/experts/" + id, null))
+        assertThat(IntegrationTestSupport.body(this.get("/api-web/n/content/experts/" + id, null))
                         .path("code")
                         .asInt())
                 .isEqualTo(404);
-        assertThat(IntegrationTestSupport.data(this.get("/api-web/content/experts", null))
+        assertThat(IntegrationTestSupport.data(this.get("/api-web/n/content/experts", null))
                         .path("list"))
                 .isEmpty();
         CqtIntegrationTestSupport.assertError(
@@ -183,7 +182,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                 Map.of("title", "剧本甲", "image", "/uploads/showcase.png", "category", "SCRIPT"));
         IntegrationTestSupport.assertOk(showcase);
         final long showcaseId = IntegrationTestSupport.data(showcase).asLong();
-        assertThat(IntegrationTestSupport.data(this.get("/api-web/content/showcases/" + showcaseId, null))
+        assertThat(IntegrationTestSupport.data(this.get("/api-web/n/content/showcases/" + showcaseId, null))
                         .path("title")
                         .asText())
                 .isEqualTo("剧本甲");
@@ -193,13 +192,13 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                 Map.of("title", "稿纸甲", "category", "SCRIPT_PAPER", "materialUrl", "/uploads/paper.pdf"));
         IntegrationTestSupport.assertOk(resource);
         final JsonNode publicResource = IntegrationTestSupport.data(this.get(
-                "/api-web/content/resources/"
+                "/api-web/n/content/resources/"
                         + IntegrationTestSupport.data(resource).asLong(),
                 null));
         assertThat(publicResource.path("materialUrl").asText()).isEqualTo("/uploads/paper.pdf");
         assertThat(publicResource.has("fileUrl")).isFalse();
         assertThat(publicResource.has("fileName")).isFalse();
-        assertThat(IntegrationTestSupport.data(this.get("/api-web/content/resources?category=DRAMA_MATERIAL", null))
+        assertThat(IntegrationTestSupport.data(this.get("/api-web/n/content/resources?category=DRAMA_MATERIAL", null))
                         .path("list"))
                 .isEmpty();
     }
@@ -231,7 +230,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                         Map.of("title", "甲", "category", "SCRIPT_PAPER", "materialUrl", "//evil.test/a")),
                 HttpStatus.BAD_REQUEST,
                 100001);
-        assertThat(IntegrationTestSupport.body(this.get("/api-web/content/resources?category=UNKNOWN", null))
+        assertThat(IntegrationTestSupport.body(this.get("/api-web/n/content/resources?category=UNKNOWN", null))
                         .path("code")
                         .asInt())
                 .isEqualTo(400);
@@ -268,16 +267,16 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                 .isEqualTo(2);
 
         final ResponseEntity<JsonNode> homePage =
-                this.get("/api-web/product/news?page=1&pageSize=3&homeOnly=true", null);
+                this.get("/api-web/n/product/news?page=1&pageSize=3&homeOnly=true", null);
         CqtWebIT.assertPortalOk(homePage);
         final JsonNode homeList = IntegrationTestSupport.data(homePage).path("list");
         assertThat(homeList).hasSize(1);
         assertThat(homeList.get(0).path("id").asLong()).isEqualTo(firstId);
 
-        final ResponseEntity<JsonNode> publicPage = this.get("/api-web/product/news?page=1&pageSize=10", null);
+        final ResponseEntity<JsonNode> publicPage = this.get("/api-web/n/product/news?page=1&pageSize=10", null);
         CqtWebIT.assertPortalOk(publicPage);
         assertThat(IntegrationTestSupport.data(publicPage).path("list")).hasSize(2);
-        final ResponseEntity<JsonNode> detail = this.get("/api-web/product/newsdetail?id=" + firstId, null);
+        final ResponseEntity<JsonNode> detail = this.get("/api-web/n/product/newsdetail?id=" + firstId, null);
         CqtWebIT.assertPortalOk(detail);
         assertThat(IntegrationTestSupport.data(detail).path("content").asText()).isEqualTo("<p>正文原文</p>");
 
@@ -285,7 +284,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
                 Map.of("title", "更新后动态", "image", "", "showOnHome", false, "sort", 0, "content", "<p>已更新</p>");
         IntegrationTestSupport.assertOk(this.put("/api-backend/cqt/news/update/" + firstId, admin, updated));
         final ResponseEntity<JsonNode> emptyHome =
-                this.get("/api-web/product/news?page=1&pageSize=3&homeOnly=true", null);
+                this.get("/api-web/n/product/news?page=1&pageSize=3&homeOnly=true", null);
         CqtWebIT.assertPortalOk(emptyHome);
         assertThat(IntegrationTestSupport.data(emptyHome).path("total").asLong())
                 .isZero();
@@ -319,10 +318,10 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     @Test
     @DisplayName("学校导入模板可公开下载，任务查询要求登录且只允许学校账号")
     void schoolImportTemplateAndAccessBoundary() {
-        final ResponseEntity<JsonNode> templateLink = this.get("/api-web/auth/getexinfo", null);
+        final ResponseEntity<JsonNode> templateLink = this.get("/api-web/n/auth/getexinfo", null);
         CqtIntegrationTestSupport.assertPortalOk(templateLink);
         final String templateUrl = IntegrationTestSupport.data(templateLink).asText();
-        assertThat(templateUrl).isEqualTo("/api-web/cqt-import/template.xlsx");
+        assertThat(templateUrl).isEqualTo("/api-web/n/cqt-import/template.xlsx");
 
         final ResponseEntity<byte[]> template = this.rest.getForEntity(templateUrl, byte[].class);
         assertThat(template.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -500,7 +499,7 @@ class CqtWebIT extends CqtIntegrationTestSupport {
         form.put("chengnuoshu", "/uploads/commitment.pdf");
         form.put("password", CqtIntegrationTestSupport.PASSWORD);
         form.put("password_confirmation", CqtIntegrationTestSupport.PASSWORD);
-        CqtWebIT.assertPortalOk(this.post("/api-web/auth/register", null, form));
+        CqtWebIT.assertPortalOk(this.post("/api-web/n/auth/register", null, form));
         return phone;
     }
 
@@ -740,16 +739,18 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("公开接口：无令牌可访问，带有效令牌时仍取得账号 ID")
-    void publicEndpointResolvesOptionalAccount() {
-        final ResponseEntity<JsonNode> anonymous = this.get("/api-web/__test/public-me", null);
+    @DisplayName("公开接口：无令牌可访问，带令牌也不解析账号；登录后前缀不允许匿名访问")
+    void publicEndpointDoesNotResolveAccount() {
+        final ResponseEntity<JsonNode> anonymous = this.get("/api-web/n/__test/public-me", null);
         CqtWebIT.assertPortalOk(anonymous);
         assertThat(IntegrationTestSupport.data(anonymous).asLong()).isEqualTo(-1L);
 
         final String phone = this.registerPersonal();
         final ResponseEntity<JsonNode> signedIn =
-                this.get("/api-web/__test/public-me", this.portalToken(phone, CqtIntegrationTestSupport.PASSWORD));
-        assertThat(IntegrationTestSupport.data(signedIn).asLong()).isEqualTo(this.accountId(phone));
+                this.get("/api-web/n/__test/public-me", this.portalToken(phone, CqtIntegrationTestSupport.PASSWORD));
+        CqtWebIT.assertPortalOk(signedIn);
+        assertThat(IntegrationTestSupport.data(signedIn).asLong()).isEqualTo(-1L);
+        CqtWebIT.assertPortalOk(this.get("/api-web/n/__test/public-me", "not-a-jwt"));
     }
 
     @Test
@@ -772,48 +773,44 @@ class CqtWebIT extends CqtIntegrationTestSupport {
     @Test
     @DisplayName("业务异常折成三位码；参数缺失与类型不匹配为 400；未预期异常为 500 且不泄露细节")
     void errorSemantics() {
-        CqtWebIT.assertPortalError(this.get("/api-web/__test/not-found", null), 404, "资源不存在");
+        CqtWebIT.assertPortalError(this.get("/api-web/n/__test/not-found", null), 404, "资源不存在");
 
-        final ResponseEntity<JsonNode> missing = this.get("/api-web/__test/required", null);
+        final ResponseEntity<JsonNode> missing = this.get("/api-web/n/__test/required", null);
         CqtWebIT.assertPortalError(missing, 400, "page: 不能为空");
-        final ResponseEntity<JsonNode> mismatch = this.get("/api-web/__test/required?page=abc", null);
+        final ResponseEntity<JsonNode> mismatch = this.get("/api-web/n/__test/required?page=abc", null);
         CqtWebIT.assertPortalError(mismatch, 400, "page: 参数类型不正确");
 
-        final ResponseEntity<JsonNode> boom = this.get("/api-web/__test/boom", null);
+        final ResponseEntity<JsonNode> boom = this.get("/api-web/n/__test/boom", null);
         CqtWebIT.assertPortalError(boom, 500, "服务器内部错误");
         assertThat(IntegrationTestSupport.body(boom).toString()).doesNotContain("internal-detail");
     }
 
     /** 只存在于测试 classpath 的前台接口，用来覆盖无法用真实业务接口触发的分支。 */
     @PortalController
-    @RequestMapping("/api-web/__test")
+    @RequestMapping("/api-web")
     static class TestPortalController {
 
-        @GetMapping("/me")
+        @GetMapping("/__test/me")
         PortalResult<Long> me() {
             return PortalResult.ok(PortalAccount.current().orElseThrow());
         }
 
-        @PortalPublic
-        @GetMapping("/public-me")
+        @GetMapping("/n/__test/public-me")
         PortalResult<Long> publicMe() {
             return PortalResult.ok(PortalAccount.current().orElse(-1L));
         }
 
-        @PortalPublic
-        @GetMapping("/not-found")
+        @GetMapping("/n/__test/not-found")
         PortalResult<Void> notFound() {
             throw BizException.notFound("资源不存在");
         }
 
-        @PortalPublic
-        @GetMapping("/required")
+        @GetMapping("/n/__test/required")
         PortalResult<Integer> required(@RequestParam final int page) {
             return PortalResult.ok(page);
         }
 
-        @PortalPublic
-        @GetMapping("/boom")
+        @GetMapping("/n/__test/boom")
         PortalResult<Void> boom() {
             throw new IllegalStateException("internal-detail");
         }

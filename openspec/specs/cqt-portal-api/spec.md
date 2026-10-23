@@ -6,7 +6,7 @@ status: "active"
 
 ## Purpose
 本能力长期负责常青藤前台（uniapp）接口 `/api-web/**` 的公共约定：统一响应包络、错误语义（HTTP 恒 200、由 body 的 code 区分成功、
-未登录与其它错误）、C 端用户令牌的签发与校验，以及哪些接口可免登录访问；使前台沿用原有判定逻辑，且与后台 `/api/**` 的约定互不干扰。
+未登录与其它错误）、C 端用户令牌的签发与校验，以及 `/api-web/n/**` 公开入口；使前台沿用原有判定逻辑，且与后台 `/api-backend/**` 的约定互不干扰。
 
 ## Requirements
 
@@ -16,7 +16,7 @@ status: "active"
 `/api-web/**` 的接口 **MUST NOT** 被框架统一包络改写成 `{code:0}`。
 
 #### Scenario: 公开接口成功返回
-- **WHEN** 不带令牌请求 `GET /api-web/product/getconfig`
+- **WHEN** 不带令牌请求 `GET /api-web/n/product/getconfig`
 - **THEN** HTTP 200，body 的 `code` 为 200、`message` 为「成功」、`data` 为对象
 - **判据**:集成测试断言状态码 200 且 `$.code == 200`、`$.message == "成功"`、`$.data` 为 JSON 对象
 
@@ -72,11 +72,11 @@ status: "active"
 
 ### Requirement: [FR-004] 前台接口登录校验
 
-`/api-web/**` 的接口 **MUST** 默认要求请求头 `Authorization: Bearer <前台令牌>`；
+`/api-web/**`（排除 `/api-web/n/**`）的接口 **MUST** 要求请求头 `Authorization: Bearer <前台令牌>`；
 令牌解析成功后 **MUST** 查询对应账号：账号不存在或其 `token_version` 与令牌 `ver` 不一致时，令牌视为无效。
 缺少令牌时 **MUST** 返回 `{"code":401,"message":"请求参数缺token"}`，令牌无效时 **MUST** 返回 `{"code":401,"message":"登录失效,请重新登录"}`，HTTP 均为 200。
-标注为公开的接口 **MUST** 允许无令牌访问；带有效令牌访问公开接口时 **MUST** 仍能取得当前账号 ID。
-前台令牌 **MUST NOT** 通过后台 `/api/**` 的认证，后台令牌 **MUST NOT** 通过 `/api-web/**` 的认证。
+`/api-web/n/**` **MUST** 免登录且不解析令牌；公开接口 **MUST NOT** 依赖当前账号。不能用注解放行 `/api-web/**` 的方法。
+前台令牌 **MUST NOT** 通过后台 `/api-backend/**` 的认证，后台令牌 **MUST NOT** 通过需登录的 `/api-web/**` 的认证。
 
 #### Scenario: 无令牌访问需登录接口
 - **WHEN** 不带 `Authorization` 请求需登录的 `/api-web` 接口
@@ -92,6 +92,11 @@ status: "active"
 - **WHEN** 以为某个存在的账号按其当前 `token_version` 签发的令牌请求需登录的 `/api-web` 接口
 - **THEN** HTTP 200，`code` 为 200，接口取得的当前账号 ID 为该账号 ID
 - **判据**:集成测试对回显当前账号 ID 的测试专用接口断言 `$.data` 等于该账号 ID
+
+#### Scenario: 公开入口不解析令牌
+- **WHEN** 无令牌、有效前台令牌或无效令牌请求 `/api-web/n/**` 的公开接口
+- **THEN** 三次请求都可访问，接口内均没有当前账号 ID
+- **判据**:集成测试分别断言三次返回 `code` 200，账号 ID 均为空
 
 #### Scenario: 前后台令牌互不通用
 - **WHEN** 以前台令牌请求后台 `GET /api/auth/me`，或以后台管理员令牌请求需登录的 `/api-web` 接口

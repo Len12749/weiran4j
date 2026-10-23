@@ -60,7 +60,7 @@ abstract class CqtIntegrationTestSupport extends IntegrationTestSupport {
 
     /** 发送验证码并从测试用例的验证码存储中读取。 */
     String smsCode(final String phone) {
-        final ResponseEntity<JsonNode> response = this.get("/api-web/auth/sendSms?phone=" + phone, null);
+        final ResponseEntity<JsonNode> response = this.get("/api-web/n/auth/sendSms?phone=" + phone, null);
         CqtIntegrationTestSupport.assertPortalOk(response);
         return this.smsCodeStore.get(phone).orElseThrow().code();
     }
@@ -87,7 +87,7 @@ abstract class CqtIntegrationTestSupport extends IntegrationTestSupport {
     String registerPersonal() {
         final String phone = CqtIntegrationTestSupport.uniquePhone();
         final ResponseEntity<JsonNode> response = this.post(
-                "/api-web/auth/register",
+                "/api-web/n/auth/register",
                 null,
                 CqtIntegrationTestSupport.personalForm(
                         phone, CqtIntegrationTestSupport.uniqueIdCard(), this.smsCode(phone)));
@@ -98,7 +98,7 @@ abstract class CqtIntegrationTestSupport extends IntegrationTestSupport {
     /** 手机号 + 密码登录，返回前台令牌。 */
     String portalToken(final String phone, final String password) {
         final ResponseEntity<JsonNode> response =
-                this.post("/api-web/auth/autologin", null, Map.of("phone", phone, "password", password));
+                this.post("/api-web/n/auth/autologin", null, Map.of("phone", phone, "password", password));
         CqtIntegrationTestSupport.assertPortalOk(response);
         return IntegrationTestSupport.data(response).path("access_token").asText();
     }

@@ -29,16 +29,21 @@ status: "active"
 
 ### Requirement: [FR-002] 登录
 
-`POST /api-web/auth/login`（手机号、密码、验证码）与 `POST /api-web/auth/autologin`（手机号、密码）**MUST** 免登录。
-`login` **MUST** 先校验验证码，失败返回 `code` 401「验证码错误」。
+`POST /api-web/n/auth/login`（手机号 + 验证码，或手机号 + 密码；旧请求可同时提交两者）与 `POST /api-web/n/auth/autologin`（手机号 + 密码）**MUST** 免登录。
+`login` 收到验证码时 **MUST** 先校验验证码，失败返回 `code` 401「验证码错误」；验证码正确且未提交密码时无需校验密码。
 按手机号查账号时 **MUST** 优先 `source_database='zhongxi'`、其次 `id` 最小的一条。
-手机号不存在与密码错误 **MUST** 返回同一 `code`（400）与同一提示「手机号或密码错误」。
+密码登录时手机号不存在与密码错误 **MUST** 返回同一 `code`（400）与同一提示「手机号或密码错误」。验证码登录时手机号不存在 **MUST** 返回 `code` 404「用户信息不存在，请先注册」（验证码已证明持有该号码）。
 成功时 **MUST** 返回 `{"access_token":<前台令牌>,"token_type":"bearer","expires_in":<有效期秒数>}`，令牌按账号当前 `token_version` 签发。
 
 #### Scenario: 验证码登录成功
-- **WHEN** 发送验证码后，以正确手机号、密码、验证码调用 `login`
+- **WHEN** 已注册手机号收到验证码后，以手机号和验证码调用 `login`
 - **THEN** `code` 200，`data.access_token` 可访问 `userinfo`
 - **判据**:集成测试用返回的令牌请求 `userinfo` 得到 `code` 200
+
+#### Scenario: 验证码正确但手机号未注册
+- **WHEN** 未注册手机号收到验证码后，以手机号和验证码调用 `login`
+- **THEN** `code` 404「用户信息不存在，请先注册」
+- **判据**:集成测试断言返回提示先注册，而非密码错误
 
 #### Scenario: 账号不存在与密码错误不可区分
 - **WHEN** 分别以未注册手机号、已注册手机号 + 错误密码调用 `autologin`
@@ -52,7 +57,7 @@ status: "active"
 
 ### Requirement: [FR-003] 注册
 
-`POST /api-web/auth/register` **MUST** 免登录，按 `type` 区分个人（1）与学校（2），其余值返回 `code` 400「类型格式不正确」。
+`POST /api-web/n/auth/register` **MUST** 免登录，按 `type` 区分个人（1）与学校（2），其余值返回 `code` 400「类型格式不正确」。
 **MUST** 校验：姓名 / 学校名称去空白后至少 2 个字符；手机号 11 位数字；密码至少 6 位且与 `password_confirmation` 一致；验证码正确（否则 401「验证码错误」）；
 手机号未被任何账号使用（否则 `code` 409「当前手机号已经注册」）。
 个人账号 **MUST** 校验证件：`credential_type` 接受「身份证号」/「身份证」/`ID_CARD`（→ `ID_CARD`）与「其他」/`OTHER`（→ `OTHER`），缺省为身份证号；
@@ -115,7 +120,7 @@ status: "active"
 
 ### Requirement: [FR-006] 重置密码
 
-`POST /api-web/auth/resetPassword` **MUST** 免登录：密码至少 6 位且与 `password_confirmation` 一致（否则 400「两次密码不一致或密码长度不足」），验证码正确（否则 401「验证码错误」）；
+`POST /api-web/n/auth/resetPassword` **MUST** 免登录：密码至少 6 位且与 `password_confirmation` 一致（否则 400「两次密码不一致或密码长度不足」），验证码正确（否则 401「验证码错误」）；
 **MUST** 修改该手机号对应的全部账号的密码并把其 `token_version` 加 1；
 手机号无账号时 **MUST** 返回 `code` 404「用户信息不存在」（此时请求方已通过该手机号的验证码校验，即已证明持有该号码，不构成账号枚举）。
 
@@ -126,7 +131,7 @@ status: "active"
 
 ### Requirement: [FR-007] 承诺书模板链接
 
-`GET` 或 `POST /api-web/auth/getlinkinfo` **MUST** 免登录，`data` 为配置项 `weiran.cqt.commitment-template-url` 的值（未配置时为空串）。
+`GET` 或 `POST /api-web/n/auth/getlinkinfo` **MUST** 免登录，`data` 为配置项 `weiran.cqt.commitment-template-url` 的值（未配置时为空串）。
 
 #### Scenario: 返回配置的链接
 - **WHEN** 配置了模板链接时请求

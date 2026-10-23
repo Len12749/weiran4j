@@ -198,7 +198,7 @@ import { contentAll, expertView } from '@/util/content.js';
 
 			this.GET({
 				name: '获取网站配置',
-				url: '/api/product/getconfig',
+				url: '/api/n/product/getconfig',
 				data: {}
 			}).then((res) => {
 				this.configData = res.data.data
@@ -235,7 +235,7 @@ import { contentAll, expertView } from '@/util/content.js';
 			get_index3() {
 				this.GET({
 					name: '大赛动态',
-					url: '/api/product/news?page=1&pageSize=3&homeOnly=true',
+					url: '/api/n/product/news?page=1&pageSize=3&homeOnly=true',
 					data: {}
 				}).then((res) => {
 					this.list1 = (res.data.data.list || []).map((item) => ({

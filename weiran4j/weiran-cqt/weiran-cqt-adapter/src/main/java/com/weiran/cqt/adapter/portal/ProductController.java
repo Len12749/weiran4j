@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 /** 前台「产品」接口组（沿用原系统 {@code /api/product/*} 的分组名）。 */
 @PortalController
-@RequestMapping("/api-web/product")
+@RequestMapping("/api-web/n/product")
 public class ProductController {
 
     private final SiteConfigService siteConfigService;
@@ -19,7 +19,6 @@ public class ProductController {
     }
 
     /** 站点配置（公开）。 */
-    @PortalPublic
     @GetMapping("/getconfig")
     public PortalResult<Map<String, @Nullable Object>> getConfig() {
         return PortalResult.ok(this.siteConfigService.getConfig());

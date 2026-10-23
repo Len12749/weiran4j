@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 前台（uniapp）接口的 Controller 注解：{@code @RestController} + {@link SkipApiResponse}。
  *
  * <p>标了它的 Controller 返回 {@link PortalResult}（{@code {code:200}}），异常由 {@link PortalExceptionAdvice} 统一输出，
- * 路径必须在 {@code /api-web/**} 下才会经过 {@link PortalAuthInterceptor}。
+ * 登录后接口使用 {@code /api-web/**} 并经过 {@link PortalAuthInterceptor}；公开接口使用 {@code /api-web/n/**}。
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

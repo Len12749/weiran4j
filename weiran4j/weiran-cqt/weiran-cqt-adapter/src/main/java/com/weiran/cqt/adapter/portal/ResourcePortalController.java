@@ -12,8 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 /** 指导资料公开查询；只公开启用项。 */
 @PortalController
-@PortalPublic
-@RequestMapping("/api-web/content/resources")
+@RequestMapping("/api-web/n/content/resources")
 public class ResourcePortalController {
     private final ResourceService service;
 

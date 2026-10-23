@@ -187,7 +187,7 @@ import { contentGet, contentUrl, downloadContent } from '@/util/content.js';
 
 			this.GET({
 				name: '获取网站配置',
-				url: '/api/product/getconfig',
+				url: '/api/n/product/getconfig',
 				data: {}
 			}).then((res) => {
 				this.configData = res.data.data

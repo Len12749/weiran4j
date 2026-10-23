@@ -23,10 +23,10 @@ status: "active"
 
 ### Requirement: [FR-002] 前台赛事与赛项读取
 
-`competitionlists`（`GET`/`POST /api-web/competcategory/competitionlists`，公开）**MUST** 返回 `[{id, legacy_id, name, edition, year, description, status}]`，按 `year`、`id` 倒序，
+`competitionlists`（`GET`/`POST /api-web/n/competcategory/competitionlists`，公开）**MUST** 返回 `[{id, legacy_id, name, edition, year, description, status}]`，按 `year`、`id` 倒序，
 可按 `status`（精确）与 `name`（包含）过滤。
-`getsecondcat`（`GET /api-web/auth/getsecondcat?id=<赛事ID>`，公开）在赛事不存在或 `status≠1` 时 **MUST** 返回空数组，否则返回启用的一级赛项；
-`secondcategory`（`GET`/`POST /api-web/competcategory/secondcategory?id=<一级赛项编号>`，公开）**MUST** 返回该一级赛项下启用的二级赛项。
+`getsecondcat`（`GET /api-web/n/auth/getsecondcat?id=<赛事ID>`，公开）在赛事不存在或 `status≠1` 时 **MUST** 返回空数组，否则返回启用的一级赛项；
+`secondcategory`（`GET`/`POST /api-web/n/competcategory/secondcategory?id=<一级赛项编号>`，公开）**MUST** 返回该一级赛项下启用的二级赛项。
 赛项项 **MUST** 为 `{id: legacy_id, pid: parent_legacy_id, name, sort: sort_order, status, fujian: attachment_required}`，按 `sort_order`、`id` 升序。
 
 #### Scenario: 赛事列表过滤
@@ -47,7 +47,7 @@ status: "active"
 ### Requirement: [FR-003] 组别
 
 组别 **MUST** 存放在 `cqt_competition_groups`，按赛事配置；一级 / 二级赛项编号为 0 表示对该层级通用。
-`groups`（`GET /api-web/competcategory/groups?competition_id&firstcatid&secondcatid`，公开）缺 `competition_id` 或 `firstcatid` 时 **MUST** 返回空数组，
+`groups`（`GET /api-web/n/competcategory/groups?competition_id&firstcatid&secondcatid`，公开）缺 `competition_id` 或 `firstcatid` 时 **MUST** 返回空数组，
 否则 **MUST** 返回该赛事启用的、一级赛项为 0 或等于 `firstcatid`、二级赛项为 0 或等于 `secondcatid` 的组别 `[{id, name, sort: id}]`，按 `id` 升序。
 
 #### Scenario: 通用组别与赛项专属组别

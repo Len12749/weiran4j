@@ -73,7 +73,15 @@ public class AccountApplicationService implements AccountService {
     @Transactional(readOnly = true)
     public LoginResult login(
             final @Nullable String phone, final @Nullable String password, final @Nullable String code) {
-        this.smsService.verify(AccountApplicationService.strip(phone), code);
+        if (code != null) {
+            this.smsService.verify(AccountApplicationService.strip(phone), code);
+            if (password == null || password.isEmpty()) {
+                final Account account = this.accountRepository
+                        .findFirstByPhone(AccountApplicationService.strip(phone))
+                        .orElseThrow(() -> BizException.notFound("用户信息不存在，请先注册"));
+                return this.issueToken(account);
+            }
+        }
         return this.passwordLogin(phone, password);
     }
 
@@ -211,6 +219,10 @@ public class AccountApplicationService implements AccountService {
         if (!this.passwordHasher.matches(raw, account.getPasswordHash())) {
             throw new BizException(CqtErrors.LOGIN_FAILED);
         }
+        return this.issueToken(account);
+    }
+
+    private LoginResult issueToken(final Account account) {
         final String token = this.tokenCodec.issue(account.requireId(), account.getTokenVersion());
         return new LoginResult(
                 token,

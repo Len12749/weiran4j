@@ -282,7 +282,7 @@
 		onShow() {
 			this.GET({
 				name: '获取网站配置',
-				url: '/api/product/getconfig',
+				url: '/api/n/product/getconfig',
 				data: {}
 			}).then((res) => {
 				this.configData = res.data.data
@@ -404,7 +404,7 @@
 			getlinkinfo() {
 				this.POST({
 					name: '获取下载链接',
-					url: '/api/auth/getlinkinfo',
+					url: '/api/n/auth/getlinkinfo',
 					data: {}
 				}).then((res) => {
 					this.link_url = res.data.data
@@ -444,7 +444,7 @@
 				// 3. 调用接口
 				this.GET({
 					name: '发送验证码',
-					url: '/api/auth/sendSms', // 确保后端有此接口
+					url: '/api/n/auth/sendSms', // 确保后端有此接口
 					data: {
 						phone: this.phone,
 					}
@@ -513,7 +513,7 @@
 					}
 					this.POST({
 						name: '学生注册',
-						url: '/api/auth/register',
+						url: '/api/n/auth/register',
 						data: {
 							type: 1,
 							name: this.name,
@@ -542,7 +542,7 @@
 							// }, 1000)
 							this.POST({
 								name: '学生登录',
-								url: '/api/auth/autologin',
+								url: '/api/n/auth/autologin',
 								data: {
 									phone: this.phone,
 									name: this.name,
@@ -574,7 +574,7 @@
 				if (this.is_school == 1) {
 					this.POST({
 						name: '学校注册',
-						url: '/api/auth/register',
+						url: '/api/n/auth/register',
 						data: {
 							type: 2,
 							name: this.name,
@@ -609,7 +609,7 @@
 							// }, 1000)
 							this.POST({
 								name: '学生登录',
-								url: '/api/auth/autologin',
+								url: '/api/n/auth/autologin',
 								data: {
 									phone: this.phone,
 									name: this.name,

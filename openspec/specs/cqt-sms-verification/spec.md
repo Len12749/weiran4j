@@ -12,7 +12,7 @@ status: "active"
 
 ### Requirement: [FR-001] 验证码发送
 
-`GET /api-web/auth/sendSms?phone=<手机号>` **MUST** 免登录。手机号 **MUST** 为 11 位数字，否则返回 `code` 400「手机号格式不正确」。
+`GET /api-web/n/auth/sendSms?phone=<手机号>` **MUST** 免登录。手机号 **MUST** 为 11 位数字，否则返回 `code` 400「手机号格式不正确」。
 系统 **MUST** 生成 6 位数字验证码，并按 `weiran.sms.mode` 使用 system 短信配置的 `sms.system_tpl.captcha_local` 或 `sms.system_tpl.captcha_aliyun` 模板与 system `SmsService` 发送；成功返回 `{"sent":true}`，响应 **MUST NOT** 回显验证码。
 同一手机号距上次成功发送不足 60 秒时 **MUST** 返回 `code` 429「发送过于频繁，请稍后再试」且不生成新验证码。
 system 短信服务不可用或当前模式的模板为空时 **MUST** 返回 `code` 503「短信服务未配置」。发送失败时 **MUST** 删除本次验证码（允许立即重发），并按 system 返回结果映射：服务商频控 → `code` 429；号码非法 → `code` 400；其它失败 → `code` 503。HTTP 均为 200。

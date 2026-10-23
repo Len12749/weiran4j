@@ -56,13 +56,15 @@ public class CqtAdapterAutoConfiguration {
         return new PortalAuthInterceptor(authService);
     }
 
-    /** 只把前台拦截器挂在 {@code /api-web/**}；后台 {@code /api-backend/**} 由框架拦截器负责。 */
+    /** 前台仅 {@code /api-web/**} 登录后入口需要认证，公开 {@code /api-web/n/**} 不解析用户身份。 */
     @Bean
     public WebMvcConfigurer cqtPortalWebMvcConfigurer(final PortalAuthInterceptor portalAuthInterceptor) {
         return new WebMvcConfigurer() {
             @Override
             public void addInterceptors(final InterceptorRegistry registry) {
-                registry.addInterceptor(portalAuthInterceptor).addPathPatterns("/api-web/**");
+                registry.addInterceptor(portalAuthInterceptor)
+                        .addPathPatterns("/api-web/**")
+                        .excludePathPatterns("/api-web/n/**");
             }
         };
     }

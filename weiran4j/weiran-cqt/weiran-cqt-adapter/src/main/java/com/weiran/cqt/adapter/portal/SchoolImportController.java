@@ -30,8 +30,7 @@ public class SchoolImportController {
     }
 
     /** 返回不含示例数据及奖项列的空白模板。 */
-    @PortalPublic
-    @GetMapping("/api-web/cqt-import/template.xlsx")
+    @GetMapping("/api-web/n/cqt-import/template.xlsx")
     public ResponseEntity<byte[]> template() {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(SchoolImportController.XLSX_TYPE))
@@ -40,10 +39,9 @@ public class SchoolImportController {
     }
 
     /** 旧页面模板链接接口。 */
-    @PortalPublic
-    @GetMapping("/api-web/auth/getexinfo")
+    @GetMapping("/api-web/n/auth/getexinfo")
     public PortalResult<String> templateUrl() {
-        return PortalResult.ok("/api-web/cqt-import/template.xlsx");
+        return PortalResult.ok("/api-web/n/cqt-import/template.xlsx");
     }
 
     /** 查询学校是否存在待处理任务。 */

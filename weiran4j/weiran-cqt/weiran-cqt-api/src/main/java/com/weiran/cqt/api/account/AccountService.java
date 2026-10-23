@@ -5,7 +5,7 @@ import org.jspecify.annotations.Nullable;
 /** 前台账号。 */
 public interface AccountService {
 
-    /** 手机号 + 密码 + 短信验证码登录。 */
+    /** 手机号 + 短信验证码、手机号 + 密码登录；兼容同时提交密码与验证码。 */
     LoginResult login(@Nullable String phone, @Nullable String password, @Nullable String code);
 
     /** 手机号 + 密码登录（uniapp 注册成功后自动登录用）。 */

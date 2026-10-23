@@ -79,7 +79,7 @@ import { contentGet } from '@/util/content.js';
 		onShow() {
 			this.GET({
 				name: '获取网站配置',
-				url: '/api/product/getconfig',
+				url: '/api/n/product/getconfig',
 				data: {}
 			}).then((res) => {
 				this.configData = res.data.data

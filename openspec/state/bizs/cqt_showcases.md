@@ -2,7 +2,7 @@
 
 ## 0. 概要
 
-独立内容表 `cqt_showcases`，属于 weiran-cqt content 子域。后台「站点资料 → 佳作欣赏」`/cqt/showcases`；管理接口 `/api-backend/cqt/showcases`；公开接口 `/api-web/content/showcases`。与大赛动态、另外两个内容模块的数据和 ID 互相独立。
+独立内容表 `cqt_showcases`，属于 weiran-cqt content 子域。后台「站点资料 → 佳作欣赏」`/cqt/showcases`；管理接口 `/api-backend/cqt/showcases`；公开接口 `/api-web/n/content/showcases`。与大赛动态、另外两个内容模块的数据和 ID 互相独立。
 
 ## 1. 列表
 

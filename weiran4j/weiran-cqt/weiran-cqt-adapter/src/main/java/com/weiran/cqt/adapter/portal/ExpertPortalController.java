@@ -11,8 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 /** 学术评审团公开查询；只公开启用项。 */
 @PortalController
-@PortalPublic
-@RequestMapping("/api-web/content/experts")
+@RequestMapping("/api-web/n/content/experts")
 public class ExpertPortalController {
     private final ExpertService service;
 

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 /** 大赛动态前台公开接口。 */
 @PortalController
-@RequestMapping("/api-web/product")
+@RequestMapping("/api-web/n/product")
 public class NewsPortalController {
 
     private final NewsPortalService newsService;
@@ -21,7 +21,6 @@ public class NewsPortalController {
     }
 
     /** 动态列表；首页可通过 {@code homeOnly=true} 限定首页展示项。 */
-    @PortalPublic
     @GetMapping("/news")
     public PortalResult<PageResult<NewsView>> page(
             @RequestParam(defaultValue = "1") final int page,
@@ -31,7 +30,6 @@ public class NewsPortalController {
     }
 
     /** 动态详情（保留 uniapp 原有路径与参数形式）。 */
-    @PortalPublic
     @GetMapping("/newsdetail")
     public PortalResult<NewsView> detail(@RequestParam("id") final long id) {
         return PortalResult.ok(this.newsService.get(id));
