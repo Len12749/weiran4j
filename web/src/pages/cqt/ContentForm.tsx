@@ -3,11 +3,11 @@ import type { FormApi } from '@douyinfe/semi-ui/lib/es/form';
 import { useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { PageContainer } from '@/components/PageContainer';
-import { FileUpload } from '@/components/FileUpload';
 import { usePageTabs } from '@/hooks/usePageTabs';
 import { useContentDetail, useSaveContent, useUploadContent, type ContentBody, type ContentResource, type ContentView } from '@/hooks/queries/cqt-content';
 import type { CqtShowcaseCategory, CqtResourceCategory, SiteConfigImageUpload } from '@/types/api';
 import { contentConfig } from './ContentConfig';
+import { CqtFileUpload } from './CqtFileUpload';
 import { SiteConfigRichEditor } from './SiteConfigRichEditor';
 
 type Fields = { name: string; title: string; image: string; category: string; author: string; teacher: string; school: string; description: string;
@@ -62,7 +62,7 @@ function ContentForm({ resource, record }: { resource: ContentResource; record?:
     const uploadField = (label: string, urlField: 'attachmentUrl' | 'videoUrl', nameField?: 'attachmentName') => <div style={{ margin: '16px 0' }}>
         <Typography.Text strong>{label}</Typography.Text>
         {nameField && values[nameField] && <div><Typography.Text type="tertiary">{values[nameField]}</Typography.Text></div>}
-        <div style={{ marginTop: 8 }}><FileUpload
+        <div style={{ marginTop: 8 }}><CqtFileUpload
             value={values[urlField]}
             disabled={busy}
             allowedExtensions={urlField === 'videoUrl' ? VIDEO_EXTENSIONS : ATTACHMENT_EXTENSIONS}
@@ -83,14 +83,14 @@ function ContentForm({ resource, record }: { resource: ContentResource; record?:
         <div inert={busy}><Form<Fields> disabled={busy} initValues={values} getFormApi={(formApi) => { api.current = formApi; }} labelPosition="top">
             {resource === 'experts' ? <Form.Input field="name" label="姓名" maxLength={255} rules={[{ required: true, whitespace: true, message: '请输入姓名' }]} /> : <Form.Input field="title" label="标题" maxLength={255} rules={[{ required: true, whitespace: true, message: '请输入标题' }]} />}
             {resource !== 'resources' && <><Form.Input field="image" label="首图" style={{ display: 'none' }} rules={[{ required: true, message: '请上传首图' }]} />
-                <FileUpload value={values.image} disabled={busy} allowedExtensions={IMAGE_EXTENSIONS}
+                <CqtFileUpload value={values.image} disabled={busy} allowedExtensions={IMAGE_EXTENSIONS}
                     onChange={(value) => change('image', value)} onUpload={(file) => trackUpload('images', file)} /></>}
             {config.categories.length > 0 && <Form.Select field="category" label="分类" optionList={config.categories} rules={[{ required: true, message: '请选择分类' }]} style={{ width: '100%' }} />}
             {resource === 'showcases' && <><Form.Input field="author" label="作者" maxLength={255} /><Form.Input field="teacher" label="指导教师" maxLength={255} /><Form.Input field="school" label="学校" maxLength={255} /><Form.TextArea field="description" label="简介" />
                 {uploadField('附件', 'attachmentUrl', 'attachmentName')}{uploadField('视频', 'videoUrl')}</>}
             {resource === 'resources' && <div style={{ margin: '16px 0' }}>
                 <Typography.Text strong>上传资料</Typography.Text>
-                <div style={{ marginTop: 8 }}><FileUpload value={values.materialUrl} disabled={busy}
+                <div style={{ marginTop: 8 }}><CqtFileUpload value={values.materialUrl} disabled={busy}
                     allowedExtensions={ATTACHMENT_EXTENSIONS} maxFileSizeMB={1024}
                     onUpload={(file) => trackUpload('files', file)}
                     onChange={(url) => { change('materialUrl', url); setError(''); }} /></div>

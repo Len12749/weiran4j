@@ -30,8 +30,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 /** 文件上传、查询和引用保护删除用例。 */
 public class MediaApplicationService implements MediaService {
 
-    private static final long MAX_SIZE = 10L * 1024L * 1024L;
-
     private final MediaRepository mediaRepository;
     private final FileStorage fileStorage;
     private final MediaAssetDeletionService deletionService;
@@ -71,17 +69,23 @@ public class MediaApplicationService implements MediaService {
             throws IOException {
         final StoredFile stored;
         try (PushbackInputStream checked = new PushbackInputStream(content, 12)) {
-            if (size == 0 || size > MediaApplicationService.MAX_SIZE) {
-                throw BizException.badRequest("文件不能为空且不得超过 10 MB");
-            }
             final String extension = MediaFileTypes.extension(originalName);
             if (!MediaFileTypes.allowed(extension)) {
                 throw BizException.badRequest("不支持该文件类型");
+            }
+            final long maxSize =
+                    MediaFileTypes.video(extension) ? MediaFileTypes.MAX_VIDEO_SIZE : MediaFileTypes.MAX_FILE_SIZE;
+            if (size == 0 || size > maxSize) {
+                throw BizException.badRequest(
+                        MediaFileTypes.video(extension) ? "视频不能为空且不得超过 100 MB" : "文件不能为空且不得超过 10 MB");
             }
             final byte[] header = checked.readNBytes(12);
             checked.unread(header);
             if (MediaFileTypes.image(extension) && !MediaApplicationService.matchesImageSignature(extension, header)) {
                 throw BizException.badRequest("图片文件内容与扩展名不匹配");
+            }
+            if (MediaFileTypes.video(extension) && !MediaApplicationService.matchesVideoSignature(extension, header)) {
+                throw BizException.badRequest("视频文件内容与扩展名不匹配");
             }
             stored = this.fileStorage.store(originalName, checked, size);
         } catch (final IOException | RuntimeException ex) {
@@ -206,6 +210,20 @@ public class MediaApplicationService implements MediaService {
                         && header[9] == 'E'
                         && header[10] == 'B'
                         && header[11] == 'P';
+            default -> false;
+        };
+    }
+
+    private static boolean matchesVideoSignature(final String extension, final byte[] header) {
+        return switch (extension) {
+            case "mp4", "mov" ->
+                header.length >= 8 && header[4] == 'f' && header[5] == 't' && header[6] == 'y' && header[7] == 'p';
+            case "webm" ->
+                header.length >= 4
+                        && header[0] == 0x1a
+                        && header[1] == 0x45
+                        && header[2] == (byte) 0xdf
+                        && header[3] == (byte) 0xa3;
             default -> false;
         };
     }

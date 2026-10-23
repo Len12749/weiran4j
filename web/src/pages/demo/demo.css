@@ -1,0 +1,8 @@
+.demo-page { display: grid; gap: 16px; }
+.demo-page__hint { color: var(--color-text-secondary); font-size: 12px; }
+.demo-page__nav { height: 320px; max-width: 520px; }
+.demo-page__fields { display: grid; gap: 20px; }
+.demo-page__fields label { display: flex; align-items: center; gap: 12px; }
+.demo-page__access { display: flex; align-items: flex-start; gap: 20px; }
+.demo-page__access strong { font-size: 16px; }
+.demo-page__access p { margin: 6px 0 12px; color: var(--color-text-secondary); }

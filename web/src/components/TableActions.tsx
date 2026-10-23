@@ -1,6 +1,7 @@
 import { Button, Dropdown, Modal, Popconfirm, Space } from '@douyinfe/semi-ui';
 import type { ColumnProps } from '@douyinfe/semi-ui/lib/es/table';
 import { MoreHorizontal } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { mediaDown } from '@/lib/breakpoints';
 import { usePermission } from '@/hooks/usePermission';
@@ -8,6 +9,7 @@ import { usePermission } from '@/hooks/usePermission';
 export interface TableAction {
     key: string;
     label: string;
+    icon?: ReactNode;
     onClick: () => void;
     /** 危险操作：红色文字 */
     danger?: boolean;
@@ -59,6 +61,7 @@ export function TableActions({ actions, compact = false }: { actions: readonly T
                                 {...(a.disabled ? { disabled: true } : {})}
                                 onClick={() => run(a)}
                             >
+                                {a.icon && <span style={{ display: 'inline-flex', verticalAlign: 'middle', marginRight: 6 }}>{a.icon}</span>}
                                 {a.label}
                             </Dropdown.Item>
                         ))}
@@ -78,6 +81,7 @@ export function TableActions({ actions, compact = false }: { actions: readonly T
                         key={a.key}
                         theme="borderless"
                         size="small"
+                        {...(a.icon ? { icon: a.icon } : {})}
                         {...(a.danger ? { type: 'danger' as const } : {})}
                         {...(a.disabled ? { disabled: true } : {})}
                         {...(a.confirm ? {} : { onClick: a.onClick })}

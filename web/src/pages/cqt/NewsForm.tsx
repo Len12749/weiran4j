@@ -1,11 +1,11 @@
 import { Button, Form, Space, Toast } from '@douyinfe/semi-ui';
 import type { FormApi } from '@douyinfe/semi-ui/lib/es/form';
 import { useRef, useState } from 'react';
-import { FileUpload } from '@/components/FileUpload';
 import { PageContainer } from '@/components/PageContainer';
 import { useCreateCqtNews, useUpdateCqtNews, useUploadCqtNewsImage } from '@/hooks/queries/cqt-news';
 import type { CqtNewsSaveRequest, CqtNewsView } from '@/types/api';
 import { SiteConfigRichEditor } from './SiteConfigRichEditor';
+import { CqtFileUpload } from './CqtFileUpload';
 
 export type NewsTarget = { mode: 'create' } | { mode: 'edit'; record: CqtNewsView };
 
@@ -47,7 +47,7 @@ export function NewsForm({ target, onClose, onSaved }: { target: NewsTarget; onC
         >
             <Form.Input field="title" label="标题" maxLength={255} rules={[{ required: true, message: '请输入标题' }]} />
             <Form.Input field="image" label="首图" rules={[{ required: true, message: '请上传首图' }]} style={{ display: 'none' }} />
-            <FileUpload
+            <CqtFileUpload
                 value={image}
                 allowedExtensions={['.jpg', '.jpeg', '.png', '.gif']}
                 onUpload={(file) => uploadImage.mutateAsync(file)}

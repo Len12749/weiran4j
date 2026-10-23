@@ -1,15 +1,19 @@
 import { Button, Input, Modal, Select, Table, Tag, Toast, Typography } from '@douyinfe/semi-ui';
 import type { ColumnProps } from '@douyinfe/semi-ui/lib/es/table';
-import { FilePlus2, RefreshCw } from 'lucide-react';
+import { Copy, Download, Eye, FilePlus2, Play, RefreshCw, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useColumnSettings } from '@/components/ColumnSettings';
-import { fileUploadError, isImageUrl, openFileUrl } from '@/components/FileUpload';
+import { FileTypeIcon, isPdfFile } from '@/components/FileTypeIcon';
+import { fileUploadError, MAX_FILE_SIZE_MB, MAX_VIDEO_SIZE_MB } from '@/components/FileUpload';
+import { PdfPreview } from '@/components/PdfPreview';
+import { VideoPreview } from '@/components/VideoPreview';
 import { PageContainer } from '@/components/PageContainer';
 import { Permission } from '@/components/Permission';
 import { SearchToolbar, type SearchCondition } from '@/components/SearchToolbar';
 import { useActionsColumn, type TableAction } from '@/components/TableActions';
 import { useDeleteSystemMediaFile, useSystemMediaFiles, useUploadSystemFile } from '@/hooks/queries/system-media';
 import { tableScrollX, useTableDefaults } from '@/hooks/useTableDefaults';
+import { openFileUrl } from '@/lib/file-url';
 import type { SystemMediaFileQuery, SystemMediaFileView } from '@/types/api';
 import './media-library.css';
 
@@ -23,6 +27,7 @@ interface UploadItem {
 type Category = SystemMediaFileQuery['category'];
 const CATEGORY_OPTIONS = [
     { label: '图片', value: 'image' },
+    { label: '视频', value: 'video' },
     { label: '文档', value: 'document' },
     { label: '压缩包', value: 'archive' },
 ];
@@ -44,6 +49,8 @@ export default function SystemMediaLibraryPage() {
     const [pageSize, setPageSize] = useState(initialPageSize);
     const [uploads, setUploads] = useState<UploadItem[]>([]);
     const [preview, setPreview] = useState<SystemMediaFileView | null>(null);
+    const [videoPreview, setVideoPreview] = useState<SystemMediaFileView | null>(null);
+    const [pdfPreview, setPdfPreview] = useState<SystemMediaFileView | null>(null);
     const [deleting, setDeleting] = useState<SystemMediaFileView | null>(null);
     const query = useSystemMediaFiles({ page, pageSize, ...(keyword ? { keyword } : {}), ...(category ? { category } : {}) });
     const upload = useUploadSystemFile();
@@ -91,8 +98,8 @@ export default function SystemMediaLibraryPage() {
     const columns: ColumnProps<SystemMediaFileView>[] = [
         { title: 'ID', dataIndex: 'id', width: 90 },
         { title: '文件', dataIndex: 'originalName', width: 320, render: (_: unknown, row) => <div className="media-library__file-cell">
-            {isImageUrl(row.url) ? <img src={row.url} alt="" loading="lazy" /> : <span className="media-library__file-icon">文件</span>}
-            <span title={row.originalName}>{row.originalName}</span>
+            {row.category === 'image' ? <img src={row.url} alt="" loading="lazy" /> : <FileTypeIcon name={row.originalName} size={40} />}
+            <span className="media-library__filename" title={row.originalName}>{row.originalName}</span>
         </div> },
         { title: '类型', dataIndex: 'category', width: 90, render: (value: string) => CATEGORY_OPTIONS.find((option) => option.value === value)?.label ?? value },
         { title: '大小', dataIndex: 'size', width: 110, render: (value: number) => formatBytes(value) },
@@ -103,9 +110,9 @@ export default function SystemMediaLibraryPage() {
         { title: '操作', dataIndex: 'actions', width: 210, fixed: 'right' },
     ];
     const actionsOf = (row: SystemMediaFileView): TableAction[] => [
-        { key: 'open', label: row.category === 'image' ? '预览' : '打开/下载', onClick: () => row.category === 'image' ? setPreview(row) : openFileUrl(row.url) },
-        { key: 'copy', label: '复制链接', onClick: () => void copyUrl(row.url) },
-        { key: 'delete', label: '删除', danger: true, disabled: row.references.length > 0, permission: 'system:media-library:delete', onClick: () => setDeleting(row) },
+        { key: 'open', label: row.category === 'image' || isPdfFile(row.originalName) ? '预览' : row.category === 'video' ? '播放' : '下载', icon: row.category === 'image' || isPdfFile(row.originalName) ? <Eye size={14} /> : row.category === 'video' ? <Play size={14} /> : <Download size={14} />, onClick: () => row.category === 'image' ? setPreview(row) : isPdfFile(row.originalName) ? setPdfPreview(row) : row.category === 'video' ? setVideoPreview(row) : openFileUrl(row.url) },
+        { key: 'copy', label: '复制链接', icon: <Copy size={14} />, onClick: () => void copyUrl(row.url) },
+        { key: 'delete', label: '删除', icon: <Trash2 size={14} />, danger: true, disabled: row.references.length > 0, permission: 'system:media-library:delete', onClick: () => setDeleting(row) },
     ];
     const { columns: settledColumns, columnSettings } = useColumnSettings('system/media-library', columns);
     const { columns: tableColumns } = useActionsColumn(settledColumns, actionsOf);
@@ -125,7 +132,7 @@ export default function SystemMediaLibraryPage() {
         </SearchToolbar>
         <input ref={inputRef} type="file" multiple hidden aria-label="选择文件" onChange={(event) => { const files = Array.from(event.currentTarget.files ?? []); event.currentTarget.value = ''; chooseFiles(files); }} />
         {uploads.length > 0 && <section className="media-library__uploads" aria-label="上传结果">
-            <div className="media-library__uploads-title">本次上传 · 单文件不超过 10 MB</div>
+            <div className="media-library__uploads-title">本次上传 · 普通文件不超过 {MAX_FILE_SIZE_MB} MB，视频不超过 {MAX_VIDEO_SIZE_MB} MB</div>
             {uploads.map((item) => <div className="media-library__upload-row" key={item.key}>
                 <span className="media-library__upload-name" title={item.file.name}>{item.file.name}</span>
                 {item.state === 'uploading' ? <Typography.Text type="tertiary">上传中</Typography.Text>
@@ -146,6 +153,8 @@ export default function SystemMediaLibraryPage() {
         <Modal visible={preview !== null} title={preview?.originalName ?? '图片预览'} footer={null} onCancel={() => setPreview(null)}>
             {preview && <img className="media-library__preview-image" src={preview.url} alt={preview.originalName} />}
         </Modal>
+        <VideoPreview url={videoPreview?.url ?? null} title={videoPreview?.originalName ?? '视频预览'} onClose={() => setVideoPreview(null)} />
+        <PdfPreview url={pdfPreview?.url ?? null} title={pdfPreview?.originalName ?? 'PDF 预览'} onClose={() => setPdfPreview(null)} />
         <Modal visible={deleting !== null} title="删除文件" onCancel={() => setDeleting(null)} onOk={() => void deleteFile()} okText="删除" okButtonProps={{ type: 'danger', loading: remove.isPending }}>
             <Typography.Paragraph>确定删除「{deleting?.originalName}」？</Typography.Paragraph>
         </Modal>

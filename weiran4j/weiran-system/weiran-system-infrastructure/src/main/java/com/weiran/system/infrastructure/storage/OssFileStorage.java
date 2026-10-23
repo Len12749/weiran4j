@@ -31,7 +31,10 @@ public final class OssFileStorage implements FileStorage, AutoCloseable {
         metadata.setContentLength(size);
         final String extension = MediaFileTypes.extension(originalName);
         metadata.setContentType(MediaFileTypes.contentType(extension));
-        if (!MediaFileTypes.image(extension) && !extension.equals("pdf") && !extension.equals("txt")) {
+        if (!MediaFileTypes.image(extension)
+                && !MediaFileTypes.video(extension)
+                && !extension.equals("pdf")
+                && !extension.equals("txt")) {
             metadata.setContentDisposition("attachment");
         }
         try {

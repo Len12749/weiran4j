@@ -2,12 +2,12 @@
 
 系统配置页面按分组展示动态表单；配置项及其渲染和校验元数据保存在 `sys_config` 中。各模块可基于同一配置底子接入自己的字段定义，之后再扩展为低代码配置。
 
-系统配置的内置分组：`general`（通用设置）、`user`（用户）、`cqt_site`（常青藤站点）。`general` 分组包含 `system.general.title`；`user` 分组包含 `system.user.enable_phone_login`，以开关控制，默认关闭。短信配置使用独立的 `general`（通用）与 `system_tpl`（系统模板）分组。
+系统配置的内置分组：`general`（通用设置）、`user`（用户）。`general` 分组包含 `system.general.title`；`user` 分组包含 `system.user.enable_phone_login`，以开关控制，默认关闭。短信配置使用独立的 `general`（通用）与 `system_tpl`（系统模板）分组。
 
 ## 配置项字段
 
 - **内置分组**：相同分组编码的项目显示在同一 Tab。新增项目只能选择已有分组；扩充分组需由模块提供代码定义。
-- **表单字段**：单行输入、多行文本、数字、开关、下拉选择、JSON、单文件上传或富文本。单文件使用通用 `FileUpload` 并保存文件 URL；业务表单可用多文件模式保存 URL 数组。图片可缩放预览，其他文件由浏览器打开或下载。富文本使用通用 `RichTextEditor`，支持粘贴图片和一次上传多张图片，保存 HTML。文件默认由 system 资源接口上传；单文件和富文本配置字段均使用 string 配置类型。
+- **表单字段**：单行输入、多行文本、数字、开关、下拉选择、JSON、单文件上传或富文本。单文件使用通用 `FileUpload` 并保存文件 URL；业务表单可用多文件模式保存 URL 数组。图片可缩放预览，PDF 使用浏览器内置阅读器预览，视频可在当前页面播放，其他文件提供下载操作。富文本使用通用 `RichTextEditor`，支持粘贴图片和一次上传多张图片，保存 HTML。文件默认由 system 资源接口上传；单文件和富文本配置字段均使用 string 配置类型。
 - **必填 / 下拉选项**：提交时前端校验，后端也按值类型、必填规则和选项元数据拒绝非法值。
 - **配置键**：遵循 `{range}.{group}.{value}`，例如 `system.general.title`、`sms.general.sign_name`、`sms.system_tpl.captcha_local`。`range` 为 `system` 或 `sms`；`group` 必须等于所属分组编码；`value` 是组内配置项编码。三段只用小写字母、数字、下划线、连字符，分组和配置项编码以小写字母开头。新建或调整键、分组时校验此约定；内置配置不能删除，内置键不能改名。
 
@@ -15,6 +15,8 @@
 
 本地短信模式需要把 `sms.system_tpl.captcha_local` 配置为包含 `${code}` 的短信正文，例如 `你的验证码是 ${code} , 5 分钟有效, 请不要告知他人`。发送时会将占位符替换为验证码，并把完整正文写入应用日志供联调。开启 `system.user.enable_phone_login` 后，登录页才会在发送器和模板均就绪时显示手机号登录。
 
+本仓库的可选 `weiran-demo` 模块在 local/test profile 播种组件演示菜单与独立的示例配置分组；下游可省略模块与 `web/src/pages/demo/`，生产环境默认不加载。演示页的「配置表单」使用同一套表单展示八种字段类型各一条，并提供多文件示例。文件选中后立即上传到 system 资源库；上传入口与等比图片缩略图并列，多文件拖动时显示插入位置，也可用箭头调整顺序，图片预览可缩放，PDF 可在页内预览，视频可在页内播放。普通文件限 10 MB、视频限 100 MB，默认最多 9 个，达到数量上限时隐藏上传入口。点击保存才将 URL、按顺序排列的 URL 数组或 HTML 写入 `sys_config`；页面可查看服务端已保存值。移除文件后保存会清除配置引用，未被引用的文件可在资源库删除。
+
 匿名接口 `/api-backend/n/system/config/getPublic/{key}` 只允许 `system.general.title`。它不会自动改变前端显示；标题仍由构建变量 `VITE_APP_TITLE` 提供。
 
-常青藤站点配置在 `cqt_site` 分组维护，前台仍通过 `/api-web/product/getconfig` 读取；原 `cqt_setting` 表及独立后台页面已移除。表结构和跨接口业务约束见 `weiran4j/docs/01-架构与接口契约.md`；接口路径与字段 schema 以本地 OpenAPI 为准。
+站点内容配置已从页面、接口与数据库移除。表结构和跨接口业务约束见 `weiran4j/docs/01-架构与接口契约.md`；接口路径与字段 schema 以本地 OpenAPI 为准。

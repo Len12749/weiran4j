@@ -37,6 +37,10 @@ export default defineConfig(({ mode }) => {
                     target: apiTarget,
                     changeOrigin: true,
                 },
+                '/system-uploads': {
+                    target: apiTarget,
+                    changeOrigin: true,
+                },
             },
         },
         test: {
