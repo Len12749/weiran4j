@@ -31,7 +31,7 @@
 
 | 项 | 值 |
 | --- | --- |
-| 表 | `sys_user` 通用账号（关联 `sys_user_backend` 后台资料、`sys_user_role` 用户角色） |
+| 表 | `sys_user` 通用账号（关联 `sys_user_backend` 后台资料、`sys_user_role` 用户角色；关联表以自增 `id` 为主键，`(user_id, role_id)` 唯一） |
 | 菜单 | 系统管理 › 用户管理（`sys_menu.id = 3`） |
 | 路由 | `/system/users` |
 | 页面组件 | `system/users/UsersPage`（弹窗 `UserFormModal`、`ResetPasswordModal`） |
@@ -181,6 +181,10 @@ PUT 偏好与 PUT 收藏只更新 `sys_user_backend`，不触及基础账号审�
   可选的改法：把「重置密码」「外部身份」收进「…」菜单（需要给 `TableActions` 加「部分收起」能力），或者压窄其它列。
 
 ## 7. changelog
+
+**2026-10-23**（关联表自增主键）
+
+- `sys_user_role` 增加自增 `id` 主键，原 `(user_id, role_id)` 联合主键改为唯一索引，用户角色去重规则不变。
 
 **2026-10-23**（账号标识按类型唯一）
 

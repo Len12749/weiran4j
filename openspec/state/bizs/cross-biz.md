@@ -24,8 +24,8 @@
 
 | 关联 | 形态 | 说明 |
 | --- | --- | --- |
-| 用户 ↔ 角色 | `sys_user_role(user_id, role_id)` 多对多 | 用户表单全量覆盖(`roleIds` 必填);内置 admin 必须保留 `super_admin` |
-| 角色 ↔ 菜单 | `sys_role_menu(role_id, menu_id)` 多对多 | `PUT /api/roles/{id}/menus` 全量覆盖;前端勾选子节点会连带父目录 |
+| 用户 ↔ 角色 | `sys_user_role(id, user_id, role_id)` 多对多，`(user_id, role_id)` 唯一 | 用户表单全量覆盖(`roleIds` 必填);内置 admin 必须保留 `super_admin` |
+| 角色 ↔ 菜单 | `sys_role_menu(id, role_id, menu_id)` 多对多，`(role_id, menu_id)` 唯一 | `PUT /api/roles/{id}/menus` 全量覆盖;前端勾选子节点会连带父目录 |
 | 菜单树 | `parent_id`(0 = 根) | 不能挂到自己或后代下(`100004`) |
 | 字典组 → 字典项 | `sys_dict_item.group_id` | 仅 `sys_group.type=dict` 管理字典项；删字典组级联删字典项；`(group_id, value)` 唯一 |
 | 日志 → 用户 | `sys_login_log.user_id` / `sys_operation_log.user_id` | 快照 `username`,用户删除后日志仍可读 |

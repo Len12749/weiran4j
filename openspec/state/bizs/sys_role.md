@@ -23,7 +23,7 @@
 
 | 项 | 值 |
 | --- | --- |
-| 表 | `sys_role`（关联表 `sys_role_menu`：`role_id + menu_id` 联合主键；`sys_user_role` 见 `sys_user.md`） |
+| 表 | `sys_role`（关联表 `sys_role_menu`：自增 `id` 主键、`(role_id, menu_id)` 唯一；`sys_user_role` 见 `sys_user.md`） |
 | 菜单 | 系统管理 › 角色管理（`sys_menu.id = 4`） |
 | 路由 | `/system/roles` |
 | 页面组件 | `system/roles/RolesPage`（弹窗 `RoleFormModal`、侧滑 `RoleMenuSheet`） |
@@ -116,6 +116,10 @@
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-23**（关联表自增主键）
+
+- `sys_role_menu` 增加自增 `id` 主键，原 `(role_id, menu_id)` 联合主键改为唯一索引，角色菜单去重规则不变。
 
 **2026-09-27**
 - **#05 ✅ P3 角色列表按 `rules/advisory/list-view.md` 约定改造**
