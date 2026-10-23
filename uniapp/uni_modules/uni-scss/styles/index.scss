@@ -1,8 +1,0 @@
-@forward './setting/variables';
-@forward './setting/border';
-@forward './setting/color';
-// The original import chain exposed text.get-styles after space.get-styles.
-@forward './setting/space' hide get-styles;
-@forward './setting/radius';
-@forward './setting/text';
-@forward './setting/styles';

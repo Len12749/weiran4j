@@ -13,7 +13,7 @@ approved_at: "2026-10-19"
 ## Context
 
 - 需求来源：`interview.md`、`proposal.md`。
-- 现状调研：`explore.md`。参考实现已在下游 CQT 模块使用阿里云 `dysmsapi20170525` SDK；本项目 system 尚无短信服务。
+- 现状调研：`explore.md`。参考实现使用阿里云 `dysmsapi20170525` SDK；本项目 system 尚无短信服务。
 - 关键约束：SMS 发送由 system API 提供给业务模块；system 不生成验证码、不提供 HTTP 接口；发送结果不幂等，必须单次尝试。
 
 ## 宪法对照

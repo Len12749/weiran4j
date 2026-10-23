@@ -68,16 +68,13 @@
 | 导出 | `GET /export` | `region:export` | 当前筛选条件下全部匹配记录，UTF-8 BOM CSV |
 | 注册/登录态选择数据 | `GET /lookup` | 公开 | 仅返回启用地区及其完整启用祖先路径 |
 
-新增、修改、删除写操作记录 `@OperationLog`。本下游分配错误码：`40040` 层级/父级无效，`40940` code 重复，`40941` 节点仍有子级。菜单号段为 `2000`–`2099`，与 CQT 菜单隔离。
+新增、修改、删除写操作记录 `@OperationLog`。本下游分配错误码：`40040` 层级/父级无效，`40940` code 重复，`40941` 节点仍有子级。菜单号段为 `2000`–`2099`。
 
 ## 4. 用到的公共组件
 
 - `PageContainer`、`SearchToolbar`、`ColumnSettings`、`TableActions`、`Permission`、`StatusTag`
 - [`RegionSelect`](../../../web/src/components/RegionSelect.tsx)：地区级联选择器，受控值为 code 字符串路径，只显示启用节点。
 - [`regions.ts`](../../../web/src/hooks/queries/regions.ts)：地区查询、写入与导出 hooks。
-- UniApp 注册、资料维护和作品报名复用 `wangding-pickerAddress2.vue`，从公开 lookup 接口读取省市县；提交所选省级 `region.id`，不再映射旧赛区编号。
-- `cqt_portal_accounts.region_id`、`cqt_entries.region_id` 与 `cqt_reviewer_scopes.region_id` 使用本表 ID。地区名称通过本表查询。
-- 新迁移会清空旧账号与作品地区，并删除旧地区受限评委范围；旧赛区数据不迁移，评委范围需重新配置。
 
 ## 5. 说明与建议
 
@@ -96,4 +93,4 @@
 
 **2026-10-19**
 - **#01 ✅ P2 新增地区行政区划模块**
-  新建 `region` 表及 3351 条固定行政区划快照，提供树/平铺/详情、CRUD、启停、筛选、CSV 导出、公开 lookup、管理页面和 `RegionSelect`；UniApp 学生注册接入地区树。
+  新建 `region` 表及 3351 条固定行政区划快照，提供树/平铺/详情、CRUD、启停、筛选、CSV 导出、公开 lookup、管理页面和 `RegionSelect`。

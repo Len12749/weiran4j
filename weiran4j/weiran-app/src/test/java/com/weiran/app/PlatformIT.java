@@ -99,8 +99,7 @@ class PlatformIT extends IntegrationTestSupport {
         final String suffix = IntegrationTestSupport.unique("cfg");
         final String prefix = "system.general." + suffix;
         final JsonNode groups = IntegrationTestSupport.data(this.get("/api-backend/system/config/listGroups", admin));
-        assertThat(groups.findValuesAsText("key"))
-                .containsExactly("general", "general", "user", "system_tpl", "cqt_site");
+        assertThat(groups.findValuesAsText("key")).containsExactly("general", "general", "user", "system_tpl");
         assertThat(groups.findValuesAsText("groupKey"))
                 .containsExactly("config_system", "config_sms", "config_system", "config_sms", "config_system");
         assertThat(this.jdbc.queryForObject(

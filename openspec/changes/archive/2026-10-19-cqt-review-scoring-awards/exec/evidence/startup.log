@@ -1,4 +1,0 @@
-[2026-10-17 10:18:14.311] [weiran4j] [] [main] [INFO] [org.flywaydb.core.internal.command.DbMigrate] --> Migrating schema `qidian_zhongxi` to version "202610170400 - cqt review scoring awards"
-[2026-10-17 10:18:14.582] [weiran4j] [] [main] [INFO] [org.flywaydb.core.internal.command.DbMigrate] --> Successfully applied 1 migration to schema `qidian_zhongxi`, now at version v202610170400 (execution time 00:00.250s)
-[2026-10-17 10:18:15.776] [weiran4j] [] [main] [INFO] [o.s.boot.web.embedded.tomcat.TomcatWebServer] --> Tomcat started on port 3300 (http) with context path '/'
-[2026-10-17 10:18:15.783] [weiran4j] [] [main] [INFO] [com.weiran.app.WeiranApplication] --> Started WeiranApplication in 3.144 seconds (process running for 3.339)

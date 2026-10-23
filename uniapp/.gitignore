@@ -1,9 +1,0 @@
-.DS_Store
-*/.DS_Store
-nativeplugins
-.hbuilderx
-unpackage/cache
-unpackage/debug
-unpackage/dist
-unpackage/release
-unpackage
