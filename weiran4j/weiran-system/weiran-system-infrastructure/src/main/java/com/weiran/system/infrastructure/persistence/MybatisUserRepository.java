@@ -107,29 +107,37 @@ public class MybatisUserRepository implements UserRepository {
 
     @Override
     public boolean existsByUsername(final String username) {
-        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class).eq(SysUserDO::getUsername, username));
+        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class)
+                .eq(SysUserDO::getType, MybatisUserRepository.BACKEND)
+                .eq(SysUserDO::getUsername, username));
     }
 
     @Override
     public boolean existsByEmail(final String email) {
-        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class).eq(SysUserDO::getEmail, email));
+        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class)
+                .eq(SysUserDO::getType, MybatisUserRepository.BACKEND)
+                .eq(SysUserDO::getEmail, email));
     }
 
     @Override
     public boolean existsByEmail(final String email, final long excludedUserId) {
         return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class)
+                .eq(SysUserDO::getType, MybatisUserRepository.BACKEND)
                 .eq(SysUserDO::getEmail, email)
                 .ne(SysUserDO::getId, excludedUserId));
     }
 
     @Override
     public boolean existsByPhone(final String phone) {
-        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class).eq(SysUserDO::getPhone, phone));
+        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class)
+                .eq(SysUserDO::getType, MybatisUserRepository.BACKEND)
+                .eq(SysUserDO::getPhone, phone));
     }
 
     @Override
     public boolean existsByPhone(final String phone, final long excludedUserId) {
         return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class)
+                .eq(SysUserDO::getType, MybatisUserRepository.BACKEND)
                 .eq(SysUserDO::getPhone, phone)
                 .ne(SysUserDO::getId, excludedUserId));
     }

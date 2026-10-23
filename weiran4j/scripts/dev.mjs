@@ -39,8 +39,8 @@ if (!existsSync(join(ROOT, 'config', 'application-local.yml'))) {
     );
 }
 
-// --console=plain:turbo 会把多个任务的输出混排,Gradle 默认的富文本进度条在这里只会刷屏。
-const gradle = spawn('./gradlew', [':weiran-app:bootRun', '--console=plain', ...process.argv.slice(2)], {
+// --console=colored:在 turbo 多任务日志中保留 Gradle 颜色,同时避免富文本进度条刷屏。
+const gradle = spawn('./gradlew', [':weiran-app:bootRun', '--console=colored', ...process.argv.slice(2)], {
     cwd: ROOT,
     stdio: 'inherit',
     env: { ...process.env, JAVA_HOME: javaHome },

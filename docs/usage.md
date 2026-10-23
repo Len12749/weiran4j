@@ -3,7 +3,7 @@
 ## 环境要求
 
 - JDK 21
-- Node.js 22 或更高版本、pnpm
+- Node.js 22.13 或更高版本、pnpm 12
 - MySQL 8；也可以用仓库提供的 Docker Compose 部署方式
 
 ## 本地启动

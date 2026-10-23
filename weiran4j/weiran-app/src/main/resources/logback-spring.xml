@@ -3,7 +3,7 @@
   日志输出（artifact.md#10，change deploy-observability）。
   格式按公司日志规范：[%d] [%contextName] [%X{requestId}] [%thread] [%level] [%logger{50}] -> %msg%n，
   requestId 由 weiran-framework 的 RequestIdFilter 写入 MDC。
-  - local / test profile：只输出到控制台（本机与集成测试不写文件）。
+  - local / test profile：只输出到控制台（本机与集成测试不写文件）；local 控制台的级别使用颜色。
   - 其它 profile（部署环境）：控制台 + ${logging.file.path}/weiran4j.log（按天 + 100MB 滚动），
     MyBatis Mapper 的 SQL（WEIRAN_LOG_LEVEL=DEBUG 时才有）只写 weiran4j-sql.log，不进主日志。
   级别仍由 application.yml 的 logging.level 控制；目录与保留天数分别是 WEIRAN_LOG_DIR / WEIRAN_LOG_MAX_HISTORY。
@@ -23,7 +23,19 @@
         </encoder>
     </appender>
 
-    <springProfile name="local | test">
+    <springProfile name="local">
+        <appender name="LOCAL_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%contextName] [%X{requestId}] [%thread] [%highlight(%level)] [%logger{50}] --> %msg%n</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="LOCAL_CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="test">
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
         </root>

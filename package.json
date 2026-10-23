@@ -1,7 +1,7 @@
 {
   "name": "weiran4j",
   "private": true,
-  "packageManager": "pnpm@11.21.0",
+  "packageManager": "pnpm@12.15.0",
   "scripts": {
     "dev": "turbo run dev",
     "dev:server": "turbo run dev --filter=@weiran/server",
@@ -18,6 +18,6 @@
     "hooks:install": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
-    "turbo": "^2.11.4"
+    "turbo": "^2.11.10"
   }
 }

@@ -8,7 +8,7 @@ https://weiran-tech.github.io/weiran4j/
 
 ## 开始使用
 
-准备 JDK 21、Node.js 22+、pnpm 和 MySQL 8。创建空库并准备本地配置：
+准备 JDK 21、Node.js 22.13+、pnpm 12 和 MySQL 8。创建空库并准备本地配置：
 
 ```bash
 mysql -uroot -e "CREATE DATABASE weiran4j DEFAULT CHARACTER SET utf8mb4"

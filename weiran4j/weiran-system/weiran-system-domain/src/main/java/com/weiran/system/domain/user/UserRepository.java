@@ -26,19 +26,19 @@ public interface UserRepository {
     /** 按资源 URL 批量查找使用该资源作为头像的用户 ID。 */
     Map<String, List<Long>> findAvatarReferences(Collection<String> urls);
 
-    /** 用户名是否已存在。 */
+    /** 后台账号中用户名是否已存在。 */
     boolean existsByUsername(String username);
 
-    /** 邮箱是否被除指定用户外的用户占用。 */
+    /** 后台账号中邮箱是否被除指定用户外的用户占用。 */
     boolean existsByEmail(String email, long excludedUserId);
 
-    /** 手机号是否被除指定用户外的用户占用。 */
+    /** 后台账号中手机号是否被除指定用户外的用户占用。 */
     boolean existsByPhone(String phone, long excludedUserId);
 
-    /** 邮箱是否已被任何用户占用。 */
+    /** 后台账号中邮箱是否已被占用。 */
     boolean existsByEmail(String email);
 
-    /** 手机号是否已被任何用户占用。 */
+    /** 后台账号中手机号是否已被占用。 */
     boolean existsByPhone(String phone);
 
     /** 定向修改一个账号字段。 */

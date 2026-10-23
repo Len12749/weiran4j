@@ -3,6 +3,10 @@ packages:
   - 'web'
   # 后端是 Gradle 项目,登记进工作区只为让 turbo 能编排它的 dev 任务(见 weiran4j/package.json)
   - 'weiran4j'
+# Semi UI 2.104.0 固定依赖 Tiptap 3.31.3；与编辑器的同系列扩展保持一致。
+overrides:
+  '@tiptap/extension-bubble-menu': 3.31.3
+  '@tiptap/extension-floating-menu': 3.31.3
 allowBuilds:
   '@parcel/watcher': true
   core-js: true

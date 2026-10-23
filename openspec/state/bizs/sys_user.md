@@ -90,13 +90,13 @@
 
 | 字段 | 前端控件 | 前端校验 | 后端校验 | DB 列 / 类型 |
 | --- | --- | --- | --- | --- |
-| 用户名 ❌ | `Form.Input`，编辑态 `disabled`；行操作「设置账号信息」中单独修改 | 必填；`maxLength=32`；修改入口校验 2–32 位、字母开头且仅含字母数字 `_ . -` | 创建与单独修改均去首尾空白后查重，重复 100003「用户名已存在」 | `username varchar(32)` 唯一 |
+| 用户名 ❌ | `Form.Input`，编辑态 `disabled`；行操作「设置账号信息」中单独修改 | 必填；`maxLength=32`；修改入口校验 2–32 位、字母开头且仅含字母数字 `_ . -` | 创建与单独修改均去首尾空白后按 `type=backend` 查重，重复 100003「用户名已存在」 | `username varchar(32)`，唯一键 `(type, username)` |
 | 昵称 | `Form.Input` | 必填；`maxLength=32` | `@NotBlank` `@Size(max=32)` | `nickname varchar(32)` |
 | 初始密码 | `Form.Input mode=password`，**仅新增** | 必填；`/^(?=.*[A-Za-z])(?=.*\d).{8,64}$/` | `@NotBlank` + 领域 `PasswordPolicy`：8–64 位且同时含字母与数字，否则 100001 `password: …` | `password varchar(100)`（BCrypt） |
 | 角色 ❓ | `Form.Select multiple`，选项来自 `GET /api/roles/options`（仅启用角色，见 #04） | 无（可不选） | `@NotNull`（可为空数组）；每个 ID 必须存在，否则 100001；授予/移除 `super_admin` 需操作人本身是超管，否则 100102；内置用户必须保留 `super_admin`，否则 100004 | `sys_user_role`（全量覆盖） |
 | 性别 | `Form.Select`（字典 `sys_user_gender`），可清空 | 无 | 可空；新增空值落 `unknown`，编辑空值**保持原值**；非法值 100001 | `sys_user_backend.gender varchar(16)` 默认 `unknown` |
-| 邮箱 | `Form.Input`；行操作「设置账号信息」中单独修改 | `type: email`；`maxLength=128`；单独设置时留空可清除 | `@Email` `@Size(max=128)`；trim 后的非空值全局唯一，冲突 100003「邮箱已存在」 | `email varchar(128) null`，唯一索引 |
-| 手机 | `Form.Input`；行操作「设置账号信息」中单独修改 | `maxLength=20`；单独设置时留空可清除 | `@Size(max=20)`，无格式校验；trim 后的非空值全局唯一，冲突 100003「手机号已存在」 | `phone varchar(20) null`，唯一索引 |
+| 邮箱 | `Form.Input`；行操作「设置账号信息」中单独修改 | `type: email`；`maxLength=128`；单独设置时留空可清除 | `@Email` `@Size(max=128)`；trim 后的非空值在 `type=backend` 内唯一，冲突 100003「邮箱已存在」 | `email varchar(128) null`，唯一键 `(type, email)` |
+| 手机 | `Form.Input`；行操作「设置账号信息」中单独修改 | `maxLength=20`；单独设置时留空可清除 | `@Size(max=20)`，无格式校验；trim 后的非空值在 `type=backend` 内唯一，冲突 100003「手机号已存在」 | `phone varchar(20) null`，唯一键 `(type, phone)` |
 | 状态 | `Form.RadioGroup`（启用/禁用），内置用户 `disabled` | 无 | 新增空值落 `enabled`，编辑空值保持原值；内置用户禁用 100004「内置用户不可禁用」 | `status varchar(16)` 默认 `enabled` |
 
 表单外的列：`avatar` 只能由本人在个人中心改（`PUT /api/auth/profile`），管理员编辑时原值保留；
@@ -181,6 +181,10 @@ PUT 偏好与 PUT 收藏只更新 `sys_user_backend`，不触及基础账号审�
   可选的改法：把「重置密码」「外部身份」收进「…」菜单（需要给 `TableActions` 加「部分收起」能力），或者压窄其它列。
 
 ## 7. changelog
+
+**2026-10-23**（账号标识按类型唯一）
+
+- 将用户名、手机号、邮箱的全局唯一索引替换为 `(type, username)`、`(type, phone)`、`(type, email)`；后台账号查重限定 `backend`，不同类型可复用相同标识，手机号和邮箱的 `NULL` 仍可重复。
 
 **2026-10-23**（拆分后台账号资料）
 

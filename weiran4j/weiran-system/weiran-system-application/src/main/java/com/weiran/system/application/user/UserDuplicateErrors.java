@@ -12,13 +12,13 @@ public final class UserDuplicateErrors {
     /** 从 MySQL 唯一键冲突中选择字段级重复提示。 */
     public static BizException from(final DuplicateKeyException exception, final String fallbackMessage) {
         final String details = exception.toString().toLowerCase(Locale.ROOT);
-        if (details.contains("uk_sys_user_username")) {
+        if (details.contains("uk_sys_user_type_username")) {
             return BizException.duplicate("用户名已存在");
         }
-        if (details.contains("uk_sys_user_phone")) {
+        if (details.contains("uk_sys_user_type_phone")) {
             return BizException.duplicate("手机号已存在");
         }
-        if (details.contains("uk_sys_user_email")) {
+        if (details.contains("uk_sys_user_type_email")) {
             return BizException.duplicate("邮箱已存在");
         }
         return BizException.duplicate(fallbackMessage);
