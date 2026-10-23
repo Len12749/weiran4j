@@ -1,7 +1,6 @@
 import { Form, Modal, Toast } from '@douyinfe/semi-ui';
 import type { FormApi } from '@douyinfe/semi-ui/lib/es/form';
 import { useRef } from 'react';
-import { useDepartmentTreeData } from '@/components/DepartmentTreeSelect';
 import { STATUS_OPTIONS } from '@/components/StatusTag';
 import { useDictOptions } from '@/hooks/queries/dicts';
 import { useRoleOptions } from '@/hooks/queries/roles';
@@ -16,7 +15,6 @@ interface UserForm {
     email?: string;
     phone?: string;
     gender?: Gender;
-    departmentId?: number;
     status: Status;
     roleIds: number[];
 }
@@ -32,7 +30,6 @@ function toInitValues(r: UserView | null): UserForm {
         ...(r.email ? { email: r.email } : {}),
         ...(r.phone ? { phone: r.phone } : {}),
         ...(r.gender ? { gender: r.gender } : {}),
-        ...(r.departmentId ? { departmentId: r.departmentId } : {}),
     };
 }
 
@@ -47,7 +44,6 @@ export function UserFormModal({ record, onClose }: Props) {
     const api = useRef<FormApi<UserForm> | null>(null);
     const save = useSaveUser();
     const genderOptions = useDictOptions('sys_user_gender');
-    const departmentTree = useDepartmentTreeData();
     const { data: roles } = useRoleOptions();
 
     const submit = async () => {
@@ -58,7 +54,6 @@ export function UserFormModal({ record, onClose }: Props) {
             email: v.email || null,
             phone: v.phone || null,
             gender: v.gender ?? null,
-            departmentId: v.departmentId ?? null,
             status: v.status,
             roleIds: v.roleIds ?? [],
         };
@@ -108,16 +103,6 @@ export function UserFormModal({ record, onClose }: Props) {
                         ]}
                     />
                 )}
-                <Form.TreeSelect
-                    field="departmentId"
-                    label="部门"
-                    treeData={departmentTree}
-                    style={{ width: '100%' }}
-                    placeholder="选择部门"
-                    showClear
-                    filterTreeNode
-                    expandAll
-                />
                 <Form.Select
                     field="roleIds"
                     label="角色"

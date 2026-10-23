@@ -17,9 +17,6 @@ import com.weiran.system.api.user.UserService;
 import com.weiran.system.api.user.UserView;
 import com.weiran.system.application.auth.AuthSnapshotCache;
 import com.weiran.system.domain.auth.Authorization;
-import com.weiran.system.domain.department.Department;
-import com.weiran.system.domain.department.DepartmentRepository;
-import com.weiran.system.domain.hierarchy.Hierarchy;
 import com.weiran.system.domain.identity.UserIdentityRepository;
 import com.weiran.system.domain.role.Role;
 import com.weiran.system.domain.role.RoleRepository;
@@ -33,7 +30,6 @@ import com.weiran.system.domain.user.UserRepository;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -53,8 +49,6 @@ public class UserApplicationService implements UserService {
 
     private final RoleRepository roleRepository;
 
-    private final DepartmentRepository departmentRepository;
-
     private final PasswordHasher passwordHasher;
 
     private final AuthSnapshotCache cache;
@@ -67,14 +61,12 @@ public class UserApplicationService implements UserService {
     public UserApplicationService(
             final UserRepository userRepository,
             final RoleRepository roleRepository,
-            final DepartmentRepository departmentRepository,
             final PasswordHasher passwordHasher,
             final AuthSnapshotCache cache,
             final Clock clock,
             final UserIdentityRepository identityRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
-        this.departmentRepository = departmentRepository;
         this.passwordHasher = passwordHasher;
         this.cache = cache;
         this.clock = clock;
@@ -84,12 +76,9 @@ public class UserApplicationService implements UserService {
     @Override
     @Transactional(readOnly = true)
     public PageResult<UserView> page(final UserQuery query, final PageQuery pageQuery) {
-        final Long departmentId = query.departmentId();
-        final Set<Long> departmentIds = departmentId == null ? null : this.departmentScope(departmentId);
         final UserCriteria criteria = new UserCriteria(
                 Texts.trimToNull(query.keyword()),
                 EnableStatus.filterOf(query.status()),
-                departmentIds,
                 Texts.trimToNull(query.username()),
                 query.userId(),
                 Texts.trimToNull(query.phone()),
@@ -123,7 +112,6 @@ public class UserApplicationService implements UserService {
         this.ensureEmailAvailable(email, null);
         this.ensurePhoneAvailable(phone, null);
         PasswordPolicy.validate("password", command.password());
-        this.ensureDepartmentExists(command.departmentId());
         this.ensureRolesGrantable(command.roleIds(), Set.of());
         final LocalDateTime now = LocalDateTime.now(this.clock);
         final User user = User.builder()
@@ -133,7 +121,6 @@ public class UserApplicationService implements UserService {
                 .email(email)
                 .phone(phone)
                 .gender(Gender.of(command.gender()))
-                .departmentId(command.departmentId())
                 .status(EnableStatus.ofNullable(command.status(), EnableStatus.ENABLED))
                 .tokenVersion(0)
                 .passwordUpdatedAt(now)
@@ -157,7 +144,6 @@ public class UserApplicationService implements UserService {
         final String phone = Texts.trimToNull(command.phone());
         this.ensureEmailAvailable(email, id);
         this.ensurePhoneAvailable(phone, id);
-        this.ensureDepartmentExists(command.departmentId());
         final Set<Long> currentRoleIds = this.userRepository.findRoleIds(id);
         final List<Role> roles = this.ensureRolesGrantable(command.roleIds(), currentRoleIds);
         if (user.isBuiltin() && roles.stream().noneMatch(UserApplicationService::isSuperAdmin)) {
@@ -170,7 +156,7 @@ public class UserApplicationService implements UserService {
                         phone,
                         user.getAvatar(),
                         command.gender() == null ? user.getGender() : Gender.of(command.gender()))
-                .withAssignment(command.departmentId(), EnableStatus.ofNullable(command.status(), user.getStatus()));
+                .withAssignment(EnableStatus.ofNullable(command.status(), user.getStatus()));
         try {
             this.userRepository.updateAccount(updated);
         } catch (final DuplicateKeyException ex) {
@@ -277,19 +263,6 @@ public class UserApplicationService implements UserService {
         return this.userRepository.findById(id).orElseThrow(() -> BizException.notFound("用户不存在"));
     }
 
-    private Set<Long> departmentScope(final long departmentId) {
-        final Map<Long, Long> parentById = new HashMap<>();
-        this.departmentRepository.findAll().forEach(dept -> parentById.put(dept.requireId(), dept.getParentId()));
-        return Hierarchy.of(parentById).selfAndDescendantsOf(departmentId);
-    }
-
-    private void ensureDepartmentExists(final @Nullable Long departmentId) {
-        if (departmentId != null
-                && this.departmentRepository.findById(departmentId).isEmpty()) {
-            throw BizException.badRequest("departmentId: 部门不存在");
-        }
-    }
-
     /**
      * 校验角色存在，且授予或移除超级管理员角色的操作人本身是超级管理员
      * （防止只有用户管理权限的人给自己或他人提权，或把超管降级）。
@@ -326,19 +299,12 @@ public class UserApplicationService implements UserService {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         final Map<Long, Role> roles = this.roleRepository.findByIds(allRoleIds).stream()
                 .collect(Collectors.toMap(Role::requireId, Function.identity()));
-        final Set<Long> departmentIds = users.stream()
-                .map(User::getDepartmentId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        final Map<Long, String> departmentNames = this.departmentRepository.findByIds(departmentIds).stream()
-                .collect(Collectors.toMap(Department::requireId, Department::getName));
         return users.stream()
                 .map(user -> {
                     final List<Role> userRoles = roleIdsByUser.getOrDefault(user.requireId(), Set.of()).stream()
                             .map(roles::get)
                             .filter(Objects::nonNull)
                             .toList();
-                    final Long departmentId = user.getDepartmentId();
                     return new UserView(
                             user.requireId(),
                             user.getUsername(),
@@ -347,8 +313,6 @@ public class UserApplicationService implements UserService {
                             user.getPhone(),
                             user.getAvatar(),
                             user.getGender().value(),
-                            departmentId,
-                            departmentId == null ? null : departmentNames.get(departmentId),
                             user.getStatus().value(),
                             user.isBuiltin(),
                             userRoles.stream().map(Role::requireId).toList(),

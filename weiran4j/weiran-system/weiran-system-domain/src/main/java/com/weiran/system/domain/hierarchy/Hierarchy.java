@@ -38,7 +38,7 @@ public final class Hierarchy {
      *
      * @param id 被移动的节点
      * @param newParentId 新父节点，{@link #ROOT} 表示挂到根
-     * @param what 节点名称（「菜单」「部门」），用于提示语
+     * @param what 节点名称，用于提示语
      * @throws BizException 父节点不存在（100001）；父节点是自己或自己的后代（100004）
      */
     public void ensureValidParent(final long id, final long newParentId, final String what) {

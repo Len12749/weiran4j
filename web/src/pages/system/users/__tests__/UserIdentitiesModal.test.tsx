@@ -13,8 +13,6 @@ const alice: UserView = {
     phone: null,
     avatar: null,
     gender: null,
-    departmentId: null,
-    departmentName: null,
     status: 'enabled',
     isBuiltin: false,
     roleIds: [],
@@ -92,7 +90,6 @@ describe('UsersPage「外部身份」行操作', () => {
         'GET /api-backend/system/user/list': page([alice], 1),
         'GET /api-backend/system/dict/listItemsByCode/sys_user_gender': [],
         'GET /api-backend/system/dict/listItemsByCode/sys_common_status': [],
-        'GET /api-backend/system/department/list': [],
         'GET /api-backend/system/role/listOptions': [],
     };
 

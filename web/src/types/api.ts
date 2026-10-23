@@ -63,8 +63,6 @@ export interface CurrentUserView {
     phone: string | null;
     avatar: string | null;
     gender: Gender | null;
-    departmentId: number | null;
-    departmentName: string | null;
     roles: string[];
     permissions: string[];
     /** false = 没有本地密码（外部身份自动开通的用户）：密码登录、锁屏校验一律 110101，不能改密码 */
@@ -179,8 +177,6 @@ export interface UserView {
     phone: string | null;
     avatar: string | null;
     gender: Gender | null;
-    departmentId: number | null;
-    departmentName: string | null;
     status: Status;
     isBuiltin: boolean;
     roleIds: number[];
@@ -195,7 +191,6 @@ export interface UserView {
 export interface UserQuery extends PageQuery {
     keyword?: string;
     status?: Status;
-    departmentId?: number;
     /** 用户名，精确匹配 */
     username?: string;
     userId?: number;
@@ -221,7 +216,6 @@ export interface UserCreateRequest {
     email?: string | null;
     phone?: string | null;
     gender?: Gender | null;
-    departmentId?: number | null;
     status?: Status;
     roleIds: number[];
 }
@@ -278,32 +272,6 @@ export interface RoleOption {
     id: number;
     name: string;
     code: string;
-}
-
-/* ---------- 部门 ---------- */
-
-export interface DepartmentNode {
-    id: number;
-    parentId: number;
-    name: string;
-    code: string;
-    leaderId: number | null;
-    leaderName: string | null;
-    phone: string | null;
-    sort: number;
-    status: Status;
-    createdAt: string;
-    children: DepartmentNode[];
-}
-
-export interface DepartmentSaveRequest {
-    parentId: number;
-    name: string;
-    code: string;
-    leaderId?: number | null;
-    phone?: string | null;
-    sort?: number;
-    status?: Status;
 }
 
 /* ---------- 行政区划 ---------- */

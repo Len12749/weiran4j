@@ -5,7 +5,7 @@ import './demo.css';
 
 const ITEMS = [
     { key: 'list', title: '列表与筛选', detail: '查询、列设置、操作列' },
-    { key: 'fields', title: '字段与标签', detail: '字典、部门、图标' },
+    { key: 'fields', title: '字段与标签', detail: '字典、图标' },
     { key: 'access', title: '权限与入口', detail: '权限展示、安全入口' },
 ] as const;
 

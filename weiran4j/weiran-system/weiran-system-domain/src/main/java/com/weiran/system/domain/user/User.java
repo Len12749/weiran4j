@@ -33,8 +33,6 @@ public final class User {
 
     private final Gender gender;
 
-    private final @Nullable Long departmentId;
-
     private final EnableStatus status;
 
     private final int tokenVersion;
@@ -87,17 +85,16 @@ public final class User {
     }
 
     /**
-     * 管理员调整部门与状态。
+     * 管理员调整状态。
      *
      * <p>内置用户不可禁用；启用 → 禁用时令牌版本加一，已登录的会话立即失效。
      */
-    public User withAssignment(final @Nullable Long departmentId, final EnableStatus status) {
+    public User withAssignment(final EnableStatus status) {
         if (this.builtin && status == EnableStatus.DISABLED) {
             throw BizException.conflict("内置用户不可禁用");
         }
         final boolean disabling = this.isEnabled() && status == EnableStatus.DISABLED;
         return this.toBuilder()
-                .departmentId(departmentId)
                 .status(status)
                 .tokenVersion(disabling ? this.tokenVersion + 1 : this.tokenVersion)
                 .build();

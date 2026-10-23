@@ -173,7 +173,7 @@ public class AuthController {
         try {
             return ApiResponse.ok(this.objectMapper.readTree(json));
         } catch (final JsonProcessingException ex) {
-            throw new IllegalStateException("sys_user.preferences 不是合法的 JSON", ex);
+            throw new IllegalStateException("sys_user_backend.preferences 不是合法的 JSON", ex);
         }
     }
 

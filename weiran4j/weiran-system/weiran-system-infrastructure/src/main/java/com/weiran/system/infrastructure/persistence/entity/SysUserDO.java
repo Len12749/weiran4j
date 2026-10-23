@@ -18,14 +18,15 @@ import org.jspecify.annotations.NullUnmarked;
  * <p>密码、令牌版本、登录信息标 {@code updateStrategy = NEVER}：整行覆盖不写它们，只能走仓储里的定向更新
  * （{@code token_version = token_version + 1} 等），避免并发的「先读后整行写」把刚吊销的令牌版本写回旧值。
  *
- * <p>偏好与收藏菜单（JSON 列）另外标 {@code select = false}：偏好最大 16KB，而用户行在鉴权、列表里被频繁整行读取，
- * 默认不查；只由仓储里的专用方法显式 {@code select} 与定向更新。
+ * <p>后台头像、性别和界面偏好存储在 {@code sys_user_backend}，此表只保留通用账号字段。
  */
 @NullUnmarked
 @Getter
 @Setter
 @TableName("sys_user")
 public class SysUserDO extends AuditableDO {
+
+    private String type;
 
     private String username;
 
@@ -39,14 +40,6 @@ public class SysUserDO extends AuditableDO {
 
     @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private String phone;
-
-    @TableField(updateStrategy = FieldStrategy.ALWAYS)
-    private String avatar;
-
-    private String gender;
-
-    @TableField(updateStrategy = FieldStrategy.ALWAYS)
-    private Long departmentId;
 
     private String status;
 
@@ -63,10 +56,4 @@ public class SysUserDO extends AuditableDO {
     private LocalDateTime passwordUpdatedAt;
 
     private Boolean isBuiltin;
-
-    @TableField(select = false, insertStrategy = FieldStrategy.NEVER, updateStrategy = FieldStrategy.NEVER)
-    private String preferences;
-
-    @TableField(select = false, insertStrategy = FieldStrategy.NEVER, updateStrategy = FieldStrategy.NEVER)
-    private String favoriteMenus;
 }

@@ -17,7 +17,6 @@ import org.jspecify.annotations.Nullable;
  * @param email 邮箱
  * @param phone 手机号
  * @param gender 性别
- * @param departmentId 部门 ID
  * @param status 状态
  * @param roleIds 角色 ID，必填（可为空数组）
  */
@@ -32,6 +31,5 @@ public record CreateUserRequest(
         @Nullable @Email @Size(max = 128) String email,
         @Nullable @Size(max = 20) String phone,
         @Nullable String gender,
-        @Nullable Long departmentId,
         @Nullable String status,
         @NotNull List<Long> roleIds) {}

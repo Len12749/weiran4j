@@ -24,7 +24,7 @@ Turbo 管理根目录的前端、后端开发启动任务和 VitePress 文档构
 | --- | --- |
 | `web/` | React 19、TypeScript、Semi UI 后台；动态菜单路由与权限按钮 |
 | `weiran4j/weiran-framework/` | 统一响应、异常、认证拦截、权限注解和基础契约 |
-| `weiran4j/weiran-system/` | 登录、用户、角色、菜单、部门、字典、系统配置和日志等通用能力 |
+| `weiran4j/weiran-system/` | 登录、用户、角色、菜单、字典、系统配置和日志等通用能力 |
 | `weiran4j/weiran-region/` | 行政区划管理与查询 |
 | `weiran4j/weiran-app/` | 可执行 Spring Boot 应用、配置和集成测试 |
 | `weiran4j/weiran-dependencies/` | Gradle 依赖版本平台 |

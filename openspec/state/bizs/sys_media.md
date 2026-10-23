@@ -18,7 +18,7 @@
 
 ## 2. 字段与表单
 
-`id`、`original_name`、`url`、`object_name`、`size`、`uploaded_by`、`created_at`。只收录经本系统上传并成功登记的文件。类型由原始扩展名识别，引用位置从当前 `sys_config.config_value` 中提取文件 URL，并按 `sys_user.avatar` 精确匹配。
+`id`、`original_name`、`url`、`object_name`、`size`、`uploaded_by`、`created_at`。只收录经本系统上传并成功登记的文件。类型由原始扩展名识别，引用位置从当前 `sys_config.config_value` 中提取文件 URL，并按 `sys_user_backend.avatar` 精确匹配。
 
 ## 3. 动作
 
@@ -35,7 +35,7 @@ Semi UI 表格、列设置、操作列与搜索工具栏、system 文件存储�
 ## 6. 已知问题汇总
 
 - **#03 待处理 P2 业务模块引用位置尚未接入资源库**
-  业务表保存资源 URL 时，资源库仍可能显示「未发现引用」，管理员可误删业务正在使用的文件。当前从 `sys_config` 与 `sys_user.avatar` 识别引用，后续业务模块需接入资源引用索引或提供引用查询接口。
+  业务表保存资源 URL 时，资源库仍可能显示「未发现引用」，管理员可误删业务正在使用的文件。当前从 `sys_config` 与 `sys_user_backend.avatar` 识别引用，后续业务模块需接入资源引用索引或提供引用查询接口。
 
 ## 7. changelog
 

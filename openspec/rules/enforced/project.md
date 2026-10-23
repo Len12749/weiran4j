@@ -73,7 +73,7 @@
 **前端路由由后端 `sys_menu` 驱动**（`/api-backend/system/auth/listCurrentMenus`），`web/src/App.tsx` 不再逐页登记 `<Route>`。
 新增页面必须**追加一个 Flyway 迁移**往 `sys_menu` 插入菜单行（`component` = 相对 `web/src/pages` 的路径，无 `.tsx`），
 并按需插入按钮权限行与 `sys_role_menu` 绑定。菜单 id 是全局序号：并行的两个 change 各插一个 id，会撞主键。基座占 `1`–`999`，业务模块从 `1000` 起按 `weiran4j/docs/business-modules.md` 登记的段取（宪法 CP-15）。
-历史演示菜单迁移保留校验和，后续系统迁移清理所有环境中的演示菜单；当前项目不注册演示页面。
+历史演示菜单迁移保留校验和；可选 `weiran-demo` 仅在 local/test 环境注册演示页面。
 
 ### SL-5 · `web/src/pages/**` 与 `web/src/utils/page-registry.ts`
 
@@ -184,7 +184,7 @@ Flyway 以 `out-of-order: true` 运行（D-012）：版本号早于已执行最�
 
 ### CC-3 · 数据范围（`data-scope`）
 
-**尚未引入**。本系统暂无按部门/角色过滤数据可见范围的机制（部门字段已存在于 `sys_user`）。
+**尚未引入**。本系统暂无按角色过滤数据可见范围的机制。
 
 ### CC-4 · 多租户隔离（`tenant`）
 
@@ -256,7 +256,7 @@ Flyway 以 `out-of-order: true` 运行（D-012）：版本号早于已执行最�
 
 ### PK-2 · `weiran-system-*`（api/domain/application/infrastructure/adapter）
 
-`weiran-system` 是后台基座，DDD 五层：包 `com.weiran.system` 管认证 / 用户 / 角色 / 菜单 / 部门 / 登录日志，包 `com.weiran.platform` 管字典 / 系统配置 / 操作日志（D-011 由两个模块合并而来）。
+`weiran-system` 是后台基座，DDD 五层：包 `com.weiran.system` 管认证 / 用户 / 角色 / 菜单 / 登录日志，包 `com.weiran.platform` 管字典 / 系统配置 / 操作日志（D-011 由两个模块合并而来）。
 
 ### PK-3 · `weiran-app`
 

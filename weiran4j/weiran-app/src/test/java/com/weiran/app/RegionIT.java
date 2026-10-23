@@ -47,7 +47,6 @@ class RegionIT extends IntegrationTestSupport {
         user.put("username", username);
         user.put("nickname", "行政区划只读测试");
         user.put("password", RegionIT.USER_PASSWORD);
-        user.put("departmentId", 1);
         user.put("roleIds", List.of());
         this.create("/api-backend/system/user/create", admin, user);
         final String viewer = this.tokenOf(username, RegionIT.USER_PASSWORD);

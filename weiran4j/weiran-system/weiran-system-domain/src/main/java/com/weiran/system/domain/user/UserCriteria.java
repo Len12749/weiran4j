@@ -2,7 +2,6 @@ package com.weiran.system.domain.user;
 
 import com.weiran.framework.status.EnableStatus;
 import java.time.LocalDateTime;
-import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -10,7 +9,6 @@ import org.jspecify.annotations.Nullable;
  *
  * @param keyword 匹配用户名 / 昵称 / 手机号
  * @param status 状态
- * @param departmentIds 部门 ID 集合（已展开子部门）
  * @param username 用户名，精确匹配
  * @param userId 用户 ID
  * @param phone 手机号，精确匹配
@@ -25,7 +23,6 @@ import org.jspecify.annotations.Nullable;
 public record UserCriteria(
         @Nullable String keyword,
         @Nullable EnableStatus status,
-        @Nullable Set<Long> departmentIds,
         @Nullable String username,
         @Nullable Long userId,
         @Nullable String phone,

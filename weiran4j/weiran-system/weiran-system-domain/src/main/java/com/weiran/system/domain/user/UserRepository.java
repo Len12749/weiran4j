@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
-/** 用户仓储端口（含用户-角色关联）。 */
+/** 后台用户仓储端口（通用账号、后台扩展及用户-角色关联）。 */
 public interface UserRepository {
 
     /** 按 ID 查找。 */
@@ -56,7 +56,7 @@ public interface UserRepository {
     /** 定向更新：本人修改资料（昵称、邮箱、手机号、头像、性别）。 */
     void updateProfile(User user);
 
-    /** 定向更新：管理员修改用户（昵称、邮箱、手机号、性别、部门、状态）。 */
+    /** 定向更新：管理员修改用户（昵称、邮箱、手机号、性别、状态）。 */
     void updateAccount(User user);
 
     /** 定向更新：记录一次成功登录。 */
@@ -68,7 +68,7 @@ public interface UserRepository {
     /** 定向更新：令牌版本原子加一（禁用账号时吊销已签发令牌）。 */
     void revokeTokens(long id);
 
-    /** 只读令牌版本与账号状态：每个请求都会调用，实现必须只按主键查这两列。 */
+    /** 只读账号类型、令牌版本与状态：每个请求都会调用，实现必须只按主键查询必要列。 */
     Optional<AuthState> findAuthState(long id);
 
     /** 界面偏好的原始 JSON 对象文本；从未保存过（或用户不存在）时为空。 */
@@ -94,9 +94,6 @@ public interface UserRepository {
 
     /** 批量按 ID 查找。 */
     List<User> findByIds(Collection<Long> ids);
-
-    /** 指定部门下的用户数。 */
-    long countByDepartmentId(long departmentId);
 
     /** 用户的角色 ID。 */
     Set<Long> findRoleIds(long userId);

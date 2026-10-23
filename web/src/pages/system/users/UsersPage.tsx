@@ -2,7 +2,6 @@ import { Button, DatePicker, Input, InputNumber, Select, Space, Table, Tag, Toas
 import type { ColumnProps } from '@douyinfe/semi-ui/lib/es/table';
 import dayjs from 'dayjs';
 import { useState } from 'react';
-import { DepartmentTreeSelect } from '@/components/DepartmentTreeSelect';
 import { DictSelect } from '@/components/DictSelect';
 import { DictTag } from '@/components/DictTag';
 import { useColumnSettings } from '@/components/ColumnSettings';
@@ -12,24 +11,22 @@ import { SearchField, SearchToolbar, type SearchCondition } from '@/components/S
 import { useActionsColumn, type TableAction } from '@/components/TableActions';
 import { useProviders } from '@/hooks/queries/identities';
 import { StatusTag } from '@/components/StatusTag';
-import { useDepartmentTree } from '@/hooks/queries/departments';
 import { useDictOptions } from '@/hooks/queries/dicts';
 import { useRoleOptions } from '@/hooks/queries/roles';
 import { useDeleteUser, useUserList } from '@/hooks/queries/users';
 import { usePermission } from '@/hooks/usePermission';
 import { tableScrollX, useTableDefaults } from '@/hooks/useTableDefaults';
-import type { DepartmentNode, Gender, Status, UserQuery, UserView } from '@/types/api';
+import type { Gender, Status, UserQuery, UserView } from '@/types/api';
 import { toDayRange } from '@/utils/date';
 import { ResetPasswordModal } from './ResetPasswordModal';
 import { UserFormModal } from './UserFormModal';
 import { UserIdentitiesModal } from './UserIdentitiesModal';
 import { SetUserAccountFieldModal } from './SetUserAccountFieldModal';
 
-/** 工具栏快速搜索（keyword / status / departmentId）+ 高级筛选的单字段条件（契约 §6.2） */
+/** 工具栏快速搜索（keyword / status）+ 高级筛选的单字段条件（契约 §6.2） */
 export interface Filters {
     keyword: string;
     status: Status | undefined;
-    departmentId: number | undefined;
     username: string;
     userId: number | undefined;
     phone: string;
@@ -44,7 +41,6 @@ export interface Filters {
 export const EMPTY_FILTERS: Filters = {
     keyword: '',
     status: undefined,
-    departmentId: undefined,
     username: '',
     userId: undefined,
     phone: '',
@@ -64,7 +60,6 @@ export function toQuery(f: Filters, page: number, pageSize: number): UserQuery {
         pageSize,
         ...text('keyword'),
         ...(f.status ? { status: f.status } : {}),
-        ...(f.departmentId !== undefined ? { departmentId: f.departmentId } : {}),
         ...text('username'),
         ...(f.userId !== undefined ? { userId: f.userId } : {}),
         ...text('phone'),
@@ -85,16 +80,6 @@ export function formatDayRange(range: Date[] | undefined): string | null {
     if (start && end) return `${day(start)} ~ ${day(end)}`;
     if (start) return `≥ ${day(start)}`;
     if (end) return `≤ ${day(end)}`;
-    return null;
-}
-
-/** 部门树里按 id 找名称（已选条件标签用）；找不到返回 null */
-function findDepartmentName(nodes: readonly DepartmentNode[], id: number): string | null {
-    for (const n of nodes) {
-        if (n.id === id) return n.name;
-        const hit = n.children?.length ? findDepartmentName(n.children, id) : null;
-        if (hit) return hit;
-    }
     return null;
 }
 
@@ -141,7 +126,6 @@ export default function UsersPage() {
     const statusOptions = useDictOptions('sys_common_status');
     const genderOptions = useDictOptions('sys_user_gender');
     const { data: roleOptions } = useRoleOptions();
-    const { data: departmentTree } = useDepartmentTree();
     const conditions = ((): SearchCondition[] => {
         const remove = (field: keyof Filters) => () => {
             setFilters((f) => ({ ...f, [field]: EMPTY_FILTERS[field] }));
@@ -164,15 +148,6 @@ export default function UsersPage() {
                 label: '状态',
                 value: label,
                 onRemove: remove('status'),
-            });
-        }
-        if (filters.departmentId !== undefined) {
-            const name = findDepartmentName(departmentTree ?? [], filters.departmentId) ?? `#${filters.departmentId}`;
-            list.push({
-                key: 'departmentId',
-                label: '部门',
-                value: name,
-                onRemove: remove('departmentId'),
             });
         }
         const username = filters.username.trim();
@@ -245,8 +220,8 @@ export default function UsersPage() {
         return list;
     })();
 
-    // 列宽合计（含弹性列「角色」按 ROLE_MIN_WIDTH 计）为 1395：1440 宽下双列布局可用 1115，表格横向滚动，操作列固定在右侧；
-    // 配置外部身份提供方时多一个「外部身份」操作，合计 1467（见 ACTIONS_WIDTH_WITH_IDENTITY），各宽屏布局均可横向滚动；
+    // 列宽合计（含弹性列「角色」按 ROLE_MIN_WIDTH 计）为 1316：1440 宽下双列布局可用 1115，表格横向滚动，操作列固定在右侧；
+    // 配置外部身份提供方时多一个「外部身份」操作，合计 1388（见 ACTIONS_WIDTH_WITH_IDENTITY），部分布局仍会横向滚动；
     // 视口 < 992（便捷搜索隐藏）时操作列收成「…」（useCompactActions）；其间放不下就横向滚动（操作列固定在右侧）。
     // 各固定列已压到「内容 + 24 内边距」：时间 158（156 时小数宽度会把时分秒挤到第二行）；手机 116（Inter 数字不等宽，最宽的 11 位约 91）；
     // 性别 52；ID 160；用户名加宽到 140，减少常见用户名折行。操作列 300 可完整展示四个文字按钮。
@@ -254,12 +229,6 @@ export default function UsersPage() {
         { title: 'ID', dataIndex: 'id', width: 160 },
         { title: '用户名', dataIndex: 'username', width: 140 },
         { title: '昵称', dataIndex: 'nickname', width: 90 },
-        {
-            title: '部门',
-            dataIndex: 'departmentName',
-            width: 79,
-            render: (v: string | null) => v || '—',
-        },
         {
             title: '角色',
             dataIndex: 'roleNames',
@@ -375,7 +344,7 @@ export default function UsersPage() {
                         </Button>
                     </Permission>
                 }
-                // 高级筛选是单字段查询（设计稿「用户列表」顺序）；所属部门、状态与工具栏共用同一份草稿
+                // 高级筛选是单字段查询（设计稿「用户列表」顺序）；状态与工具栏共用同一份草稿
                 advanced={
                     <>
                         <SearchField label="用户名">
@@ -419,13 +388,6 @@ export default function UsersPage() {
                                 onChange={(email) => setDraft((d) => ({ ...d, email }))}
                                 onEnterPress={search}
                                 showClear
-                            />
-                        </SearchField>
-                        <SearchField label="所属部门">
-                            <DepartmentTreeSelect
-                                placeholder="请选择所属部门"
-                                value={draft.departmentId}
-                                onChange={(departmentId) => setDraft((d) => ({ ...d, departmentId }))}
                             />
                         </SearchField>
                         <SearchField label="角色">
@@ -503,7 +465,6 @@ export default function UsersPage() {
                     value={draft.status}
                     onChange={(v) => setDraft((d) => ({ ...d, status: v as Status | undefined }))}
                 />
-                <DepartmentTreeSelect value={draft.departmentId} onChange={(departmentId) => setDraft((d) => ({ ...d, departmentId }))} />
             </SearchToolbar>
             <Table<UserView>
                 {...tableProps}

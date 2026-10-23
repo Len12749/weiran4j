@@ -16,8 +16,6 @@ const me: CurrentUserView = {
     phone: null,
     avatar: null,
     gender: 'male',
-    departmentId: 1,
-    departmentName: '总公司',
     roles: ['super_admin'],
     permissions: ['*'],
     hasPassword: true,

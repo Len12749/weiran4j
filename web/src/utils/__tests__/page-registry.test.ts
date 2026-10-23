@@ -7,7 +7,6 @@ const SEED_COMPONENTS = [
     'system/users/UsersPage',
     'system/roles/RolesPage',
     'system/menus/MenusPage',
-    'system/departments/DepartmentsPage',
     'system/dicts/DictsPage',
     'system/configs/ConfigsPage',
     'system/sms/SmsConfigsPage',

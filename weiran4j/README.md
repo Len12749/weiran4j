@@ -1,7 +1,7 @@
 # weiran4j
 
 **Java 21 + MySQL 8 + Semi UI** 的后台管理框架底座，能力形态对标 mono4ts 的标准后台：
-登录/JWT、用户、角色、菜单（动态路由 + 按钮权限）、部门、字典、系统配置、登录日志、操作日志。
+登录/JWT、用户、角色、菜单（动态路由 + 按钮权限）、字典、系统配置、登录日志、操作日志。
 
 |      |                                                                                   |
 | ---- | --------------------------------------------------------------------------------- |
@@ -24,7 +24,7 @@ mysql -uroot -e "CREATE DATABASE weiran4j DEFAULT CHARACTER SET utf8mb4"
 cp config/application-local.yml.example config/application-local.yml   # 填库密码与 JWT 密钥（openssl rand -base64 48）
 
 # 3. 一条命令起前后端（仓库根目录，turbo 编排）
-cd .. && pnpm install && pnpm dev      # 后端(5200) + 前端(5202) + 文档站(5309)，/api 代理到后端
+cd .. && pnpm install && pnpm dev      # 后端(5200) + 前端(5202) + 文档站(5209)，/api 代理到后端
                                        # 只起后端：pnpm dev:server，或在 weiran4j/ 下 ./gradlew :weiran-app:bootRun
 ```
 
@@ -37,7 +37,7 @@ cd .. && pnpm install && pnpm dev      # 后端(5200) + 前端(5202) + 文档站
 | `build-logic` | 约定插件：Checkstyle / Spotless / SpotBugs / Forbidden APIs / Error Prone + NullAway / Jacoco |
 | `weiran-dependencies` | BOM：框架版本只在这里；fork 下游的业务版本在 `biz-dependencies.gradle.kts`（D-013） |
 | `weiran-framework` | 纯 Java 契约（错误码、分页、响应包络）+ 统一响应、全局异常、认证拦截、`@RequiresPermission`、`@OperationLog`、MyBatis-Plus 配置 |
-| `weiran-system-*` | 后台基座：认证 / 用户 / 角色 / 菜单 / 部门 / 登录日志（包 `com.weiran.system`）+ 字典 / 系统配置 / 操作日志（包 `com.weiran.platform`） |
+| `weiran-system-*` | 后台基座：认证 / 用户 / 角色 / 菜单 / 登录日志（包 `com.weiran.system`）+ 字典 / 系统配置 / 操作日志（包 `com.weiran.platform`） |
 | `weiran-region-*` | 行政区划管理与查询，按 DDD 五层组织 |
 | `weiran-app` | 启动模块与集成测试 |
 

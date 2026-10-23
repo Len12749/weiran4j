@@ -2,7 +2,7 @@
 
 **Java 21 + MySQL 8 + Semi UI 的后台管理框架**，能力形态对标
 [mono4ts](/Users/duoli/Projects/hanrui-jinnuo/mono4ts)（Hono + Drizzle + Semi）的「标准后台底座」：
-登录/JWT、用户、角色、菜单（动态路由 + 按钮权限）、部门、字典、系统配置、登录日志、操作日志。
+登录/JWT、用户、角色、菜单（动态路由 + 按钮权限）、字典、系统配置、登录日志、操作日志。
 2026-09-26 起原地重写（决策 D-008）：**不再兼容 PHP weiran-v1，不再依赖 wuli3 底座**。
 
 ## 对话语言
@@ -28,7 +28,7 @@
 
 ```bash
 # ── 一条命令起后端、后台前端和文档站（仓库根，turbo 编排）──
-pnpm dev                          # = turbo run dev：后端 bootRun(5200) + 后台 vite(5202) + VitePress(5309)
+pnpm dev                          # = turbo run dev：后端 bootRun(5200) + 后台 vite(5202) + VitePress(5209)
 pnpm dev:server / pnpm dev:web / pnpm dev:docs  # 单独启动后端、后台前端或文档站
 # 后端的 dev 是 weiran4j/scripts/dev.mjs：自动找 JDK 21、缺本地配置时先提示，Ctrl-C 会一并停掉应用 JVM。
 # 给后端传环境变量（如 SERVER_PORT、WEIRAN_*）必须先在 turbo.json 的 passThroughEnv 里放行，否则被静默丢弃。
@@ -79,7 +79,7 @@ duoli-weiran4j/                  # git 仓库根 = pnpm 工作区根 = openspec 
     ├── weiran-framework/        # 框架层：纯 Java 契约包（错误码、分页、响应包络、树工具，domain/api 只能用这些）
     │                            #   + Spring 基础设施（统一响应、全局异常、认证拦截、@RequiresPermission、
     │                            #   @OperationLog、MyBatis-Plus 配置与审计字段填充）。框架库不向下游传递（D-016）
-    ├── weiran-system/           # 后台基座（DDD 五层）：身份与权限（认证 / 用户 / 角色 / 菜单 / 部门 / 登录日志，
+    ├── weiran-system/           # 后台基座（DDD 五层）：身份与权限（认证 / 用户 / 角色 / 菜单 / 登录日志，
     │                            #   Java 包 com.weiran.system）+ 平台能力（字典 / 系统配置 / 操作日志，包 com.weiran.platform）
     ├── weiran-demo/             # 可选资源模块：仅 local/test 的组件演示菜单与配置种子；下游可不复制
     ├── weiran-app/              # 可执行应用：依赖聚合 + application.yml + 集成测试

@@ -33,7 +33,6 @@ class UserRoleIT extends IntegrationTestSupport {
         body.put("email", username + "@example.com");
         body.put("phone", "138" + String.format("%08d", UserRoleIT.PHONE_SEQUENCE.getAndIncrement()));
         body.put("gender", "male");
-        body.put("departmentId", 1);
         body.put("roleIds", roleIds);
         return body;
     }
@@ -67,7 +66,6 @@ class UserRoleIT extends IntegrationTestSupport {
         IntegrationTestSupport.assertError(
                 this.get("/api-backend/system/role/list", token), HttpStatus.FORBIDDEN, 100102);
         IntegrationTestSupport.assertOk(this.get("/api-backend/system/role/listOptions", token));
-        IntegrationTestSupport.assertOk(this.get("/api-backend/system/department/list", token));
 
         final JsonNode me = IntegrationTestSupport.data(this.get("/api-backend/system/auth/getCurrentUser", token));
         assertThat(AuthIT.texts(me.path("permissions"))).containsExactly("system:user:list");
@@ -104,7 +102,6 @@ class UserRoleIT extends IntegrationTestSupport {
 
         final JsonNode view = IntegrationTestSupport.data(this.get("/api-backend/system/user/get/" + id, admin));
         assertThat(view.path("username").asText()).isEqualTo(username);
-        assertThat(view.path("departmentName").asText()).isEqualTo("总公司");
         assertThat(view.path("status").asText()).isEqualTo("enabled");
         assertThat(view.path("isBuiltin").isBoolean()).isTrue();
         assertThat(view.path("isBuiltin").asBoolean()).isFalse();
@@ -117,9 +114,8 @@ class UserRoleIT extends IntegrationTestSupport {
                 this.jdbc.queryForMap("SELECT created_by, updated_by FROM sys_user WHERE id = ?", id);
         assertThat(audit.get("created_by")).isEqualTo(1L);
 
-        final ResponseEntity<JsonNode> page = this.get(
-                "/api-backend/system/user/list?keyword=" + username + "&status=enabled&departmentId=1&pageSize=10",
-                admin);
+        final ResponseEntity<JsonNode> page =
+                this.get("/api-backend/system/user/list?keyword=" + username + "&status=enabled&pageSize=10", admin);
         IntegrationTestSupport.assertOk(page);
         assertThat(IntegrationTestSupport.data(page).path("total").asLong()).isEqualTo(1L);
 
@@ -133,7 +129,6 @@ class UserRoleIT extends IntegrationTestSupport {
         final JsonNode updated = IntegrationTestSupport.data(this.get("/api-backend/system/user/get/" + id, admin));
         assertThat(updated.path("nickname").asText()).isEqualTo("改名");
         assertThat(updated.path("email").isNull()).isTrue();
-        assertThat(updated.path("departmentId").isNull()).isTrue();
         assertThat(updated.path("roleIds").isEmpty()).isTrue();
 
         final JsonNode options = IntegrationTestSupport.data(this.get("/api-backend/system/user/listOptions", admin));
@@ -270,7 +265,6 @@ class UserRoleIT extends IntegrationTestSupport {
                 this.delete("/api-backend/system/user/delete/1", admin), HttpStatus.CONFLICT, 100004);
         final Map<String, Object> disableAdmin = new HashMap<>();
         disableAdmin.put("nickname", "超级管理员");
-        disableAdmin.put("departmentId", 1);
         disableAdmin.put("status", "disabled");
         disableAdmin.put("roleIds", List.of(1L));
         IntegrationTestSupport.assertError(

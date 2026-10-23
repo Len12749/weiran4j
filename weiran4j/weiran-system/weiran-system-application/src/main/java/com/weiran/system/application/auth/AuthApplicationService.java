@@ -21,8 +21,6 @@ import com.weiran.system.application.user.UserDuplicateErrors;
 import com.weiran.system.domain.auth.Authorization;
 import com.weiran.system.domain.auth.TokenClaims;
 import com.weiran.system.domain.auth.TokenCodec;
-import com.weiran.system.domain.department.Department;
-import com.weiran.system.domain.department.DepartmentRepository;
 import com.weiran.system.domain.identity.ExternalIdentityProviders;
 import com.weiran.system.domain.loginlog.LoginLog;
 import com.weiran.system.domain.loginlog.LoginLogRepository;
@@ -73,8 +71,6 @@ public class AuthApplicationService implements AuthService {
 
     private final MenuRepository menuRepository;
 
-    private final DepartmentRepository departmentRepository;
-
     private final LoginLogRepository loginLogRepository;
 
     private final PasswordHasher passwordHasher;
@@ -93,7 +89,6 @@ public class AuthApplicationService implements AuthService {
     public AuthApplicationService(
             final UserRepository userRepository,
             final MenuRepository menuRepository,
-            final DepartmentRepository departmentRepository,
             final LoginLogRepository loginLogRepository,
             final PasswordHasher passwordHasher,
             final TokenCodec tokenCodec,
@@ -103,7 +98,6 @@ public class AuthApplicationService implements AuthService {
             final ExternalIdentityProviders providers) {
         this.userRepository = userRepository;
         this.menuRepository = menuRepository;
-        this.departmentRepository = departmentRepository;
         this.loginLogRepository = loginLogRepository;
         this.passwordHasher = passwordHasher;
         this.tokenCodec = tokenCodec;
@@ -221,13 +215,6 @@ public class AuthApplicationService implements AuthService {
     public CurrentUserView me(final long userId) {
         final User user = this.requireUser(userId);
         final Authorization authorization = this.authorizationResolver.resolve(userId);
-        final Long departmentId = user.getDepartmentId();
-        final String departmentName = departmentId == null
-                ? null
-                : this.departmentRepository
-                        .findById(departmentId)
-                        .map(Department::getName)
-                        .orElse(null);
         return new CurrentUserView(
                 userId,
                 user.getUsername(),
@@ -236,8 +223,6 @@ public class AuthApplicationService implements AuthService {
                 user.getPhone(),
                 user.getAvatar(),
                 user.getGender().value(),
-                departmentId,
-                departmentName,
                 List.copyOf(authorization.roleCodes()),
                 List.copyOf(authorization.displayPermissions(this.menuRepository.findAll())),
                 user.hasPassword());

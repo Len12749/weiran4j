@@ -84,8 +84,8 @@ status: "active"
 
 ### Requirement: [FR-005] 条件组合与默认结果
 
-`GET /api-backend/users` 的全部查询条件(`keyword`、`status`、`departmentId` 与本能力新增的各参数)**MUST** 取交集;
-未传任何新增参数时,结果 **MUST** 与仅支持 `keyword` / `status` / `departmentId` 时完全一致。
+`GET /api-backend/users` 的全部查询条件(`keyword`、`status` 与本能力新增的各参数)**MUST** 取交集;
+未传任何新增参数时,结果 **MUST** 与仅支持 `keyword` / `status` 时完全一致。
 
 #### Scenario: 多条件取交集
 - **WHEN** 同时传 `keyword` 与 `gender`、`roleId`
@@ -93,19 +93,19 @@ status: "active"
 - **判据**:集成测试断言结果为符合全部条件的那一个用户
 
 #### Scenario: 不传新参数行为不变
-- **WHEN** 请求 `GET /api-backend/users?keyword=<name>&status=enabled&departmentId=1`
+- **WHEN** 请求 `GET /api-backend/users?keyword=<name>&status=enabled`
 - **THEN** 结果与改造前相同
 - **判据**:既有集成用例 `UserRoleIT.userCrud` 不改断言仍通过
 
 ### Requirement: [FR-006] 用户管理页高级筛选面板
 
-用户管理页的高级筛选面板 **MUST** 默认收起;展开后 **MUST** 依次提供:用户名、用户 ID、手机号、邮箱、所属部门、角色、状态、性别、创建时间、最后登录时间。
+用户管理页的高级筛选面板 **MUST** 默认收起;展开后 **MUST** 依次提供:用户名、用户 ID、手机号、邮箱、角色、状态、性别、创建时间、最后登录时间。
 点「搜索」**MUST** 把已填写的字段作为对应查询参数发出;时间字段按天选择,开始日 **MUST** 取当天 `00:00:00`、结束日 **MUST** 取当天 `23:59:59`。
 
 #### Scenario: 面板默认收起且字段齐全
 - **WHEN** 打开用户管理页,再点「高级筛选」
 - **THEN** 打开前面板不存在;打开后字段标签按上述顺序出现
-- **判据**:前端测试断言 `.search-field__label` 文本序列等于上述 10 项
+- **判据**:前端测试断言 `.search-field__label` 文本序列等于上述 9 项
 
 #### Scenario: 搜索发出对应参数
 - **WHEN** 在面板填写用户名、选择角色与性别、选择创建时间 `2026-09-01 ~ 2026-09-27` 后点「搜索」

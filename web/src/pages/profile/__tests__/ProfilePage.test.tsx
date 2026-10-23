@@ -14,8 +14,6 @@ const me: CurrentUserView = {
     phone: null,
     avatar: null,
     gender: null,
-    departmentId: null,
-    departmentName: null,
     roles: ['viewer'],
     permissions: [],
     hasPassword: true,

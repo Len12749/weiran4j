@@ -57,7 +57,6 @@ public class UserController {
     public PageResult<UserView> page(
             @RequestParam(required = false) final @Nullable String keyword,
             @RequestParam(required = false) final @Nullable String status,
-            @RequestParam(required = false) final @Nullable Long departmentId,
             @RequestParam(required = false) final @Nullable String username,
             @RequestParam(required = false) final @Nullable Long userId,
             @RequestParam(required = false) final @Nullable String phone,
@@ -73,7 +72,6 @@ public class UserController {
         final UserQuery query = new UserQuery(
                 keyword,
                 status,
-                departmentId,
                 username,
                 userId,
                 phone,
@@ -112,7 +110,6 @@ public class UserController {
                 request.email(),
                 request.phone(),
                 request.gender(),
-                request.departmentId(),
                 request.status(),
                 request.roleIds())));
     }
@@ -129,7 +126,6 @@ public class UserController {
                         request.email(),
                         request.phone(),
                         request.gender(),
-                        request.departmentId(),
                         request.status(),
                         request.roleIds()));
         return ApiResponse.ok();

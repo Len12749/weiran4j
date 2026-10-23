@@ -23,7 +23,6 @@ import com.weiran.system.api.auth.SystemAuthErrors;
 import com.weiran.system.domain.auth.Authorization;
 import com.weiran.system.domain.auth.TokenClaims;
 import com.weiran.system.domain.auth.TokenCodec;
-import com.weiran.system.domain.department.DepartmentRepository;
 import com.weiran.system.domain.identity.ExternalIdentityProvider;
 import com.weiran.system.domain.identity.ExternalIdentityProviders;
 import com.weiran.system.domain.loginlog.LoginLog;
@@ -87,7 +86,6 @@ class AuthApplicationServiceTest {
         this.service = new AuthApplicationService(
                 this.users,
                 mock(MenuRepository.class),
-                mock(DepartmentRepository.class),
                 this.loginLogs,
                 this.hasher,
                 this.tokenCodec,

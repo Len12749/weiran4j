@@ -12,8 +12,6 @@ const admin: UserView = {
     phone: '13800000000',
     avatar: null,
     gender: 'male',
-    departmentId: 1,
-    departmentName: '总公司',
     status: 'enabled',
     isBuiltin: true,
     roleIds: [1],
@@ -34,7 +32,6 @@ function baseRoutes() {
             { id: 2, dictId: 1, label: '女', value: 'female', color: 'pink', sort: 2, status: 'enabled', remark: null },
         ],
         'GET /api-backend/system/dict/listItemsByCode/sys_common_status': [],
-        'GET /api-backend/system/department/list': [],
         'GET /api-backend/system/role/listOptions': [
             { id: 1, name: '超级管理员', code: 'super_admin' },
             { id: 2, name: '编辑', code: 'editor' },
@@ -126,7 +123,6 @@ describe('UsersPage', () => {
             status: 'enabled',
             roleIds: [],
             gender: 'unknown',
-            departmentId: null,
         });
     });
 
@@ -220,7 +216,7 @@ describe('UsersPage', () => {
             fireEvent.click(await screen.findByRole('option', { name: option }));
         };
 
-        it('高级筛选默认收起；展开后按设计稿顺序放出 10 个单字段条件，所属部门 / 状态与工具栏共用草稿（FR-006）', async () => {
+        it('高级筛选默认收起；展开后按设计稿顺序放出 9 个单字段条件，状态与工具栏共用草稿（FR-006）', async () => {
             mockFetch(routes());
             renderWithProviders(<UsersPage />);
             await screen.findByText('alice');
@@ -236,7 +232,6 @@ describe('UsersPage', () => {
                 '用户 ID',
                 '手机号',
                 '邮箱',
-                '所属部门',
                 '角色',
                 '状态',
                 '性别',

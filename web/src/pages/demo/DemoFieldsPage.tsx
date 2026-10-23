@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { DepartmentTreeSelect } from '@/components/DepartmentTreeSelect';
 import { DictSelect } from '@/components/DictSelect';
 import { DictTag } from '@/components/DictTag';
 import { IconPicker } from '@/components/IconPicker';
@@ -8,14 +7,12 @@ import { StatusTag } from '@/components/StatusTag';
 import './demo.css';
 
 export default function DemoFieldsPage() {
-    const [departmentId, setDepartmentId] = useState<number | undefined>();
     const [icon, setIcon] = useState('Puzzle');
     const [status, setStatus] = useState<string | undefined>();
 
     return (
-        <PageContainer title="字段与标签" extra={<span className="demo-page__hint">选项来自现有字典与部门接口</span>}>
+        <PageContainer title="字段与标签" extra={<span className="demo-page__hint">选项来自现有字典接口</span>}>
             <div className="demo-page__fields">
-                <label>部门树 <DepartmentTreeSelect value={departmentId} onChange={setDepartmentId} /></label>
                 <label>菜单图标 <IconPicker value={icon} onChange={setIcon} /></label>
                 <label>状态字典 <DictSelect dictCode="sys_common_status" value={status} onChange={setStatus} /></label>
                 <div>状态标签 <StatusTag value="enabled" /> <StatusTag value="disabled" /></div>

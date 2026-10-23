@@ -69,9 +69,9 @@
 | 公共 | —(跨模块业务定义) | [`cross-biz.md`](cross-biz.md) |
 | 公共 | —(架构与技术问题) | [`artifact.md`](artifact.md) |
 | 身份与权限(weiran-system) | `sys_user` 用户 | [`sys_user.md`](sys_user.md) |
+| 身份与权限(weiran-system) | `sys_user_backend` 后台用户扩展 | [`sys_user_backend.md`](sys_user_backend.md) |
 | 身份与权限(weiran-system) | `sys_role` 角色 | [`sys_role.md`](sys_role.md) |
 | 身份与权限(weiran-system) | `sys_menu` 菜单 / 权限点 | [`sys_menu.md`](sys_menu.md) |
-| 身份与权限(weiran-system) | `sys_department` 部门 | [`sys_department.md`](sys_department.md) |
 | 身份与权限(weiran-system) | `sys_login_log` 登录日志 | [`sys_login_log.md`](sys_login_log.md) |
 | 身份与权限(weiran-system) | `sys_user_identity` 外部身份绑定 | [`sys_user_identity.md`](sys_user_identity.md) |
 | 平台能力(weiran-system) | `sys_group` / `sys_dict_item` 字典与共享分组 | [`sys_group.md`](sys_group.md) |

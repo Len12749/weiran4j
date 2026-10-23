@@ -120,7 +120,7 @@
 
 ## 5. 说明与建议
 
-- **内置字典被前端硬编码引用**：`sys_common_status` 用于用户 / 角色 / 部门的状态筛选（`DictSelect`），`sys_user_gender`
+- **内置字典被前端硬编码引用**：`sys_common_status` 用于用户 / 角色的状态筛选（`DictSelect`），`sys_user_gender`
   用于用户表单性别下拉与列表性别列（`DictTag`）。后端对内置字典本身禁止改编码、禁用、删除，但对其字典项没有保护（#03）。
 - 字典项删除是物理删除，业务数据里已存的值不会随之变化；`DictTag` 找不到对应项时退化为显示原值。
 - 建议：内置字典的状态单选在前端直接禁用（#02）；左栏可补上已有后端支持的状态筛选。
@@ -131,7 +131,7 @@
   `DictFormModal` 只对内置字典禁用了「字典编码」，状态单选可改；后端 `Dict.withDetails` 返回 100004「内置字典不可禁用」。
 - **#03 ❓ P3 内置字典的字典项可被任意修改或删除**
   `DictApplicationService.updateItem` / `deleteItem` 不检查所属字典是否内置。拥有 `system:dict:update` 的用户可以删掉
-  `sys_common_status` 的 `enabled` 项或改掉其 `value`，此后用户 / 角色 / 部门页的状态筛选下拉缺项，`DictTag`
+  `sys_common_status` 的 `enabled` 项或改掉其 `value`，此后用户 / 角色页的状态筛选下拉缺项，`DictTag`
   显示原始值。是否需要保护待定。
 - **#04 ❓ P3 契约 §6.7 未记载的后端规则（与代码不符，以代码为准）**
   契约写「内置字典 code 不可改」「内置不可删；级联删字典项」「`/code/{code}/items` 仅 enabled 项」。代码另有：

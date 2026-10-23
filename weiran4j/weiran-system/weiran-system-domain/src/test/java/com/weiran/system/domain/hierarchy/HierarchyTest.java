@@ -26,10 +26,10 @@ class HierarchyTest {
     @Test
     @DisplayName("父节点是自己时拒绝并返回 100004")
     void rejectsSelfAsParent() {
-        assertThatThrownBy(() -> this.hierarchy.ensureValidParent(2L, 2L, "部门"))
+        assertThatThrownBy(() -> this.hierarchy.ensureValidParent(2L, 2L, "菜单"))
                 .isInstanceOfSatisfying(
                         BizException.class, ex -> assertThat(ex.getErrorCode()).isEqualTo(CommonErrors.CONFLICT))
-                .hasMessage("上级部门不能是自己或自己的下级");
+                .hasMessage("上级菜单不能是自己或自己的下级");
     }
 
     @Test
@@ -44,17 +44,17 @@ class HierarchyTest {
     @Test
     @DisplayName("挂到根、兄弟节点或其它树下是合法的")
     void acceptsValidParents() {
-        assertThatCode(() -> this.hierarchy.ensureValidParent(4L, 0L, "部门")).doesNotThrowAnyException();
-        assertThatCode(() -> this.hierarchy.ensureValidParent(4L, 3L, "部门")).doesNotThrowAnyException();
-        assertThatCode(() -> this.hierarchy.ensureValidParent(2L, 6L, "部门")).doesNotThrowAnyException();
+        assertThatCode(() -> this.hierarchy.ensureValidParent(4L, 0L, "菜单")).doesNotThrowAnyException();
+        assertThatCode(() -> this.hierarchy.ensureValidParent(4L, 3L, "菜单")).doesNotThrowAnyException();
+        assertThatCode(() -> this.hierarchy.ensureValidParent(2L, 6L, "菜单")).doesNotThrowAnyException();
         // 新建节点还没有 ID：用一个不存在的 ID 校验父节点存在即可。
-        assertThatCode(() -> this.hierarchy.ensureValidParent(-1L, 5L, "部门")).doesNotThrowAnyException();
+        assertThatCode(() -> this.hierarchy.ensureValidParent(-1L, 5L, "菜单")).doesNotThrowAnyException();
     }
 
     @Test
     @DisplayName("父节点不存在返回 100001")
     void rejectsMissingParent() {
-        assertThatThrownBy(() -> this.hierarchy.ensureValidParent(2L, 99L, "部门"))
+        assertThatThrownBy(() -> this.hierarchy.ensureValidParent(2L, 99L, "菜单"))
                 .isInstanceOfSatisfying(
                         BizException.class, ex -> assertThat(ex.getErrorCode()).isEqualTo(CommonErrors.BAD_REQUEST));
     }

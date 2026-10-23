@@ -48,7 +48,6 @@ class AuthIT extends IntegrationTestSupport {
         final JsonNode data = IntegrationTestSupport.data(me);
         assertThat(data.path("id").asLong()).isEqualTo(1L);
         assertThat(data.path("username").asText()).isEqualTo("admin");
-        assertThat(data.path("departmentName").asText()).isEqualTo("总公司");
         assertThat(AuthIT.texts(data.path("roles"))).containsExactly("super_admin");
         assertThat(AuthIT.texts(data.path("permissions"))).containsExactly("*");
         assertThat(data.has("password")).isFalse();

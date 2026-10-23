@@ -1,7 +1,6 @@
 package com.weiran.system.adapter.autoconfigure;
 
 import com.weiran.system.adapter.web.AuthController;
-import com.weiran.system.adapter.web.DepartmentController;
 import com.weiran.system.adapter.web.LoginLogController;
 import com.weiran.system.adapter.web.MediaController;
 import com.weiran.system.adapter.web.MenuController;
@@ -25,7 +24,6 @@ import org.springframework.context.annotation.Import;
     UserAccountFieldController.class,
     RoleController.class,
     MenuController.class,
-    DepartmentController.class,
     LoginLogController.class,
     MediaController.class,
     SystemStorageWebConfiguration.class

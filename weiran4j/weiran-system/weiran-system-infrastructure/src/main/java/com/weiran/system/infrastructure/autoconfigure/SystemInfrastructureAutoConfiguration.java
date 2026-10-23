@@ -13,7 +13,6 @@ import com.weiran.system.domain.user.PasswordHasher;
 import com.weiran.system.infrastructure.identity.AuthProvidersProperties;
 import com.weiran.system.infrastructure.identity.ConfiguredExternalIdentityProviders;
 import com.weiran.system.infrastructure.identity.HmacSsoStateSigner;
-import com.weiran.system.infrastructure.persistence.MybatisDepartmentRepository;
 import com.weiran.system.infrastructure.persistence.MybatisLoginLogRepository;
 import com.weiran.system.infrastructure.persistence.MybatisMediaRepository;
 import com.weiran.system.infrastructure.persistence.MybatisMenuRepository;
@@ -61,7 +60,6 @@ import org.springframework.context.annotation.Import;
     MybatisUserRepository.class,
     MybatisRoleRepository.class,
     MybatisMenuRepository.class,
-    MybatisDepartmentRepository.class,
     MybatisLoginLogRepository.class,
     MybatisUserIdentityRepository.class,
     MybatisMediaRepository.class

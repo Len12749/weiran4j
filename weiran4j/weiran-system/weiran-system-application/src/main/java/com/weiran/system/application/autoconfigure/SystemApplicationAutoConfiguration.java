@@ -10,7 +10,6 @@ import com.weiran.system.application.auth.LocalIdentityResolver;
 import com.weiran.system.application.auth.LocalRbacPermissionSource;
 import com.weiran.system.application.auth.PhoneLoginApplicationService;
 import com.weiran.system.application.auth.PhoneLoginSettings;
-import com.weiran.system.application.department.DepartmentApplicationService;
 import com.weiran.system.application.loginlog.LoginLogApplicationService;
 import com.weiran.system.application.media.MediaApplicationService;
 import com.weiran.system.application.media.MediaAssetDeletionService;
@@ -44,7 +43,6 @@ import org.springframework.context.annotation.Import;
     UserApplicationService.class,
     RoleApplicationService.class,
     MenuApplicationService.class,
-    DepartmentApplicationService.class,
     LoginLogApplicationService.class,
     MediaApplicationService.class,
     MediaAssetDeletionService.class,

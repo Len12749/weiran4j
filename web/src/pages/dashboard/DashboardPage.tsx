@@ -22,7 +22,6 @@ export default function DashboardPage() {
     const name = user.nickname || user.username;
     const isSuper = user.permissions.includes('*');
     const stats = [
-        { label: '所属部门', value: user.departmentName || '—' },
         { label: '角色', value: user.roles.length },
         { label: '权限', value: isSuper ? '全部' : user.permissions.length },
     ];
@@ -54,7 +53,6 @@ export default function DashboardPage() {
                     data={[
                         { key: '用户名', value: user.username },
                         { key: '昵称', value: user.nickname || '—' },
-                        { key: '部门', value: user.departmentName || '—' },
                         { key: '性别', value: <DictTag dictCode="sys_user_gender" value={user.gender} /> },
                         { key: '邮箱', value: user.email || '—' },
                         { key: '手机', value: user.phone || '—' },

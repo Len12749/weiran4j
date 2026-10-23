@@ -10,7 +10,6 @@ import org.jspecify.annotations.Nullable;
  *
  * @param keyword 用户名 / 昵称 / 手机号模糊
  * @param status 状态
- * @param departmentId 部门 ID（含子部门）
  * @param username 用户名，精确匹配
  * @param userId 用户 ID
  * @param phone 手机号，精确匹配
@@ -25,7 +24,6 @@ import org.jspecify.annotations.Nullable;
 public record UserQuery(
         @Nullable String keyword,
         @Nullable String status,
-        @Nullable Long departmentId,
         @Nullable String username,
         @Nullable Long userId,
         @Nullable String phone,

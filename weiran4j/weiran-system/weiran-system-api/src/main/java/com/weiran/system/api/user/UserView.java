@@ -14,8 +14,6 @@ import org.jspecify.annotations.Nullable;
  * @param phone 手机号
  * @param avatar 头像
  * @param gender 性别
- * @param departmentId 部门 ID
- * @param departmentName 部门名称
  * @param status 状态
  * @param isBuiltin 是否内置
  * @param roleIds 角色 ID
@@ -33,8 +31,6 @@ public record UserView(
         @Nullable String phone,
         @Nullable String avatar,
         String gender,
-        @Nullable Long departmentId,
-        @Nullable String departmentName,
         String status,
         boolean isBuiltin,
         List<Long> roleIds,

@@ -21,7 +21,7 @@ interface LoginForm {
 
 type LoginMethod = 'password' | 'phone';
 
-const FEATURES = ['JWT 认证', '菜单驱动路由', '按钮级权限', '部门与角色', '字典与系统配置', '登录与操作日志'];
+const FEATURES = ['JWT 认证', '菜单驱动路由', '按钮级权限', '用户与角色', '字典与系统配置', '登录与操作日志'];
 
 /** 左侧品牌栏：主色底 + 光晕 / 同心环装饰，窄屏不渲染 */
 function BrandPanel() {

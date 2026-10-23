@@ -11,7 +11,7 @@ export function toQueryString(params: object): string {
     return qs ? `?${qs}` : '';
 }
 
-/** 变化频率低的 lookup 数据（字典项、部门树、下拉源）的 staleTime */
+/** 变化频率低的 lookup 数据（字典项、下拉源）的 staleTime */
 export const LOOKUP_STALE_TIME = 5 * 60 * 1000;
 
 export function createQueryClient() {

@@ -43,22 +43,18 @@ class UserTest {
     void disablingBumpsTokenVersion() {
         final User user = UserTest.user(2L, false);
 
-        assertThat(user.withAssignment(5L, EnableStatus.DISABLED).getTokenVersion())
-                .isEqualTo(4);
-        assertThat(user.withAssignment(5L, EnableStatus.ENABLED).getTokenVersion())
-                .isEqualTo(3);
-        assertThat(user.withAssignment(5L, EnableStatus.ENABLED).getDepartmentId())
-                .isEqualTo(5L);
-        final User disabled = user.withAssignment(null, EnableStatus.DISABLED);
+        assertThat(user.withAssignment(EnableStatus.DISABLED).getTokenVersion()).isEqualTo(4);
+        assertThat(user.withAssignment(EnableStatus.ENABLED).getTokenVersion()).isEqualTo(3);
+        final User disabled = user.withAssignment(EnableStatus.DISABLED);
         assertThat(disabled.isEnabled()).isFalse();
-        assertThat(disabled.withAssignment(null, EnableStatus.DISABLED).getTokenVersion())
+        assertThat(disabled.withAssignment(EnableStatus.DISABLED).getTokenVersion())
                 .isEqualTo(4);
     }
 
     @Test
     @DisplayName("内置用户不可禁用、不可删除，任何人不能删除自己")
     void protectsBuiltinAndSelf() {
-        assertThatThrownBy(() -> UserTest.user(1L, true).withAssignment(null, EnableStatus.DISABLED))
+        assertThatThrownBy(() -> UserTest.user(1L, true).withAssignment(EnableStatus.DISABLED))
                 .isInstanceOfSatisfying(
                         BizException.class, ex -> assertThat(ex.getErrorCode()).isEqualTo(CommonErrors.CONFLICT));
         assertThatThrownBy(() -> UserTest.user(1L, true).ensureDeletableBy(9L)).hasMessage("内置用户不可删除");

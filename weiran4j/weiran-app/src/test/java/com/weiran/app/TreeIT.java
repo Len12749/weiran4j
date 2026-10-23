@@ -10,18 +10,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
-/** 菜单树与部门树：组树、环检测、删除保护、含子部门查询。 */
+/** 菜单树：组树、环检测与删除保护。 */
 class TreeIT extends IntegrationTestSupport {
-
-    private static Map<String, Object> department(final long parentId, final String code) {
-        final Map<String, Object> body = new HashMap<>();
-        body.put("parentId", parentId);
-        body.put("name", "部门" + code);
-        body.put("code", code);
-        body.put("leaderId", 1);
-        body.put("sort", 1);
-        return body;
-    }
 
     private static Map<String, Object> menu(final long parentId, final String type, final String title) {
         final Map<String, Object> body = new HashMap<>();
@@ -29,67 +19,6 @@ class TreeIT extends IntegrationTestSupport {
         body.put("title", title);
         body.put("type", type);
         return body;
-    }
-
-    @Test
-    @DisplayName("部门：挂到自己或后代下返回 100004，有子部门或有用户时不可删，按部门查用户包含子部门")
-    void departmentTree() {
-        final String admin = this.adminToken();
-        final long parent = this.create(
-                "/api-backend/system/department/create",
-                admin,
-                TreeIT.department(1, IntegrationTestSupport.unique("DA")));
-        final long child = this.create(
-                "/api-backend/system/department/create",
-                admin,
-                TreeIT.department(parent, IntegrationTestSupport.unique("DB")));
-
-        final JsonNode node =
-                IntegrationTestSupport.data(this.get("/api-backend/system/department/get/" + child, admin));
-        assertThat(node.path("parentId").asLong()).isEqualTo(parent);
-        assertThat(node.path("leaderName").asText()).isEqualTo("超级管理员");
-        assertThat(node.path("children").isEmpty()).isTrue();
-
-        final Map<String, Object> toDescendant = TreeIT.department(child, "ignored_" + parent);
-        toDescendant.put("code", node.path("code").asText() + "_p");
-        IntegrationTestSupport.assertError(
-                this.put("/api-backend/system/department/update/" + parent, admin, toDescendant),
-                HttpStatus.CONFLICT,
-                100004);
-        IntegrationTestSupport.assertError(
-                this.put(
-                        "/api-backend/system/department/update/" + parent,
-                        admin,
-                        TreeIT.department(parent, "self_" + parent)),
-                HttpStatus.CONFLICT,
-                100004);
-        IntegrationTestSupport.assertError(
-                this.delete("/api-backend/system/department/delete/" + parent, admin), HttpStatus.CONFLICT, 100004);
-
-        final String username = IntegrationTestSupport.unique("deptuser");
-        final Map<String, Object> user = new HashMap<>();
-        user.put("username", username);
-        user.put("nickname", "部门成员");
-        user.put("password", "Passw0rd1");
-        user.put("departmentId", child);
-        user.put("roleIds", List.of());
-        this.create("/api-backend/system/user/create", admin, user);
-        final JsonNode byParent =
-                IntegrationTestSupport.data(this.get("/api-backend/system/user/list?departmentId=" + parent, admin));
-        assertThat(byParent.path("list").findValuesAsText("username")).containsExactly(username);
-        IntegrationTestSupport.assertError(
-                this.delete("/api-backend/system/department/delete/" + child, admin), HttpStatus.CONFLICT, 100004);
-
-        final JsonNode tree =
-                IntegrationTestSupport.data(this.get("/api-backend/system/department/list?status=enabled", admin));
-        final JsonNode root = tree.get(0);
-        assertThat(root.path("code").asText()).isEqualTo("HQ");
-        assertThat(root.path("children").findValuesAsText("id")).contains(String.valueOf(parent));
-
-        IntegrationTestSupport.assertError(
-                this.post("/api-backend/system/department/create", admin, TreeIT.department(1, "HQ")),
-                HttpStatus.CONFLICT,
-                100003);
     }
 
     @Test
