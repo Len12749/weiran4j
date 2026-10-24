@@ -27,5 +27,11 @@ features:
 - [使用指南](/usage)：本地环境、启动方式、常用命令和部署入口。
 - [架构说明](/architecture)：仓库结构、前后端关系、后端分层和请求流程。
 - [系统配置](/configuration)：分组 Tab、动态表单字段、校验与配置键前缀。
+- [OpenAPI 与 Swagger UI](/openapi)：本地接口定义与交互页面的访问方式。
+- [接口与数据约定](/contracts)：认证、错误码、数据关系与跨接口规则。
+- [部署与运维](/deployment)：Docker Compose、环境变量、反向代理与 SLS 日志采集。
+- [环境变量与配置模板](/environment)：完整的 `.env` 和可选生产 YAML 示例。
+- [关键设计决策](/design-decisions)：模块分层、认证和下游扩展的取舍。
+- [资源库引用与删除设计](/资源库引用与删除设计)：资源引用登记与删除校验。
 
-数据库、错误码与跨接口业务规则见 `weiran4j/docs/01-架构与接口契约.md`；HTTP 接口定义以 Springdoc 生成的 OpenAPI 为准。生产部署步骤见 `weiran4j/docs/02-部署.md`。
+HTTP 接口的路径、参数和字段以运行中的 OpenAPI 为准。

@@ -10,7 +10,9 @@ export default defineConfig({
     nav: [
       { text: '使用指南', link: '/usage' },
       { text: '架构说明', link: '/architecture' },
-      { text: '配置边界', link: '/configuration' },
+      { text: '系统配置', link: '/configuration' },
+      { text: 'OpenAPI', link: '/openapi' },
+      { text: '部署与运维', link: '/deployment' },
     ],
     sidebar: [
       {
@@ -19,7 +21,13 @@ export default defineConfig({
           { text: '首页', link: '/' },
           { text: '使用指南', link: '/usage' },
           { text: '架构说明', link: '/architecture' },
-          { text: '配置边界', link: '/configuration' },
+          { text: '系统配置', link: '/configuration' },
+          { text: 'OpenAPI 与 Swagger UI', link: '/openapi' },
+          { text: '接口与数据约定', link: '/contracts' },
+          { text: '资源库引用与删除', link: '/资源库引用与删除设计' },
+          { text: '部署与运维', link: '/deployment' },
+          { text: '环境变量与配置模板', link: '/environment' },
+          { text: '关键设计决策', link: '/design-decisions' },
         ],
       },
     ],

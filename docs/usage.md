@@ -45,12 +45,14 @@ pnpm dev
 
 ## 短信联调
 
-短信发送默认关闭。受控的本地开发环境可设置 `WEIRAN_SMS_MODE=local`：系统会将模板代码和参数写入应用日志，不会发送短信。模板参数可能含验证码或个人信息，不要在生产环境启用此模式。阿里云凭据使用 `WEIRAN_SMS_ALIYUN_*`；短信签名与本地/阿里云验证码模板在单独的「短信配置」页面维护。
+短信发送默认关闭。受控的本地开发环境可设置 `WEIRAN_SMS_MODE=local`：系统会将替换变量后的短信正文写入应用日志，不会发送短信；手机号验证码还会明文写入登录日志。日志可能含验证码或个人信息，不要在生产环境启用此模式。阿里云凭据使用 `WEIRAN_SMS_ALIYUN_*`；短信签名与本地/阿里云验证码模板在单独的「短信配置」页面维护。
 
 短信模板在阿里云短信控制台创建并审核，不在本项目配置模板正文。业务模块调用 `SmsService.send` 时，将阿里云模板 CODE 填入 `SmsSendCommand.templateCode`，模板变量填入 `templateParameters`。验证码的生成、校验、过期和发送频率由业务模块负责；system 只负责按模板发送。
 
 ## 部署与接口
 
-- Docker Compose 部署步骤、环境变量和反向代理配置：`weiran4j/docs/02-部署.md`
-- 数据库、权限码、错误码与跨接口业务规则：`weiran4j/docs/01-架构与接口契约.md`；HTTP 接口定义以 OpenAPI 为准
-- 关键架构决策：`weiran4j/docs/00-决策记录.md`
+- [部署与运维](/deployment)：Docker Compose、阿里云 SLS 容器日志采集、环境变量和反向代理。
+- [环境变量与配置模板](/environment)：可复制的部署变量与生产配置示例。
+- [接口与数据约定](/contracts)：数据库、权限码、错误码与跨接口规则。
+- [OpenAPI 与 Swagger UI](/openapi)：查看本地接口定义和交互页面。
+- [关键设计决策](/design-decisions)：架构分层、认证与扩展方式。
