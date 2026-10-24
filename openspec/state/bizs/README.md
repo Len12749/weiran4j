@@ -78,5 +78,8 @@
 | 平台能力(weiran-system) | `sys_config` 系统配置 | [`sys_config.md`](sys_config.md) |
 | 平台能力(weiran-system) | `sys_media` 文件资源 | [`sys_media.md`](sys_media.md) |
 | 平台能力(weiran-system) | `sys_media_reference` 资源引用 | [`sys_media_reference.md`](sys_media_reference.md) |
+| 平台能力(weiran-system) | `sys_task` 批处理任务 | [`sys_task.md`](sys_task.md) |
+| 平台能力(weiran-system) | `sys_task_detail` 逐项结果 | [`sys_task_detail.md`](sys_task_detail.md) |
+| 可选演示(weiran-demo) | `demo_batch_item` 演示结果 | [`demo_batch_item.md`](demo_batch_item.md) |
 | 平台能力(weiran-system) | `sys_operation_log` 操作日志 | [`sys_operation_log.md`](sys_operation_log.md) |
 | 行政区划(weiran-region) | `region` 行政区划 | [`region.md`](region.md) |

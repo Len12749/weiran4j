@@ -55,4 +55,5 @@ pnpm dev
 - [环境变量与配置模板](/environment)：可复制的部署变量与生产配置示例。
 - [接口与数据约定](/contracts)：数据库、权限码、错误码与跨接口规则。
 - [OpenAPI 与 Swagger UI](/openapi)：查看本地接口定义和交互页面。
+- [批处理任务](/batch-processing)：Excel、ZIP 演示与业务处理器接入。
 - [关键设计决策](/design-decisions)：架构分层、认证与扩展方式。

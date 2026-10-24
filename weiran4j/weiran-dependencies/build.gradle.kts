@@ -47,6 +47,9 @@ dependencies {
         // system 的阿里云短信 SendSms 适配器。
         api("com.aliyun:dysmsapi20170525:4.6.0")
 
+        // local/test 演示模块的 XLSX 解析；生产应用不包含 weiran-demo。
+        api("org.apache.poi:poi-ooxml:6.0.0")
+
         // Forbidden APIs 的 @SuppressForbidden 注解。仅编译期可见，用于在无法回避的
         // 第三方 API 边界（JJWT 只接受 java.util.Date）做精确豁免，版本与 build-logic 里的插件一致。
         api("de.thetaphi:forbiddenapis:3.10")

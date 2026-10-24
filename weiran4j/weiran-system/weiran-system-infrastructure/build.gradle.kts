@@ -15,6 +15,7 @@ dependencies {
     // framework 不再传递框架库（D-016），持久化与 JSON 用到的自己声明。
     implementation("com.baomidou:mybatis-plus-spring-boot3-starter")
     implementation("org.springframework:spring-jdbc")
+    implementation("org.springframework:spring-tx")
     implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("org.springframework.security:spring-security-crypto")
     implementation("io.jsonwebtoken:jjwt-api")

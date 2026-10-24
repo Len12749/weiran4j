@@ -1,6 +1,7 @@
 package com.weiran.system.adapter.autoconfigure;
 
 import com.weiran.system.adapter.web.AuthController;
+import com.weiran.system.adapter.web.BatchJobController;
 import com.weiran.system.adapter.web.LoginLogController;
 import com.weiran.system.adapter.web.MediaController;
 import com.weiran.system.adapter.web.MenuController;
@@ -18,6 +19,7 @@ import org.springframework.context.annotation.Import;
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @Import({
     AuthController.class,
+    BatchJobController.class,
     SsoController.class,
     PhoneAuthController.class,
     UserController.class,

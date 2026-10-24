@@ -10,6 +10,8 @@ import com.weiran.system.application.auth.LocalIdentityResolver;
 import com.weiran.system.application.auth.LocalRbacPermissionSource;
 import com.weiran.system.application.auth.PhoneLoginApplicationService;
 import com.weiran.system.application.auth.PhoneLoginSettings;
+import com.weiran.system.application.batch.BatchJobApplicationService;
+import com.weiran.system.application.batch.BatchJobWorker;
 import com.weiran.system.application.loginlog.LoginLogApplicationService;
 import com.weiran.system.application.media.AvatarMediaReferenceChecker;
 import com.weiran.system.application.media.ConfigMediaReferenceChecker;
@@ -23,6 +25,7 @@ import com.weiran.system.application.sms.SystemSmsSettings;
 import com.weiran.system.application.user.UserApplicationService;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Import;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * weiran-system 应用层自动配置：各用例服务与 {@code TokenAuthenticator} 实现（三段式认证，D-014）。
@@ -31,7 +34,10 @@ import org.springframework.context.annotation.Import;
  * 注解事务驱动，服务类因此不能是 final（CGLIB 代理）。
  */
 @AutoConfiguration
+@EnableScheduling
 @Import({
+    BatchJobApplicationService.class,
+    BatchJobWorker.class,
     AuthSnapshotCache.class,
     AuthorizationResolver.class,
     LocalIdentityResolver.class,

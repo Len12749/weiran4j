@@ -487,3 +487,30 @@ export interface OperationLogQuery extends PageQuery {
 export interface IdResult {
     id: number;
 }
+
+/* ---------- 批处理 ---------- */
+
+export interface BatchJobView {
+    id: number;
+    kind: string;
+    sourceName: string;
+    status: string;
+    phase: string;
+    total: number | null;
+    processed: number;
+    succeeded: number;
+    failed: number;
+    errorMessage: string | null;
+    createdAt: string;
+    finishedAt: string | null;
+}
+
+export interface BatchTaskDetailView {
+    id: number;
+    itemNo: number;
+    itemName: string;
+    stage: string;
+    status: string;
+    message: string | null;
+    createdAt: string;
+}

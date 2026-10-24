@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weiran.system.domain.auth.TokenCodec;
 import com.weiran.system.domain.auth.TokenIssuerReader;
 import com.weiran.system.domain.auth.TokenVerifier;
+import com.weiran.system.domain.batch.BatchFileStorage;
 import com.weiran.system.domain.identity.ExternalIdentityProviders;
 import com.weiran.system.domain.identity.SsoStateSigner;
 import com.weiran.system.domain.sms.SmsSender;
@@ -13,6 +14,7 @@ import com.weiran.system.domain.user.PasswordHasher;
 import com.weiran.system.infrastructure.identity.AuthProvidersProperties;
 import com.weiran.system.infrastructure.identity.ConfiguredExternalIdentityProviders;
 import com.weiran.system.infrastructure.identity.HmacSsoStateSigner;
+import com.weiran.system.infrastructure.persistence.JdbcBatchJobRepository;
 import com.weiran.system.infrastructure.persistence.JdbcMediaReferenceRepository;
 import com.weiran.system.infrastructure.persistence.MybatisLoginLogRepository;
 import com.weiran.system.infrastructure.persistence.MybatisMediaRepository;
@@ -29,6 +31,7 @@ import com.weiran.system.infrastructure.sms.AliyunSmsSender;
 import com.weiran.system.infrastructure.sms.DisabledSmsSender;
 import com.weiran.system.infrastructure.sms.LocalSmsSender;
 import com.weiran.system.infrastructure.sms.SystemSmsProperties;
+import com.weiran.system.infrastructure.storage.ConfiguredBatchFileStorage;
 import com.weiran.system.infrastructure.storage.DisabledFileStorage;
 import com.weiran.system.infrastructure.storage.LocalFileStorage;
 import com.weiran.system.infrastructure.storage.OssFileStorage;
@@ -64,9 +67,16 @@ import org.springframework.context.annotation.Import;
     MybatisLoginLogRepository.class,
     MybatisUserIdentityRepository.class,
     MybatisMediaRepository.class,
+    JdbcBatchJobRepository.class,
     JdbcMediaReferenceRepository.class
 })
 public class SystemInfrastructureAutoConfiguration {
+
+    @Bean(destroyMethod = "close")
+    @ConditionalOnMissingBean(BatchFileStorage.class)
+    public ConfiguredBatchFileStorage batchFileStorage(final SystemStorageProperties properties) {
+        return new ConfiguredBatchFileStorage(properties);
+    }
 
     @Bean
     @ConditionalOnMissingBean(SmsSender.class)
