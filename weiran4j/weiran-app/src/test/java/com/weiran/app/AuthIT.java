@@ -66,10 +66,10 @@ class AuthIT extends IntegrationTestSupport {
 
         IntegrationTestSupport.assertOk(response);
         final JsonNode roots = IntegrationTestSupport.data(response);
-        assertThat(AuthIT.ids(roots)).contains(1L, 2L, 9L).doesNotContain(14L);
+        assertThat(AuthIT.ids(roots)).containsExactly(1L, 2L, 9L, 14L);
         final JsonNode system = roots.get(1);
         assertThat(system.path("type").asText()).isEqualTo("directory");
-        assertThat(AuthIT.ids(system.path("children"))).containsExactly(3L, 4L, 5L, 6L, 7L, 8L, 12L, 2000L, 13L);
+        assertThat(AuthIT.ids(system.path("children"))).containsExactly(3L, 4L, 5L, 7L, 8L, 12L, 2000L, 13L);
         final JsonNode users = system.path("children").get(0);
         assertThat(users.path("component").asText()).isEqualTo("system/users/UsersPage");
         assertThat(users.path("permission").asText()).isEqualTo("system:user:list");
@@ -78,17 +78,17 @@ class AuthIT extends IntegrationTestSupport {
         assertThat(users.path("keepAlive").isBoolean()).isTrue();
         assertThat(users.path("isExternal").isBoolean()).isTrue();
         assertThat(users.path("status").asText()).isEqualTo("enabled");
-        final JsonNode smsConfigs = system.path("children").get(6);
+        final JsonNode smsConfigs = system.path("children").get(5);
         assertThat(smsConfigs.path("title").asText()).isEqualTo("短信配置");
         assertThat(smsConfigs.path("path").asText()).isEqualTo("/system/sms");
         assertThat(smsConfigs.path("component").asText()).isEqualTo("system/sms/SmsConfigsPage");
-        final JsonNode regions = system.path("children").get(7);
+        final JsonNode regions = system.path("children").get(6);
         assertThat(regions.path("title").asText()).isEqualTo("行政区划");
         assertThat(regions.path("component").asText()).isEqualTo("system/regions/RegionsPage");
         assertThat(regions.path("permission").asText()).isEqualTo("region:list");
         final Integer demoRows =
                 this.jdbc.queryForObject("SELECT COUNT(*) FROM sys_menu WHERE id BETWEEN 14 AND 19", Integer.class);
-        assertThat(demoRows).isZero();
+        assertThat(demoRows).isEqualTo(6);
     }
 
     @Test
