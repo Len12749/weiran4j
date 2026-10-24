@@ -88,6 +88,7 @@
 ## 5. 说明与建议
 
 - 配置写入后没有缓存层，公开接口每次查库。
+- 配置保存和删除时，在同一事务同步替换 `sys_media_reference` 中的 `system_config` 引用；资源库仍通过实时检查器核对历史配置值。
 - 系统配置页面按 `sys_group(type=config,group_key=config_system)` 分组；短信页面按 `group_key=config_sms` 分组。配置键遵循 `{range}.{group}.{value}`，其中 `range=system/sms`、`group=sys_config.group_key=sys_group.code`；新建或变更键、分组时校验。已有不合规的自定义键允许原位改值。`field_type`、`field_options`、`required` 控制表单渲染和校验。匿名读取仅允许 `system.general.title`。
 - 短信配置由 `/system/sms` 菜单进入共用的 `ConfigsPage`，传入 `config_sms` 后只呈现短信域分组及 `sms.*` 配置项：`sms.general.sign_name` 位于 `general` 组，`sms.system_tpl.captcha_local` 与 `sms.system_tpl.captcha_aliyun` 位于 `system_tpl` 组。分组与配置项管理共用同一页面流程，分组写接口按配置域定位。
 - 登录页通过公开 `/api-backend/n/system/auth/listProviders` 获取手机号登录状态；后端只有在 `system.user.enable_phone_login=true`、短信发送模式可用且当前模式的验证码模板有效时才返回 `phoneLoginEnabled=true`。`local` 模式的 `sms.system_tpl.captcha_local` 是短信正文，必须包含 `${code}`；发码时替换并写入应用日志。`aliyun` 模式的 `sms.system_tpl.captcha_aliyun` 是已审核模板 CODE。

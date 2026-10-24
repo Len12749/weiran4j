@@ -76,5 +76,7 @@
 | 身份与权限(weiran-system) | `sys_user_identity` 外部身份绑定 | [`sys_user_identity.md`](sys_user_identity.md) |
 | 平台能力(weiran-system) | `sys_group` / `sys_dict_item` 字典与共享分组 | [`sys_group.md`](sys_group.md) |
 | 平台能力(weiran-system) | `sys_config` 系统配置 | [`sys_config.md`](sys_config.md) |
+| 平台能力(weiran-system) | `sys_media` 文件资源 | [`sys_media.md`](sys_media.md) |
+| 平台能力(weiran-system) | `sys_media_reference` 资源引用 | [`sys_media_reference.md`](sys_media_reference.md) |
 | 平台能力(weiran-system) | `sys_operation_log` 操作日志 | [`sys_operation_log.md`](sys_operation_log.md) |
 | 行政区划(weiran-region) | `region` 行政区划 | [`region.md`](region.md) |

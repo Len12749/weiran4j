@@ -11,6 +11,7 @@ import com.weiran.framework.persistence.Likes;
 import com.weiran.framework.persistence.MybatisPages;
 import com.weiran.framework.status.EnableStatus;
 import com.weiran.system.domain.auth.AuthState;
+import com.weiran.system.domain.media.MediaReferenceRepository;
 import com.weiran.system.domain.user.Gender;
 import com.weiran.system.domain.user.User;
 import com.weiran.system.domain.user.UserAccountField;
@@ -54,17 +55,20 @@ public class MybatisUserRepository implements UserRepository {
     private final SysUserRoleMapper userRoleMapper;
 
     private final ObjectMapper objectMapper;
+    private final MediaReferenceRepository mediaReferences;
 
     /** 构造仓储。 */
     public MybatisUserRepository(
             final SysUserMapper userMapper,
             final SysUserBackendMapper backendMapper,
             final SysUserRoleMapper userRoleMapper,
-            final ObjectMapper objectMapper) {
+            final ObjectMapper objectMapper,
+            final MediaReferenceRepository mediaReferences) {
         this.userMapper = userMapper;
         this.backendMapper = backendMapper;
         this.userRoleMapper = userRoleMapper;
         this.objectMapper = objectMapper;
+        this.mediaReferences = mediaReferences;
     }
 
     @Override
@@ -164,6 +168,7 @@ public class MybatisUserRepository implements UserRepository {
         backend.setAvatar(user.getAvatar());
         backend.setGender(user.getGender().value());
         this.backendMapper.insert(backend);
+        this.replaceAvatarReference(row.getId(), user.getAvatar());
         return row.getId();
     }
 
@@ -182,6 +187,7 @@ public class MybatisUserRepository implements UserRepository {
                 .set(SysUserBackendDO::getAvatar, user.getAvatar())
                 .set(SysUserBackendDO::getGender, user.getGender().value())
                 .eq(SysUserBackendDO::getUserId, user.requireId()));
+        this.replaceAvatarReference(user.requireId(), user.getAvatar());
     }
 
     @Override
@@ -283,6 +289,16 @@ public class MybatisUserRepository implements UserRepository {
         this.userRoleMapper.delete(Wrappers.lambdaQuery(SysUserRoleDO.class).eq(SysUserRoleDO::getUserId, id));
         this.backendMapper.deleteById(id);
         this.userMapper.deleteById(id);
+        this.replaceAvatarReference(id, null);
+    }
+
+    private void replaceAvatarReference(final long id, final @Nullable String avatar) {
+        this.mediaReferences.replace(
+                "user_avatar",
+                String.valueOf(id),
+                "avatar",
+                "用户头像：#" + id,
+                avatar == null || avatar.isBlank() ? List.of() : List.of(avatar));
     }
 
     @Override

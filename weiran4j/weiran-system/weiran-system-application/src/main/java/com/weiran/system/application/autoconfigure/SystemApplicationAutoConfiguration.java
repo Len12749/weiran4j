@@ -11,8 +11,11 @@ import com.weiran.system.application.auth.LocalRbacPermissionSource;
 import com.weiran.system.application.auth.PhoneLoginApplicationService;
 import com.weiran.system.application.auth.PhoneLoginSettings;
 import com.weiran.system.application.loginlog.LoginLogApplicationService;
+import com.weiran.system.application.media.AvatarMediaReferenceChecker;
+import com.weiran.system.application.media.ConfigMediaReferenceChecker;
 import com.weiran.system.application.media.MediaApplicationService;
 import com.weiran.system.application.media.MediaAssetDeletionService;
+import com.weiran.system.application.media.MediaReferenceApplicationService;
 import com.weiran.system.application.menu.MenuApplicationService;
 import com.weiran.system.application.role.RoleApplicationService;
 import com.weiran.system.application.sms.SmsApplicationService;
@@ -45,6 +48,9 @@ import org.springframework.context.annotation.Import;
     MenuApplicationService.class,
     LoginLogApplicationService.class,
     MediaApplicationService.class,
+    MediaReferenceApplicationService.class,
+    ConfigMediaReferenceChecker.class,
+    AvatarMediaReferenceChecker.class,
     MediaAssetDeletionService.class,
     SmsApplicationService.class
 })

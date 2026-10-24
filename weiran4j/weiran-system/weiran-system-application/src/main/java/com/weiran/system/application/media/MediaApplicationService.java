@@ -3,24 +3,25 @@ package com.weiran.system.application.media;
 import com.weiran.framework.error.BizException;
 import com.weiran.framework.page.PageQuery;
 import com.weiran.framework.page.PageResult;
-import com.weiran.platform.domain.config.ConfigRepository;
-import com.weiran.platform.domain.config.SystemConfig;
 import com.weiran.system.api.media.FileUploadView;
+import com.weiran.system.api.media.MediaReferenceChecker;
+import com.weiran.system.api.media.MediaReferenceLocation;
 import com.weiran.system.api.media.MediaService;
 import com.weiran.system.api.media.MediaView;
 import com.weiran.system.domain.media.MediaAsset;
 import com.weiran.system.domain.media.MediaFileTypes;
+import com.weiran.system.domain.media.MediaReferenceRepository;
 import com.weiran.system.domain.media.MediaRepository;
 import com.weiran.system.domain.storage.FileStorage;
 import com.weiran.system.domain.storage.FileStorage.StoredFile;
 import com.weiran.system.domain.storage.FileStorageException;
-import com.weiran.system.domain.user.UserRepository;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,21 +34,21 @@ public class MediaApplicationService implements MediaService {
     private final MediaRepository mediaRepository;
     private final FileStorage fileStorage;
     private final MediaAssetDeletionService deletionService;
-    private final @Nullable ConfigRepository configRepository;
-    private final @Nullable UserRepository userRepository;
+    private final @Nullable MediaReferenceRepository referenceRepository;
+    private final List<MediaReferenceChecker> referenceCheckers;
 
     @Autowired
     public MediaApplicationService(
             final MediaRepository mediaRepository,
             final FileStorage fileStorage,
             final MediaAssetDeletionService deletionService,
-            final ConfigRepository configRepository,
-            final UserRepository userRepository) {
+            final MediaReferenceRepository referenceRepository,
+            final List<MediaReferenceChecker> referenceCheckers) {
         this.mediaRepository = mediaRepository;
         this.fileStorage = fileStorage;
         this.deletionService = deletionService;
-        this.configRepository = configRepository;
-        this.userRepository = userRepository;
+        this.referenceRepository = referenceRepository;
+        this.referenceCheckers = List.copyOf(referenceCheckers);
     }
 
     /** 供无需配置仓储的轻量使用者使用。 */
@@ -58,8 +59,8 @@ public class MediaApplicationService implements MediaService {
         this.mediaRepository = mediaRepository;
         this.fileStorage = fileStorage;
         this.deletionService = deletionService;
-        this.configRepository = null;
-        this.userRepository = null;
+        this.referenceRepository = null;
+        this.referenceCheckers = List.of();
     }
 
     @Override
@@ -119,14 +120,11 @@ public class MediaApplicationService implements MediaService {
     public PageResult<MediaView> page(
             final @Nullable String keyword, final @Nullable String category, final PageQuery pageQuery) {
         final PageResult<MediaAsset> result = this.mediaRepository.page(keyword, category, pageQuery);
-        final List<SystemConfig> configs = this.configRepository == null ? List.of() : this.configRepository.findAll();
-        final Map<String, List<Long>> avatarReferences = this.userRepository == null
-                ? Map.of()
-                : this.userRepository.findAvatarReferences(
-                        result.list().stream().map(MediaAsset::url).toList());
+        final Map<String, List<String>> references =
+                this.references(result.list().stream().map(MediaAsset::url).toList());
         return new PageResult<>(
                 result.list().stream()
-                        .map(asset -> MediaApplicationService.toView(asset, configs, avatarReferences))
+                        .map(asset -> MediaApplicationService.toView(asset, references))
                         .toList(),
                 result.total(),
                 result.page(),
@@ -137,11 +135,12 @@ public class MediaApplicationService implements MediaService {
     @Transactional
     public void delete(final long id) {
         final MediaAsset asset = this.mediaRepository.findById(id).orElseThrow(() -> BizException.notFound("文件不存在"));
-        final List<SystemConfig> configs = this.configRepository == null ? List.of() : this.configRepository.findAll();
-        final Map<String, List<Long>> avatarReferences =
-                this.userRepository == null ? Map.of() : this.userRepository.findAvatarReferences(List.of(asset.url()));
-        if (!MediaApplicationService.references(asset, configs, avatarReferences)
+        if (!this.references(List.of(asset.url()))
+                .getOrDefault(asset.url(), List.of())
                 .isEmpty()) {
+            throw BizException.conflict("文件仍被使用，请先移除引用");
+        }
+        if (this.referenceRepository != null && !this.referenceRepository.claimDeletion(id)) {
             throw BizException.conflict("文件仍被使用，请先移除引用");
         }
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -153,8 +152,7 @@ public class MediaApplicationService implements MediaService {
         });
     }
 
-    private static MediaView toView(
-            final MediaAsset asset, final List<SystemConfig> configs, final Map<String, List<Long>> avatarReferences) {
+    private static MediaView toView(final MediaAsset asset, final Map<String, List<String>> references) {
         return new MediaView(
                 asset.id(),
                 asset.originalName(),
@@ -162,20 +160,34 @@ public class MediaApplicationService implements MediaService {
                 asset.size(),
                 asset.createdAt(),
                 MediaFileTypes.category(asset.originalName()),
-                MediaApplicationService.references(asset, configs, avatarReferences));
+                references.getOrDefault(asset.url(), List.of()));
     }
 
-    private static List<String> references(
-            final MediaAsset asset, final List<SystemConfig> configs, final Map<String, List<Long>> avatarReferences) {
-        final List<String> configReferences = configs.stream()
-                .filter(config -> config.getConfigValue().contains(asset.url()))
-                .map(config -> "系统配置：" + config.getConfigKey())
-                .toList();
-        final List<String> userReferences = avatarReferences.getOrDefault(asset.url(), List.of()).stream()
-                .map(id -> "用户头像：#" + id)
-                .toList();
-        return java.util.stream.Stream.concat(configReferences.stream(), userReferences.stream())
-                .toList();
+    private Map<String, List<String>> references(final List<String> urls) {
+        if (urls.isEmpty()) {
+            return Map.of();
+        }
+        final List<MediaReferenceLocation> locations = new java.util.ArrayList<>();
+        if (this.referenceRepository != null) {
+            this.referenceRepository
+                    .findReferences(urls)
+                    .forEach(reference -> locations.add(new MediaReferenceLocation(
+                            reference.url(),
+                            reference.sourceType(),
+                            reference.sourceId(),
+                            reference.field(),
+                            reference.label())));
+        }
+        for (final MediaReferenceChecker checker : this.referenceCheckers) {
+            locations.addAll(checker.findReferences(urls));
+        }
+        return locations.stream()
+                .collect(Collectors.groupingBy(
+                        MediaReferenceLocation::url,
+                        Collectors.mapping(
+                                MediaReferenceLocation::label,
+                                Collectors.collectingAndThen(
+                                        Collectors.toCollection(java.util.LinkedHashSet::new), List::copyOf))));
     }
 
     private static boolean matchesImageSignature(final String extension, final byte[] header) {

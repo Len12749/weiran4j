@@ -13,6 +13,7 @@ import com.weiran.system.domain.user.PasswordHasher;
 import com.weiran.system.infrastructure.identity.AuthProvidersProperties;
 import com.weiran.system.infrastructure.identity.ConfiguredExternalIdentityProviders;
 import com.weiran.system.infrastructure.identity.HmacSsoStateSigner;
+import com.weiran.system.infrastructure.persistence.JdbcMediaReferenceRepository;
 import com.weiran.system.infrastructure.persistence.MybatisLoginLogRepository;
 import com.weiran.system.infrastructure.persistence.MybatisMediaRepository;
 import com.weiran.system.infrastructure.persistence.MybatisMenuRepository;
@@ -62,7 +63,8 @@ import org.springframework.context.annotation.Import;
     MybatisMenuRepository.class,
     MybatisLoginLogRepository.class,
     MybatisUserIdentityRepository.class,
-    MybatisMediaRepository.class
+    MybatisMediaRepository.class,
+    JdbcMediaReferenceRepository.class
 })
 public class SystemInfrastructureAutoConfiguration {
 

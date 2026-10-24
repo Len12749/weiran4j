@@ -11,6 +11,7 @@ import com.weiran.platform.domain.config.ConfigType;
 import com.weiran.platform.domain.config.SystemConfig;
 import com.weiran.platform.infrastructure.persistence.entity.SysConfigDO;
 import com.weiran.platform.infrastructure.persistence.mapper.SysConfigMapper;
+import com.weiran.system.domain.media.MediaReferenceRepository;
 import java.util.List;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
@@ -19,10 +20,12 @@ import org.jspecify.annotations.Nullable;
 public class MybatisConfigRepository implements ConfigRepository {
 
     private final SysConfigMapper configMapper;
+    private final MediaReferenceRepository mediaReferences;
 
     /** 构造仓储。 */
-    public MybatisConfigRepository(final SysConfigMapper configMapper) {
+    public MybatisConfigRepository(final SysConfigMapper configMapper, final MediaReferenceRepository mediaReferences) {
         this.configMapper = configMapper;
+        this.mediaReferences = mediaReferences;
     }
 
     @Override
@@ -68,12 +71,19 @@ public class MybatisConfigRepository implements ConfigRepository {
         } else {
             this.configMapper.updateById(row);
         }
+        this.mediaReferences.replace(
+                "system_config",
+                String.valueOf(row.getId()),
+                "config_value",
+                "系统配置：" + row.getConfigKey(),
+                this.mediaReferences.findUrlsInText(row.getConfigValue() == null ? "" : row.getConfigValue()));
         return row.getId();
     }
 
     @Override
     public void deleteById(final long id) {
         this.configMapper.deleteById(id);
+        this.mediaReferences.replace("system_config", String.valueOf(id), "config_value", "", List.of());
     }
 
     @Override
