@@ -34,7 +34,7 @@ subprojects {
             repositories {
                 maven {
                     name = "GitHubPackages"
-                    url = uri("https://maven.pkg.github.com/wulicode/weiran-tech/weiran4j")
+                    url = uri("https://maven.pkg.github.com/weiran-tech/weiran4j")
                     credentials {
                         username = githubUser.orNull
                         password = githubToken.orNull

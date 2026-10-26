@@ -18,7 +18,7 @@ RUN --mount=type=cache,target=/root/.gradle \
 
 # ---- 运行 ----
 FROM eclipse-temurin:21-jre
-LABEL org.opencontainers.image.source="https://github.com/wulicode/weiran-tech/weiran4j"
+LABEL org.opencontainers.image.source="https://github.com/weiran-tech/weiran4j"
 # 非 root 运行（uid 10001）；日志目录归它所有，Compose 在这里挂卷。
 RUN groupadd --system --gid 10001 weiran \
     && useradd --system --uid 10001 --gid weiran --home-dir /app --no-create-home weiran \

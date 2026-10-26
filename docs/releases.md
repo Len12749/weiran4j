@@ -4,8 +4,8 @@
 
 | tag | 发布物 | 位置 |
 | --- | --- | --- |
-| `lib-v1.2.3` | `com.wulicode.weiran:weiran-dependencies:1.2.3` 与全部库模块 | [GitHub Packages Maven/Gradle 仓库](https://maven.pkg.github.com/wulicode/weiran-tech/weiran4j) |
-| `demo-v1.2.3` | 前端与后端 Demo 容器镜像、Compose 文件 | GHCR 与 [GitHub Releases](https://github.com/wulicode/weiran-tech/weiran4j/releases) |
+| `lib-v1.2.3` | `com.wulicode.weiran:weiran-dependencies:1.2.3` 与全部库模块 | [GitHub Packages Maven/Gradle 仓库](https://maven.pkg.github.com/weiran-tech/weiran4j) |
+| `demo-v1.2.3` | 前端与后端 Demo 容器镜像、Compose 文件 | GHCR 与 [GitHub Releases](https://github.com/weiran-tech/weiran4j/releases) |
 
 两条版本线可以各自递增。Demo 镜像始终由对应 tag 的仓库源码构建，Release 记录提交 SHA、可追溯的最近组件包 tag 及两个镜像摘要；不能仅凭版本号推断 Demo 一定使用了已发布组件包的相同代码。
 
@@ -25,7 +25,7 @@ git push origin lib-v0.1.2
 ```kotlin
 mavenCentral()
 maven {
-    url = uri("https://maven.pkg.github.com/wulicode/weiran-tech/weiran4j")
+    url = uri("https://maven.pkg.github.com/weiran-tech/weiran4j")
     credentials {
         username = providers.gradleProperty("gpr.user").orNull
         password = providers.gradleProperty("gpr.key").orNull

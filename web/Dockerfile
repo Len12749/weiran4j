@@ -15,7 +15,7 @@ RUN pnpm --filter @weiran/web build
 
 # ---- 运行 ----
 FROM nginx:1.27-alpine
-LABEL org.opencontainers.image.source="https://github.com/wulicode/weiran-tech/weiran4j"
+LABEL org.opencontainers.image.source="https://github.com/weiran-tech/weiran4j"
 COPY web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /src/web/dist /usr/share/nginx/html
 EXPOSE 80
