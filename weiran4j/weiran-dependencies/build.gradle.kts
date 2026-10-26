@@ -74,6 +74,10 @@ extra["weiran.versionDriftAllowlist"] = mapOf(
         "Spring Boot BOM 自带的 jackson-dataformat-yaml 2.21.4 需要 2.5，BOM 仍管 2.4；属 Spring Boot 自身不一致",
     "org.apache.commons:commons-lang3" to
         "springdoc 的 swagger-core-jakarta 需要 3.20.0，BOM 管 3.17.0；只影响 OpenAPI 文档（默认关闭）",
+    "commons-codec:commons-codec" to
+        "仅 local/test 与 Demo 镜像加载的 POI 6.0.0 需要 1.23.0，Spring Boot BOM 管 1.18.0；生产镜像不包含演示模块",
+    "org.apache.logging.log4j:log4j-api" to
+        "仅 local/test 与 Demo 镜像加载的 POI 6.0.0 需要 2.26.1，Spring Boot BOM 管 2.24.3；生产镜像不包含演示模块",
 )
 
 // ── 下游依赖清单（D-013）────────────────────────────────────────────────────
