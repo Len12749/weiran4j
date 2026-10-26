@@ -56,4 +56,5 @@ pnpm dev
 - [接口与数据约定](/contracts)：数据库、权限码、错误码与跨接口规则。
 - [OpenAPI 与 Swagger UI](/openapi)：查看本地接口定义和交互页面。
 - [批处理任务](/batch-processing)：Excel、ZIP 演示与业务处理器接入。
+- [自增序号](/sequence)：按类型分配持久化唯一序号。
 - [关键设计决策](/design-decisions)：架构分层、认证与扩展方式。

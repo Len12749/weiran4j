@@ -1,0 +1,13 @@
+# 可选 SLS 采集器：与 docker-compose.yml 一起使用，见 weiran4j/docs/02-部署.md §6a。
+# 账号 ID、地域、机器组标识和镜像版本均从未入库的 weiran4j/.env 注入。
+services:
+  loongcollector:
+    image: ${WEIRAN_SLS_IMAGE:?在 weiran4j/.env 中设置兼容宿主机 Docker 版本的 LoongCollector 镜像}
+    environment:
+      ALIYUN_LOGTAIL_CONFIG: /etc/ilogtail/conf/${WEIRAN_SLS_UPLOAD_CHANNEL:?设置 WEIRAN_SLS_UPLOAD_CHANNEL}/ilogtail_config.json
+      ALIYUN_LOGTAIL_USER_ID: ${WEIRAN_SLS_ACCOUNT_ID:?设置 WEIRAN_SLS_ACCOUNT_ID}
+      ALIYUN_LOGTAIL_USER_DEFINED_ID: ${WEIRAN_SLS_MACHINE_ID:?设置 WEIRAN_SLS_MACHINE_ID}
+    volumes:
+      - /:/logtail_host:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped

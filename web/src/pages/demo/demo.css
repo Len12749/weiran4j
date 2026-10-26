@@ -6,3 +6,7 @@
 .demo-page__access { display: flex; align-items: flex-start; gap: 20px; }
 .demo-page__access strong { font-size: 16px; }
 .demo-page__access p { margin: 6px 0 12px; color: var(--color-text-secondary); }
+.demo-page__sequence { max-width: 520px; display: grid; gap: 10px; }
+.demo-page__sequence-form { display: flex; gap: 12px; }
+.demo-page__sequence-form .semi-input-wrapper { flex: 1; min-width: 0; }
+.demo-page__sequence-result { display: grid; gap: 8px; margin-top: 16px; padding: 16px; border: 1px solid var(--semi-color-border); border-radius: 8px; }

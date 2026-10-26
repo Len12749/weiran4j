@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * @param browser 浏览器
  * @param os 操作系统
  * @param userAgent User-Agent
- * @param eventType {@code login / logout}
+ * @param eventType {@code login / logout / sms_code}
  * @param status {@code success / fail}
  * @param message 结果说明
  * @param createdAt 时间

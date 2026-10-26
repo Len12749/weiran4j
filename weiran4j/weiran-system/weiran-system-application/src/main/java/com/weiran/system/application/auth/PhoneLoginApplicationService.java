@@ -105,6 +105,9 @@ public class PhoneLoginApplicationService {
         final SmsSendResult result = this.smsService.send(new SmsSendCommand(
                 phone, this.settings.templateCode(), Map.of(PhoneLoginApplicationService.TEMPLATE_PARAMETER, code)));
         if (result == SmsSendResult.SENT || result == SmsSendResult.LOGGED) {
+            if (result == SmsSendResult.LOGGED && this.settings.isLocalMode()) {
+                this.authService.recordLocalPhoneCodeSent(found.orElseThrow(), phone, client, code);
+            }
             this.challenges.put(
                     phone,
                     new Challenge(

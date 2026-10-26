@@ -443,7 +443,7 @@ export interface LoginLogView {
     browser: string | null;
     os: string | null;
     userAgent: string | null;
-    eventType: 'login' | 'logout';
+    eventType: 'login' | 'logout' | 'sms_code';
     status: 'success' | 'fail';
     message: string | null;
     createdAt: string;
@@ -452,7 +452,7 @@ export interface LoginLogView {
 export interface LoginLogQuery extends PageQuery {
     username?: string;
     status?: 'success' | 'fail';
-    eventType?: 'login' | 'logout';
+    eventType?: 'login' | 'logout' | 'sms_code';
     startTime?: string;
     endTime?: string;
 }

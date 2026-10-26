@@ -13,7 +13,7 @@ import { formatTimeRange, toTimeRange } from '@/utils/date';
 interface Filters {
     username: string;
     status: 'success' | 'fail' | undefined;
-    eventType: 'login' | 'logout' | undefined;
+    eventType: 'login' | 'logout' | 'sms_code' | undefined;
     range: Date[] | undefined;
 }
 
@@ -22,6 +22,7 @@ const EMPTY_FILTERS: Filters = { username: '', status: undefined, eventType: und
 const EVENT_OPTIONS = [
     { label: '登录', value: 'login' },
     { label: '登出', value: 'logout' },
+    { label: '验证码发送', value: 'sms_code' },
 ];
 const STATUS_OPTIONS = [
     { label: '成功', value: 'success' },
@@ -84,8 +85,8 @@ export default function LoginLogsPage() {
             dataIndex: 'eventType',
             width: 72,
             render: (v: string) => (
-                <Tag size="small" color={v === 'login' ? 'blue' : 'grey'}>
-                    {v === 'login' ? '登录' : '登出'}
+                <Tag size="small" color={v === 'login' ? 'blue' : v === 'sms_code' ? 'orange' : 'grey'}>
+                    {v === 'login' ? '登录' : v === 'sms_code' ? '验证码' : '登出'}
                 </Tag>
             ),
         },
@@ -96,8 +97,8 @@ export default function LoginLogsPage() {
         {
             title: '信息',
             dataIndex: 'message',
-            render: (v: string | null, r: LoginLogView) => (
-                <Typography.Text ellipsis={{ showTooltip: { opts: { content: r.userAgent ?? v ?? '' } } }} style={{ maxWidth: 260 }}>
+            render: (v: string | null) => (
+                <Typography.Text ellipsis={{ showTooltip: { opts: { content: v ?? '' } } }} style={{ maxWidth: 260 }}>
                     {v || '—'}
                 </Typography.Text>
             ),

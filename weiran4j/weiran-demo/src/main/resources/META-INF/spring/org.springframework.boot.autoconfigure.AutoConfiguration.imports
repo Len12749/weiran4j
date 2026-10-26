@@ -1,1 +1,2 @@
 com.weiran.demo.batch.DemoBatchAutoConfiguration
+com.weiran.demo.sequence.DemoSequenceAutoConfiguration

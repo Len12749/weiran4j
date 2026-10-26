@@ -16,6 +16,7 @@ import com.weiran.system.infrastructure.identity.ConfiguredExternalIdentityProvi
 import com.weiran.system.infrastructure.identity.HmacSsoStateSigner;
 import com.weiran.system.infrastructure.persistence.JdbcBatchJobRepository;
 import com.weiran.system.infrastructure.persistence.JdbcMediaReferenceRepository;
+import com.weiran.system.infrastructure.persistence.JdbcSequenceRepository;
 import com.weiran.system.infrastructure.persistence.MybatisLoginLogRepository;
 import com.weiran.system.infrastructure.persistence.MybatisMediaRepository;
 import com.weiran.system.infrastructure.persistence.MybatisMenuRepository;
@@ -68,7 +69,8 @@ import org.springframework.context.annotation.Import;
     MybatisUserIdentityRepository.class,
     MybatisMediaRepository.class,
     JdbcBatchJobRepository.class,
-    JdbcMediaReferenceRepository.class
+    JdbcMediaReferenceRepository.class,
+    JdbcSequenceRepository.class
 })
 public class SystemInfrastructureAutoConfiguration {
 

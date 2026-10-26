@@ -167,9 +167,28 @@ public class AuthApplicationService implements AuthService {
     /** 手机号登录失败留痕；手机号或验证码本身不写入日志。 */
     void recordPhoneLoginFailure(
             final @Nullable Long userId, final String phone, final ClientContext client, final String message) {
-        final String maskedPhone =
-                phone.length() <= 4 ? "****" : phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
-        this.appendLog(userId, maskedPhone, client, LoginLog.EVENT_LOGIN, LoginLog.STATUS_FAIL, message);
+        this.appendLog(
+                userId,
+                AuthApplicationService.maskPhone(phone),
+                client,
+                LoginLog.EVENT_LOGIN,
+                LoginLog.STATUS_FAIL,
+                message);
+    }
+
+    /** 本地模式发送成功后，把明文验证码留在受权限控制的登录日志中供联调。 */
+    void recordLocalPhoneCodeSent(final User user, final String phone, final ClientContext client, final String code) {
+        this.appendLog(
+                user.getId(),
+                user.getUsername(),
+                client,
+                LoginLog.EVENT_SMS_CODE,
+                LoginLog.STATUS_SUCCESS,
+                "local 模式登录验证码：" + code + "，手机号：" + AuthApplicationService.maskPhone(phone));
+    }
+
+    private static String maskPhone(final String phone) {
+        return phone.length() <= 4 ? "****" : phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
     }
 
     @Override

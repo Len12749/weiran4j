@@ -42,6 +42,11 @@ public class SystemSmsSettings implements SmsSettings {
         return !template.isBlank() && (!"local".equals(this.mode) || template.contains("${code}"));
     }
 
+    @Override
+    public boolean isLocalMode() {
+        return "local".equals(this.mode);
+    }
+
     private Map<String, String> values() {
         return this.configService.all().stream()
                 .filter(config -> config.configKey().startsWith("sms."))

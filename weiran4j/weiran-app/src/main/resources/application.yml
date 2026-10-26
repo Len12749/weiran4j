@@ -12,11 +12,12 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   flyway:
     enabled: true
+    table: sys_migration
     # 递归扫描：各模块 infrastructure 把脚本放在 db/migration/<module>/ 下。
     locations: classpath:db/migration
     # 上下游（fork）的脚本时间戳必然交错：后合入的低版本脚本要补执行，而不是让启动失败（D-012）。
     # 代价是执行顺序不再严格等于版本号顺序——脚本之间不得依赖版本号之外的隐含次序。
-    out-of-order: true
+    out-of-order: false
   web:
     # 校验提示语（如「不能为空」）按固定中文输出，不随客户端 Accept-Language 漂移。
     locale: zh_CN
@@ -29,6 +30,12 @@ spring:
   lifecycle:
     # 每个停机阶段最多等多久（进行中的请求、操作日志线程池）；容器编排的强杀时限要比它长（见 docs/02-部署.md）。
     timeout-per-shutdown-phase: ${WEIRAN_SHUTDOWN_TIMEOUT:30s}
+
+  # 开发者工具
+  devtools:
+    livereload:
+      enabled: true
+      port: 35730   # 默认 35729,换成任意空闲端口
 
 server:
   port: ${WEIRAN_PORT:5200}

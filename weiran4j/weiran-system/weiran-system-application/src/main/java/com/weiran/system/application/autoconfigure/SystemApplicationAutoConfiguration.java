@@ -20,6 +20,7 @@ import com.weiran.system.application.media.MediaAssetDeletionService;
 import com.weiran.system.application.media.MediaReferenceApplicationService;
 import com.weiran.system.application.menu.MenuApplicationService;
 import com.weiran.system.application.role.RoleApplicationService;
+import com.weiran.system.application.sequence.SequenceApplicationService;
 import com.weiran.system.application.sms.SmsApplicationService;
 import com.weiran.system.application.sms.SystemSmsSettings;
 import com.weiran.system.application.user.UserApplicationService;
@@ -51,6 +52,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
     ExternalLoginApplicationService.class,
     UserApplicationService.class,
     RoleApplicationService.class,
+    SequenceApplicationService.class,
     MenuApplicationService.class,
     LoginLogApplicationService.class,
     MediaApplicationService.class,

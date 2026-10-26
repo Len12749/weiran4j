@@ -23,6 +23,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 30
+    labels:
+      com.weiran.sls.service: mysql
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     restart: unless-stopped
 
   backend:
@@ -43,6 +50,14 @@ services:
     volumes:
       - backend-logs:/app/logs
       - ./weiran4j/config:/app/config:ro
+    labels:
+      com.weiran.sls.service: backend
+    # SLS LoongCollector 读取 Docker json-file；限制宿主机上的 stdout 日志占用。
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     # 比 WEIRAN_SHUTDOWN_TIMEOUT（30s）长，给优雅停机留足时间后再强杀
     stop_grace_period: 40s
     restart: unless-stopped
@@ -56,6 +71,13 @@ services:
       - "${WEIRAN_WEB_PORT:-5202}:80"
     depends_on:
       - backend
+    labels:
+      com.weiran.sls.service: web
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     restart: unless-stopped
 
 volumes:

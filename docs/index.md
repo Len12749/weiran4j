@@ -31,6 +31,7 @@ features:
 - [接口与数据约定](/contracts)：认证、错误码、数据关系与跨接口规则。
 - [部署与运维](/deployment)：Docker Compose、环境变量、反向代理与 SLS 日志采集。
 - [环境变量与配置模板](/environment)：完整的 `.env` 和可选生产 YAML 示例。
+- [版本发布](/releases)：GitHub Packages 组件包与 GHCR Demo 镜像。
 - [关键设计决策](/design-decisions)：模块分层、认证和下游扩展的取舍。
 - [资源库引用与删除设计](/资源库引用与删除设计)：资源引用登记与删除校验。
 

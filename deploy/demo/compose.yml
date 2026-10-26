@@ -1,0 +1,49 @@
+name: weiran4j-demo
+
+# 与 demo-v* GitHub Release 一起分发。只拉取已发布的镜像，不在使用者机器上编译源码。
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${WEIRAN_DB_PASSWORD:?请在 .env 中设置数据库密码}
+      MYSQL_DATABASE: weiran4j_demo
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/weiran-tech/weiran4j-demo-backend:${WEIRAN_DEMO_VERSION:?请在 .env 中设置 Demo 版本}
+    environment:
+      WEIRAN_DB_URL: jdbc:mysql://mysql:3306/weiran4j_demo?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+      WEIRAN_DB_USERNAME: root
+      WEIRAN_DB_PASSWORD: ${WEIRAN_DB_PASSWORD:?请在 .env 中设置数据库密码}
+      WEIRAN_JWT_SECRET: ${WEIRAN_JWT_SECRET:?请在 .env 中设置 JWT 密钥}
+      WEIRAN_COOKIE_SECURE: ${WEIRAN_COOKIE_SECURE:-false}
+      WEIRAN_PUBLIC_BASE_URL: ${WEIRAN_PUBLIC_BASE_URL:-http://localhost:5202}
+      # CP-7：演示迁移只由现有 local/test profile 显式加载；镜像只在此 Compose 中启用 local。
+      SPRING_PROFILES_ACTIVE: local
+      # local profile 的开发默认值在公开 Demo 中收紧。
+      LOGGING_LEVEL_COM_WEIRAN: INFO
+      SPRINGDOC_API_DOCS_ENABLED: "false"
+      SPRINGDOC_SWAGGER_UI_ENABLED: "false"
+      WEIRAN_STORAGE_MODE: disabled
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    image: ghcr.io/weiran-tech/weiran4j-demo-web:${WEIRAN_DEMO_VERSION:?请在 .env 中设置 Demo 版本}
+    ports:
+      - "${WEIRAN_WEB_PORT:-5202}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mysql-data:

@@ -31,6 +31,7 @@ pnpm dev
 - [文档站首页](docs/index.md)：VitePress 文档入口
 - [架构、数据库与业务约束](weiran4j/docs/01-架构与接口契约.md)
 - [部署手册](weiran4j/docs/02-部署.md)
+- [版本发布](docs/releases.md)：GitHub Packages 组件包与 GHCR 完整 Demo 镜像
 - [开发约定](AGENTS.md)
 
 文档站由 Turbo 管理：`pnpm dev:docs` 单独启动，`pnpm build:docs` 构建。

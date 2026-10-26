@@ -26,7 +26,7 @@
 | 菜单 | 日志审计 › 登录日志（`sys_menu.id = 10`） |
 | 路由 | `/logs/login` |
 | 页面组件 | `logs/LoginLogsPage` |
-| 后端模块 | `weiran-system`；查询 `LoginLogController` → `LoginLogApplicationService`；写入在 `AuthApplicationService` |
+| 后端模块 | `weiran-system`；查询 `LoginLogController` → `LoginLogApplicationService`；写入在 `AuthApplicationService`（含本地验证码发码） |
 | 接口 | `GET /api/login-logs`（只读） |
 | 权限码 | `system:login-log:list`（种子里没有对应的按钮节点，本页只读） |
 
@@ -37,12 +37,12 @@
 | # | 列表列 | 来源 | 渲染 |
 | --- | --- | --- | --- |
 | 1 | 用户名 | `username`（登录时提交的用户名，不一定是真实存在的用户） | 原值 |
-| 2 | 事件 | `event_type` | 登录（蓝）/ 登出（灰）`Tag` |
+| 2 | 事件 | `event_type` | 登录（蓝）/ 登出（灰）/ 验证码（橙）`Tag` |
 | 3 | 结果 | `status` | `StatusTag`（成功绿 / 失败红） |
 | 4 | IP | `ip` | 空值 `—` |
 | 5 | 浏览器 | `browser` | 空值 `—` |
 | 6 | 操作系统 | `os` | 空值 `—` |
-| 7 | 信息 | `message` | 单行省略；**悬停提示显示的是 `userAgent`**（无 UA 时退回 message） |
+| 7 | 信息 | `message` | 单行省略；悬停提示显示完整 message，本地验证码明文可在此查看 |
 | 8 | 时间 | `created_at` | 原值 |
 
 `userId` 接口返回但未展示。无详情接口、无行操作。
@@ -52,7 +52,7 @@
 | 控件 | 参数 | 后端口径 |
 | --- | --- | --- |
 | 输入框「用户名」 | `username` | `LIKE` 模糊（已转义通配符） |
-| 下拉「事件」 | `eventType` | 等值 `login` / `logout`；传其它值不报错，只是查不到 |
+| 下拉「事件」 | `eventType` | 等值 `login` / `logout` / `sms_code`；传其它值不报错，只是查不到 |
 | 下拉「结果」 | `status` | 等值 `success` / `fail`；同上 |
 | `DatePicker type=dateTimeRange` | `startTime` / `endTime` | 格式 `yyyy-MM-dd HH:mm:ss`；`created_at >= startTime` 且 `<= endTime`（两端含） |
 
@@ -69,9 +69,9 @@
 | `ip` | `varchar(64)` 默认 `''` | `ClientIpResolver`：`X-Forwarded-For` 第一个 → `X-Real-IP` → `remoteAddr`，截断到 64 |
 | `user_agent` | `varchar(512)` 默认 `''` | 请求头 `User-Agent`，截断到 512 |
 | `browser` / `os` | `varchar(64)` 默认 `''` | `UserAgentParser` 解析结果，截断到 64 |
-| `event_type` | `varchar(16)` | `login` / `logout` |
+| `event_type` | `varchar(16)` | `login` / `logout` / `sms_code` |
 | `status` | `varchar(16)` | `success` / `fail` |
-| `message` | `varchar(256)` 默认 `''` | 「登录成功」「用户名或密码错误」「账号已禁用」「登出成功」四种固定文案 |
+| `message` | `varchar(256)` 默认 `''` | 登录、登出的结果说明；`local` 发码成功时为 `local 模式登录验证码：<6 位明文>，手机号：<脱敏手机号>` |
 | `created_at` | `datetime` | 应用时钟 `LocalDateTime.now(clock)` |
 
 ## 3. 动作
@@ -84,6 +84,7 @@
 | 用户名不存在或密码错误 | 同上 | 免登录 | 否 | `login / fail`「用户名或密码错误」；两种情况同一错误码 110101、同一文案，用户名不存在时仍空跑一次 BCrypt 以抹平耗时差 |
 | 账号已禁用 | 同上 | 免登录 | 否 | `login / fail`「账号已禁用」；返回 110103 |
 | 登出 | `POST /api/auth/logout` | 仅登录 | 否 | `logout / success`「登出成功」 |
+| 本地验证码发送成功 | `POST /api-backend/n/system/auth/sendPhoneCode` | 免登录 | 否 | `sms_code / success`，记录关联用户、客户端信息及明文验证码；非 `local` 模式不写该事件 |
 | 查询 | `GET /api/login-logs` | `system:login-log:list` | 否 | — |
 
 `login` 刻意不开事务：失败分支先写日志再抛异常，日志不会随异常回滚。写入是同步的。
@@ -99,6 +100,7 @@
   登记在 `artifact.md#03`。本表 `ip` 只宜作展示，不能用于访问控制或审计取证。
 - **用户名列是提交值**：失败登录会原样记录攻击者提交的任意字符串（≤64 字符）。
 - 登录 / 登出只写本表，**不写**操作日志（`AuthController` 的类注释明示）。
+- 本地验证码发送成功后也写本表，且 `message` 有明文验证码；此模式只应在受控开发环境启用，登录日志查询权限仅授给联调人员。记录在验证码过期后仍会保留，直到按保留/归档策略清理。
 - 建议：为本表规划保留期或归档任务（#01）。
 
 ## 6. 已知问题汇总
@@ -110,6 +112,9 @@
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-24**
+- 本地模式手机号验证码发送成功后追加 `sms_code` 记录，登录日志页面可筛选事件并查看明文验证码。
 
 **2026-09-27**
 - **#03 ✅ P3 登录日志列表按 `rules/advisory/list-view.md` 约定改造**

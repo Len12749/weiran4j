@@ -38,6 +38,11 @@ public class PhoneLoginSettings {
         return this.smsSettings.verificationTemplateCode();
     }
 
+    /** 只有本地模式的验证码可写入登录日志供联调。 */
+    public boolean isLocalMode() {
+        return this.smsSettings.isLocalMode();
+    }
+
     private Map<String, String> values() {
         return this.configService.all().stream()
                 .filter(config -> config.configKey().equals(PhoneLoginSettings.ENABLED_KEY))

@@ -26,6 +26,7 @@ export default defineConfig({
           { text: '接口与数据约定', link: '/contracts' },
           { text: '资源库引用与删除', link: '/资源库引用与删除设计' },
           { text: '批处理任务', link: '/batch-processing' },
+          { text: '自增序号', link: '/sequence' },
           { text: '部署与运维', link: '/deployment' },
           { text: '环境变量与配置模板', link: '/environment' },
           { text: '关键设计决策', link: '/design-decisions' },

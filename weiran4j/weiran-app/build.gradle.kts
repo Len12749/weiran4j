@@ -38,9 +38,18 @@ dependencies {
     runtimeOnly("com.mysql:mysql-connector-j")
     developmentOnly(platform(project(":weiran-dependencies")))
     developmentOnly("org.springframework.boot:spring-boot-devtools")
-    // 可选演示种子：bootRun 与集成测试可见，生产 bootJar 不包含；下游可省略整个 weiran-demo 目录。
+    // 可选演示种子：本地 bootRun / 测试可见；只有专用 Demo 镜像的 bootJar 才打包它。
+    // 下游可省略整个 weiran-demo 目录，普通生产镜像仍不包含演示功能。
+    val demoImageEnabled = providers.gradleProperty("weiran.demo.image").map { it.toBooleanStrict() }.orElse(false).get()
+    require(!demoImageEnabled || findProject(":weiran-demo") != null) {
+        "Demo 镜像需要可选的 weiran-demo 模块。"
+    }
     if (findProject(":weiran-demo") != null) {
-        developmentOnly(project(":weiran-demo"))
+        if (demoImageEnabled) {
+            runtimeOnly(project(":weiran-demo"))
+        } else {
+            developmentOnly(project(":weiran-demo"))
+        }
         testRuntimeOnly(project(":weiran-demo"))
     }
 
