@@ -15,15 +15,15 @@
 
 ## 2. 字段与表单
 
-`kind` 标识处理器；`source_key` 是私有输入文件键，保留期后清空。`status`、`phase`、`total`、`processed`、`succeeded`、`failed` 保存进度；阶段依次为 `waiting`、`preparing`、`validating`、`processing`、`finished`，失败或取消时保留停止所在阶段。`error_message` 保存任务级失败原因。`worker` 与 `heartbeat_at` 用于领取及过期恢复；`created_by` 用于所有查询的用户隔离。
+`kind` 标识处理器；`source_key` 是私有文件键或业务引用，`input_mode` 区分两者，`input_fingerprint` 锁定输入内容。托管文件保留期后清空源键。`status` 与 `phase` 分别保存生命周期和五阶段位置；新阶段为 `uploading`、`validating`、`deciding`、`processing`、`summarizing`，历史阶段仍可查询。`total` 是预检识别项数，`selected_count` 与 `decided_at` 固定自动决策，`processed`、`succeeded`、`failed` 是明细投影；`error_message` 是任务级失败原因。`worker` 与 `heartbeat_at` 用于领取及过期恢复；`created_by` 用于查询隔离。
 
 ## 3. 动作
 
-上传并创建、查询列表和详情、协作式取消。worker 原子领取任务，逐项提交计数和 `sys_task_detail` 明细；致命异常结束任务。中断后任务可重新领取，业务处理器应保证幂等。
+上传或业务引用创建、列表与详情查询、协作式取消。worker 原子领取任务，预检每项后持久化完整结果，自动决策后仅处理合格项；每项业务数据和成功明细同事务提交。超时重领保留明细和决策，仅处理 `pending` 项；总结时从明细重建计数。任务级输入错误阻止入库。
 
 ## 4. 用到的公共组件
 
-`BatchProcessor`、`BatchProgress`、`BatchFileStorage`；前端复用 `BatchJobWorkbench`，用 Semi UI Step、表格与进度组件。
+`BatchProcessor`、`BatchValidationSink`、`BatchFileStorage`；前端复用 `BatchJobWorkbench`，用 Semi UI Step、表格与进度组件。
 
 ## 5. 说明与建议
 
@@ -34,6 +34,11 @@
 无。
 
 ## 7. changelog
+
+**2026-10-26**
+
+- **#05 ✅ P1 五阶段与断点恢复**
+  任务持久化输入指纹与决策；重领保留明细，从待处理项继续，汇总计数从明细重建。
 
 **2026-10-24**
 

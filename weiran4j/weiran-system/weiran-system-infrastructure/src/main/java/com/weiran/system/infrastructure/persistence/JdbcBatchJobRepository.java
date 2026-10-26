@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -17,7 +18,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.transaction.annotation.Transactional;
 
-/** MySQL 8 任务队列与逐项明细。领取通过一条 UPDATE 原子完成，过期租约可重新领取。 */
+/** MySQL 8 任务队列；明细永不因重领而删除，计数只从明细投影。 */
 public class JdbcBatchJobRepository implements BatchJobRepository {
 
     private static final RowMapper<BatchJob> JOB_MAPPER = (row, index) -> JdbcBatchJobRepository.map(row);
@@ -29,7 +30,13 @@ public class JdbcBatchJobRepository implements BatchJobRepository {
 
     @Override
     @Transactional
-    public long create(final String kind, final String filename, final String sourceKey, final long userId) {
+    public long create(
+            final String kind,
+            final String name,
+            final String sourceKey,
+            final String inputMode,
+            final String fingerprint,
+            final long userId) {
         this.jdbc.queryForObject("select id from sys_user where id = ? for update", Long.class, userId);
         final Integer active = this.jdbc.queryForObject(
                 "select count(*) from sys_task where created_by = ? "
@@ -43,16 +50,19 @@ public class JdbcBatchJobRepository implements BatchJobRepository {
         this.jdbc.update(
                 connection -> {
                     final var statement = connection.prepareStatement(
-                            "insert into sys_task (kind, source_name, source_key, created_by) values (?, ?, ?, ?)",
+                            "insert into sys_task (kind, source_name, source_key, input_mode, input_fingerprint, "
+                                    + "created_by, phase) values (?, ?, ?, ?, ?, ?, 'uploading')",
                             java.sql.Statement.RETURN_GENERATED_KEYS);
                     statement.setString(1, kind);
-                    statement.setString(2, filename);
+                    statement.setString(2, name);
                     statement.setString(3, sourceKey);
-                    statement.setLong(4, userId);
+                    statement.setString(4, inputMode);
+                    statement.setString(5, fingerprint);
+                    statement.setLong(6, userId);
                     return statement;
                 },
                 keys);
-        return java.util.Objects.requireNonNull(keys.getKey()).longValue();
+        return Objects.requireNonNull(keys.getKey()).longValue();
     }
 
     @Override
@@ -110,33 +120,33 @@ public class JdbcBatchJobRepository implements BatchJobRepository {
     @Override
     @Transactional
     public @Nullable BatchWork claim(final String worker) {
-        this.jdbc.update("update sys_task set status = 'cancelled', finished_at = now() "
+        this.jdbc.update("update sys_task set status = 'cancelled', finished_at = now(), worker = null "
                 + "where status = 'cancel_requested' and heartbeat_at < date_sub(now(), interval 2 minute)");
         final int claimed = this.jdbc.update(
-                "update sys_task set status = 'running', phase = 'preparing', worker = ?, heartbeat_at = now(), "
-                        + "total = null, processed = 0, succeeded = 0, failed = 0, error_message = null "
+                "update sys_task set status = 'running', worker = ?, heartbeat_at = now() "
                         + "where status = 'queued' or (status = 'running' and heartbeat_at < date_sub(now(), interval 2 minute)) "
                         + "order by id limit 1",
                 worker);
         if (claimed == 0) {
             return null;
         }
-        final BatchWork work = this.jdbc
+        return this.jdbc
                 .query(
-                        "select id, kind, source_name, source_key from sys_task where worker = ? and status = 'running'",
+                        "select id, kind, source_name, source_key, input_mode, input_fingerprint, phase, total "
+                                + "from sys_task where worker = ? and status = 'running'",
                         (row, index) -> new BatchWork(
                                 row.getLong("id"),
                                 row.getString("kind"),
                                 row.getString("source_name"),
-                                row.getString("source_key")),
+                                row.getString("source_key"),
+                                row.getString("input_mode"),
+                                row.getString("input_fingerprint"),
+                                row.getString("phase"),
+                                row.getObject("total", Long.class)),
                         worker)
                 .stream()
                 .findFirst()
                 .orElse(null);
-        if (work != null) {
-            this.jdbc.update("delete from sys_task_detail where task_id = ?", work.id());
-        }
-        return work;
     }
 
     @Override
@@ -149,102 +159,132 @@ public class JdbcBatchJobRepository implements BatchJobRepository {
 
     @Override
     public void beginValidation(final long id, final String worker) {
-        this.jdbc.update(
-                "update sys_task set phase = 'validating', heartbeat_at = now() where id = ? and worker = ? and status = 'running'",
+        JdbcBatchJobRepository.requireOne(this.jdbc.update(
+                "update sys_task set phase = 'validating', heartbeat_at = now() "
+                        + "where id = ? and worker = ? and status = 'running' and phase in ('uploading', 'waiting', 'validating')",
                 id,
-                worker);
+                worker));
     }
 
     @Override
-    public void setTotal(final long id, final String worker, final long total) {
+    @Transactional
+    public void validation(final long id, final String worker, final BatchTaskDetail item) {
+        this.lockPhase(id, worker, "validating");
         this.jdbc.update(
-                "update sys_task set total = ?, heartbeat_at = now() where id = ? and worker = ? and status = 'running' and phase = 'validating'",
+                "insert ignore into sys_task_detail (task_id, stage, item_no, item_name, source_location, "
+                        + "idempotency_key, status, message, display_data) values (?, 'validating', ?, ?, ?, ?, ?, ?, ?)",
+                id,
+                item.itemNo(),
+                item.itemName(),
+                item.sourceLocation(),
+                item.idempotencyKey(),
+                item.status(),
+                item.message(),
+                item.displayData());
+        final BatchTaskDetail stored = this.jdbc.queryForObject(
+                "select * from sys_task_detail where task_id = ? and stage = 'validating' and item_no = ?",
+                (row, index) -> JdbcBatchJobRepository.mapDetail(row),
+                id,
+                item.itemNo());
+        if (stored == null
+                || !stored.status().equals(item.status())
+                || !stored.itemName().equals(item.itemName())
+                || !Objects.equals(stored.idempotencyKey(), item.idempotencyKey())
+                || !Objects.equals(stored.sourceLocation(), item.sourceLocation())) {
+            throw new IllegalStateException("预检项与已持久化结果不一致");
+        }
+    }
+
+    @Override
+    public void beginDecision(final long id, final String worker, final long total) {
+        JdbcBatchJobRepository.requireOne(this.jdbc.update(
+                "update sys_task set phase = 'deciding', total = ?, heartbeat_at = now() "
+                        + "where id = ? and worker = ? and status = 'running' and phase = 'validating'",
                 total,
                 id,
-                worker);
-    }
-
-    @Override
-    public void beginProcessing(final long id, final String worker) {
-        this.jdbc.update(
-                "update sys_task set phase = 'processing', heartbeat_at = now() where id = ? and worker = ? and status = 'running' and phase = 'validating'",
-                id,
-                worker);
+                worker));
     }
 
     @Override
     @Transactional
-    public void precheckFailure(
-            final long id, final String worker, final long itemNo, final String itemName, final String message) {
-        final int updated = this.jdbc.update(
-                "update sys_task set heartbeat_at = now() where id = ? and worker = ? and status = 'running' and phase = 'validating'",
-                id,
-                worker);
-        if (updated != 1) {
-            throw new IllegalStateException("批处理预检已停止");
+    public void decide(final long id, final String worker, final long total) {
+        this.lockPhase(id, worker, "deciding");
+        final Long actual = this.jdbc.queryForObject(
+                "select count(*) from sys_task_detail where task_id = ? and stage = 'validating'", Long.class, id);
+        if (actual == null || actual != total) {
+            throw new IllegalStateException("预检明细数量与识别项数不一致");
         }
         this.jdbc.update(
-                "insert into sys_task_detail (task_id, item_no, item_name, stage, status, message) "
-                        + "values (?, ?, ?, 'validating', 'failed', ?)",
-                id,
-                itemNo,
-                itemName,
-                message);
-    }
-
-    @Override
-    public long precheckErrors(final long id) {
-        final Long count = this.jdbc.queryForObject(
-                "select count(*) from sys_task_detail where task_id = ? and stage = 'validating' and status = 'failed'",
-                Long.class,
+                "insert ignore into sys_task_detail (task_id, stage, item_no, item_name, source_location, "
+                        + "idempotency_key, display_data, status) "
+                        + "select task_id, 'processing', item_no, item_name, source_location, idempotency_key, "
+                        + "display_data, 'pending' from sys_task_detail "
+                        + "where task_id = ? and stage = 'validating' and status = 'succeeded'",
                 id);
-        return count == null ? 0 : count;
+        final Long selected = this.jdbc.queryForObject(
+                "select count(*) from sys_task_detail where task_id = ? and stage = 'processing'", Long.class, id);
+        JdbcBatchJobRepository.requireOne(this.jdbc.update(
+                "update sys_task set total = ?, selected_count = ?, decided_at = now(), phase = 'processing' "
+                        + "where id = ? and worker = ? and status = 'running' and phase = 'deciding'",
+                total,
+                selected,
+                id,
+                worker));
+        this.recount(id);
+    }
+
+    @Override
+    public List<BatchTaskDetail> pending(final long id) {
+        return this.jdbc.query(
+                "select * from sys_task_detail where task_id = ? and stage = 'processing' "
+                        + "and status = 'pending' order by item_no",
+                (row, index) -> JdbcBatchJobRepository.mapDetail(row),
+                id);
+    }
+
+    @Override
+    public void lockItem(final long id, final String worker, final long itemNo) {
+        this.lockPhase(id, worker, "processing");
+        final Long count = this.jdbc.queryForObject(
+                "select count(*) from sys_task_detail where task_id = ? and stage = 'processing' "
+                        + "and item_no = ? and status = 'pending'",
+                Long.class,
+                id,
+                itemNo);
+        if (count == null || count != 1) {
+            throw new IllegalStateException("批处理项已完成或未被决策选中");
+        }
+    }
+
+    @Override
+    public void succeeded(
+            final long id,
+            final String worker,
+            final long itemNo,
+            final @Nullable String resultType,
+            final @Nullable String resultId) {
+        this.lockPhase(id, worker, "processing");
+        JdbcBatchJobRepository.requireOne(this.jdbc.update(
+                "update sys_task_detail set status = 'succeeded', result_type = ?, result_id = ? "
+                        + "where task_id = ? and stage = 'processing' and item_no = ? and status = 'pending'",
+                resultType,
+                resultId,
+                id,
+                itemNo));
+        this.recount(id);
     }
 
     @Override
     @Transactional
-    public void success(final long id, final String worker, final long itemNo, final String itemName) {
-        final int updated = this.jdbc.update(
-                "update sys_task set processed = processed + 1, succeeded = succeeded + 1, heartbeat_at = now() "
-                        + "where id = ? and worker = ? and status = 'running'",
+    public void failedItem(final long id, final String worker, final long itemNo, final String message) {
+        this.lockPhase(id, worker, "processing");
+        JdbcBatchJobRepository.requireOne(this.jdbc.update(
+                "update sys_task_detail set status = 'failed', message = ? "
+                        + "where task_id = ? and stage = 'processing' and item_no = ? and status = 'pending'",
+                message,
                 id,
-                worker);
-        if (updated != 1) {
-            throw new IllegalStateException("批处理任务已停止");
-        }
-        this.jdbc.update(
-                "insert into sys_task_detail (task_id, item_no, item_name, stage, status) "
-                        + "values (?, ?, ?, 'processing', 'succeeded')",
-                id,
-                itemNo,
-                itemName);
-    }
-
-    @Override
-    @Transactional
-    public void failure(
-            final long id, final String worker, final long itemNo, final String itemName, final String message) {
-        final int updated = this.jdbc.update(
-                "update sys_task set processed = processed + 1, failed = failed + 1, heartbeat_at = now() "
-                        + "where id = ? and worker = ? and status = 'running'",
-                id,
-                worker);
-        if (updated != 1) {
-            throw new IllegalStateException("批处理任务已停止");
-        }
-        this.jdbc.update(
-                "insert into sys_task_detail (task_id, item_no, item_name, stage, status, message) "
-                        + "values (?, ?, ?, 'processing', 'failed', ?)",
-                id,
-                itemNo,
-                itemName,
-                message);
-    }
-
-    @Override
-    public boolean hasFailures(final long id) {
-        final Long failed = this.jdbc.queryForObject("select failed from sys_task where id = ?", Long.class, id);
-        return failed != null && failed > 0;
+                itemNo));
+        this.recount(id);
     }
 
     @Override
@@ -264,40 +304,113 @@ public class JdbcBatchJobRepository implements BatchJobRepository {
     }
 
     @Override
-    public void finish(final long id, final String worker, final String status) {
-        this.jdbc.update(
-                "update sys_task set phase = case when status = 'cancel_requested' then phase else 'finished' end, "
-                        + "status = case when status = 'cancel_requested' then 'cancelled' else ? end, "
-                        + "finished_at = now(), worker = null "
-                        + "where id = ? and worker = ?",
-                status,
+    @Transactional
+    public void finish(final long id, final String worker) {
+        final String status = this.jdbc.queryForObject(
+                "select status from sys_task where id = ? and worker = ? for update", String.class, id, worker);
+        if (!"running".equals(status) && !"cancel_requested".equals(status)) {
+            throw new IllegalStateException("批处理任务租约已失效");
+        }
+        this.recount(id);
+        if ("cancel_requested".equals(status)) {
+            JdbcBatchJobRepository.requireOne(this.jdbc.update(
+                    "update sys_task set status = 'cancelled', finished_at = now(), worker = null "
+                            + "where id = ? and worker = ? and status = 'cancel_requested'",
+                    id,
+                    worker));
+            return;
+        }
+        final Long unfinished = this.jdbc.queryForObject(
+                "select count(*) from sys_task_detail where task_id = ? and stage = 'processing' and status = 'pending'",
+                Long.class,
+                id);
+        final Long total = this.jdbc.queryForObject("select total from sys_task where id = ?", Long.class, id);
+        final Long validations = this.jdbc.queryForObject(
+                "select count(*) from sys_task_detail where task_id = ? and stage = 'validating'", Long.class, id);
+        if (total == null || !total.equals(validations) || unfinished == null || unfinished > 0) {
+            throw new IllegalStateException("批处理明细未完成，不能总结");
+        }
+        final long[] counts = this.jdbc.queryForObject(
+                "select succeeded, failed from sys_task where id = ?",
+                (row, index) -> new long[] {row.getLong(1), row.getLong(2)},
+                id);
+        if (counts == null) {
+            throw new IllegalStateException("批处理任务不存在");
+        }
+        final String terminal =
+                counts[0] > 0 && counts[1] > 0 ? "partial_failed" : counts[1] > 0 ? "failed" : "succeeded";
+        JdbcBatchJobRepository.requireOne(this.jdbc.update(
+                "update sys_task set phase = 'summarizing', status = ?, finished_at = now(), worker = null "
+                        + "where id = ? and worker = ? and status = 'running'",
+                terminal,
                 id,
-                worker);
+                worker));
     }
 
     @Override
+    @Transactional
     public void fail(final long id, final String worker, final String message) {
-        this.jdbc.update(
-                "update sys_task set status = case when status = 'cancel_requested' then 'cancelled' else 'failed' end, "
-                        + "finished_at = now(), worker = null, error_message = ? "
-                        + "where id = ? and worker = ?",
-                message,
+        final List<Long> owned = this.jdbc.query(
+                "select id from sys_task where id = ? and worker = ? for update",
+                (row, index) -> row.getLong(1),
                 id,
                 worker);
+        if (owned.isEmpty()) {
+            return;
+        }
+        this.recount(id);
+        JdbcBatchJobRepository.requireOne(this.jdbc.update(
+                "update sys_task set status = case when status = 'cancel_requested' then 'cancelled' else 'failed' end, "
+                        + "finished_at = now(), worker = null, error_message = ? where id = ? and worker = ?",
+                message,
+                id,
+                worker));
     }
 
     @Override
     public List<BatchCleanup> expiredFiles() {
         return this.jdbc.query(
-                "select id, source_key from sys_task "
-                        + "where finished_at < date_sub(now(), interval 7 day) "
-                        + "and source_key is not null order by id limit 100",
+                "select id, source_key from sys_task where finished_at < date_sub(now(), interval 7 day) "
+                        + "and source_key is not null and input_mode = 'managed_file' order by id limit 100",
                 (row, index) -> new BatchCleanup(row.getLong("id"), row.getString("source_key")));
     }
 
     @Override
     public void clearFiles(final long id, final @Nullable String sourceKey) {
         this.jdbc.update("update sys_task set source_key = null where id = ? and source_key <=> ?", id, sourceKey);
+    }
+
+    private void lockPhase(final long id, final String worker, final String phase) {
+        final String actual = this.jdbc.queryForObject(
+                "select phase from sys_task where id = ? and worker = ? and status = 'running' for update",
+                String.class,
+                id,
+                worker);
+        if (!phase.equals(actual)) {
+            throw new IllegalStateException("批处理任务阶段或租约已变化");
+        }
+    }
+
+    private void recount(final long id) {
+        this.jdbc.update(
+                "update sys_task set succeeded = (select count(*) from sys_task_detail "
+                        + "where task_id = ? and stage = 'processing' and status = 'succeeded'), "
+                        + "failed = (select count(*) from sys_task_detail where task_id = ? "
+                        + "and ((stage = 'validating' and status = 'failed') "
+                        + "or (stage = 'processing' and status = 'failed'))), "
+                        + "processed = (select count(*) from sys_task_detail where task_id = ? "
+                        + "and ((stage = 'validating' and status = 'failed') "
+                        + "or (stage = 'processing' and status in ('succeeded', 'failed')))) where id = ?",
+                id,
+                id,
+                id,
+                id);
+    }
+
+    private static void requireOne(final int affected) {
+        if (affected != 1) {
+            throw new IllegalStateException("批处理状态转换未生效");
+        }
     }
 
     private static BatchJob map(final ResultSet row) throws SQLException {
@@ -308,14 +421,14 @@ public class JdbcBatchJobRepository implements BatchJobRepository {
                 row.getString("status"),
                 row.getString("phase"),
                 row.getObject("total", Long.class),
+                row.getObject("selected_count", Long.class),
                 row.getLong("processed"),
                 row.getLong("succeeded"),
                 row.getLong("failed"),
                 row.getString("error_message"),
-                row.getTimestamp("created_at").toLocalDateTime(),
-                row.getTimestamp("finished_at") == null
-                        ? null
-                        : row.getTimestamp("finished_at").toLocalDateTime());
+                row.getObject("decided_at", java.time.LocalDateTime.class),
+                row.getObject("created_at", java.time.LocalDateTime.class),
+                row.getObject("finished_at", java.time.LocalDateTime.class));
     }
 
     private static BatchTaskDetail mapDetail(final ResultSet row) throws SQLException {
@@ -326,6 +439,11 @@ public class JdbcBatchJobRepository implements BatchJobRepository {
                 row.getString("stage"),
                 row.getString("status"),
                 row.getString("message"),
-                row.getTimestamp("created_at").toLocalDateTime());
+                row.getString("source_location"),
+                row.getString("idempotency_key"),
+                row.getString("display_data"),
+                row.getString("result_type"),
+                row.getString("result_id"),
+                row.getObject("created_at", java.time.LocalDateTime.class));
     }
 }

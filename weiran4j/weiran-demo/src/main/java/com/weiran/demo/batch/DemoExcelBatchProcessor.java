@@ -1,9 +1,11 @@
 package com.weiran.demo.batch;
 
 import com.weiran.system.api.batch.BatchFileException;
+import com.weiran.system.api.batch.BatchItemResult;
 import com.weiran.system.api.batch.BatchProcessor;
-import com.weiran.system.api.batch.BatchProgress;
 import com.weiran.system.api.batch.BatchSource;
+import com.weiran.system.api.batch.BatchValidationItem;
+import com.weiran.system.api.batch.BatchValidationSink;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Locale;
@@ -49,49 +51,53 @@ public class DemoExcelBatchProcessor implements BatchProcessor {
     }
 
     @Override
-    public void process(final BatchSource source, final BatchProgress progress) throws Exception {
+    public void precheck(final BatchSource source, final BatchValidationSink sink) throws Exception {
         final long[] count = {0};
         this.read(source, new RowConsumer() {
             @Override
             public void row(final long number, final String name, final String value) {
                 if (++count[0] > DemoExcelBatchProcessor.MAX_ROWS) {
-                    progress.precheckFailure(number, name, "Excel 超过 10000 行");
                     throw new BatchFileException("Excel 超过 10000 行");
                 }
-                if (progress.cancelled()) {
-                    return;
-                }
+                final String error;
                 if (name.isBlank() || value.isBlank()) {
-                    progress.precheckFailure(number, name, "name 和 value 都不能为空");
+                    error = "name 和 value 都不能为空";
                 } else if (name.length() > 255 || value.length() > 255) {
-                    progress.precheckFailure(number, name, "name 或 value 超过 255 个字符");
+                    error = "name 或 value 超过 255 个字符";
+                } else {
+                    error = null;
                 }
+                sink.accept(new BatchValidationItem(
+                        number,
+                        name.isBlank() ? "第 " + number + " 行" : name.substring(0, Math.min(name.length(), 255)),
+                        "工作表 1，第 " + number + " 行",
+                        String.valueOf(number),
+                        error == null,
+                        error,
+                        null));
             }
         });
-        if (progress.cancelled()) {
-            return;
+    }
+
+    @Override
+    public BatchItemResult processItem(
+            final BatchSource source, final long taskId, final long itemNo, final String idempotencyKey)
+            throws Exception {
+        if (!idempotencyKey.equals(String.valueOf(itemNo))) {
+            throw new BatchFileException("Excel 处理项键已变化");
         }
-        progress.total(count[0]);
+        final boolean[] found = {false};
         this.read(source, (number, name, value) -> {
-            if (progress.cancelled()) {
+            if (number != itemNo) {
                 return;
             }
-            if (name.isBlank() || value.isBlank()) {
-                progress.failure(number, name, "name 和 value 都不能为空");
-                return;
-            }
-            if (name.length() > 255 || value.length() > 255) {
-                progress.failure(number, name, "name 或 value 超过 255 个字符");
-                return;
-            }
-            try {
-                this.items.save(progress.jobId(), number, name, value);
-            } catch (final RuntimeException ex) {
-                progress.failure(number, name, "写入演示数据失败");
-                return;
-            }
-            progress.success(number, name);
+            found[0] = true;
+            this.items.save(taskId, number, name, value);
         });
+        if (!found[0]) {
+            throw new BatchFileException("Excel 处理项已失效");
+        }
+        return BatchItemResult.withoutReference();
     }
 
     private void read(final BatchSource source, final RowConsumer consumer) throws Exception {

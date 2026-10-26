@@ -27,9 +27,12 @@ const STATUS: Record<string, string> = {
     queued: '排队中', running: '处理中', cancel_requested: '正在取消',
     succeeded: '完成', partial_failed: '部分失败', failed: '失败', cancelled: '已取消',
 };
-const PHASE_STEP: Record<string, number> = { waiting: 0, preparing: 1, validating: 2, processing: 3, finished: 4 };
+const PHASE_STEP: Record<string, number> = {
+    waiting: 0, uploading: 0, preparing: 0, validating: 1, deciding: 2, processing: 3, summarizing: 4, finished: 4,
+};
 const PHASE_LABEL: Record<string, string> = {
-    waiting: '排队等待', preparing: '准备文件', validating: '预检文件', processing: '逐项处理', finished: '处理结束',
+    waiting: '排队等待', uploading: '上传完成', preparing: '准备输入', validating: '逐项预检',
+    deciding: '自动决策', processing: '逐项入库', summarizing: '汇总结果', finished: '处理结束',
 };
 
 function stepStatus(status: string): 'process' | 'finish' | 'error' | 'warning' {
@@ -53,8 +56,9 @@ function BatchDetailTable({ data, loading, page, onPageChange }: {
     const columns = [
         { title: 'ID', dataIndex: 'id', width: 90 },
         { title: '序号', dataIndex: 'itemNo', width: 90 },
-        { title: '行或文件', dataIndex: 'itemName', width: 220 },
-        { title: '结果', dataIndex: 'status', width: 90, render: (value: string) => value === 'succeeded' ? '成功' : '失败' },
+        { title: '处理项', dataIndex: 'itemName', width: 180 },
+        { title: '源位置', dataIndex: 'sourceLocation', width: 190 },
+        { title: '结果', dataIndex: 'status', width: 90, render: (value: string) => value === 'succeeded' ? '通过' : value === 'pending' ? '待处理' : '失败' },
         { title: '原因', dataIndex: 'message' },
     ];
     return <Table<BatchTaskDetailView> {...tableProps} rowKey="id" dataSource={data?.list ?? []} loading={loading}
@@ -92,12 +96,11 @@ export function BatchJobWorkbench({ title, description, kinds, samples = [], sam
     const taskDetails = useQuery({
         queryKey: ['batch-task-details', selectedId, activeStep, detailStatus, detailPage, detail.data?.processed, detail.data?.status],
         queryFn: () => {
-            const params = new URLSearchParams({ page: String(detailPage), pageSize: '20', stage: activeStep === 2 ? 'validating' : 'processing' });
-            if (activeStep === 2) params.set('status', 'failed');
-            else if (detailStatus !== 'all') params.set('status', detailStatus);
+            const params = new URLSearchParams({ page: String(detailPage), pageSize: '20', stage: activeStep === 1 ? 'validating' : 'processing' });
+            if (detailStatus !== 'all') params.set('status', detailStatus);
             return http.get<BatchPageResult<BatchTaskDetailView>>(`/api-backend/system/batchJob/listDetails/${selectedId}?${params}`);
         },
-        enabled: selectedId !== null && (activeStep === 2 || activeStep === 3),
+        enabled: selectedId !== null && (activeStep === 1 || activeStep === 3),
         refetchInterval: detail.data && ACTIVE.has(detail.data.status) ? 2000 : false,
     });
     const create = useMutation({
@@ -146,12 +149,12 @@ export function BatchJobWorkbench({ title, description, kinds, samples = [], sam
                     {job && <p>{job.sourceName} · 当前阶段：{PHASE_LABEL[job.phase] ?? job.phase}</p>}
                     <div className="batch-workbench__steps">
                         <Steps type="basic" current={activeStep} size="small"
-                            aria-label="任务处理阶段" style={{ minWidth: 620 }} onChange={(step) => { setSelectedStep(step); setDetailPage(1); }}>
-                            <Steps.Step title="上传与排队" status={stageStatus(0, job)} />
-                            <Steps.Step title="准备" status={stageStatus(1, job)} />
-                            <Steps.Step title="预检" status={stageStatus(2, job)} />
-                            <Steps.Step title="逐项处理" status={stageStatus(3, job)} />
-                            <Steps.Step title="结束与数据" status={stageStatus(4, job)} />
+                                aria-label="任务处理阶段" style={{ minWidth: 620 }} onChange={(step) => { setSelectedStep(step); setDetailStatus('all'); setDetailPage(1); }}>
+                            <Steps.Step title="上传" status={stageStatus(0, job)} />
+                            <Steps.Step title="预检" status={stageStatus(1, job)} />
+                            <Steps.Step title="决策" status={stageStatus(2, job)} />
+                            <Steps.Step title="入库" status={stageStatus(3, job)} />
+                            <Steps.Step title="总结" status={stageStatus(4, job)} />
                         </Steps>
                     </div>
                     {activeStep === 0 && <div className="batch-workbench__content">
@@ -174,28 +177,33 @@ export function BatchJobWorkbench({ title, description, kinds, samples = [], sam
                     </div>}
                     {activeStep === 1 && <div className="batch-workbench__content">
                         {job ? <>
-                            <strong>准备输入文件</strong>
-                            <p>处理类型：{kinds.find((option) => option.value === job.kind)?.label ?? job.kind}</p>
-                            <p className="batch-workbench__hint">工作线程领取任务并打开私有输入文件，随后开始预检。</p>
+                            <div className="batch-workbench__heading">
+                                <strong>逐项预检结果</strong>
+                                <Select value={detailStatus} style={{ width: 130 }} optionList={[
+                                    { label: '全部', value: 'all' }, { label: '通过', value: 'succeeded' }, { label: '失败', value: 'failed' },
+                                ]} onChange={(value) => { setDetailStatus(String(value)); setDetailPage(1); }} />
+                            </div>
+                            {job.phase === 'validating' && ACTIVE.has(job.status) && <p>正在扫描完整输入…</p>}
+                            <p>已识别 {job.total ?? '扫描中'} 项；预检失败项计入最终失败数。</p>
+                            <BatchDetailTable data={taskDetails.data} loading={taskDetails.isPending} page={detailPage} onPageChange={setDetailPage} />
+                            {taskDetails.isError && <Typography.Text type="danger">预检明细读取失败，请刷新页面重试。</Typography.Text>}
                         </> : <p>请先在「上传与排队」阶段上传文件。</p>}
                     </div>}
                     {activeStep === 2 && <div className="batch-workbench__content">
                         {job ? <>
-                            <strong>文件预检结果</strong>
-                            {job.phase === 'validating' && ACTIVE.has(job.status) && <p>正在扫描文件并检查数据…</p>}
-                            {job.phase === 'validating' && job.errorMessage && <Typography.Text type="danger">{job.errorMessage}</Typography.Text>}
-                            {taskDetails.data && <p>预检错误 {taskDetails.data.total} 项</p>}
-                            {taskDetails.data?.total === 0 && (PHASE_STEP[job.phase] ?? 0) > 2 && <p>预检通过，未发现错误。</p>}
-                            <BatchDetailTable data={taskDetails.data} loading={taskDetails.isPending} page={detailPage} onPageChange={setDetailPage} />
-                            {taskDetails.isError && <Typography.Text type="danger">预检明细读取失败，请刷新页面重试。</Typography.Text>}
+                            <strong>自动决策</strong>
+                            <p>总计 {job.total ?? '待预检'} 项，选中入库 {job.selectedCount ?? '待决策'} 项，预检失败 {job.failed} 项。</p>
+                            {job.phase === 'deciding' && <p>正在持久化入库选择…</p>}
+                            {job.errorMessage && <Typography.Text type="danger">{job.errorMessage}</Typography.Text>}
                         </> : <p>请先在「上传与排队」阶段上传文件。</p>}
                     </div>}
                     {activeStep === 3 && <div className="batch-workbench__content">
                         {job ? <>
                             <div className="batch-workbench__heading">
-                                <strong>逐项处理结果</strong>
+                                <strong>逐项入库结果</strong>
                                 <Select value={detailStatus} style={{ width: 130 }} optionList={[
-                                    { label: '全部', value: 'all' }, { label: '成功', value: 'succeeded' }, { label: '失败', value: 'failed' },
+                                    { label: '全部', value: 'all' }, { label: '待处理', value: 'pending' },
+                                    { label: '成功', value: 'succeeded' }, { label: '失败', value: 'failed' },
                                 ]} onChange={(value) => { setDetailStatus(String(value)); setDetailPage(1); }} />
                             </div>
                             {(PHASE_STEP[job.phase] ?? 0) < 3 && <p>任务尚未进入逐项处理阶段。</p>}

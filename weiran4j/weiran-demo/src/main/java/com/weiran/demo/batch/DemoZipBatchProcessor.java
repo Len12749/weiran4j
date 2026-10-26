@@ -1,9 +1,11 @@
 package com.weiran.demo.batch;
 
 import com.weiran.system.api.batch.BatchFileException;
+import com.weiran.system.api.batch.BatchItemResult;
 import com.weiran.system.api.batch.BatchProcessor;
-import com.weiran.system.api.batch.BatchProgress;
 import com.weiran.system.api.batch.BatchSource;
+import com.weiran.system.api.batch.BatchValidationItem;
+import com.weiran.system.api.batch.BatchValidationSink;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.util.HexFormat;
@@ -11,8 +13,9 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import org.jspecify.annotations.Nullable;
 
-/** ZIP 演示：逐文件计算 SHA-256 并写入演示业务表，不将条目解压到文件系统。 */
+/** ZIP 演示：预检所有文件，入库时按稳定文件序号重读输入。 */
 public class DemoZipBatchProcessor implements BatchProcessor {
 
     private static final long MAX_ENTRY_BYTES = 10L * 1024 * 1024;
@@ -42,17 +45,38 @@ public class DemoZipBatchProcessor implements BatchProcessor {
     }
 
     @Override
-    public void process(final BatchSource source, final BatchProgress progress) throws Exception {
-        final long total = this.scan(source, progress, true);
-        if (progress.cancelled()) {
-            return;
-        }
-        progress.total(total);
-        this.scan(source, progress, false);
+    public void precheck(final BatchSource source, final BatchValidationSink sink) throws Exception {
+        this.scan(
+                source,
+                (number, name, hash, error) -> sink.accept(new BatchValidationItem(
+                        number, name, "ZIP: " + name, String.valueOf(number), error == null, error, null)));
     }
 
-    private long scan(final BatchSource source, final BatchProgress progress, final boolean validating)
+    @Override
+    public BatchItemResult processItem(
+            final BatchSource source, final long taskId, final long itemNo, final String idempotencyKey)
             throws Exception {
+        if (!idempotencyKey.equals(String.valueOf(itemNo))) {
+            throw new BatchFileException("ZIP 处理项键已变化");
+        }
+        final boolean[] found = {false};
+        this.scan(source, (number, name, hash, error) -> {
+            if (number != itemNo) {
+                return;
+            }
+            found[0] = true;
+            if (error != null) {
+                throw new BatchFileException(error);
+            }
+            this.items.save(taskId, number, name, hash);
+        });
+        if (!found[0]) {
+            throw new BatchFileException("ZIP 处理项已失效");
+        }
+        return BatchItemResult.withoutReference();
+    }
+
+    private void scan(final BatchSource source, final EntryConsumer consumer) throws Exception {
         long count = 0;
         long expanded = 0;
         try (InputStream input = source.open();
@@ -66,24 +90,7 @@ public class DemoZipBatchProcessor implements BatchProcessor {
                 }
                 final String name = entry.getName().replace('\\', '/');
                 if (++count > DemoZipBatchProcessor.MAX_ENTRIES) {
-                    if (validating) {
-                        progress.precheckFailure(count, name, "ZIP 文件数量超过限制");
-                    }
                     throw new BatchFileException("ZIP 文件数量超过限制");
-                }
-                if (progress.cancelled()) {
-                    return count - 1;
-                }
-                if (name.startsWith("/")
-                        || name.matches("^[A-Za-z]:.*")
-                        || name.equals("..")
-                        || name.endsWith("/..")
-                        || name.contains("../")
-                        || name.contains("\u0000")) {
-                    if (validating) {
-                        progress.precheckFailure(count, name, "ZIP 包含无效路径");
-                    }
-                    throw new BatchFileException("ZIP 包含无效路径");
                 }
                 final MessageDigest digest = MessageDigest.getInstance("SHA-256");
                 long bytes = 0;
@@ -93,48 +100,44 @@ public class DemoZipBatchProcessor implements BatchProcessor {
                     expanded += read;
                     if (bytes > DemoZipBatchProcessor.MAX_ENTRY_BYTES
                             || expanded > DemoZipBatchProcessor.MAX_EXPANDED_BYTES) {
-                        if (validating) {
-                            progress.precheckFailure(count, name, "ZIP 解压后大小超过限制");
-                        }
                         throw new BatchFileException("ZIP 解压后大小超过限制");
                     }
                     digest.update(buffer, 0, read);
                 }
                 if (entry.getCompressedSize() > 0 && bytes / entry.getCompressedSize() > 100) {
-                    if (validating) {
-                        progress.precheckFailure(count, name, "ZIP 压缩比超过限制");
-                    }
                     throw new BatchFileException("ZIP 压缩比超过限制");
                 }
                 zip.closeEntry();
                 final String suffix = name.substring(name.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT);
-                if (!DemoZipBatchProcessor.ALLOWED.contains(suffix)) {
-                    if (validating) {
-                        progress.precheckFailure(count, name, "不支持的 ZIP 内文件类型");
-                    } else {
-                        progress.failure(count, name, "不支持的 ZIP 内文件类型");
-                    }
+                final String error;
+                if (name.startsWith("/")
+                        || name.matches("^[A-Za-z]:.*")
+                        || name.equals("..")
+                        || name.endsWith("/..")
+                        || name.contains("../")
+                        || name.contains("\u0000")) {
+                    error = "ZIP 包含无效路径";
+                } else if (!DemoZipBatchProcessor.ALLOWED.contains(suffix)) {
+                    error = "不支持的 ZIP 内文件类型";
                 } else if (name.length() > 255) {
-                    if (validating) {
-                        progress.precheckFailure(count, name, "文件路径超过 255 个字符");
-                    } else {
-                        progress.failure(count, name, "文件路径超过 255 个字符");
-                    }
-                } else if (!validating) {
-                    try {
-                        this.items.save(
-                                progress.jobId(), count, name, HexFormat.of().formatHex(digest.digest()));
-                    } catch (final RuntimeException ex) {
-                        progress.failure(count, name, "写入演示数据失败");
-                        continue;
-                    }
-                    progress.success(count, name);
+                    error = "文件路径超过 255 个字符";
+                } else {
+                    error = null;
                 }
+                consumer.accept(
+                        count,
+                        name.length() > 255 ? name.substring(0, 255) : name,
+                        HexFormat.of().formatHex(digest.digest()),
+                        error);
             }
         }
         if (count == 0) {
             throw new BatchFileException("ZIP 没有文件");
         }
-        return count;
+    }
+
+    @FunctionalInterface
+    private interface EntryConsumer {
+        void accept(long number, String name, String hash, @Nullable String error);
     }
 }

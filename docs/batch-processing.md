@@ -1,78 +1,34 @@
 # 批处理任务
 
-批处理基座接收文件后立即返回任务 ID，由后台工作线程处理；前端以任务 ID 查询状态。Excel 导入与 ZIP 文件处理通过同一套任务状态、进度和逐项结果能力接入。
+批处理按 **上传 → 预检 → 决策 → 入库 → 总结** 执行。`sys_task` 保存生命周期、决策结论与汇总；`sys_task_detail` 保存所有识别项的预检结果和被选中项的入库结果。业务模块可以保留任务关联及输入文件清单，但逐项处理结果以通用明细为准。
 
-## 数据与生命周期
+## 生命周期与数量
 
-通用任务由 `sys_task` 和 `sys_task_detail` 承载。`sys_task` 保存创建者、状态、阶段、进度计数和任务级失败原因；`sys_task_detail` 保存预检错误及处理阶段的逐项结果，包含阶段、行号或文件序号、名称、成功或失败状态与原因。页面按阶段和状态分页查询明细。无需错误样例 JSON，也不生成私有错误 CSV。业务导入的目标表由具体处理器负责，例如 local/test 演示的 `demo_batch_item`。
+任务状态为 `queued`、`running`、`cancel_requested`、`succeeded`、`partial_failed`、`failed`、`cancelled`。阶段为 `uploading`、`validating`、`deciding`、`processing`、`summarizing`；历史任务的 `waiting`、`preparing`、`finished` 阶段仍可查询。状态表达排队、运行或终态；阶段表达处理位置，两者不能互相替代。
 
-文件进入与资源库隔离的 `batch/YYYYMM/` 私有对象目录，不创建 `sys_media` 记录。批处理文件由服务端对象键读取，不经浏览器可访问的资源 URL。阿里云模式为对象设置 private ACL；部署时还应确保 Bucket 策略没有对 `batch/*` 开放匿名读取。本地模式把文件放在资源库根目录旁的 `batch-private/`，不处于 `/system-uploads/**` 的映射范围内。
+上传完成后才创建可入队的任务。平台托管文件保存到私有 `batch/YYYYMM/` 对象，任务记录保存 SHA-256。业务引用型任务保存引用和处理器计算的 SHA-256 指纹，不创建占位文件。处理器在恢复及逐项入库前重新校验输入；文件或清单变化时整个任务失败。已完成任务的托管文件保留七天，之后仅清除源文件，任务和明细仍保留。
 
-状态为 `queued`、`running`、`cancel_requested`、`succeeded`、`partial_failed`、`failed`、`cancelled`。阶段按 `waiting`（排队）、`preparing`（准备文件）、`validating`（首次扫描与预检）、`processing`（逐项处理）、`finished`（正常完成）推进，页面用 Step 展示。预检发现错误时逐项写入 `sys_task_detail(stage=validating,status=failed)`，任务停在预检阶段并置为 `failed`，不会写业务结果。失败或取消时保留停止所在阶段，由 `status` 判断任务是否结束。同一账号最多同时保留 3 个未结束任务。预检扫描完成前 `total` 为 `null`，前端显示不确定进度；扫描完成后即使发现错误也保存总数，处理阶段按 `processed / total` 显示。每完成一项立即更新计数，满足 `processed = succeeded + failed`；预检错误不计入处理计数。取消由工作线程在项目之间协作检查，正在处理的一项可能继续完成。
+预检必须识别完整输入，并对每个处理项写一条 `validating` 明细。文件损坏、模板无法识别等任务级异常阻止整个任务入库，此时 `total` 可为 `null`。预检结束后将总项数持久化，进入自动决策。决策只为预检通过的项建立 `processing/pending` 明细；预检失败项不进入入库。`decided_at` 和 `selected_count` 持久化决策结果，恢复时只执行待处理项。
 
-当前工作线程每个应用实例串行消费。数据库原子领取任务；运行期间每 30 秒独立续租，超过两分钟没有心跳的运行中任务可被重新领取，并从源文件重新处理。重新领取时事务内清空旧明细并重置计数。**业务处理器必须按任务 ID 与项目序号或业务唯一键幂等写入**。任务结束 7 天后，后台清理输入文件；任务和逐项结果继续保留。
+每个业务项的目标数据、业务幂等关联和 `processing/succeeded` 在同一个数据库事务提交。处理器若写入其他存储，必须以 `(taskId, itemNo)` 或稳定幂等键实现等效恢复。成功记录可带 `result_type`、`result_id`；失败记录保留安全的错误摘要。任务级异常和取消分别得到 `failed`、`cancelled` 终态。正常总结先从明细重建计数，未完成项或预检明细数不等于 `total` 时拒绝成功终结。
 
-不同应用实例可以同时领取并处理不同任务；单个实例目前一次只处理一个任务，单个 Excel/ZIP 任务也按行或文件顺序处理。需要单实例并行时，宜先用一个轮询器向有界工作池分发不同任务，并为每项任务独立续租、取消和结束；并发数应按数据库连接池、CPU 与文件存储吞吐设置上限。单任务内并行需要额外处理文件拆分、项目幂等和进度计数争用，不宜只增加调度线程数。
+数量口径：`total` 为预检识别项数；`failed` 包含预检失败与入库失败；`succeeded` 为入库成功；`processed = succeeded + failed ≤ total`。所有项成功为 `succeeded`；成功与失败并存为 `partial_failed`；没有成功且有失败为 `failed`。无处理项且无错误的空输入得到 `succeeded`。
 
-## 接入业务处理器
+## 接入处理器
 
-业务模块依赖 `weiran-system-api`，实现 `BatchProcessor` 并注册为 Spring Bean。`kind()` 是请求使用的处理器类型，`extension()` 声明允许的文件后缀，`maxBytes()` 控制该类型上传上限，`authorize(userId)` 校验该业务处理器的额外权限。`process(BatchSource, BatchProgress)` 可多次打开源文件：先扫描并用 `precheckFailure(itemNo, itemName, message)` 记录逐项预检错误，再调用 `total(value)`；如有预检错误，`total` 会终止执行，业务处理不得开始。预检通过后逐项处理，成功调用 `success(itemNo, itemName)`，可继续的项目错误调用 `failure(itemNo, itemName, message)`，每项前检查 `cancelled()`。同一阶段内的 `itemNo` 必须唯一；文件级预检错误使用 0。业务模块只通过 API 使用基座，不直接操作任务表。
+业务模块只依赖 `weiran-system-api`，实现 `BatchProcessor` 并注册为 Spring Bean。创建任务时会检查 `kind()` 是否已注册并调用 `authorize(userId)`。
 
-建议每项或每小批独立提交业务事务，并用 `progress.jobId()` 与项目序号建立幂等键。先落业务数据，再更新进度；进程在两步之间退出时，重试的业务写入应无副作用。预检时的文件级致命异常记录在明细第 0 项并结束任务；逐项预检错误可累计展示。处理阶段可继续的项目错误调用 `failure`，使其余项目继续处理。
+- 平台文件处理器使用默认的 `inputMode() == MANAGED_FILE`，通过现有 multipart 创建接口上传。`extension()` 和 `maxBytes()` 约束文件。
+- 业务引用处理器返回 `inputMode() == REFERENCE`，在业务事务内先保存不可变的文件清单或归属关系，再调用 `BatchJobService.createReference(kind, name, reference, userId)`。`referenceFingerprint(reference)` 必须覆盖清单及其指向的内容，返回 64 位 SHA-256；`BatchSource.reference()` 向处理器提供引用，无需单一文件流。
+- `precheck(source, sink)` 扫描全部输入。每个 `BatchValidationItem` 提供稳定正整数 `itemNo`、显示名、源位置、稳定幂等键、通过或失败、可选安全错误摘要及最多 2048 字符的脱敏展示数据。团体作品可用一个项编号，源位置描述多行范围。展示数据不是重做入库的权威输入。
+- `processItem(source, taskId, itemNo, idempotencyKey)` 只会对决策选中的项调用。处理器重新从不可变输入按编号定位，使用持久化的幂等键写入目标数据，并可返回通用结果引用。可继续的项级失败抛 `BatchFileException` 供查看；其他异常会成为安全的通用项级错误。处理器不得自行写 `sys_task_detail` 或任务计数。
 
-## HTTP 与页面
+worker 在两项之间检查取消；超时重领保留所有明细和决策，只继续 `processing/pending` 项。明细唯一键为 `(task_id, stage, item_no)`；结果状态只能从 `pending` 转为 `succeeded` 或 `failed`，更新受影响行数必须为一。重复回调不会增加计数。
 
-所有入口需要登录，任务及明细查询只能访问本人创建的任务。权限为 `system:batch-job:create`、`system:batch-job:list`、`system:batch-job:cancel`。
+## 查询与前端
 
-| 用途 | 接口 |
-| --- | --- |
-| 上传并创建 | `POST /api-backend/system/batchJob/create`，multipart 字段 `kind`、`file` |
-| 最近 30 个任务 | `GET /api-backend/system/batchJob/list?kinds=demo_excel,demo_zip`；`kinds` 可省略，传入后先按类型筛选再取最近 30 个 |
-| 任务详情 | `GET /api-backend/system/batchJob/get/{id}` |
-| 取消 | `POST /api-backend/system/batchJob/cancel/{id}` |
-| 逐项结果 | `GET /api-backend/system/batchJob/listDetails/{id}?stage=validating&status=failed&page=1&pageSize=20`；`stage` 可省略或为 `validating` / `processing`，`status` 可省略或为 `succeeded` / `failed` |
+`BatchJobService.get(id, userId)`、`recent(userId, kinds)` 和 `details(id, userId, stage, status, page)` 负责创建者隔离。明细支持按 `validating` / `processing` 和 `pending` / `succeeded` / `failed` 分页。业务接口应先验证任务归属和业务权限，再按 `sys_task.id` 查询通用结果。
 
-前端上传时显示上传状态，任务创建后按任务 ID 轮询详情。刷新页面后从最近任务列表恢复查看。`local/test` 的「组件演示 → 批处理任务」页面用一组可点击的 Step 同时展示任务当前位置与切换阶段内容：「上传与排队」包含文件上传和 Excel、ZIP 正常或错误样例下载；任务结束后在「结束与数据」分页查看全部已写入的演示数据。
+通用 HTTP 接口由 Springdoc OpenAPI 描述：`/api-backend/system/batchJob/**` 提供文件创建、任务查询、取消和明细分页；业务引用型创建由业务模块调用 Java 服务。前端 `BatchJobWorkbench` 展示五阶段及三类计数。演示模块的 Excel、ZIP 处理器仅在 local/test 装配；下游可以省略整个 `weiran-demo` 模块。
 
-## 演示文件
-
-- **Excel**：仅 `.xlsx`，最大 5 MB，首张工作表的首行必须为 `name`、`value`，最多 10000 行。首次扫描检查空字段和过长字段，逐行输出预检错误；通过后写入 `demo_batch_item`。
-- **ZIP**：最大 100 MB、1000 个文件，单文件解压后最大 10 MB、总计最大 200 MB、压缩比不超过 100。首次扫描检查路径、类型和大小，逐文件输出可定位的预检错误；通过后逐项计算 SHA-256 并写入 `demo_batch_item`。仅处理文档、文本、表格和常见图片类型；不解压到文件系统。
-
-验证预检错误时，下载页面上的「错误 Excel」或「错误 ZIP」，选择对应处理类型并上传：
-
-| 示例 | 预期预检明细 | 预期任务结果 |
-| --- | --- | --- |
-| 错误 Excel | 第 3 行缺少 `name`、第 4 行缺少 `value`，各记录一条 `validating/failed` | `status=failed`、`phase=validating`，处理计数为 0，演示数据为 0 条 |
-| 错误 ZIP | 第 2、3 个文件分别为 `unsupported.exe`、`unsupported.bat`，各记录一条 `validating/failed` | `status=failed`、`phase=validating`，处理计数为 0，演示数据为 0 条 |
-
-点击「预检」步骤核对行号、文件名和原因；切换到「逐项处理」应无处理明细，「结束与数据」应显示失败原因和空业务结果。正常样例预检通过后进入逐项处理，任务结束时可在「结束与数据」核对落库结果。
-
-## 下游作为插件接入
-
-通用能力有两处扩展点：后端 `weiran-system-api` 的 `BatchProcessor` 是任务处理插件接口，前端 `web/src/components/BatchJobWorkbench.tsx` 是可配置的 Step 工作台。下游保留基座和该组件，可以省略整个 `weiran-demo` 及 `web/src/pages/demo/`，无需复制演示 Excel/ZIP 处理器或演示表。
-
-1. 在下游业务模块实现 `BatchProcessor`，用模块自己的 `@AutoConfiguration` 注册为 Spring Bean；`kind()` 与前端的类型 `value` 保持一致。业务表由模块自己的 Flyway 迁移创建，预检错误通过 `precheckFailure` 写入通用明细。
-2. 新建业务页面，传入类型列表、允许的文件后缀、可选下载样例及业务结果组件。工作台按配置的类型筛选最近任务，并复用上传、任务查询、取消、阶段切换和明细分页；`ResultPanel` 在任务结束后才挂载，接收当前 `job`，可按 `job.id` 查询业务表。
-3. 业务结果查询接口应先调用 `BatchJobService.get(jobId, CurrentUser.require().id())` 校验任务归属，再读取自己的结果表。按项目页面规则添加菜单迁移，`component` 指向新业务页面。
-
-```tsx
-import { BatchJobWorkbench, type BatchJob } from '@/components/BatchJobWorkbench';
-
-function ImportResults({ job }: { job: BatchJob }) {
-  return <YourResultTable taskId={job.id} />;
-}
-
-export default function OrderImportPage() {
-  return <BatchJobWorkbench
-    title="订单导入"
-    description="上传订单文件并查看每个阶段的结果"
-    kinds={[{ value: 'order_import', label: '订单 Excel', accept: '.xlsx' }]}
-    ResultPanel={ImportResults}
-  />;
-}
-```
-
-`YourResultTable` 是业务自己的分页结果组件，需要由下游实现。`samples` 可传 `{ label, href }[]` 提供业务样例下载，`sampleHint` 与 `uploadHint` 可补充说明。通用接口仍使用 `system:batch-job:create/list/cancel` 权限；业务处理器可在 `authorize(userId)` 增加自身的授权检查。
-
-演示模块 `weiran-demo` 仅在 local/test profile 装配，不进入生产 `bootJar`。下游复制框架时可不复制该模块，再按业务需要提供自己的 `BatchProcessor`。
+演示 Excel 的 `name/value` 空值或超长是单项预检失败，其他行继续入库；ZIP 的不支持类型是单项失败，损坏或超过解压限制则是任务级失败。演示业务表 `demo_batch_item` 是目标数据，不是逐项结果表。

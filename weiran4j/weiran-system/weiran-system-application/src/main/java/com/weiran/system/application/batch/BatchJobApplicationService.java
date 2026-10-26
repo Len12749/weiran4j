@@ -3,6 +3,7 @@ package com.weiran.system.application.batch;
 import com.weiran.framework.error.BizException;
 import com.weiran.framework.page.PageQuery;
 import com.weiran.framework.page.PageResult;
+import com.weiran.system.api.batch.BatchInputMode;
 import com.weiran.system.api.batch.BatchJobService;
 import com.weiran.system.api.batch.BatchJobView;
 import com.weiran.system.api.batch.BatchProcessor;
@@ -10,11 +11,16 @@ import com.weiran.system.api.batch.BatchTaskDetailView;
 import com.weiran.system.domain.batch.BatchFileStorage;
 import com.weiran.system.domain.batch.BatchJob;
 import com.weiran.system.domain.batch.BatchJobRepository;
+import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.transaction.annotation.Transactional;
 
 /** 上传文件并建立持久化任务，查询始终按创建者隔离。 */
 public class BatchJobApplicationService implements BatchJobService {
@@ -35,10 +41,10 @@ public class BatchJobApplicationService implements BatchJobService {
     @Override
     public BatchJobView create(
             final String kind, final String filename, final InputStream input, final long size, final long userId) {
-        final BatchProcessor processor = this.processors.stream()
-                .filter(candidate -> candidate.kind().equals(kind))
-                .findFirst()
-                .orElseThrow(() -> BizException.badRequest("不支持的批处理类型"));
+        final BatchProcessor processor = this.processor(kind);
+        if (processor.inputMode() != BatchInputMode.MANAGED_FILE) {
+            throw BizException.badRequest("该处理类型使用业务引用输入");
+        }
         if (size <= 0 || size > processor.maxBytes()) {
             throw BizException.badRequest("批处理文件超过该类型的大小限制");
         }
@@ -52,12 +58,39 @@ public class BatchJobApplicationService implements BatchJobService {
         }
         final String key = this.files.store(basename, input, size);
         try {
-            final long id = this.jobs.create(kind, basename, key, userId);
+            final String fingerprint = BatchJobApplicationService.sha256(() -> this.files.open(key));
+            final long id = this.jobs.create(kind, basename, key, "managed_file", fingerprint, userId);
             return this.get(id, userId);
         } catch (final RuntimeException ex) {
             this.files.delete(key);
             throw ex;
         }
+    }
+
+    @Override
+    @Transactional
+    public BatchJobView createReference(
+            final String kind, final String name, final String reference, final long userId) {
+        final BatchProcessor processor = this.processor(kind);
+        if (processor.inputMode() != BatchInputMode.REFERENCE) {
+            throw BizException.badRequest("该处理类型需要平台托管文件");
+        }
+        processor.authorize(userId);
+        if (name.isBlank() || name.length() > 255 || reference.isBlank() || reference.length() > 255) {
+            throw BizException.badRequest("批处理输入引用无效");
+        }
+        final String fingerprint;
+        try {
+            fingerprint = processor.referenceFingerprint(reference);
+        } catch (final Exception ex) {
+            throw BizException.badRequest("批处理输入引用不可用");
+        }
+        if (!fingerprint.matches("[a-fA-F0-9]{64}")) {
+            throw BizException.badRequest("批处理输入指纹无效");
+        }
+        final long id =
+                this.jobs.create(kind, name, reference, "reference", fingerprint.toLowerCase(Locale.ROOT), userId);
+        return this.get(id, userId);
     }
 
     @Override
@@ -97,7 +130,7 @@ public class BatchJobApplicationService implements BatchJobService {
         if (stage != null && !stage.equals("validating") && !stage.equals("processing")) {
             throw BizException.badRequest("明细阶段无效");
         }
-        if (status != null && !status.equals("succeeded") && !status.equals("failed")) {
+        if (status != null && !status.equals("pending") && !status.equals("succeeded") && !status.equals("failed")) {
             throw BizException.badRequest("明细状态无效");
         }
         return this.jobs
@@ -109,7 +142,33 @@ public class BatchJobApplicationService implements BatchJobService {
                         item.stage(),
                         item.status(),
                         item.message(),
+                        item.sourceLocation(),
+                        item.idempotencyKey(),
+                        item.displayData(),
+                        item.resultType(),
+                        item.resultId(),
                         item.createdAt()));
+    }
+
+    private BatchProcessor processor(final String kind) {
+        return this.processors.stream()
+                .filter(candidate -> candidate.kind().equals(kind))
+                .findFirst()
+                .orElseThrow(() -> BizException.badRequest("不支持的批处理类型"));
+    }
+
+    static String sha256(final com.weiran.system.api.batch.BatchSource source) {
+        try (InputStream input = source.open()) {
+            final MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            final byte[] buffer = new byte[8192];
+            int read;
+            while ((read = input.read(buffer)) != -1) {
+                digest.update(buffer, 0, read);
+            }
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (final IOException | NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("批处理输入无法校验", ex);
+        }
     }
 
     private BatchJobView view(final BatchJob job) {
@@ -120,10 +179,12 @@ public class BatchJobApplicationService implements BatchJobService {
                 job.status(),
                 job.phase(),
                 job.total(),
+                job.selectedCount(),
                 job.processed(),
                 job.succeeded(),
                 job.failed(),
                 job.errorMessage(),
+                job.decidedAt(),
                 job.createdAt(),
                 job.finishedAt());
     }

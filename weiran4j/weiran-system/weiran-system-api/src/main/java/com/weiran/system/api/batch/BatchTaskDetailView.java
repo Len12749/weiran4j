@@ -11,4 +11,9 @@ public record BatchTaskDetailView(
         String stage,
         String status,
         @Nullable String message,
+        @Nullable String sourceLocation,
+        @Nullable String idempotencyKey,
+        @Nullable String displayData,
+        @Nullable String resultType,
+        @Nullable String resultId,
         LocalDateTime createdAt) {}

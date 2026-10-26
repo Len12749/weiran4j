@@ -497,10 +497,12 @@ export interface BatchJobView {
     status: string;
     phase: string;
     total: number | null;
+    selectedCount: number | null;
     processed: number;
     succeeded: number;
     failed: number;
     errorMessage: string | null;
+    decidedAt: string | null;
     createdAt: string;
     finishedAt: string | null;
 }
@@ -512,5 +514,10 @@ export interface BatchTaskDetailView {
     stage: string;
     status: string;
     message: string | null;
+    sourceLocation: string | null;
+    idempotencyKey: string | null;
+    displayData: string | null;
+    resultType: string | null;
+    resultId: string | null;
     createdAt: string;
 }

@@ -5,9 +5,9 @@ import com.weiran.framework.page.PageResult;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/** 任务及逐项结果仓储；领取与逐项写入均由数据库原子操作保证。 */
+/** 生命周期及逐项结果的唯一持久化端口。 */
 public interface BatchJobRepository {
-    long create(String kind, String filename, String sourceKey, long userId);
+    long create(String kind, String name, String sourceKey, String inputMode, String fingerprint, long userId);
 
     @Nullable
     BatchJob get(long id, long userId);
@@ -23,25 +23,27 @@ public interface BatchJobRepository {
 
     void beginValidation(long id, String worker);
 
-    void setTotal(long id, String worker, long total);
+    void validation(long id, String worker, BatchTaskDetail item);
 
-    void beginProcessing(long id, String worker);
+    void beginDecision(long id, String worker, long total);
 
-    void precheckFailure(long id, String worker, long itemNo, String itemName, String message);
+    /** 原子确认预检记录完整，并持久化决策和处理阶段待执行项。 */
+    void decide(long id, String worker, long total);
 
-    long precheckErrors(long id);
+    List<BatchTaskDetail> pending(long id);
 
-    void success(long id, String worker, long itemNo, String itemName);
+    /** 在业务写入事务内锁定任务，防止租约转移后继续写入。 */
+    void lockItem(long id, String worker, long itemNo);
 
-    void failure(long id, String worker, long itemNo, String itemName, String message);
+    void succeeded(long id, String worker, long itemNo, @Nullable String resultType, @Nullable String resultId);
 
-    boolean hasFailures(long id);
+    void failedItem(long id, String worker, long itemNo, String message);
 
     boolean stopped(long id, String worker);
 
     void requestCancel(long id, long userId);
 
-    void finish(long id, String worker, String status);
+    void finish(long id, String worker);
 
     void fail(long id, String worker, String message);
 
@@ -49,7 +51,15 @@ public interface BatchJobRepository {
 
     void clearFiles(long id, @Nullable String sourceKey);
 
-    record BatchWork(long id, String kind, String sourceName, String sourceKey) {}
+    record BatchWork(
+            long id,
+            String kind,
+            String sourceName,
+            String sourceKey,
+            String inputMode,
+            String fingerprint,
+            String phase,
+            @Nullable Long total) {}
 
     record BatchCleanup(long id, @Nullable String sourceKey) {}
 }

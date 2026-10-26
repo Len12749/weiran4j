@@ -1,32 +1,42 @@
 package com.weiran.system.application.batch;
 
 import com.weiran.system.api.batch.BatchFileException;
+import com.weiran.system.api.batch.BatchInputMode;
+import com.weiran.system.api.batch.BatchItemResult;
 import com.weiran.system.api.batch.BatchProcessor;
-import com.weiran.system.api.batch.BatchProgress;
+import com.weiran.system.api.batch.BatchSource;
+import com.weiran.system.api.batch.BatchValidationItem;
 import com.weiran.system.domain.batch.BatchFileStorage;
 import com.weiran.system.domain.batch.BatchJobRepository;
 import com.weiran.system.domain.batch.BatchJobRepository.BatchWork;
+import com.weiran.system.domain.batch.BatchTaskDetail;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
-/** 单实例串行消费；数据库原子领取允许多个应用实例并行处理不同任务。 */
+/** 预检、决策、入库、总结均可在过期重领后从持久化阶段继续。 */
 public class BatchJobWorker implements AutoCloseable, InitializingBean {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BatchJobWorker.class);
     private final BatchJobRepository jobs;
     private final BatchFileStorage files;
     private final List<BatchProcessor> processors;
+    private final TransactionTemplate transactions;
     private @Nullable ScheduledFuture<?> cleanupTask;
     private final ScheduledExecutorService renewer = Executors.newScheduledThreadPool(2, task -> {
         final Thread thread = new Thread(task, "weiran-batch-heartbeat");
@@ -37,10 +47,12 @@ public class BatchJobWorker implements AutoCloseable, InitializingBean {
     public BatchJobWorker(
             final BatchJobRepository jobs,
             final BatchFileStorage files,
-            final ObjectProvider<BatchProcessor> processors) {
+            final ObjectProvider<BatchProcessor> processors,
+            final PlatformTransactionManager transactionManager) {
         this.jobs = jobs;
         this.files = files;
         this.processors = processors.orderedStream().toList();
+        this.transactions = new TransactionTemplate(transactionManager);
     }
 
     @Override
@@ -84,69 +96,94 @@ public class BatchJobWorker implements AutoCloseable, InitializingBean {
                 30,
                 30,
                 TimeUnit.SECONDS);
-        final AtomicBoolean validationPassed = new AtomicBoolean();
         try {
-            final BatchProgress progress = new BatchProgress() {
-                @Override
-                public long jobId() {
-                    return work.id();
-                }
-
-                @Override
-                public void precheckFailure(final long itemNo, final String itemName, final String message) {
-                    BatchJobWorker.this.jobs.precheckFailure(
-                            work.id(),
-                            worker,
-                            itemNo,
-                            BatchJobWorker.limit(itemName, 255),
-                            BatchJobWorker.limit(message, 500));
-                }
-
-                @Override
-                public void total(final long value) {
-                    BatchJobWorker.this.jobs.setTotal(work.id(), worker, value);
-                    final long errors = BatchJobWorker.this.jobs.precheckErrors(work.id());
-                    if (errors > 0) {
-                        throw new BatchFileException("预检发现 " + errors + " 项错误");
+            if ((processor.inputMode() == BatchInputMode.REFERENCE) != "reference".equals(work.inputMode())) {
+                throw new BatchFileException("处理器输入方式已变化");
+            }
+            final BatchSource source;
+            if ("reference".equals(work.inputMode())) {
+                final BatchSource delegate = processor.referenceSource(work.sourceKey());
+                source = new BatchSource() {
+                    @Override
+                    public java.io.InputStream open() throws java.io.IOException {
+                        return delegate.open();
                     }
-                    BatchJobWorker.this.jobs.beginProcessing(work.id(), worker);
-                    validationPassed.set(true);
-                }
 
-                @Override
-                public void success(final long itemNo, final String itemName) {
-                    BatchJobWorker.this.jobs.success(work.id(), worker, itemNo, BatchJobWorker.limit(itemName, 255));
+                    @Override
+                    public String reference() {
+                        return work.sourceKey();
+                    }
+                };
+            } else {
+                source = () -> this.files.open(work.sourceKey());
+            }
+            this.verifyInput(work, processor, source);
+            if ("uploading".equals(work.phase())
+                    || "waiting".equals(work.phase())
+                    || "validating".equals(work.phase())) {
+                this.jobs.beginValidation(work.id(), worker);
+                final AtomicLong total = new AtomicLong();
+                processor.precheck(source, item -> {
+                    if (this.jobs.stopped(work.id(), worker)) {
+                        throw new BatchStoppedException();
+                    }
+                    this.jobs.validation(work.id(), worker, BatchJobWorker.detail(item));
+                    total.incrementAndGet();
+                });
+                if (this.jobs.stopped(work.id(), worker)) {
+                    this.jobs.fail(work.id(), worker, "任务已取消");
+                    return;
                 }
-
-                @Override
-                public void failure(final long itemNo, final String itemName, final String message) {
-                    final String name = BatchJobWorker.limit(itemName, 255);
-                    final String reason = BatchJobWorker.limit(message, 500);
-                    BatchJobWorker.this.jobs.failure(work.id(), worker, itemNo, name, reason);
+                this.verifyInput(work, processor, source);
+                this.jobs.beginDecision(work.id(), worker, total.get());
+                this.jobs.decide(work.id(), worker, total.get());
+            } else if ("deciding".equals(work.phase())) {
+                if (work.total() == null) {
+                    throw new IllegalStateException("决策阶段缺少预检总数");
                 }
-
-                @Override
-                public boolean cancelled() {
-                    return BatchJobWorker.this.jobs.stopped(work.id(), worker);
+                this.jobs.decide(work.id(), worker, work.total());
+            }
+            for (final BatchTaskDetail item : this.jobs.pending(work.id())) {
+                if (this.jobs.stopped(work.id(), worker)) {
+                    this.jobs.fail(work.id(), worker, "任务已取消");
+                    return;
                 }
-            };
-            this.jobs.beginValidation(work.id(), worker);
-            processor.process(() -> this.files.open(work.sourceKey()), progress);
-            this.jobs.finish(work.id(), worker, this.jobs.hasFailures(work.id()) ? "partial_failed" : "succeeded");
+                this.verifyInput(work, processor, source);
+                try {
+                    this.transactions.executeWithoutResult(status -> {
+                        this.jobs.lockItem(work.id(), worker, item.itemNo());
+                        try {
+                            final BatchItemResult result = processor.processItem(
+                                    source, work.id(), item.itemNo(), Objects.requireNonNull(item.idempotencyKey()));
+                            this.jobs.succeeded(
+                                    work.id(),
+                                    worker,
+                                    item.itemNo(),
+                                    BatchJobWorker.limitNullable(result.resultType(), 64),
+                                    BatchJobWorker.limitNullable(result.resultId(), 191));
+                        } catch (final Exception ex) {
+                            throw new ItemWriteException(ex);
+                        }
+                    });
+                } catch (final ItemWriteException ex) {
+                    final Throwable cause = ex.getCause();
+                    final String message = cause instanceof BatchFileException fileError
+                            ? BatchJobWorker.limit(fileError.getMessage(), 500)
+                            : "该项写入失败";
+                    if (!this.jobs.stopped(work.id(), worker)) {
+                        this.jobs.failedItem(work.id(), worker, item.itemNo(), message);
+                    }
+                }
+            }
+            this.verifyInput(work, processor, source);
+            this.jobs.finish(work.id(), worker);
+        } catch (final BatchStoppedException ex) {
+            this.jobs.fail(work.id(), worker, "任务已取消");
         } catch (final Exception ex) {
             LOGGER.error("批处理任务失败 id={} type={}", work.id(), ex.getClass().getSimpleName());
             final String message = ex instanceof BatchFileException fileError
                     ? BatchJobWorker.limit(fileError.getMessage(), 500)
-                    : "文件处理失败，请检查模板或文件内容";
-            if (!validationPassed.get()) {
-                try {
-                    if (this.jobs.precheckErrors(work.id()) == 0) {
-                        this.jobs.precheckFailure(work.id(), worker, 0, work.sourceName(), message);
-                    }
-                } catch (final RuntimeException detailError) {
-                    LOGGER.error("批处理预检错误记录失败 id={}", work.id());
-                }
-            }
+                    : "输入失效或处理失败，请检查任务文件";
             this.jobs.fail(work.id(), worker, message);
         } finally {
             lease.cancel(false);
@@ -174,7 +211,60 @@ public class BatchJobWorker implements AutoCloseable, InitializingBean {
         this.renewer.shutdownNow();
     }
 
+    private void verifyInput(final BatchWork work, final BatchProcessor processor, final BatchSource source)
+            throws Exception {
+        final String fingerprint = processor.inputMode() == BatchInputMode.REFERENCE
+                ? processor.referenceFingerprint(work.sourceKey())
+                : BatchJobApplicationService.sha256(source);
+        if (!fingerprint.equalsIgnoreCase(work.fingerprint())) {
+            throw new BatchFileException("输入文件或清单已变化");
+        }
+    }
+
+    private static BatchTaskDetail detail(final BatchValidationItem item) {
+        if (item.itemNo() <= 0
+                || item.itemName().isBlank()
+                || item.sourceLocation().isBlank()
+                || item.idempotencyKey().isBlank()
+                || item.itemName().length() > 255
+                || item.sourceLocation().length() > 500
+                || item.idempotencyKey().length() > 191
+                || (!item.passed() && (item.message() == null || item.message().isBlank()))
+                || (item.displayData() != null && item.displayData().length() > 2048)) {
+            throw new IllegalArgumentException("预检项编号或展示字段无效");
+        }
+        return new BatchTaskDetail(
+                0,
+                item.itemNo(),
+                item.itemName(),
+                "validating",
+                item.passed() ? "succeeded" : "failed",
+                BatchJobWorker.limitNullable(item.message(), 500),
+                item.sourceLocation(),
+                item.idempotencyKey(),
+                item.displayData(),
+                null,
+                null,
+                LocalDateTime.now(ZoneOffset.UTC));
+    }
+
     private static String limit(final String value, final int max) {
         return value.length() <= max ? value : value.substring(0, max);
+    }
+
+    private static @Nullable String limitNullable(final @Nullable String value, final int max) {
+        return value == null ? null : BatchJobWorker.limit(value, max);
+    }
+
+    private static final class BatchStoppedException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class ItemWriteException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        private ItemWriteException(final Exception cause) {
+            super(cause);
+        }
     }
 }

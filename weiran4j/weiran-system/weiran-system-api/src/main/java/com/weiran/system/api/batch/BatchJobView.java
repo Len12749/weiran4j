@@ -11,9 +11,11 @@ public record BatchJobView(
         String status,
         String phase,
         @Nullable Long total,
+        @Nullable Long selectedCount,
         long processed,
         long succeeded,
         long failed,
         @Nullable String errorMessage,
+        @Nullable LocalDateTime decidedAt,
         LocalDateTime createdAt,
         @Nullable LocalDateTime finishedAt) {}

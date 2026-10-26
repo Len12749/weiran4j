@@ -5,6 +5,11 @@ spring:
     fail-on-missing-locations: false
 
 weiran:
+  storage:
+    mode: local
+    local:
+      root: build/test-uploads
+      url-prefix: /system-uploads
   system:
     # 测试用低强度，只为让每次建用户 / 改密不至于花掉上百毫秒；种子数据的 cost 10 哈希照样能校验。
     bcrypt-strength: 4

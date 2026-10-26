@@ -10,6 +10,9 @@ import org.jspecify.annotations.Nullable;
 public interface BatchJobService {
     BatchJobView create(String kind, String filename, InputStream input, long size, long userId);
 
+    /** 在调用方事务内创建业务引用任务；引用与清单必须先由业务模块持久化。 */
+    BatchJobView createReference(String kind, String name, String reference, long userId);
+
     BatchJobView get(long id, long userId);
 
     default List<BatchJobView> recent(final long userId) {
