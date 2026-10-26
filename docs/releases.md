@@ -4,8 +4,8 @@
 
 | tag | 发布物 | 位置 |
 | --- | --- | --- |
-| `lib-v1.2.3` | `com.weiran:weiran-dependencies:1.2.3` 与全部库模块 | [GitHub Packages Maven/Gradle 仓库](https://maven.pkg.github.com/weiran-tech/weiran4j) |
-| `demo-v1.2.3` | 前端与后端 Demo 容器镜像、Compose 文件 | GHCR 与 [GitHub Releases](https://github.com/weiran-tech/weiran4j/releases) |
+| `lib-v1.2.3` | `com.wulicode.weiran:weiran-dependencies:1.2.3` 与全部库模块 | [GitHub Packages Maven/Gradle 仓库](https://maven.pkg.github.com/wulicode/weiran-tech/weiran4j) |
+| `demo-v1.2.3` | 前端与后端 Demo 容器镜像、Compose 文件 | GHCR 与 [GitHub Releases](https://github.com/wulicode/weiran-tech/weiran4j/releases) |
 
 两条版本线可以各自递增。Demo 镜像始终由对应 tag 的仓库源码构建，Release 记录提交 SHA、可追溯的最近组件包 tag 及两个镜像摘要；不能仅凭版本号推断 Demo 一定使用了已发布组件包的相同代码。
 
@@ -25,7 +25,7 @@ git push origin lib-v0.1.2
 ```kotlin
 mavenCentral()
 maven {
-    url = uri("https://maven.pkg.github.com/weiran-tech/weiran4j")
+    url = uri("https://maven.pkg.github.com/wulicode/weiran-tech/weiran4j")
     credentials {
         username = providers.gradleProperty("gpr.user").orNull
         password = providers.gradleProperty("gpr.key").orNull
@@ -37,9 +37,9 @@ maven {
 
 ```kotlin
 dependencies {
-    implementation(platform("com.weiran:weiran-dependencies:0.1.2"))
-    implementation("com.weiran:weiran-system")
-    implementation("com.weiran:weiran-region")
+    implementation(platform("com.wulicode.weiran:weiran-dependencies:0.1.2"))
+    implementation("com.wulicode.weiran:weiran-system")
+    implementation("com.wulicode.weiran:weiran-region")
 }
 ```
 
@@ -76,7 +76,7 @@ docker compose --env-file .env -f compose.yml up -d
 
 ## 本地验证发布物
 
-所有 Gradle 命令都使用 JDK 21。组件包可先生成 POM，检查 BOM 中每个 `com.weiran` 坐标都存在对应 publication；Demo 可按发布工作流构建 bootJar，检查其中的 `weiran-demo` 依赖与迁移。
+所有 Gradle 命令都使用 JDK 21。组件包可先生成 POM，检查 BOM 中每个 `com.wulicode.weiran` 坐标都存在对应 publication；Demo 可按发布工作流构建 bootJar，检查其中的 `weiran-demo` 依赖与迁移。
 
 ```bash
 cd weiran4j

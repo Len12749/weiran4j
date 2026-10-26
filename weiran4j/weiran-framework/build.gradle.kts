@@ -1,5 +1,5 @@
 plugins {
-    id("com.weiran.spring-conventions")
+    id("com.wulicode.weiran.spring-conventions")
 }
 
 description = "weiran4j 框架层：纯 Java 通用契约（错误码、业务异常、统一响应、分页、树工具）+ Spring 基础设施（全局异常、" +

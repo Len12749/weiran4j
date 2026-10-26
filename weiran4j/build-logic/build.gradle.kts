@@ -2,7 +2,7 @@ plugins {
     `kotlin-dsl`
 }
 
-group = "com.weiran.gradle"
+group = "com.wulicode.weiran.gradle"
 version = providers.gradleProperty("weiran.build-logic.version").get()
 
 dependencies {
@@ -22,20 +22,20 @@ repositories {
 gradlePlugin {
     plugins {
         register("javaConventions") {
-            id = "com.weiran.java-conventions"
-            implementationClass = "com.weiran.gradle.JavaConventionsPlugin"
+            id = "com.wulicode.weiran.java-conventions"
+            implementationClass = "com.wulicode.weiran.gradle.JavaConventionsPlugin"
         }
         register("qualityConventions") {
-            id = "com.weiran.quality-conventions"
-            implementationClass = "com.weiran.gradle.QualityConventionsPlugin"
+            id = "com.wulicode.weiran.quality-conventions"
+            implementationClass = "com.wulicode.weiran.gradle.QualityConventionsPlugin"
         }
         register("springConventions") {
-            id = "com.weiran.spring-conventions"
-            implementationClass = "com.weiran.gradle.SpringConventionsPlugin"
+            id = "com.wulicode.weiran.spring-conventions"
+            implementationClass = "com.wulicode.weiran.gradle.SpringConventionsPlugin"
         }
         register("bootAppConventions") {
-            id = "com.weiran.boot-app-conventions"
-            implementationClass = "com.weiran.gradle.BootAppConventionsPlugin"
+            id = "com.wulicode.weiran.boot-app-conventions"
+            implementationClass = "com.wulicode.weiran.gradle.BootAppConventionsPlugin"
         }
     }
 }

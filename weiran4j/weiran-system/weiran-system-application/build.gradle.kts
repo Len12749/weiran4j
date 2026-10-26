@@ -1,5 +1,5 @@
 plugins {
-    id("com.weiran.spring-conventions")
+    id("com.wulicode.weiran.spring-conventions")
 }
 
 description = "weiran-system 应用层：用例编排、事务边界，含 TokenAuthenticator 与 OperationLogRecorder（独立线程池异步落库）实现。依赖领域端口，不依赖持久化实现。"

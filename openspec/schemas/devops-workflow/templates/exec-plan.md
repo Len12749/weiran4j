@@ -71,7 +71,7 @@ flowchart TD
 
 | 执行单元 | 内容 | 涉及文件 |
 |---|---|---|
-| `E1` |  | `weiran-framework/src/main/java/com/weiran/framework/...` |
+| `E1` |  | `weiran-framework/src/main/java/com/wulicode/weiran/framework/...` |
 
 **完成判据**:`./gradlew :weiran-framework:check` 通过,且下方「契约冻结」表已填满。
 

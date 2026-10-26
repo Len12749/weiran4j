@@ -23,16 +23,16 @@ dependencies {
 
     constraints {
         // 本仓模块，供未来外部消费方无版本引入。
-        api("com.weiran:weiran-framework:${project.version}")
+        api("com.wulicode.weiran:weiran-framework:${project.version}")
         // 业务模块清单由 settings.gradle.kts 按目录发现（D-012），这里不再手写。
         @Suppress("UNCHECKED_CAST") // settings 写入的就是 List<String>；gradle.extra 只能按 Any? 取出。
         val businessModules = gradle.extra["weiran.businessModules"] as List<String>
         businessModules.forEach { module ->
             listOf("api", "domain", "application", "infrastructure", "adapter").forEach { layer ->
-                api("com.weiran:$module-$layer:${project.version}")
+                api("com.wulicode.weiran:$module-$layer:${project.version}")
             }
             if (findProject(":$module") != null) {
-                api("com.weiran:$module:${project.version}")
+                api("com.wulicode.weiran:$module:${project.version}")
             }
         }
 
@@ -67,7 +67,7 @@ extra["weiran.frameworkPlatforms"] = apiDeclarations.dependencies
     .withType<ExternalModuleDependency>()
     .map { "${it.group}:${it.name}:${it.version}" }
 extra["weiran.frameworkConstraints"] = apiDeclarations.dependencyConstraints
-    .filter { it.group != "com.weiran" }
+    .filter { it.group != "com.wulicode.weiran" }
     .map { "${it.group}:${it.name}:${it.version}" }
 
 // 框架依赖被传递依赖拉离框架版本、且确认可接受的，逐条写在这里，理由必填（CP-6）。

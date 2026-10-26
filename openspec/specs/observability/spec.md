@@ -42,17 +42,17 @@ status: "active"
 
 ### Requirement: [FR-003] 访问日志
 
-每个 `/api-backend/**` 请求结束时 **MUST** 以 logger `com.weiran.access` 打一行 INFO 日志,包含方法、路径(不含查询串)、HTTP 状态码、耗时毫秒数、userId(未登录为 `-`)、客户端 IP。
+每个 `/api-backend/**` 请求结束时 **MUST** 以 logger `com.wulicode.weiran.access` 打一行 INFO 日志,包含方法、路径(不含查询串)、HTTP 状态码、耗时毫秒数、userId(未登录为 `-`)、客户端 IP。
 **MUST NOT** 包含请求体、响应体或查询参数的值。`/api-backend/n/health` **MUST** 降为 DEBUG。
 
 #### Scenario: 写接口的访问日志不含请求内容
 - **WHEN** 已登录用户调用 `PUT /api-backend/auth/profile?x=secret`,请求体含昵称
 - **THEN** 产生一行 INFO,含 `PUT /api-backend/auth/profile 200`、耗时、userId、IP;不含 `secret` 与请求体
-- **判据**:集成测试或过滤器单测捕获 `com.weiran.access` 日志并断言
+- **判据**:集成测试或过滤器单测捕获 `com.wulicode.weiran.access` 日志并断言
 
 #### Scenario: 健康检查不出现在 INFO
 - **WHEN** 调用 `GET /api-backend/n/health`
-- **THEN** `com.weiran.access` 没有 INFO 级别记录
+- **THEN** `com.wulicode.weiran.access` 没有 INFO 级别记录
 - **判据**:同上,断言 INFO 事件数为 0
 
 ### Requirement: [FR-004] 异常日志分级

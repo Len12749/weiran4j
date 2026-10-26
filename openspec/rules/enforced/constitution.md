@@ -28,7 +28,7 @@
 `domain` 不依赖任何其他层；`infrastructure` 与 `adapter` 之间不得直接依赖。
 外层需要内层能力时，由内层定义端口（`domain/port`），外层实现。
 `*-domain` 与 `*-api` 除本模块内层外只能依赖 `weiran-framework`，且只能使用它的纯 Java 契约包
-（`com.weiran.framework.{error,page,response,status,text,tree}`）；`web` / `auth` / `log` / `persistence` /
+（`com.wulicode.weiran.framework.{error,page,response,status,text,tree}`）；`web` / `auth` / `log` / `persistence` /
 `autoconfigure` 等 Spring 基础设施包属于外层，只给 application / infrastructure / adapter 用。
 约定插件给所有 Java 模块注入的 `slf4j-api` 是日志门面，不算框架依赖。
 

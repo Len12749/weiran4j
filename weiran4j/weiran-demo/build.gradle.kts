@@ -1,5 +1,5 @@
 plugins {
-    id("com.weiran.spring-conventions")
+    id("com.wulicode.weiran.spring-conventions")
 }
 
 description = "可选组件演示：仅 local/test 使用的菜单、配置、批处理示例。"

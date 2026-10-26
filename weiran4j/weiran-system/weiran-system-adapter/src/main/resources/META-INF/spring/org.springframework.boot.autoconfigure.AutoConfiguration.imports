@@ -1,2 +1,2 @@
-com.weiran.system.adapter.autoconfigure.SystemAdapterAutoConfiguration
-com.weiran.platform.adapter.autoconfigure.PlatformAdapterAutoConfiguration
+com.wulicode.weiran.system.adapter.autoconfigure.SystemAdapterAutoConfiguration
+com.wulicode.weiran.platform.adapter.autoconfigure.PlatformAdapterAutoConfiguration

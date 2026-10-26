@@ -4,13 +4,13 @@
 > 契约文档 `weiran4j/docs/01-架构与接口契约.md` 只作索引；决策见 `00-决策记录.md` D-015。
 >
 > 事实源：
-> [`ExternalLoginApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/weiran/system/application/auth/ExternalLoginApplicationService.java)、
-> [`IdentityProvisioner.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/weiran/system/application/auth/IdentityProvisioner.java)、
-> [`SsoController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/weiran/system/adapter/web/SsoController.java)、
-> [`AuthController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/weiran/system/adapter/web/AuthController.java)（本人身份）、
-> [`UserController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/weiran/system/adapter/web/UserController.java)（管理员身份接口）、
+> [`ExternalLoginApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/system/application/auth/ExternalLoginApplicationService.java)、
+> [`IdentityProvisioner.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/system/application/auth/IdentityProvisioner.java)、
+> [`SsoController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/SsoController.java)、
+> [`AuthController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/AuthController.java)（本人身份）、
+> [`UserController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/UserController.java)（管理员身份接口）、
 > `weiran-system-infrastructure/.../identity/`（`OidcIdentityProvider`、`CasIdentityProvider`、`ConfiguredExternalIdentityProviders`、`HmacSsoStateSigner`）、
-> [`MybatisUserIdentityRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/weiran/system/infrastructure/persistence/MybatisUserIdentityRepository.java)、
+> [`MybatisUserIdentityRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/system/infrastructure/persistence/MybatisUserIdentityRepository.java)、
 > [`V202610060001__system_user_identity.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/system/V202610060001__system_user_identity.sql)、
 > 前端 [`ExternalAccountsCard.tsx`](../../../web/src/components/ExternalAccountsCard.tsx)、[`UserIdentitiesModal.tsx`](../../../web/src/pages/system/users/UserIdentitiesModal.tsx)、[`hooks/queries/identities.ts`](../../../web/src/hooks/queries/identities.ts)。
 >
@@ -22,7 +22,7 @@
 | --- | --- |
 | 表 | `sys_user_identity`：`(provider, external_id)` 唯一，`user_id` 有索引，不建外键 |
 | 菜单 | 没有独立页面；入口在「用户管理」行操作（按钮 `sys_menu.id = 120`）与「个人中心 → 外部账号」 |
-| 后端模块 | `weiran-system`（包 `com.weiran.system`，domain 子包 `identity`） |
+| 后端模块 | `weiran-system`（包 `com.wulicode.weiran.system`，domain 子包 `identity`） |
 | 接口 | 公开：`GET /api-backend/n/system/auth/listProviders`、`GET /api-backend/n/system/auth/authorizeSso/{provider}`、`GET /api-backend/n/system/auth/callbackSso/{provider}`；需登录：`GET /api-backend/system/auth/authorizeSso/{provider}`（绑定）、本人身份与管理员用户身份接口 |
 | 权限码 | `system:user:identity`（管理员查看、绑定、解绑他人）；本人操作只需登录 |
 

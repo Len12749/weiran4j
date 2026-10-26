@@ -80,7 +80,7 @@ duoli-weiran4j/                  # git 仓库根 = pnpm 工作区根 = openspec 
     │                            #   + Spring 基础设施（统一响应、全局异常、认证拦截、@RequiresPermission、
     │                            #   @OperationLog、MyBatis-Plus 配置与审计字段填充）。框架库不向下游传递（D-016）
     ├── weiran-system/           # 后台基座（DDD 五层）：身份与权限（认证 / 用户 / 角色 / 菜单 / 登录日志，
-    │                            #   Java 包 com.weiran.system）+ 平台能力（字典 / 系统配置 / 操作日志，包 com.weiran.platform）
+    │                            #   Java 包 com.wulicode.weiran.system）+ 平台能力（字典 / 系统配置 / 操作日志，包 com.wulicode.weiran.platform）
     ├── weiran-demo/             # 可选演示模块：local/test 菜单、种子及批处理处理器；下游可不复制
     ├── weiran-app/              # 可执行应用：依赖聚合 + application.yml + 集成测试
     └── docs/                    # 后端决策记录、接口契约与部署手册（02-部署.md）
@@ -231,7 +231,7 @@ duoli-weiran4j/                  # git 仓库根 = pnpm 工作区根 = openspec 
 - **模块自己负责装配**：每个模块用 `@AutoConfiguration` + `META-INF/spring/...imports` 自我登记，
   应用侧不写 `@ComponentScan` / `@MapperScan`。新增模块时 `weiran-app` 只加一行依赖。
 - **`weiran-framework` 的 Spring 部分是外层**：`*-domain` 与 `*-api` 只能用它的纯 Java 契约包
-  （`com.weiran.framework.{error,page,response,status,text,tree}`）。framework 的 Spring / MyBatis-Plus 依赖必须保持
+  （`com.wulicode.weiran.framework.{error,page,response,status,text,tree}`）。framework 的 Spring / MyBatis-Plus 依赖必须保持
   `implementation`——改成 `api` 会让 domain 编译期看见框架类型（D-016）；新业务模块的 application / infrastructure / adapter
   用到哪个框架库（`spring-tx`、MyBatis-Plus starter、`spring-boot-starter-web` 等）在自己的 `build.gradle.kts` 里声明。
 

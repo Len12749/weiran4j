@@ -71,10 +71,10 @@
         </appender>
 
         <!-- MyBatis 以 Mapper 接口全名作 logger 打 SQL：只进 SQL 文件 -->
-        <logger name="com.weiran.system.infrastructure.persistence.mapper" additivity="false">
+        <logger name="com.wulicode.weiran.system.infrastructure.persistence.mapper" additivity="false">
             <appender-ref ref="SQL_FILE"/>
         </logger>
-        <logger name="com.weiran.platform.infrastructure.persistence.mapper" additivity="false">
+        <logger name="com.wulicode.weiran.platform.infrastructure.persistence.mapper" additivity="false">
             <appender-ref ref="SQL_FILE"/>
         </logger>
 

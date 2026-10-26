@@ -20,4 +20,4 @@ weiran:
 
 logging:
   level:
-    com.weiran: DEBUG
+    com.wulicode.weiran: DEBUG

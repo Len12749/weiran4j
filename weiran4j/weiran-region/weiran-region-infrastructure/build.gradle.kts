@@ -1,5 +1,5 @@
 plugins {
-    id("com.weiran.spring-conventions")
+    id("com.wulicode.weiran.spring-conventions")
 }
 
 description = "weiran-region 基础设施层：region 表 MyBatis-Plus 持久化实现。"

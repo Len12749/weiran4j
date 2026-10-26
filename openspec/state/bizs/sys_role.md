@@ -4,13 +4,13 @@
 > 契约文档 `weiran4j/docs/01-架构与接口契约.md` 只作索引；它与代码不一致的地方以代码为准写在下文，并在 §6 登记。
 >
 > 事实源：
-> [`RoleController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/weiran/system/adapter/web/RoleController.java)、
-> [`SaveRoleRequest.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/weiran/system/adapter/web/request/SaveRoleRequest.java) /
-> [`AssignMenusRequest.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/weiran/system/adapter/web/request/AssignMenusRequest.java)、
-> [`RoleApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/weiran/system/application/role/RoleApplicationService.java)、
-> [`Role.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/weiran/system/domain/role/Role.java)、
-> [`Authorization.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/weiran/system/domain/auth/Authorization.java)、
-> [`MybatisRoleRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/weiran/system/infrastructure/persistence/MybatisRoleRepository.java)、
+> [`RoleController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/RoleController.java)、
+> [`SaveRoleRequest.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/request/SaveRoleRequest.java) /
+> [`AssignMenusRequest.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/request/AssignMenusRequest.java)、
+> [`RoleApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/system/application/role/RoleApplicationService.java)、
+> [`Role.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/role/Role.java)、
+> [`Authorization.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/auth/Authorization.java)、
+> [`MybatisRoleRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/system/infrastructure/persistence/MybatisRoleRepository.java)、
 > [`V202609260001__system_init_schema.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/system/V202609260001__system_init_schema.sql)、
 > [`RolesPage.tsx`](../../../web/src/pages/system/roles/RolesPage.tsx) /
 > [`RoleFormModal.tsx`](../../../web/src/pages/system/roles/RoleFormModal.tsx) /

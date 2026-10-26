@@ -2,7 +2,7 @@ import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
 import org.gradle.testing.jacoco.tasks.JacocoReport
 
 plugins {
-    id("com.weiran.boot-app-conventions")
+    id("com.wulicode.weiran.boot-app-conventions")
 }
 
 description = "weiran4j 可执行应用：聚合各业务模块的适配层与基础设施层，承载跨模块集成测试。"

@@ -87,14 +87,14 @@
 
 ### 跨模块契约（多层共同消费）
 
-### SL-6 · `weiran-framework/src/main/java/com/weiran/framework/error/CommonErrors.java`
+### SL-6 · `weiran-framework/src/main/java/com/wulicode/weiran/framework/error/CommonErrors.java`
 
 跨模块错误码基座（六位数字，服务 / 资源 / 错误各两位；HTTP 状态由 `httpStatus()` 独立指定）。
 **刻意冻结为小集合**——模块专属错误码定义在各自模块的 `*-api` 中。前端 `web/src/utils/request.ts`
 依赖 `100101`（清令牌跳登录）与 `110101`（不清令牌）的区分，
 改这两个码必须同步前端。**不是"该加就加"，而是"新增前先确认真的是跨模块概念"**。
 
-### SL-7 · `weiran-framework/src/main/java/com/weiran/framework/{page,response}/*`
+### SL-7 · `weiran-framework/src/main/java/com/wulicode/weiran/framework/{page,response}/*`
 
 跨模块分页与响应包络契约（`{code, message, data}`、`{list, total, page, pageSize}`），
 被全部后端模块与前端 `web/src/types/api.ts` 共同依赖。TS 定义**没有自动同步机制**，改了后端要手动改前端，
@@ -194,7 +194,7 @@ Flyway 以 `out-of-order: true` 运行（D-012）：版本号早于已执行最�
 ### CC-5 · 审计日志（`audit-context`）
 
 已实现两类：登录日志（`sys_login_log`，登录/登出成功与失败都记）与操作日志（写接口标 `@OperationLog`，
-由 `weiran-system`（包 `com.weiran.platform`）异步落库 `sys_operation_log`，请求体按字段名脱敏）。新增写接口**必须**标 `@OperationLog`。
+由 `weiran-system`（包 `com.wulicode.weiran.platform`）异步落库 `sys_operation_log`，请求体按字段名脱敏）。新增写接口**必须**标 `@OperationLog`。
 尚无「变更前后数据 diff」。
 
 ### CC-6 · 字段脱敏（`masking`）
@@ -257,7 +257,7 @@ Flyway 以 `out-of-order: true` 运行（D-012）：版本号早于已执行最�
 
 ### PK-2 · `weiran-system-*`（api/domain/application/infrastructure/adapter）
 
-`weiran-system` 是后台基座，DDD 五层：包 `com.weiran.system` 管认证 / 用户 / 角色 / 菜单 / 登录日志，包 `com.weiran.platform` 管字典 / 系统配置 / 操作日志（D-011 由两个模块合并而来）。
+`weiran-system` 是后台基座，DDD 五层：包 `com.wulicode.weiran.system` 管认证 / 用户 / 角色 / 菜单 / 登录日志，包 `com.wulicode.weiran.platform` 管字典 / 系统配置 / 操作日志（D-011 由两个模块合并而来）。
 
 ### PK-3 · `weiran-app`
 

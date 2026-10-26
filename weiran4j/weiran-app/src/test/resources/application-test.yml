@@ -20,4 +20,4 @@ weiran:
 
 logging:
   level:
-    com.weiran: INFO
+    com.wulicode.weiran: INFO

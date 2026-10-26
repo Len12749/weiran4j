@@ -1,5 +1,5 @@
 plugins {
-    id("com.weiran.java-conventions")
+    id("com.wulicode.weiran.java-conventions")
 }
 
 description = "weiran-system 对外契约：DTO、命令对象与应用服务接口。只依赖 weiran-framework 的纯 Java 契约包（编译期看不到 Spring）。"

@@ -131,7 +131,7 @@
   - `RequestIdFilter` 负责请求号:写 MDC 和 `X-Request-Id` 响应头,合法的入站值沿用;
   - 失败体带 `requestId`,前端 Toast 显示前 8 位;
   - `logback-spring.xml` 按公司格式输出到控制台 + 按天滚动文件,SQL 单独一个文件;
-  - `com.weiran.access` 访问日志;
+  - `com.wulicode.weiran.access` 访问日志;
   - 异常日志分级:4xx 业务异常记 WARN,5xx 记 ERROR 带堆栈;
   - `MdcTaskDecorator` 让操作日志异步线程也带请求号。
 

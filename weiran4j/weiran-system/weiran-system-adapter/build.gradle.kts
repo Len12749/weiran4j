@@ -1,5 +1,5 @@
 plugins {
-    id("com.weiran.spring-conventions")
+    id("com.wulicode.weiran.spring-conventions")
 }
 
 description = "weiran-system 适配层：HTTP Controller、请求 DTO 与校验、权限与操作日志注解。"

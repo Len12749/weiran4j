@@ -5,7 +5,7 @@ plugins {
     base
 }
 
-group = "com.weiran"
+group = "com.wulicode.weiran"
 version = providers.gradleProperty("libVersion").orElse("0.1.0-SNAPSHOT").get()
 
 // 本仓的库和 BOM 共用 libVersion；可执行应用与可选演示模块只随 demoVersion 变化。
@@ -34,7 +34,7 @@ subprojects {
             repositories {
                 maven {
                     name = "GitHubPackages"
-                    url = uri("https://maven.pkg.github.com/weiran-tech/weiran4j")
+                    url = uri("https://maven.pkg.github.com/wulicode/weiran-tech/weiran4j")
                     credentials {
                         username = githubUser.orNull
                         password = githubToken.orNull

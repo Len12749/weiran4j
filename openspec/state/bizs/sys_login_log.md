@@ -4,14 +4,14 @@
 > 契约文档 `weiran4j/docs/01-架构与接口契约.md` 只作索引；它与代码不一致的地方以代码为准写在下文，并在 §6 登记。
 >
 > 事实源：
-> [`LoginLogController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/weiran/system/adapter/web/LoginLogController.java)、
-> [`AuthController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/weiran/system/adapter/web/AuthController.java)（写入入口）、
-> [`AuthApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/weiran/system/application/auth/AuthApplicationService.java)（`login` / `logout` / `appendLog`）、
-> [`LoginLogApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/weiran/system/application/loginlog/LoginLogApplicationService.java)、
-> [`LoginLog.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/weiran/system/domain/loginlog/LoginLog.java)、
-> [`MybatisLoginLogRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/weiran/system/infrastructure/persistence/MybatisLoginLogRepository.java)、
-> [`ClientIpResolver.java`](../../../weiran4j/weiran-framework/src/main/java/com/weiran/framework/web/ClientIpResolver.java) /
-> [`UserAgentParser.java`](../../../weiran4j/weiran-framework/src/main/java/com/weiran/framework/web/UserAgentParser.java)、
+> [`LoginLogController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/LoginLogController.java)、
+> [`AuthController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/AuthController.java)（写入入口）、
+> [`AuthApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/system/application/auth/AuthApplicationService.java)（`login` / `logout` / `appendLog`）、
+> [`LoginLogApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/system/application/loginlog/LoginLogApplicationService.java)、
+> [`LoginLog.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/loginlog/LoginLog.java)、
+> [`MybatisLoginLogRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/system/infrastructure/persistence/MybatisLoginLogRepository.java)、
+> [`ClientIpResolver.java`](../../../weiran4j/weiran-framework/src/main/java/com/wulicode/weiran/framework/web/ClientIpResolver.java) /
+> [`UserAgentParser.java`](../../../weiran4j/weiran-framework/src/main/java/com/wulicode/weiran/framework/web/UserAgentParser.java)、
 > [`V202609260001__system_init_schema.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/system/V202609260001__system_init_schema.sql)、
 > [`LoginLogsPage.tsx`](../../../web/src/pages/logs/LoginLogsPage.tsx)、[`hooks/queries/logs.ts`](../../../web/src/hooks/queries/logs.ts)、
 > [`utils/date.ts`](../../../web/src/utils/date.ts)。

@@ -46,7 +46,7 @@ Compose 起三个服务：
 | `backend` | 由 `weiran4j/Dockerfile` 构建 | JRE 21，以 uid 10001 的非 root 用户运行；只在容器网络内暴露 5200；日志在卷 `backend-logs`（容器内 `/app/logs`） |
 | `web` | 由 `web/Dockerfile` 构建 | Nginx：提供前端静态文件，并把 `/api-backend/` 同源反代到 `backend:5200`；对外端口 `WEIRAN_WEB_PORT` |
 
-`backend`、`web`、`mysql` 的控制台日志使用 Docker `json-file` 驱动，每个容器最多保留 5 个 10 MB 文件；容器标签 `com.weiran.sls.service` 分别为 `backend`、`web`、`mysql`，供 SLS 精确筛选。后端的 `/app/logs` 卷仍按应用自身的滚动策略保留日志。
+`backend`、`web`、`mysql` 的控制台日志使用 Docker `json-file` 驱动，每个容器最多保留 5 个 10 MB 文件；容器标签 `com.wulicode.weiran.sls.service` 分别为 `backend`、`web`、`mysql`，供 SLS 精确筛选。后端的 `/app/logs` 卷仍按应用自身的滚动策略保留日志。
 
 > `.env` 与 `config/*.yml` 都被 gitignore，并被 `.dockerignore` 排除在镜像之外；密钥不进仓库或镜像。Compose 会将 `weiran4j/config/` 只读挂载到容器 `/app/config/`，由 `.env` 的 `SPRING_PROFILES_ACTIVE` 选择加载 `application-<profile>.yml`。可复制 `weiran4j/config/application-prod.yml.example` 作为样例；在 YAML 中引用 `${WEIRAN_DB_PASSWORD}`、`${WEIRAN_JWT_SECRET}` 等 `.env` 变量，避免重复维护。
 > 只想用已有的 MySQL：去掉 `mysql` 服务，在 `.env` 里把 `WEIRAN_DB_URL` 指向它，并删掉 `docker-compose.yml` 中 `backend.environment` 对 `WEIRAN_DB_URL` 的覆盖。
@@ -144,10 +144,10 @@ Compose 起三个服务：
 | `weiran4j.log` | 应用日志：访问日志、业务 WARN、异常 ERROR，按天 + 100MB 滚动，保留 `WEIRAN_LOG_MAX_HISTORY` 天 |
 | `weiran4j-sql.log` | MyBatis SQL，只在 `WEIRAN_LOG_LEVEL=DEBUG` 时有内容 |
 
-**格式**：`[时间] [weiran4j] [requestId] [线程] [级别] [logger] --> 消息`。访问日志的 logger 是 `com.weiran.access`，每个 API 前缀下的请求一行：
+**格式**：`[时间] [weiran4j] [requestId] [线程] [级别] [logger] --> 消息`。访问日志的 logger 是 `com.wulicode.weiran.access`，每个 API 前缀下的请求一行：
 
 ```text
-[2026-10-06 10:00:00.123] [weiran4j] [3f1c9a…] [http-nio-5200-exec-1] [INFO] [com.weiran.access] --> PUT /api-backend/system/auth/updateProfile 200 12ms user=1 ip=172.18.0.4
+[2026-10-06 10:00:00.123] [weiran4j] [3f1c9a…] [http-nio-5200-exec-1] [INFO] [com.wulicode.weiran.access] --> PUT /api-backend/system/auth/updateProfile 200 12ms user=1 ip=172.18.0.4
 ```
 
 **按请求号排障**：
@@ -206,13 +206,13 @@ docker compose --env-file weiran4j/.env -f docker-compose.yml -f docker-compose.
 
 | Logstore / 规则示例 | 来源 | 容器标签白名单 | 采集内容与处理 |
 | --- | --- | --- | --- |
-| `weiran4j-backend` / `weiran-backend-stdout` | Docker 标准输出 | `com.weiran.sls.service` = `^backend$` | 采集 stdout；启用多行合并，首行正则 `^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\]`，把 Java 异常堆栈合并到上一行。 |
-| `weiran4j-web` / `weiran-web-stdout` | Docker 标准输出 | `com.weiran.sls.service` = `^web$` | Nginx 访问日志在 stdout，错误日志在 stderr；如需两者都收集，启用 stdout 与 stderr 并根据 `stream`/`_source_` 区分。两条流之间不保证严格顺序。 |
-| `weiran4j-mysql` / `weiran-mysql-stdout`（可选） | Docker 标准输出 | `com.weiran.sls.service` = `^mysql$` | 收集 MySQL 容器启动和错误输出；数据库慢查询日志不在该规则内。 |
+| `weiran4j-backend` / `weiran-backend-stdout` | Docker 标准输出 | `com.wulicode.weiran.sls.service` = `^backend$` | 采集 stdout；启用多行合并，首行正则 `^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\]`，把 Java 异常堆栈合并到上一行。 |
+| `weiran4j-web` / `weiran-web-stdout` | Docker 标准输出 | `com.wulicode.weiran.sls.service` = `^web$` | Nginx 访问日志在 stdout，错误日志在 stderr；如需两者都收集，启用 stdout 与 stderr 并根据 `stream`/`_source_` 区分。两条流之间不保证严格顺序。 |
+| `weiran4j-mysql` / `weiran-mysql-stdout`（可选） | Docker 标准输出 | `com.wulicode.weiran.sls.service` = `^mysql$` | 收集 MySQL 容器启动和错误输出；数据库慢查询日志不在该规则内。 |
 
 为 Logstore 开启全文索引；若要按日志级别、requestId、HTTP 状态等字段检索，再按实际日志样本添加解析规则和字段索引。后端首行格式见 §6。SLS 新旧标准输出模板的容器元数据字段位置可能不同，查询前在预览里确认 `_container_name_` 或 `__tag__:_container_name_` 的实际位置。[阿里云字段说明](https://help.aliyun.com/en/sls/collect-docker-container-text-logs)。
 
-需要 SQL 日志时，在 `weiran4j-sql` Logstore **另建 Docker 文件采集规则**：容器路径 `/app/logs/weiran4j-sql.log`，标签 `com.weiran.sls.service=^backend$`，按 §6 的首行正则合并多行。只有 `WEIRAN_LOG_LEVEL=DEBUG` 且 Mapper 实际产生日志时才有数据。SQL 可能含个人数据，不应长期保持 DEBUG；给该 Logstore 单独设置较短保留期与访问权限。**不要**再采集 `/app/logs/weiran4j.log`，也不要把 Docker `json-file` 原始目录配置成额外文件规则。
+需要 SQL 日志时，在 `weiran4j-sql` Logstore **另建 Docker 文件采集规则**：容器路径 `/app/logs/weiran4j-sql.log`，标签 `com.wulicode.weiran.sls.service=^backend$`，按 §6 的首行正则合并多行。只有 `WEIRAN_LOG_LEVEL=DEBUG` 且 Mapper 实际产生日志时才有数据。SQL 可能含个人数据，不应长期保持 DEBUG；给该 Logstore 单独设置较短保留期与访问权限。**不要**再采集 `/app/logs/weiran4j.log`，也不要把 Docker `json-file` 原始目录配置成额外文件规则。
 
 **3. 验证与排障**
 
@@ -222,7 +222,7 @@ docker inspect "$(docker compose --env-file weiran4j/.env -f docker-compose.yml 
 docker compose --env-file weiran4j/.env logs --tail=20 backend
 ```
 
-确认后端的驱动为 `json-file`、标签为 `com.weiran.sls.service=backend`，机器组心跳 OK。**绑定规则后再发一个实际 API 请求**，从响应头复制 `X-Request-Id`，用该值在 `weiran4j-backend` 检索；LoongCollector 主要采集规则生效后的新增日志，旧日志不一定回补。查不到时依次核对容器有新输出、标签与规则一致、采集器版本兼容 Docker API、Project 地域与上传通道一致、Logstore 索引已开启。可在 SLS 控制台查看采集诊断信息。[阿里云采集异常排查](https://help.aliyun.com/en/sls/loongcollector-collection-exception-troubleshooting)。
+确认后端的驱动为 `json-file`、标签为 `com.wulicode.weiran.sls.service=backend`，机器组心跳 OK。**绑定规则后再发一个实际 API 请求**，从响应头复制 `X-Request-Id`，用该值在 `weiran4j-backend` 检索；LoongCollector 主要采集规则生效后的新增日志，旧日志不一定回补。查不到时依次核对容器有新输出、标签与规则一致、采集器版本兼容 Docker API、Project 地域与上传通道一致、Logstore 索引已开启。可在 SLS 控制台查看采集诊断信息。[阿里云采集异常排查](https://help.aliyun.com/en/sls/loongcollector-collection-exception-troubleshooting)。
 
 升级时先更新 `.env` 中的采集器镜像固定版本，再执行上述 `up -d loongcollector`；应用升级继续按 §7 的基础 Compose 命令执行。SLS 采集失败不会阻止应用启动；本地 `docker compose logs` 和 `/app/logs` 可用于排障，但 Docker stdout 的滚动上限意味着长时间采集故障后早期日志可能已被清理。
 

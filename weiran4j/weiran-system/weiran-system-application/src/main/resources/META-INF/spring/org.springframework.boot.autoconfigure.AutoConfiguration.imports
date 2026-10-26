@@ -1,2 +1,2 @@
-com.weiran.system.application.autoconfigure.SystemApplicationAutoConfiguration
-com.weiran.platform.application.autoconfigure.PlatformApplicationAutoConfiguration
+com.wulicode.weiran.system.application.autoconfigure.SystemApplicationAutoConfiguration
+com.wulicode.weiran.platform.application.autoconfigure.PlatformApplicationAutoConfiguration

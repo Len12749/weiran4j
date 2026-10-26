@@ -2,11 +2,11 @@
 
 > 属于 `openspec/state/`，只描述当前实现事实；以代码和已合入 Flyway 迁移为准。
 >
-> 事实源：[`RegionController.java`](../../../weiran4j/weiran-region/weiran-region-adapter/src/main/java/com/weiran/region/adapter/web/RegionController.java)、
-> [`RegionApplicationService.java`](../../../weiran4j/weiran-region/weiran-region-application/src/main/java/com/weiran/region/application/region/RegionApplicationService.java)、
-> [`Region.java`](../../../weiran4j/weiran-region/weiran-region-domain/src/main/java/com/weiran/region/domain/region/Region.java) /
-> [`RegionHierarchy.java`](../../../weiran4j/weiran-region/weiran-region-domain/src/main/java/com/weiran/region/domain/region/RegionHierarchy.java)、
-> [`MybatisRegionRepository.java`](../../../weiran4j/weiran-region/weiran-region-infrastructure/src/main/java/com/weiran/region/infrastructure/persistence/MybatisRegionRepository.java)、
+> 事实源：[`RegionController.java`](../../../weiran4j/weiran-region/weiran-region-adapter/src/main/java/com/wulicode/weiran/region/adapter/web/RegionController.java)、
+> [`RegionApplicationService.java`](../../../weiran4j/weiran-region/weiran-region-application/src/main/java/com/wulicode/weiran/region/application/region/RegionApplicationService.java)、
+> [`Region.java`](../../../weiran4j/weiran-region/weiran-region-domain/src/main/java/com/wulicode/weiran/region/domain/region/Region.java) /
+> [`RegionHierarchy.java`](../../../weiran4j/weiran-region/weiran-region-domain/src/main/java/com/wulicode/weiran/region/domain/region/RegionHierarchy.java)、
+> [`MybatisRegionRepository.java`](../../../weiran4j/weiran-region/weiran-region-infrastructure/src/main/java/com/wulicode/weiran/region/infrastructure/persistence/MybatisRegionRepository.java)、
 > [`V202610190001__region_initial_schema_and_seed.sql`](../../../weiran4j/weiran-region/weiran-region-infrastructure/src/main/resources/db/migration/region/V202610190001__region_initial_schema_and_seed.sql)、
 > [`RegionsPage.tsx`](../../../web/src/pages/system/regions/RegionsPage.tsx)、[`RegionFormModal.tsx`](../../../web/src/pages/system/regions/RegionFormModal.tsx)、
 > [`RegionSelect.tsx`](../../../web/src/components/RegionSelect.tsx)。

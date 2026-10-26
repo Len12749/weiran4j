@@ -5,15 +5,15 @@
 > `sys_group` 通过 `type=dict/config` 同时承载字典与配置分组；配置组再由 `group_key=config_system/config_sms` 区分系统配置与短信配置。本文件同时覆盖子表 `sys_dict_item`（字典项）。
 >
 > 事实源：
-> [`DictController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/weiran/platform/adapter/web/DictController.java)、
-> [`SaveDictRequest.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/weiran/platform/adapter/web/request/SaveDictRequest.java) /
-> [`SaveDictItemRequest.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/weiran/platform/adapter/web/request/SaveDictItemRequest.java)、
-> [`DictApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/weiran/platform/application/dict/DictApplicationService.java)、
-> [`Dict.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/weiran/platform/domain/dict/Dict.java) /
-> [`DictItem.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/weiran/platform/domain/dict/DictItem.java)、
-> [`MybatisDictRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/weiran/platform/infrastructure/persistence/MybatisDictRepository.java)、
-> [`SysGroupDO.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/weiran/platform/infrastructure/persistence/entity/SysGroupDO.java)、
-> [`MybatisConfigGroupRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/weiran/platform/infrastructure/persistence/MybatisConfigGroupRepository.java)、
+> [`DictController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/platform/adapter/web/DictController.java)、
+> [`SaveDictRequest.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/platform/adapter/web/request/SaveDictRequest.java) /
+> [`SaveDictItemRequest.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/platform/adapter/web/request/SaveDictItemRequest.java)、
+> [`DictApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/platform/application/dict/DictApplicationService.java)、
+> [`Dict.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/platform/domain/dict/Dict.java) /
+> [`DictItem.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/platform/domain/dict/DictItem.java)、
+> [`MybatisDictRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/platform/infrastructure/persistence/MybatisDictRepository.java)、
+> [`SysGroupDO.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/platform/infrastructure/persistence/entity/SysGroupDO.java)、
+> [`MybatisConfigGroupRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/platform/infrastructure/persistence/MybatisConfigGroupRepository.java)、
 > [`V202610201001__platform_unify_dict_config_groups.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/platform/V202610201001__platform_unify_dict_config_groups.sql)、
 > [`V202609260101__platform_init_schema.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/platform/V202609260101__platform_init_schema.sql) /
 > [`V202609260102__platform_seed_data.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/platform/V202609260102__platform_seed_data.sql)、

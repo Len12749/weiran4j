@@ -1,5 +1,5 @@
 plugins {
-    id("com.weiran.spring-conventions")
+    id("com.wulicode.weiran.spring-conventions")
 }
 
 description = "weiran-system 基础设施层：MyBatis-Plus 持久化、JWT、BCrypt 与 system / platform 两组 Flyway 迁移脚本。"

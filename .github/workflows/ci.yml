@@ -18,7 +18,7 @@ concurrency:
 jobs:
   backend:
     name: 后端 check（JDK 21 + Testcontainers）
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
@@ -34,7 +34,7 @@ jobs:
 
   web:
     name: 前端 lint / test / build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -51,7 +51,7 @@ jobs:
 
   openspec:
     name: openspec 结构检查
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7

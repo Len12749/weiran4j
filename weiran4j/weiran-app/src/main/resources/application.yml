@@ -97,7 +97,7 @@ springdoc:
 
 logging:
   level:
-    com.weiran: ${WEIRAN_LOG_LEVEL:INFO}
+    com.wulicode.weiran: ${WEIRAN_LOG_LEVEL:INFO}
   # 日志文件目录与保留天数，logback-spring.xml 读取（local / test profile 只输出到控制台，不写文件）。
   file:
     path: ${WEIRAN_LOG_DIR:logs}
