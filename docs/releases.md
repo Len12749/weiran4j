@@ -11,11 +11,11 @@
 
 ## 发布组件包
 
-在准备发布的提交通过 CI 后创建并推送 `lib-v<主>.<次>.<修订>` tag，例如 `lib-v0.1.0`。[`publish-libraries.yml`](../.github/workflows/publish-libraries.yml) 使用 JDK 21 跑后端 `check`，然后以 tag 中的版本发布 BOM、framework、system 五层，以及本 fork 的 region 五层和 `weiran-region` 入口包。`weiran-app` 和 `weiran-demo` 不发布。BOM 与它登记的本仓模块必须同批发布，不能留下引用不到的坐标。
+在准备发布的提交通过 CI 后创建并推送 `lib-v<主>.<次>.<修订>` tag，例如 `lib-v0.1.2`。[`publish-libraries.yml`](../.github/workflows/publish-libraries.yml) 使用 JDK 21 跑后端 `check`，然后以 tag 中的版本发布 BOM、framework、system 和 region 的五层及 `weiran-system`、`weiran-region` 入口包。`weiran-app` 和 `weiran-demo` 不发布。BOM 与它登记的本仓模块必须同批发布，不能留下引用不到的坐标。`lib-v0.1.1` 没有 `weiran-system` 入口包；从 `0.1.2` 起使用该坐标。
 
 ```bash
-git tag lib-v0.1.0
-git push origin lib-v0.1.0
+git tag lib-v0.1.2
+git push origin lib-v0.1.2
 ```
 
 工作流用仓库的 `GITHUB_TOKEN` 发布；首次发布后在 GitHub Packages 检查包是否关联本仓、可见性与下载权限。GitHub Packages 的 Maven/Gradle 包即使公开，下载端仍需鉴权；本地消费使用具有 `read:packages` 的 classic PAT，令牌只放在用户级配置或 CI secret。详情见 [GitHub Gradle registry 文档](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry)。
@@ -37,12 +37,13 @@ maven {
 
 ```kotlin
 dependencies {
-    implementation(platform("com.weiran:weiran-dependencies:0.1.0"))
+    implementation(platform("com.weiran:weiran-dependencies:0.1.2"))
+    implementation("com.weiran:weiran-system")
     implementation("com.weiran:weiran-region")
 }
 ```
 
-已装配 weiran4j 基座的外部应用只需添加这个 region 入口依赖。其发布元数据将 `weiran-region-api` 放在编译依赖中，将 `weiran-region-adapter` 与 `weiran-region-infrastructure` 放在运行依赖中；Gradle 会经它们取得剩余层和自动配置。直接 fork 本仓源码的下游继续由 `weiran-app` 按五层项目依赖装配，无需再下载入口包。
+外部应用可引入 system 和 region 两个入口包。它们各自只把 `*-api` 放在编译依赖中，将 `*-adapter` 与 `*-infrastructure` 放在运行依赖中；Gradle 会经它们取得剩余层和自动配置。已经装配 weiran4j 基座的应用只需添加 region 入口依赖。直接 fork 本仓源码的下游继续由 `weiran-app` 按五层项目依赖装配，无需再下载入口包。
 
 ## 发布完整 Demo 镜像
 
