@@ -11,7 +11,7 @@
 
 ## 发布组件包
 
-在准备发布的提交通过 CI 后创建并推送 `lib-v<主>.<次>.<修订>` tag，例如 `lib-v0.1.0`。[`publish-libraries.yml`](../.github/workflows/publish-libraries.yml) 使用 JDK 21 跑后端 `check`，然后以 tag 中的版本发布 BOM、framework、system 五层，以及本 fork 已发现的 region 五层。`weiran-app` 和 `weiran-demo` 不发布。BOM 与它登记的本仓模块必须同批发布，不能留下引用不到的坐标。
+在准备发布的提交通过 CI 后创建并推送 `lib-v<主>.<次>.<修订>` tag，例如 `lib-v0.1.0`。[`publish-libraries.yml`](../.github/workflows/publish-libraries.yml) 使用 JDK 21 跑后端 `check`，然后以 tag 中的版本发布 BOM、framework、system 五层，以及本 fork 的 region 五层和 `weiran-region` 入口包。`weiran-app` 和 `weiran-demo` 不发布。BOM 与它登记的本仓模块必须同批发布，不能留下引用不到的坐标。
 
 ```bash
 git tag lib-v0.1.0
@@ -38,9 +38,11 @@ maven {
 ```kotlin
 dependencies {
     implementation(platform("com.weiran:weiran-dependencies:0.1.0"))
-    implementation("com.weiran:weiran-system-api")
+    implementation("com.weiran:weiran-region")
 }
 ```
+
+已装配 weiran4j 基座的外部应用只需添加这个 region 入口依赖。其发布元数据将 `weiran-region-api` 放在编译依赖中，将 `weiran-region-adapter` 与 `weiran-region-infrastructure` 放在运行依赖中；Gradle 会经它们取得剩余层和自动配置。直接 fork 本仓源码的下游继续由 `weiran-app` 按五层项目依赖装配，无需再下载入口包。
 
 ## 发布完整 Demo 镜像
 

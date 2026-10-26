@@ -63,4 +63,8 @@ businessModules.forEach { module ->
         include(name)
         project(":$name").projectDir = file("$module/$name")
     }
+    // 可选的下游入口包与五层并列；下游只需在模块根放 build.gradle.kts。
+    if (file("$module/build.gradle.kts").isFile) {
+        include(module)
+    }
 }

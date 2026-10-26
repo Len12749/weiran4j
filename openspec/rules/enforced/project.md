@@ -52,14 +52,15 @@
 
 业务模块靠目录自动发现（D-012）：`weiran-<mod>/` 下五层子目录齐全即被 include，**新增业务模块不改本文件**；
 发现结果写入 `gradle.extra["weiran.businessModules"]`，供 SL-2、SL-3 读取。五层不齐时构建失败。
-新增**非业务**模块（如 `weiran-xxx-starter`）仍在 `include(...)` 块里追加——这部分仍是**全仓单点**，并行追加极易冲突；
+业务模块根目录若有 `build.gradle.kts`，同名对外入口项目也会被 include；没有则不创建。
+新增其余**非业务**模块（如 `weiran-xxx-starter`）仍在 `include(...)` 块里追加——这部分仍是**全仓单点**，并行追加极易冲突；
 改发现逻辑本身同理。
 `weiran-demo` 是已登记的可选非业务模块：目录存在才 include，下游可以不复制。
 
 ### SL-2 · `weiran-dependencies/build.gradle.kts`
 
 `constraints { ... }` 块钉住 Spring Boot / MyBatis-Plus BOM 之外的第三方版本，并列出仓内模块坐标。
-业务模块的五层坐标按 SL-1 的发现清单生成，新增业务模块不改本文件；新增第三方依赖或非业务模块仍需追加行。全仓单点，多人同时追加会冲突。
+业务模块的五层坐标及存在时的同名入口坐标按 SL-1 的发现清单生成，新增业务模块不改本文件；新增第三方依赖或其余非业务模块仍需追加行。全仓单点，多人同时追加会冲突。
 框架层快照、上游漂移白名单与「存在才 apply 下游清单」也在这里，改动它们会影响 `verifyFrameworkVersions`（D-013）。
 下游的业务依赖版本写在同目录下游独占的 `biz-dependencies.gradle.kts`，不改本文件。
 

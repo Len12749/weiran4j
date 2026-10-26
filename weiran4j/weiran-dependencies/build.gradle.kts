@@ -31,6 +31,9 @@ dependencies {
             listOf("api", "domain", "application", "infrastructure", "adapter").forEach { layer ->
                 api("com.weiran:$module-$layer:${project.version}")
             }
+            if (findProject(":$module") != null) {
+                api("com.weiran:$module:${project.version}")
+            }
         }
 
         // JWT：Spring Boot BOM 不含 jjwt。
