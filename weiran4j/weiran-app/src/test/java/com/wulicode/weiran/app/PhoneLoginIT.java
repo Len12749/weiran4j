@@ -27,6 +27,114 @@ import org.springframework.test.context.TestPropertySource;
 @TestPropertySource(properties = "weiran.sms.mode=local")
 class PhoneLoginIT extends IntegrationTestSupport {
 
+    @Test
+    @DisplayName("手机多因素认证先验短信再发令牌，同一设备有效期内免验，未绑定手机号的账号暂时免验")
+    void mfaRequiresCodeAndRemembersDevice() {
+        final String admin = this.adminToken();
+        final String originalTemplate = Objects.requireNonNull(this.jdbc.queryForObject(
+                "SELECT config_value FROM sys_config WHERE config_key = ?", String.class, PhoneLoginIT.TEMPLATE_KEY));
+        final Logger logger = (Logger) LoggerFactory.getLogger(LocalSmsSender.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            this.jdbc.update(
+                    "UPDATE sys_config SET config_value = ? WHERE config_key = ?",
+                    PhoneLoginIT.TEMPLATE,
+                    PhoneLoginIT.TEMPLATE_KEY);
+            final String username = IntegrationTestSupport.unique("mfa");
+            final String phone = String.format(Locale.ROOT, "139%08d", Math.floorMod(System.nanoTime(), 100_000_000));
+            this.create(
+                    "/api-backend/system/user/create",
+                    admin,
+                    Map.of(
+                            "username",
+                            username,
+                            "nickname",
+                            "双重验证",
+                            "password",
+                            "Passw0rd1",
+                            "phone",
+                            phone,
+                            "roleIds",
+                            List.of()));
+            IntegrationTestSupport.assertOk(this.put(
+                    "/api-backend/system/security/updateMfa", admin, Map.of("enabled", true, "rememberDays", 7)));
+
+            final ResponseEntity<JsonNode> first = this.loginWithCookies(username, "Passw0rd1");
+            IntegrationTestSupport.assertOk(first);
+            assertThat(IntegrationTestSupport.data(first).path("mfaRequired").asBoolean())
+                    .isTrue();
+            assertThat(first.getHeaders().get(HttpHeaders.SET_COOKIE))
+                    .noneMatch(cookie -> cookie.startsWith(AuthCookies.TOKEN_COOKIE + "="));
+            final String pending = PhoneLoginIT.cookie(first, AuthCookies.MFA_PENDING_COOKIE);
+            final Matcher matcher =
+                    PhoneLoginIT.CODE_PATTERN.matcher(appender.list.getLast().getFormattedMessage());
+            assertThat(matcher.find()).isTrue();
+            final String code = matcher.group(1);
+
+            final HttpHeaders pendingHeaders = new HttpHeaders();
+            pendingHeaders.set(HttpHeaders.COOKIE, pending);
+            final String incorrect = (code.charAt(0) == '0' ? '1' : '0') + code.substring(1);
+            IntegrationTestSupport.assertError(
+                    this.exchange(
+                            HttpMethod.POST,
+                            "/api-backend/n/system/auth/verifyMfa",
+                            pendingHeaders,
+                            Map.of("code", incorrect)),
+                    HttpStatus.BAD_REQUEST,
+                    100001);
+            final ResponseEntity<JsonNode> verified = this.exchange(
+                    HttpMethod.POST, "/api-backend/n/system/auth/verifyMfa", pendingHeaders, Map.of("code", code));
+            IntegrationTestSupport.assertOk(verified);
+            assertThat(IntegrationTestSupport.data(verified).path("mfaRequired").asBoolean())
+                    .isFalse();
+            assertThat(PhoneLoginIT.cookie(verified, AuthCookies.TOKEN_COOKIE)).isNotBlank();
+            final String trusted = PhoneLoginIT.cookie(verified, AuthCookies.MFA_TRUSTED_COOKIE);
+
+            final HttpHeaders trustedHeaders = new HttpHeaders();
+            trustedHeaders.set(HttpHeaders.COOKIE, trusted);
+            final ResponseEntity<JsonNode> remembered = this.exchange(
+                    HttpMethod.POST,
+                    "/api-backend/n/system/auth/login",
+                    trustedHeaders,
+                    Map.of("username", username, "password", "Passw0rd1"));
+            IntegrationTestSupport.assertOk(remembered);
+            assertThat(IntegrationTestSupport.data(remembered)
+                            .path("mfaRequired")
+                            .asBoolean())
+                    .isFalse();
+            assertThat(PhoneLoginIT.cookie(remembered, AuthCookies.TOKEN_COOKIE))
+                    .isNotBlank();
+
+            final String unbound = IntegrationTestSupport.unique("unbound");
+            this.create(
+                    "/api-backend/system/user/create",
+                    admin,
+                    Map.of("username", unbound, "nickname", "未绑定", "password", "Passw0rd1", "roleIds", List.of()));
+            assertThat(IntegrationTestSupport.data(this.loginWithCookies(unbound, "Passw0rd1"))
+                            .path("mfaRequired")
+                            .asBoolean())
+                    .isFalse();
+        } finally {
+            this.jdbc.update("UPDATE sys_security_settings SET mfa_enabled = 0, revision = revision + 1 WHERE id = 1");
+            this.jdbc.update(
+                    "UPDATE sys_config SET config_value = ? WHERE config_key = ?",
+                    originalTemplate,
+                    PhoneLoginIT.TEMPLATE_KEY);
+            logger.detachAppender(appender);
+            appender.stop();
+        }
+    }
+
+    private static String cookie(final ResponseEntity<JsonNode> response, final String name) {
+        return response.getHeaders().getOrEmpty(HttpHeaders.SET_COOKIE).stream()
+                .filter(value -> value.startsWith(name + "="))
+                .map(value -> value.substring(0, value.indexOf(';')))
+                .findFirst()
+                .orElseThrow();
+    }
+
     private static final String ENABLED_KEY = "system.user.enable_phone_login";
 
     private static final String TEMPLATE_KEY = "sms.system_tpl.captcha_local";
@@ -34,6 +142,62 @@ class PhoneLoginIT extends IntegrationTestSupport {
     private static final String TEMPLATE = "你的验证码是 ${code} , 5 分钟有效, 请不要告知他人";
 
     private static final Pattern CODE_PATTERN = Pattern.compile("你的验证码是 (\\d{6}) , 5 分钟有效");
+
+    @Test
+    @DisplayName("本人改手机号必须先向新号码发码并验证，验证码只能使用一次")
+    void bindsPhoneOnlyAfterVerification() {
+        final String originalTemplate = Objects.requireNonNull(this.jdbc.queryForObject(
+                "SELECT config_value FROM sys_config WHERE config_key = ?", String.class, PhoneLoginIT.TEMPLATE_KEY));
+        final Logger logger = (Logger) LoggerFactory.getLogger(LocalSmsSender.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            this.jdbc.update(
+                    "UPDATE sys_config SET config_value = ? WHERE config_key = ?",
+                    PhoneLoginIT.TEMPLATE,
+                    PhoneLoginIT.TEMPLATE_KEY);
+            final String username = IntegrationTestSupport.unique("bind");
+            this.create(
+                    "/api-backend/system/user/create",
+                    this.adminToken(),
+                    Map.of("username", username, "nickname", "待绑定", "password", "Passw0rd1", "roleIds", List.of()));
+            final String token = this.tokenOf(username, "Passw0rd1");
+            final String phone = String.format(Locale.ROOT, "137%08d", Math.floorMod(System.nanoTime(), 100_000_000));
+
+            IntegrationTestSupport.assertOk(this.put(
+                    "/api-backend/system/auth/updateProfile", token, Map.of("nickname", "已修改", "phone", phone)));
+            assertThat(IntegrationTestSupport.data(this.get("/api-backend/system/auth/getCurrentUser", token))
+                            .path("phone")
+                            .isNull())
+                    .isTrue();
+
+            IntegrationTestSupport.assertOk(
+                    this.post("/api-backend/system/auth/sendBindPhoneCode", token, Map.of("phone", phone)));
+            final Matcher matcher =
+                    PhoneLoginIT.CODE_PATTERN.matcher(appender.list.getLast().getFormattedMessage());
+            assertThat(matcher.find()).isTrue();
+            final String code = matcher.group(1);
+            IntegrationTestSupport.assertOk(
+                    this.put("/api-backend/system/auth/bindPhone", token, Map.of("phone", phone, "code", code)));
+            assertThat(IntegrationTestSupport.data(this.get("/api-backend/system/auth/getCurrentUser", token))
+                            .path("phone")
+                            .asText())
+                    .isEqualTo(phone);
+            assertThat(IntegrationTestSupport.body(this.put(
+                                    "/api-backend/system/auth/bindPhone", token, Map.of("phone", phone, "code", code)))
+                            .path("code")
+                            .asInt())
+                    .isNotZero();
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+            this.jdbc.update(
+                    "UPDATE sys_config SET config_value = ? WHERE config_key = ?",
+                    originalTemplate,
+                    PhoneLoginIT.TEMPLATE_KEY);
+        }
+    }
 
     @Test
     @DisplayName("启用手机号登录后，local 日志包含替换后的验证码；验证码可登录且只能使用一次")

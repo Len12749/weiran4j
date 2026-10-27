@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wulicode.weiran.system.domain.auth.TokenCodec;
 import com.wulicode.weiran.system.domain.auth.TokenIssuerReader;
 import com.wulicode.weiran.system.domain.auth.TokenVerifier;
+import com.wulicode.weiran.system.domain.auth.TrustedDeviceTokens;
 import com.wulicode.weiran.system.domain.batch.BatchFileStorage;
 import com.wulicode.weiran.system.domain.identity.ExternalIdentityProviders;
 import com.wulicode.weiran.system.domain.identity.SsoStateSigner;
@@ -16,6 +17,7 @@ import com.wulicode.weiran.system.infrastructure.identity.ConfiguredExternalIden
 import com.wulicode.weiran.system.infrastructure.identity.HmacSsoStateSigner;
 import com.wulicode.weiran.system.infrastructure.persistence.JdbcBatchJobRepository;
 import com.wulicode.weiran.system.infrastructure.persistence.JdbcMediaReferenceRepository;
+import com.wulicode.weiran.system.infrastructure.persistence.JdbcSecuritySettingsRepository;
 import com.wulicode.weiran.system.infrastructure.persistence.JdbcSequenceRepository;
 import com.wulicode.weiran.system.infrastructure.persistence.MybatisLoginLogRepository;
 import com.wulicode.weiran.system.infrastructure.persistence.MybatisMediaRepository;
@@ -25,6 +27,7 @@ import com.wulicode.weiran.system.infrastructure.persistence.MybatisUserIdentity
 import com.wulicode.weiran.system.infrastructure.persistence.MybatisUserRepository;
 import com.wulicode.weiran.system.infrastructure.security.AuthJwtProperties;
 import com.wulicode.weiran.system.infrastructure.security.BCryptPasswordHasher;
+import com.wulicode.weiran.system.infrastructure.security.HmacTrustedDeviceTokens;
 import com.wulicode.weiran.system.infrastructure.security.JwtIssuerReader;
 import com.wulicode.weiran.system.infrastructure.security.JwtTokenCodec;
 import com.wulicode.weiran.system.infrastructure.security.SystemSecurityProperties;
@@ -70,9 +73,15 @@ import org.springframework.context.annotation.Import;
     MybatisMediaRepository.class,
     JdbcBatchJobRepository.class,
     JdbcMediaReferenceRepository.class,
-    JdbcSequenceRepository.class
+    JdbcSequenceRepository.class,
+    JdbcSecuritySettingsRepository.class
 })
 public class SystemInfrastructureAutoConfiguration {
+
+    @Bean
+    public TrustedDeviceTokens trustedDeviceTokens(final AuthJwtProperties properties, final Clock clock) {
+        return new HmacTrustedDeviceTokens(properties, clock);
+    }
 
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean(BatchFileStorage.class)

@@ -38,6 +38,10 @@ public class PhoneLoginSettings {
         return this.smsSettings.verificationTemplateCode();
     }
 
+    public boolean templateReady() {
+        return this.smsSettings.verificationTemplateReady();
+    }
+
     /** 只有本地模式的验证码可写入登录日志供联调。 */
     public boolean isLocalMode() {
         return this.smsSettings.isLocalMode();

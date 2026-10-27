@@ -3,9 +3,11 @@ package com.wulicode.weiran.system.adapter.web;
 import com.wulicode.weiran.framework.auth.AuthCookies;
 import com.wulicode.weiran.framework.auth.CurrentUser;
 import com.wulicode.weiran.framework.auth.PublicApi;
+import com.wulicode.weiran.system.api.auth.ExternalLoginCandidate;
 import com.wulicode.weiran.system.api.auth.ExternalLoginService;
 import com.wulicode.weiran.system.api.auth.LoginResult;
 import com.wulicode.weiran.system.api.auth.SsoRedirect;
+import com.wulicode.weiran.system.application.auth.MfaLoginApplicationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
@@ -33,9 +35,15 @@ public class SsoController {
     private final AuthCookies authCookies;
 
     /** 构造控制器。 */
-    public SsoController(final ExternalLoginService externalLoginService, final AuthCookies authCookies) {
+    private final MfaLoginApplicationService mfaLoginService;
+
+    public SsoController(
+            final ExternalLoginService externalLoginService,
+            final AuthCookies authCookies,
+            final MfaLoginApplicationService mfaLoginService) {
         this.externalLoginService = externalLoginService;
         this.authCookies = authCookies;
+        this.mfaLoginService = mfaLoginService;
     }
 
     /** 发起外部登录。 */
@@ -83,7 +91,27 @@ public class SsoController {
         final SsoRedirect result =
                 this.externalLoginService.callback(provider, params, flowCookie, AuthController.clientOf(http));
         SsoController.addCookie(response, this.authCookies.clearSsoState());
-        final LoginResult login = result.login();
+        LoginResult login = null;
+        final LoginResult legacyLogin = result.login();
+        final ExternalLoginCandidate candidate = result.candidate() != null
+                ? result.candidate()
+                : legacyLogin == null ? null : new ExternalLoginCandidate(legacyLogin.userId(), provider, "外部身份登录成功");
+        if (candidate != null) {
+            final MfaLoginApplicationService.BeginResult started = this.mfaLoginService.beginExternal(
+                    candidate,
+                    AuthController.clientOf(http),
+                    AuthController.cookie(http, AuthCookies.MFA_TRUSTED_COOKIE));
+            if (started.pendingToken() != null) {
+                SsoController.addCookie(response, this.authCookies.mfaPending(started.pendingToken()));
+                SsoController.redirect(
+                        response,
+                        "/login?mfa=1&redirect="
+                                + java.net.URLEncoder.encode(
+                                        result.location(), java.nio.charset.StandardCharsets.UTF_8));
+                return;
+            }
+            login = java.util.Objects.requireNonNull(started.login());
+        }
         if (login != null) {
             for (final ResponseCookie cookie : this.authCookies.issue(
                     login.accessToken(), Duration.ofSeconds(login.expiresIn()), login.userId())) {

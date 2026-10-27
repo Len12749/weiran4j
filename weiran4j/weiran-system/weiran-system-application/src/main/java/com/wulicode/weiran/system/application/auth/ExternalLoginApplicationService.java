@@ -11,8 +11,8 @@ import com.wulicode.weiran.framework.log.OperationLogRecorder;
 import com.wulicode.weiran.framework.text.Texts;
 import com.wulicode.weiran.system.api.auth.BindIdentityCommand;
 import com.wulicode.weiran.system.api.auth.ClientContext;
+import com.wulicode.weiran.system.api.auth.ExternalLoginCandidate;
 import com.wulicode.weiran.system.api.auth.ExternalLoginService;
-import com.wulicode.weiran.system.api.auth.LoginResult;
 import com.wulicode.weiran.system.api.auth.ProviderView;
 import com.wulicode.weiran.system.api.auth.ProvidersView;
 import com.wulicode.weiran.system.api.auth.SsoRedirect;
@@ -163,8 +163,8 @@ public class ExternalLoginApplicationService implements ExternalLoginService {
                 return new SsoRedirect(
                         PROFILE_PAGE + "?bound=" + ExternalLoginApplicationService.encode(providerId), null, null);
             }
-            final LoginResult login = this.login(provider, identity, client);
-            return new SsoRedirect(state.redirect(), null, login);
+            final ExternalLoginCandidate candidate = this.login(provider, identity, client);
+            return new SsoRedirect(state.redirect(), null, null, candidate);
         } catch (final BizException ex) {
             final ErrorCode code = ex.getErrorCode();
             ExternalLoginApplicationService.log.warn(
@@ -178,7 +178,7 @@ public class ExternalLoginApplicationService implements ExternalLoginService {
     }
 
     /** 外部身份 → 本地用户：只认绑定；未绑定时按提供方开关开通，绝不按用户名关联已有账号。 */
-    private LoginResult login(
+    private ExternalLoginCandidate login(
             final ExternalIdentityProvider provider, final ExternalIdentity identity, final ClientContext client) {
         final Optional<UserIdentity> binding =
                 this.identityRepository.findByProviderAndExternalId(provider.id(), identity.externalId());
@@ -195,7 +195,7 @@ public class ExternalLoginApplicationService implements ExternalLoginService {
             throw new BizException(SystemAuthErrors.ACCOUNT_DISABLED);
         }
         final String message = provider.type().toUpperCase(Locale.ROOT) + " 登录成功（" + provider.id() + "）";
-        return this.authService.completeLogin(user, client, provider.id(), message);
+        return new ExternalLoginCandidate(user.requireId(), provider.id(), message);
     }
 
     private User provision(final ExternalIdentityProvider provider, final ExternalIdentity identity) {

@@ -1,14 +1,16 @@
-import { Avatar, Button, Input } from '@douyinfe/semi-ui';
+import { Button, Input } from '@douyinfe/semi-ui';
 import { Lock } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useVerifyPassword } from '@/hooks/queries/auth';
+import { TextAvatar } from '@/components/TextAvatar';
+import type { UserAvatar } from '@/types/api';
 import { ApiError, CODE_BAD_CREDENTIALS } from '@/utils/request';
 import './LockScreen.css';
 
 interface LockScreenProps {
     /** `hasPassword === false`（没有本地密码的外部身份用户）时不显示密码框，只能「重新登录」 */
-    user: { nickname?: string | null; username?: string; avatar?: string | null; hasPassword?: boolean } | null;
+    user: { nickname?: string | null; username?: string; avatar?: UserAvatar | null; hasPassword?: boolean } | null;
     /** 密码校验通过、退场动画结束后调用 */
     onUnlocked: () => void;
     /** 「重新登录」：退出当前账号 */
@@ -137,9 +139,7 @@ export function LockScreen({ user, onUnlocked, onReLogin }: LockScreenProps) {
                 </div>
                 <div className="lock-screen__date">{dateText}</div>
                 <div className="lock-screen__user">
-                    <Avatar size="large" color="blue" {...(user?.avatar ? { src: user.avatar } : {})}>
-                        {name.slice(0, 1)}
-                    </Avatar>
+                    <TextAvatar size="large" avatar={user?.avatar} fallback={name} />
                     <div className="lock-screen__username">{name}</div>
                 </div>
                 {noPassword ? (

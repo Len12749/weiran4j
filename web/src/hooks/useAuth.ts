@@ -21,10 +21,19 @@ export function useAuth() {
     const login = useCallback(async (body: LoginRequest) => {
         // 密码错误是 110101，不走会话失效分支；错误提示由登录页自己展示
         const res = await http.post<LoginResult>('/api-backend/n/system/auth/login', body, { silent: true });
+        if (res.mfaRequired) return res;
         qc.clear();
         // 会话过期被踢回登录页时锁屏标记还留着，重新登录后不应再锁
         unlockScreen();
         // 令牌已由浏览器按 Set-Cookie 写入 HttpOnly Cookie，这里只通知订阅方重新读取会话
+        refreshSession();
+        return res;
+    }, [qc]);
+
+    const verifyMfa = useCallback(async (code: string) => {
+        const res = await http.post<LoginResult>('/api-backend/n/system/auth/verifyMfa', { code }, { silent: true });
+        qc.clear();
+        unlockScreen();
         refreshSession();
         return res;
     }, [qc]);
@@ -64,6 +73,7 @@ export function useAuth() {
         permissions: meQuery.data?.permissions ?? [],
         meQuery,
         login,
+        verifyMfa,
         logout,
         clearSession,
     };

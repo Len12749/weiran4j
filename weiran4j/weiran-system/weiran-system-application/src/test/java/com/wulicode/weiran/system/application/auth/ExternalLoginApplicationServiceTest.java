@@ -15,7 +15,6 @@ import com.wulicode.weiran.framework.error.CommonErrors;
 import com.wulicode.weiran.framework.status.EnableStatus;
 import com.wulicode.weiran.system.api.auth.BindIdentityCommand;
 import com.wulicode.weiran.system.api.auth.ClientContext;
-import com.wulicode.weiran.system.api.auth.LoginResult;
 import com.wulicode.weiran.system.api.auth.SsoRedirect;
 import com.wulicode.weiran.system.domain.identity.ExternalIdentity;
 import com.wulicode.weiran.system.domain.identity.ExternalIdentityProvider;
@@ -33,6 +32,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -145,20 +145,19 @@ class ExternalLoginApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("已绑定：登录成功，回到 redirect，令牌带 idp")
+    @DisplayName("已绑定：回到 redirect，待手机校验后再签发带 idp 的令牌")
     void loginsBoundIdentity() {
         when(this.identities.findByProviderAndExternalId("kc", "sub-1"))
                 .thenReturn(Optional.of(new UserIdentity(1L, 7L, "kc", "sub-1", null, null, null)));
         final User user = ExternalLoginApplicationServiceTest.user(7L, "hash", EnableStatus.ENABLED);
         when(this.users.findById(7L)).thenReturn(Optional.of(user));
-        final LoginResult login = new LoginResult("jwt", "Bearer", 60, 7L);
-        when(this.auth.completeLogin(eq(user), eq(CLIENT), eq("kc"), anyString()))
-                .thenReturn(login);
-
         final SsoRedirect result = this.callback(SsoMode.LOGIN, ExternalLoginApplicationServiceTest.identity("sub-1"));
 
         assertThat(result.location()).isEqualTo("/target");
-        assertThat(result.login()).isEqualTo(login);
+        assertThat(result.login()).isNull();
+        assertThat(Objects.requireNonNull(result.candidate()).userId()).isEqualTo(7L);
+        assertThat(Objects.requireNonNull(result.candidate()).providerId()).isEqualTo("kc");
+        verify(this.auth, never()).completeLogin(any(), any(), any(), anyString());
     }
 
     @Test
@@ -188,12 +187,11 @@ class ExternalLoginApplicationServiceTest {
                 .thenReturn(9L);
         final User created = ExternalLoginApplicationServiceTest.user(9L, "", EnableStatus.ENABLED);
         when(this.users.findById(9L)).thenReturn(Optional.of(created));
-        when(this.auth.completeLogin(eq(created), eq(CLIENT), eq("kc"), anyString()))
-                .thenReturn(new LoginResult("jwt", "Bearer", 60, 9L));
-
-        assertThat(this.callback(SsoMode.LOGIN, ExternalLoginApplicationServiceTest.identity("sub-1"))
-                        .login())
-                .isNotNull();
+        assertThat(Objects.requireNonNull(
+                                this.callback(SsoMode.LOGIN, ExternalLoginApplicationServiceTest.identity("sub-1"))
+                                        .candidate())
+                        .userId())
+                .isEqualTo(9L);
     }
 
     @Test

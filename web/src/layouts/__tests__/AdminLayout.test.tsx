@@ -12,7 +12,6 @@ const me: CurrentUserView = {
     id: 1,
     username: 'admin',
     nickname: '超级管理员',
-    email: null,
     phone: null,
     avatar: null,
     gender: 'male',
@@ -111,6 +110,25 @@ describe('AdminLayout', () => {
         fireEvent.click(menuBtn);
         expect(await screen.findByText('Weiran Admin')).toBeInTheDocument();
         expect(document.querySelector('.admin-mobile-nav')).not.toBeNull();
+    });
+
+    it('混合导航打开个人中心时保留原来的侧边栏分组', async () => {
+        renderAuthed('/system/a', { navLayout: 'mixed' });
+        await screen.findByText('页面不存在');
+        expect(document.querySelector('.admin-sidebar__nav')).not.toBeNull();
+
+        fireEvent.mouseEnter(document.querySelector('.admin-header__user') as HTMLElement);
+        fireEvent.click(await screen.findByText('个人中心'));
+
+        await screen.findByText('基本设置', { selector: '.page-container__title' });
+        expect(document.querySelector('.admin-sidebar__nav')).not.toBeNull();
+        expect(document.querySelector('.admin-sidebar__nav')?.textContent).toContain('用户管理');
+    });
+
+    it('直接打开个人中心时混合导航选择一个有侧边栏的分组', async () => {
+        renderAuthed('/profile', { navLayout: 'mixed' });
+        await screen.findByText('基本设置', { selector: '.page-container__title' });
+        expect(document.querySelector('.admin-sidebar__nav')?.textContent).toContain('用户管理');
     });
 
     it('默认偏好：页签栏、从首页开始的面包屑、动态标题、Logo、全屏按钮、侧边栏宽度 240', async () => {

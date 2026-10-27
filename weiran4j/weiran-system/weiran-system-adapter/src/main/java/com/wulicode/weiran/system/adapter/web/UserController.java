@@ -60,7 +60,6 @@ public class UserController {
             @RequestParam(required = false) final @Nullable String username,
             @RequestParam(required = false) final @Nullable Long userId,
             @RequestParam(required = false) final @Nullable String phone,
-            @RequestParam(required = false) final @Nullable String email,
             @RequestParam(required = false) final @Nullable Long roleId,
             @RequestParam(required = false) final @Nullable String gender,
             @RequestParam(required = false) final @Nullable LocalDateTime createdStartTime,
@@ -75,7 +74,6 @@ public class UserController {
                 username,
                 userId,
                 phone,
-                email,
                 roleId,
                 gender,
                 createdStartTime,
@@ -107,7 +105,6 @@ public class UserController {
                 request.username(),
                 request.nickname(),
                 request.password(),
-                request.email(),
                 request.phone(),
                 request.gender(),
                 request.status(),
@@ -120,14 +117,7 @@ public class UserController {
     @PutMapping("/update/{id}")
     public ApiResponse<Void> update(@PathVariable final long id, @Valid @RequestBody final UpdateUserRequest request) {
         this.userService.update(
-                id,
-                new UpdateUserCommand(
-                        request.nickname(),
-                        request.email(),
-                        request.phone(),
-                        request.gender(),
-                        request.status(),
-                        request.roleIds()));
+                id, new UpdateUserCommand(request.nickname(), request.gender(), request.status(), request.roleIds()));
         return ApiResponse.ok();
     }
 

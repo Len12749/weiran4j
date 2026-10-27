@@ -69,7 +69,7 @@ class AuthIT extends IntegrationTestSupport {
         assertThat(AuthIT.ids(roots)).containsExactly(1L, 2L, 9L, 14L);
         final JsonNode system = roots.get(1);
         assertThat(system.path("type").asText()).isEqualTo("directory");
-        assertThat(AuthIT.ids(system.path("children"))).containsExactly(3L, 4L, 5L, 7L, 8L, 12L, 2000L, 13L);
+        assertThat(AuthIT.ids(system.path("children"))).containsExactly(3L, 4L, 5L, 7L, 8L, 12L, 2000L, 13L, 23L);
         final JsonNode users = system.path("children").get(0);
         assertThat(users.path("component").asText()).isEqualTo("system/users/UsersPage");
         assertThat(users.path("permission").asText()).isEqualTo("system:user:list");
@@ -180,16 +180,53 @@ class AuthIT extends IntegrationTestSupport {
         IntegrationTestSupport.assertOk(this.put(
                 "/api-backend/system/auth/updateProfile",
                 token,
-                Map.of("nickname", "新昵称", "email", "me@example.com", "gender", "female")));
+                Map.of("nickname", "新昵称", "avatar", Map.of("text", "新", "background", "#0064FA"), "gender", "female")));
 
         final JsonNode me = IntegrationTestSupport.data(this.get("/api-backend/system/auth/getCurrentUser", token));
         assertThat(me.path("nickname").asText()).isEqualTo("新昵称");
-        assertThat(me.path("email").asText()).isEqualTo("me@example.com");
+        assertThat(me.path("avatar").path("text").asText()).isEqualTo("新");
+        assertThat(me.path("avatar").path("background").asText()).isEqualTo("#0064FA");
+        assertThat(me.has("email")).isFalse();
         assertThat(me.path("gender").asText()).isEqualTo("female");
         assertThat(AuthIT.texts(me.path("permissions"))).isEmpty();
         assertThat(IntegrationTestSupport.data(this.get("/api-backend/system/auth/listCurrentMenus", token))
                         .isEmpty())
                 .isTrue();
+    }
+
+    @Test
+    @DisplayName("本人修改用户名后旧令牌仍有效，旧用户名不能登录，新用户名可以登录")
+    void updatesOwnUsername() {
+        final String oldUsername = IntegrationTestSupport.unique("olduser");
+        final String newUsername = IntegrationTestSupport.unique("newuser");
+        final String admin = this.adminToken();
+        this.create(
+                "/api-backend/system/user/create",
+                admin,
+                Map.of("username", oldUsername, "nickname", "用户名测试", "password", "Passw0rd1", "roleIds", List.of()));
+        final String token = this.tokenOf(oldUsername, "Passw0rd1");
+
+        IntegrationTestSupport.assertError(
+                this.put("/api-backend/system/auth/updateUsername", null, Map.of("username", newUsername)),
+                HttpStatus.UNAUTHORIZED,
+                100101);
+        IntegrationTestSupport.assertError(
+                this.put("/api-backend/system/auth/updateUsername", token, Map.of("username", "admin")),
+                HttpStatus.CONFLICT,
+                100003);
+        for (final String invalid : List.of("Alice", "alice.name", "alice-name")) {
+            IntegrationTestSupport.assertError(
+                    this.put("/api-backend/system/auth/updateUsername", token, Map.of("username", invalid)),
+                    HttpStatus.BAD_REQUEST,
+                    100001);
+        }
+        IntegrationTestSupport.assertOk(this.put(
+                "/api-backend/system/auth/updateUsername", token, Map.of("username", "_" + newUsername + "9")));
+
+        final JsonNode me = IntegrationTestSupport.data(this.get("/api-backend/system/auth/getCurrentUser", token));
+        assertThat(me.path("username").asText()).isEqualTo("_" + newUsername + "9");
+        IntegrationTestSupport.assertError(this.login(oldUsername, "Passw0rd1"), HttpStatus.UNAUTHORIZED, 110101);
+        IntegrationTestSupport.assertOk(this.login("_" + newUsername + "9", "Passw0rd1"));
     }
 
     static List<Long> ids(final JsonNode array) {

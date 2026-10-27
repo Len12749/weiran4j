@@ -7,9 +7,16 @@ import org.jspecify.annotations.Nullable;
  *
  * @param location 302 的目标地址
  * @param flowCookie 签名后的流程状态；authorize 成功时非空（写入 Cookie），其它情况为空（清除 Cookie）
- * @param login 回调完成登录时的令牌（接口层据此下发认证 Cookie）；其它情况为空
+ * @param login 已完成的登录结果；保留给直接完成会话的实现
+ * @param candidate 外部身份已验证的用户；接口层完成手机验证后才签发令牌
  */
 public record SsoRedirect(
         String location,
         @Nullable String flowCookie,
-        @Nullable LoginResult login) {}
+        @Nullable LoginResult login,
+        @Nullable ExternalLoginCandidate candidate) {
+
+    public SsoRedirect(final String location, final @Nullable String flowCookie, final @Nullable LoginResult login) {
+        this(location, flowCookie, login, null);
+    }
+}

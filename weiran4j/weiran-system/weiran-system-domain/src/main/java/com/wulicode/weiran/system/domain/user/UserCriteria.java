@@ -12,7 +12,6 @@ import org.jspecify.annotations.Nullable;
  * @param username 用户名，精确匹配
  * @param userId 用户 ID
  * @param phone 手机号，精确匹配
- * @param email 邮箱，精确匹配
  * @param roleId 拥有该角色
  * @param gender 性别
  * @param createdFrom 创建时间下界（含）
@@ -26,7 +25,6 @@ public record UserCriteria(
         @Nullable String username,
         @Nullable Long userId,
         @Nullable String phone,
-        @Nullable String email,
         @Nullable Long roleId,
         @Nullable Gender gender,
         @Nullable LocalDateTime createdFrom,

@@ -41,4 +41,14 @@ class PasswordPolicyTest {
                         BizException.class, ex -> assertThat(ex.getErrorCode()).isEqualTo(CommonErrors.BAD_REQUEST))
                 .hasMessageStartingWith("newPassword: ");
     }
+
+    @Test
+    @DisplayName("自定义密码规则同时校验长度和所有选中的字符类型")
+    void configurableRulesRequireEverySelectedType() {
+        final SecuritySettings settings = new SecuritySettings(10, 20, true, true, true, true, false, 7, 1);
+        assertThat(PasswordPolicy.isAcceptable("Abcdef123!", settings)).isTrue();
+        assertThat(PasswordPolicy.isAcceptable("Abcdef1234", settings)).isFalse();
+        assertThat(PasswordPolicy.isAcceptable("abcdef123!", settings)).isFalse();
+        assertThat(PasswordPolicy.isAcceptable("Abcd123!", settings)).isFalse();
+    }
 }

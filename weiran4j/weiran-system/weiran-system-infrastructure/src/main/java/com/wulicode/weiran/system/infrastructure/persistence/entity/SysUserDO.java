@@ -12,21 +12,16 @@ import org.jspecify.annotations.NullUnmarked;
 /**
  * {@code sys_user} 表映射。
  *
- * <p>可空列标 {@code updateStrategy = ALWAYS}：仓储按「整行覆盖」更新，默认的 NOT_NULL 策略会让
- * 「把邮箱清空」这类修改被静默忽略。
- *
  * <p>密码、令牌版本、登录信息标 {@code updateStrategy = NEVER}：整行覆盖不写它们，只能走仓储里的定向更新
  * （{@code token_version = token_version + 1} 等），避免并发的「先读后整行写」把刚吊销的令牌版本写回旧值。
  *
- * <p>后台头像、性别和界面偏好存储在 {@code sys_user_backend}，此表只保留通用账号字段。
+ * <p>文字头像存为 JSON；偏好和收藏只通过专用查询与定向更新访问。
  */
 @NullUnmarked
 @Getter
 @Setter
 @TableName("sys_user")
 public class SysUserDO extends AuditableDO {
-
-    private String type;
 
     private String username;
 
@@ -36,10 +31,18 @@ public class SysUserDO extends AuditableDO {
     private String password;
 
     @TableField(updateStrategy = FieldStrategy.ALWAYS)
-    private String email;
+    private String phone;
 
     @TableField(updateStrategy = FieldStrategy.ALWAYS)
-    private String phone;
+    private String avatar;
+
+    private String gender;
+
+    @TableField(select = false, insertStrategy = FieldStrategy.NEVER, updateStrategy = FieldStrategy.NEVER)
+    private String preferences;
+
+    @TableField(select = false, insertStrategy = FieldStrategy.NEVER, updateStrategy = FieldStrategy.NEVER)
+    private String favoriteMenus;
 
     private String status;
 

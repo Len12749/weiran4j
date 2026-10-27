@@ -4,6 +4,7 @@ import { refreshSession, useSession } from '@/utils/session';
 import { unlockScreen } from '@/hooks/useLockScreen';
 import type {
     CurrentUserView,
+    BindPhoneRequest,
     FavoriteMenusSaveRequest,
     MenuNode,
     PasswordChangeRequest,
@@ -11,6 +12,7 @@ import type {
     PhoneLoginCodeRequest,
     PhoneLoginRequest,
     ProfileUpdateRequest,
+    UpdateOwnUsernameRequest,
     VerifyPasswordRequest,
 } from '@/types/api';
 
@@ -64,6 +66,29 @@ export function useUpdateProfile() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (body: ProfileUpdateRequest) => http.put<null>('/api-backend/system/auth/updateProfile', body),
+        onSuccess: () => qc.invalidateQueries({ queryKey: authKeys.me }),
+    });
+}
+
+export function useUpdateOwnUsername() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (body: UpdateOwnUsernameRequest) => http.put<null>('/api-backend/system/auth/updateUsername', body),
+        onSuccess: () => qc.invalidateQueries({ queryKey: authKeys.me }),
+    });
+}
+
+/** 新手机号通过验证码后才写入个人资料。 */
+export function useSendBindPhoneCode() {
+    return useMutation({
+        mutationFn: (phone: string) => http.post<null>('/api-backend/system/auth/sendBindPhoneCode', { phone }),
+    });
+}
+
+export function useBindPhone() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (body: BindPhoneRequest) => http.put<null>('/api-backend/system/auth/bindPhone', body),
         onSuccess: () => qc.invalidateQueries({ queryKey: authKeys.me }),
     });
 }

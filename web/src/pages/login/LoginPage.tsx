@@ -56,7 +56,7 @@ function BrandPanel() {
 }
 
 export default function LoginPage() {
-    const { login } = useAuth();
+    const { login, verifyMfa } = useAuth();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const isMobile = useIsMobile();
@@ -65,6 +65,8 @@ export default function LoginPage() {
     const [phone, setPhone] = useState('');
     const [countdown, setCountdown] = useState(0);
     const [notice, setNotice] = useState<string | null>(null);
+    const [mfaPending, setMfaPending] = useState(() => searchParams.get('mfa') === '1');
+    const [mfaPhone, setMfaPhone] = useState<string | null>(null);
     const sendCode = useSendPhoneLoginCode();
     const phoneLogin = usePhoneLogin();
     // 外部登录回调失败时后端 302 到 /login?ssoError=<code>：首屏就显示提示
@@ -105,11 +107,29 @@ export default function LoginPage() {
             if (activeMethod === 'phone') {
                 await phoneLogin.mutateAsync({ phone: values.phone.trim(), code: values.code.trim() });
             } else {
-                await login({ username: values.username.trim(), password: values.password });
+                const result = await login({ username: values.username.trim(), password: values.password });
+                if (result.mfaRequired) {
+                    setMfaPhone(result.maskedPhone ?? null);
+                    setMfaPending(true);
+                    return;
+                }
             }
             void navigate(redirectTo, { replace: true });
         } catch (e) {
             setError(e instanceof ApiError ? e.message : '登录失败，请稍后重试');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleMfaSubmit = async ({ code }: { code: string }) => {
+        setSubmitting(true);
+        setError(null);
+        try {
+            await verifyMfa(code.trim());
+            void navigate(redirectTo, { replace: true });
+        } catch (e) {
+            setError(e instanceof ApiError ? e.message : '验证失败，请稍后重试');
         } finally {
             setSubmitting(false);
         }
@@ -154,6 +174,14 @@ export default function LoginPage() {
                     </div>
                     {error && <Banner type="danger" description={error} closeIcon={null} className="login-error" />}
                     {notice && <Banner type="success" description={notice} closeIcon={null} className="login-error" />}
+                    {mfaPending ? (
+                        <Form<{ code: string }> onSubmit={(values) => void handleMfaSubmit(values)}>
+                            <p>请输入发送到{mfaPhone ? ` ${mfaPhone}` : '安全手机号'}的 6 位验证码。</p>
+                            <Form.Input field="code" noLabel placeholder="手机验证码" autoComplete="one-time-code" size="large" rules={[{ required: true, message: '请输入验证码' }, { pattern: /^\d{6}$/, message: '请输入 6 位验证码' }]} />
+                            <Button htmlType="submit" type="primary" theme="solid" block size="large" loading={submitting}>验证并登录</Button>
+                            <Button theme="borderless" block onClick={() => { setMfaPending(false); setMfaPhone(null); }}>重新登录</Button>
+                        </Form>
+                    ) : <>
                     {providers.length > 0 && (
                         <div className="login-sso">
                             {providers.map((p) => (
@@ -242,6 +270,7 @@ export default function LoginPage() {
                             </Button>
                         </Form>
                     ))}
+                    </>}
                 </div>
             </main>
         </div>

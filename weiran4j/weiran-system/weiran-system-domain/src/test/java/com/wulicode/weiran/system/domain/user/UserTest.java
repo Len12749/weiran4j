@@ -66,16 +66,25 @@ class UserTest {
     @DisplayName("修改资料与记录登录只改对应字段")
     void updatesProfileAndLogin() {
         final User user = UserTest.user(2L, false)
-                .withProfile("新昵称", "a@b.com", "13800000000", null, Gender.FEMALE)
+                .withProfile("新昵称", new UserAvatar("张", "#0064FA"), Gender.FEMALE)
                 .withLogin("10.0.0.1", UserTest.NOW);
 
         assertThat(user.getNickname()).isEqualTo("新昵称");
-        assertThat(user.getEmail()).isEqualTo("a@b.com");
+        assertThat(user.getAvatar()).isEqualTo(new UserAvatar("张", "#0064FA"));
         assertThat(user.getGender()).isEqualTo(Gender.FEMALE);
         assertThat(user.getLastLoginIp()).isEqualTo("10.0.0.1");
         assertThat(user.getLastLoginAt()).isEqualTo(UserTest.NOW);
         assertThat(user.getTokenVersion()).isEqualTo(3);
         assertThat(user.requireId()).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("文字头像只接受短文本与十六进制背景色")
+    void validatesTextAvatar() {
+        assertThat(new UserAvatar("张", "#0064FA").background()).isEqualTo("#0064FA");
+        assertThatThrownBy(() -> new UserAvatar("张", "https://example.com/avatar.png"))
+                .isInstanceOf(BizException.class);
+        assertThatThrownBy(() -> new UserAvatar("超过四个文字", "#0064FA")).isInstanceOf(BizException.class);
     }
 
     @Test

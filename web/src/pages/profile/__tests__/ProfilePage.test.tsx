@@ -10,7 +10,6 @@ const me: CurrentUserView = {
     id: 2,
     username: 'alice',
     nickname: '爱丽丝',
-    email: null,
     phone: null,
     avatar: null,
     gender: null,
@@ -118,21 +117,77 @@ describe('ProfilePage 外部账号', () => {
     it('没有启用的提供方时不显示卡片', async () => {
         mockFetch(routes({ 'GET /api-backend/n/system/auth/listProviders': { passwordLoginEnabled: true, providers: [] } }));
         renderProfile();
-        expect(await screen.findByText('修改密码', { selector: '.page-container__title' })).toBeInTheDocument();
+        expect(await screen.findByText('基本设置', { selector: '.page-container__title' })).toBeInTheDocument();
         expect(screen.queryByText('外部账号')).not.toBeInTheDocument();
     });
 
-    it('hasPassword=false：修改密码区只显示提示，没有密码表单', async () => {
+    it('hasPassword=false：密码行显示未设置且没有修改入口', async () => {
         mockFetch(routes({ 'GET /api-backend/system/auth/getCurrentUser': { ...me, hasPassword: false } }));
         renderProfile();
-        expect(await screen.findByText('未设置本地密码，可请管理员重置后再使用密码登录')).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: '修改密码' })).not.toBeInTheDocument();
+        expect(await screen.findByText('登录密码')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: '修改登录密码' })).not.toBeInTheDocument();
     });
 
-    it('hasPassword=true：显示修改密码表单', async () => {
+    it('hasPassword=true：修改密码表单在弹窗中打开', async () => {
         mockFetch(routes());
         renderProfile();
-        expect(await screen.findByRole('button', { name: '修改密码' })).toBeInTheDocument();
-        expect(screen.queryByText('未设置本地密码，可请管理员重置后再使用密码登录')).not.toBeInTheDocument();
+        fireEvent.click(await screen.findByRole('button', { name: '修改登录密码' }));
+        expect(screen.getByText('修改登录密码', { selector: '.semi-modal-title' })).toBeInTheDocument();
+        expect(screen.getByText('原密码')).toBeInTheDocument();
+    });
+
+    it('本人修改用户名后刷新个人信息', async () => {
+        let currentUser = me;
+        const { calls } = mockFetch(routes({
+            'GET /api-backend/system/auth/getCurrentUser': () => currentUser,
+            'PUT /api-backend/system/auth/updateUsername': () => {
+                currentUser = { ...me, username: '9_alice' };
+                return null;
+            },
+        }));
+        renderProfile();
+
+        fireEvent.click(await screen.findByRole('button', { name: '修改用户名' }));
+        fireEvent.change(screen.getByLabelText('新用户名'), { target: { value: '9_alice' } });
+        fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'confirm' }));
+
+        await waitFor(() => expect(calls.find((call) => call.path === '/api-backend/system/auth/updateUsername')).toMatchObject({
+            method: 'PUT',
+            body: { username: '9_alice' },
+        }));
+        expect(await screen.findByText('9_alice')).toBeInTheDocument();
+    });
+
+    it('本人修改用户名时拒绝大写、点和横线', async () => {
+        const { calls } = mockFetch(routes());
+        renderProfile();
+        fireEvent.click(await screen.findByRole('button', { name: '修改用户名' }));
+
+        for (const invalid of ['Alice', 'alice.name', 'alice-name']) {
+            fireEvent.change(screen.getByLabelText('新用户名'), { target: { value: invalid } });
+            fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'confirm' }));
+        }
+        expect(calls.some((call) => call.path === '/api-backend/system/auth/updateUsername')).toBe(false);
+    });
+
+    it('头像从头像操作打开，选色时预览更新', async () => {
+        mockFetch(routes());
+        renderProfile();
+        fireEvent.click(await screen.findByRole('button', { name: '修改头像' }));
+        const preview = screen.getByText('预览头像').previousElementSibling as HTMLElement;
+        expect(preview).toHaveStyle({ backgroundColor: '#0064FA' });
+        fireEvent.click(screen.getByRole('button', { name: '选择背景色 #00A870' }));
+        expect(preview).toHaveStyle({ backgroundColor: '#00A870' });
+    });
+
+    it('安全手机号通过弹窗发码，验证码成功发送后才能提交', async () => {
+        const { calls } = mockFetch(routes({ 'POST /api-backend/system/auth/sendBindPhoneCode': null }));
+        renderProfile();
+        fireEvent.click(await screen.findByRole('button', { name: '修改安全手机号' }));
+        expect(screen.queryByLabelText('短信验证码')).not.toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('新手机号'), { target: { value: '13800000001' } });
+        fireEvent.click(screen.getByRole('button', { name: '发送验证码' }));
+        await waitFor(() => expect(calls.some((call) => call.path === '/api-backend/system/auth/sendBindPhoneCode')).toBe(true));
+        expect(await screen.findByLabelText('短信验证码')).toBeInTheDocument();
     });
 });

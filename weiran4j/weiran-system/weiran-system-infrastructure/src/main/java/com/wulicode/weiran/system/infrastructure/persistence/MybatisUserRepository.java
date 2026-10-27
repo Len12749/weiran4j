@@ -11,16 +11,14 @@ import com.wulicode.weiran.framework.persistence.Likes;
 import com.wulicode.weiran.framework.persistence.MybatisPages;
 import com.wulicode.weiran.framework.status.EnableStatus;
 import com.wulicode.weiran.system.domain.auth.AuthState;
-import com.wulicode.weiran.system.domain.media.MediaReferenceRepository;
 import com.wulicode.weiran.system.domain.user.Gender;
 import com.wulicode.weiran.system.domain.user.User;
 import com.wulicode.weiran.system.domain.user.UserAccountField;
+import com.wulicode.weiran.system.domain.user.UserAvatar;
 import com.wulicode.weiran.system.domain.user.UserCriteria;
 import com.wulicode.weiran.system.domain.user.UserRepository;
-import com.wulicode.weiran.system.infrastructure.persistence.entity.SysUserBackendDO;
 import com.wulicode.weiran.system.infrastructure.persistence.entity.SysUserDO;
 import com.wulicode.weiran.system.infrastructure.persistence.entity.SysUserRoleDO;
-import com.wulicode.weiran.system.infrastructure.persistence.mapper.SysUserBackendMapper;
 import com.wulicode.weiran.system.infrastructure.persistence.mapper.SysUserMapper;
 import com.wulicode.weiran.system.infrastructure.persistence.mapper.SysUserRoleMapper;
 import java.time.LocalDateTime;
@@ -37,12 +35,10 @@ import org.jspecify.annotations.Nullable;
 /** {@link UserRepository} 的 MyBatis-Plus 实现。 */
 public class MybatisUserRepository implements UserRepository {
 
-    private static final String BACKEND = "backend";
-
     /**
      * 显式把 updated_at 赋回原值，抵消列定义上的 {@code on update current_timestamp}。
      *
-     * <p>用于登录信息的定向更新。界面偏好与收藏菜单现位于无审计时间列的后台扩展表。
+     * <p>用于登录信息、界面偏好与收藏菜单的定向更新。
      */
     private static final String KEEP_UPDATED_AT = "updated_at = updated_at";
 
@@ -50,98 +46,49 @@ public class MybatisUserRepository implements UserRepository {
 
     private final SysUserMapper userMapper;
 
-    private final SysUserBackendMapper backendMapper;
-
     private final SysUserRoleMapper userRoleMapper;
 
     private final ObjectMapper objectMapper;
-    private final MediaReferenceRepository mediaReferences;
-
     /** 构造仓储。 */
     public MybatisUserRepository(
-            final SysUserMapper userMapper,
-            final SysUserBackendMapper backendMapper,
-            final SysUserRoleMapper userRoleMapper,
-            final ObjectMapper objectMapper,
-            final MediaReferenceRepository mediaReferences) {
+            final SysUserMapper userMapper, final SysUserRoleMapper userRoleMapper, final ObjectMapper objectMapper) {
         this.userMapper = userMapper;
-        this.backendMapper = backendMapper;
         this.userRoleMapper = userRoleMapper;
         this.objectMapper = objectMapper;
-        this.mediaReferences = mediaReferences;
     }
 
     @Override
     public Optional<User> findById(final long id) {
-        return Optional.ofNullable(this.userMapper.selectById(id))
-                .filter(row -> MybatisUserRepository.BACKEND.equals(row.getType()))
-                .map(this::toDomain);
+        return Optional.ofNullable(this.userMapper.selectById(id)).map(this::toDomain);
     }
 
     @Override
     public Optional<User> findByUsername(final String username) {
-        return Optional.ofNullable(this.userMapper.selectOne(Wrappers.lambdaQuery(SysUserDO.class)
-                        .eq(SysUserDO::getType, MybatisUserRepository.BACKEND)
-                        .eq(SysUserDO::getUsername, username)))
+        return Optional.ofNullable(this.userMapper.selectOne(
+                        Wrappers.lambdaQuery(SysUserDO.class).eq(SysUserDO::getUsername, username)))
                 .map(this::toDomain);
     }
 
     @Override
     public Optional<User> findByPhone(final String phone) {
-        return Optional.ofNullable(this.userMapper.selectOne(Wrappers.lambdaQuery(SysUserDO.class)
-                        .eq(SysUserDO::getType, MybatisUserRepository.BACKEND)
-                        .eq(SysUserDO::getPhone, phone)))
+        return Optional.ofNullable(this.userMapper.selectOne(
+                        Wrappers.lambdaQuery(SysUserDO.class).eq(SysUserDO::getPhone, phone)))
                 .map(this::toDomain);
     }
 
     @Override
-    public Map<String, List<Long>> findAvatarReferences(final Collection<String> urls) {
-        if (urls.isEmpty()) {
-            return Map.of();
-        }
-        return this.backendMapper
-                .selectList(Wrappers.lambdaQuery(SysUserBackendDO.class)
-                        .select(SysUserBackendDO::getUserId, SysUserBackendDO::getAvatar)
-                        .in(SysUserBackendDO::getAvatar, urls))
-                .stream()
-                .collect(Collectors.groupingBy(
-                        SysUserBackendDO::getAvatar,
-                        Collectors.mapping(SysUserBackendDO::getUserId, Collectors.toList())));
-    }
-
-    @Override
     public boolean existsByUsername(final String username) {
-        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class)
-                .eq(SysUserDO::getType, MybatisUserRepository.BACKEND)
-                .eq(SysUserDO::getUsername, username));
-    }
-
-    @Override
-    public boolean existsByEmail(final String email) {
-        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class)
-                .eq(SysUserDO::getType, MybatisUserRepository.BACKEND)
-                .eq(SysUserDO::getEmail, email));
-    }
-
-    @Override
-    public boolean existsByEmail(final String email, final long excludedUserId) {
-        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class)
-                .eq(SysUserDO::getType, MybatisUserRepository.BACKEND)
-                .eq(SysUserDO::getEmail, email)
-                .ne(SysUserDO::getId, excludedUserId));
+        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class).eq(SysUserDO::getUsername, username));
     }
 
     @Override
     public boolean existsByPhone(final String phone) {
-        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class)
-                .eq(SysUserDO::getType, MybatisUserRepository.BACKEND)
-                .eq(SysUserDO::getPhone, phone));
+        return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class).eq(SysUserDO::getPhone, phone));
     }
 
     @Override
     public boolean existsByPhone(final String phone, final long excludedUserId) {
         return this.userMapper.exists(Wrappers.lambdaQuery(SysUserDO.class)
-                .eq(SysUserDO::getType, MybatisUserRepository.BACKEND)
                 .eq(SysUserDO::getPhone, phone)
                 .ne(SysUserDO::getId, excludedUserId));
     }
@@ -154,21 +101,14 @@ public class MybatisUserRepository implements UserRepository {
         switch (field) {
             case USERNAME -> update.set(SysUserDO::getUsername, value);
             case PHONE -> update.set(SysUserDO::getPhone, value);
-            case EMAIL -> update.set(SysUserDO::getEmail, value);
         }
         this.userMapper.update(row, update);
     }
 
     @Override
     public long insert(final User user) {
-        final SysUserDO row = MybatisUserRepository.toDataObject(user);
+        final SysUserDO row = this.toDataObject(user);
         this.userMapper.insert(row);
-        final SysUserBackendDO backend = new SysUserBackendDO();
-        backend.setUserId(row.getId());
-        backend.setAvatar(user.getAvatar());
-        backend.setGender(user.getGender().value());
-        this.backendMapper.insert(backend);
-        this.replaceAvatarReference(row.getId(), user.getAvatar());
         return row.getId();
     }
 
@@ -180,14 +120,16 @@ public class MybatisUserRepository implements UserRepository {
                 row,
                 Wrappers.lambdaUpdate(SysUserDO.class)
                         .set(SysUserDO::getNickname, user.getNickname())
-                        .set(SysUserDO::getEmail, user.getEmail())
-                        .set(SysUserDO::getPhone, user.getPhone())
+                        .set(SysUserDO::getAvatar, this.avatarJson(user.getAvatar()))
+                        .set(SysUserDO::getGender, user.getGender().value())
                         .eq(SysUserDO::getId, user.requireId()));
-        this.backendMapper.update(Wrappers.lambdaUpdate(SysUserBackendDO.class)
-                .set(SysUserBackendDO::getAvatar, user.getAvatar())
-                .set(SysUserBackendDO::getGender, user.getGender().value())
-                .eq(SysUserBackendDO::getUserId, user.requireId()));
-        this.replaceAvatarReference(user.requireId(), user.getAvatar());
+    }
+
+    @Override
+    public void updateVerifiedPhone(final long id, final String phone) {
+        this.userMapper.update(Wrappers.lambdaUpdate(SysUserDO.class)
+                .set(SysUserDO::getPhone, phone)
+                .eq(SysUserDO::getId, id));
     }
 
     @Override
@@ -199,13 +141,9 @@ public class MybatisUserRepository implements UserRepository {
                 row,
                 Wrappers.lambdaUpdate(SysUserDO.class)
                         .set(SysUserDO::getNickname, user.getNickname())
-                        .set(SysUserDO::getEmail, user.getEmail())
-                        .set(SysUserDO::getPhone, user.getPhone())
+                        .set(SysUserDO::getGender, user.getGender().value())
                         .set(SysUserDO::getStatus, user.getStatus().value())
                         .eq(SysUserDO::getId, user.requireId()));
-        this.backendMapper.update(Wrappers.lambdaUpdate(SysUserBackendDO.class)
-                .set(SysUserBackendDO::getGender, user.getGender().value())
-                .eq(SysUserBackendDO::getUserId, user.requireId()));
     }
 
     @Override
@@ -235,11 +173,10 @@ public class MybatisUserRepository implements UserRepository {
 
     @Override
     public Optional<AuthState> findAuthState(final long id) {
-        // 每个已认证请求都会走到这里：只按主键取类型、令牌版本与状态，不加载整行。
+        // 每个已认证请求都会走到这里：只按主键取令牌版本与状态，不加载整行。
         return Optional.ofNullable(this.userMapper.selectOne(Wrappers.lambdaQuery(SysUserDO.class)
-                        .select(SysUserDO::getId, SysUserDO::getType, SysUserDO::getTokenVersion, SysUserDO::getStatus)
+                        .select(SysUserDO::getId, SysUserDO::getTokenVersion, SysUserDO::getStatus)
                         .eq(SysUserDO::getId, id)))
-                .filter(row -> MybatisUserRepository.BACKEND.equals(row.getType()))
                 .map(row -> new AuthState(
                         row.getTokenVersion() == null ? 0 : row.getTokenVersion(),
                         EnableStatus.of(row.getStatus()) == EnableStatus.ENABLED));
@@ -247,26 +184,26 @@ public class MybatisUserRepository implements UserRepository {
 
     @Override
     public Optional<String> findPreferences(final long id) {
-        return Optional.ofNullable(this.backendMapper.selectOne(Wrappers.lambdaQuery(SysUserBackendDO.class)
-                        .select(SysUserBackendDO::getUserId, SysUserBackendDO::getPreferences)
-                        .eq(SysUserBackendDO::getUserId, id)))
-                .map(SysUserBackendDO::getPreferences);
+        return Optional.ofNullable(this.userMapper.selectOne(Wrappers.lambdaQuery(SysUserDO.class)
+                        .select(SysUserDO::getId, SysUserDO::getPreferences)
+                        .eq(SysUserDO::getId, id)))
+                .map(SysUserDO::getPreferences);
     }
 
     @Override
     public void updatePreferences(final long id, final String preferencesJson) {
-        // 后台界面偏好只更新扩展表，不刷新基础账号的 updated_at。
-        this.backendMapper.update(Wrappers.lambdaUpdate(SysUserBackendDO.class)
-                .set(SysUserBackendDO::getPreferences, preferencesJson)
-                .eq(SysUserBackendDO::getUserId, id));
+        this.userMapper.update(Wrappers.lambdaUpdate(SysUserDO.class)
+                .set(SysUserDO::getPreferences, preferencesJson)
+                .setSql(MybatisUserRepository.KEEP_UPDATED_AT)
+                .eq(SysUserDO::getId, id));
     }
 
     @Override
     public List<Long> findFavoriteMenuIds(final long id) {
-        return Optional.ofNullable(this.backendMapper.selectOne(Wrappers.lambdaQuery(SysUserBackendDO.class)
-                        .select(SysUserBackendDO::getUserId, SysUserBackendDO::getFavoriteMenus)
-                        .eq(SysUserBackendDO::getUserId, id)))
-                .map(SysUserBackendDO::getFavoriteMenus)
+        return Optional.ofNullable(this.userMapper.selectOne(Wrappers.lambdaQuery(SysUserDO.class)
+                        .select(SysUserDO::getId, SysUserDO::getFavoriteMenus)
+                        .eq(SysUserDO::getId, id)))
+                .map(SysUserDO::getFavoriteMenus)
                 .map(json -> this.parseMenuIds(id, json))
                 .orElse(List.of());
     }
@@ -279,26 +216,16 @@ public class MybatisUserRepository implements UserRepository {
         } catch (final JsonProcessingException ex) {
             throw new IllegalStateException("收藏菜单序列化失败", ex);
         }
-        this.backendMapper.update(Wrappers.lambdaUpdate(SysUserBackendDO.class)
-                .set(SysUserBackendDO::getFavoriteMenus, json)
-                .eq(SysUserBackendDO::getUserId, id));
+        this.userMapper.update(Wrappers.lambdaUpdate(SysUserDO.class)
+                .set(SysUserDO::getFavoriteMenus, json)
+                .setSql(MybatisUserRepository.KEEP_UPDATED_AT)
+                .eq(SysUserDO::getId, id));
     }
 
     @Override
     public void deleteById(final long id) {
         this.userRoleMapper.delete(Wrappers.lambdaQuery(SysUserRoleDO.class).eq(SysUserRoleDO::getUserId, id));
-        this.backendMapper.deleteById(id);
         this.userMapper.deleteById(id);
-        this.replaceAvatarReference(id, null);
-    }
-
-    private void replaceAvatarReference(final long id, final @Nullable String avatar) {
-        this.mediaReferences.replace(
-                "user_avatar",
-                String.valueOf(id),
-                "avatar",
-                "用户头像：#" + id,
-                avatar == null || avatar.isBlank() ? List.of() : List.of(avatar));
     }
 
     @Override
@@ -319,8 +246,6 @@ public class MybatisUserRepository implements UserRepository {
                 .eq(criteria.username() != null, SysUserDO::getUsername, criteria.username())
                 .eq(criteria.userId() != null, SysUserDO::getId, criteria.userId())
                 .eq(criteria.phone() != null, SysUserDO::getPhone, criteria.phone())
-                .eq(criteria.email() != null, SysUserDO::getEmail, criteria.email())
-                .eq(SysUserDO::getType, MybatisUserRepository.BACKEND)
                 .ge(criteria.createdFrom() != null, SysUserDO::getCreatedAt, criteria.createdFrom())
                 .le(criteria.createdTo() != null, SysUserDO::getCreatedAt, criteria.createdTo())
                 // 对可空列的比较天然排除 NULL：传了登录时间任一端，从未登录的用户即被排除
@@ -328,28 +253,18 @@ public class MybatisUserRepository implements UserRepository {
                 .le(criteria.lastLoginTo() != null, SysUserDO::getLastLoginAt, criteria.lastLoginTo())
                 // 子查询而非 join：一人多角色也只出一行，total 正确；role_id 走参数绑定
                 .apply(roleId != null, "id in (select user_id from sys_user_role where role_id = {0})", roleId)
-                .apply(
-                        gender != null,
-                        "id in (select user_id from sys_user_backend where gender = {0})",
-                        gender == null ? null : gender.value())
+                .eq(gender != null, SysUserDO::getGender, gender == null ? null : gender.value())
                 .orderByDesc(SysUserDO::getId);
         final var rows = this.userMapper.selectPage(MybatisPages.of(pageQuery), wrapper);
-        final Map<Long, SysUserBackendDO> profiles = this.findBackendProfiles(
-                rows.getRecords().stream().map(SysUserDO::getId).toList());
-        return MybatisPages.toResult(rows, pageQuery, row -> this.toDomain(row, profiles.get(row.getId())));
+        return MybatisPages.toResult(rows, pageQuery, this::toDomain);
     }
 
     @Override
     public List<User> findEnabled() {
         final List<SysUserDO> rows = this.userMapper.selectList(Wrappers.lambdaQuery(SysUserDO.class)
-                .eq(SysUserDO::getType, MybatisUserRepository.BACKEND)
                 .eq(SysUserDO::getStatus, EnableStatus.ENABLED.value())
                 .orderByAsc(SysUserDO::getId));
-        final Map<Long, SysUserBackendDO> profiles =
-                this.findBackendProfiles(rows.stream().map(SysUserDO::getId).toList());
-        return rows.stream()
-                .map(row -> this.toDomain(row, profiles.get(row.getId())))
-                .toList();
+        return rows.stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -357,14 +272,7 @@ public class MybatisUserRepository implements UserRepository {
         if (ids.isEmpty()) {
             return List.of();
         }
-        final List<SysUserDO> rows = this.userMapper.selectByIds(ids).stream()
-                .filter(row -> MybatisUserRepository.BACKEND.equals(row.getType()))
-                .toList();
-        final Map<Long, SysUserBackendDO> profiles =
-                this.findBackendProfiles(rows.stream().map(SysUserDO::getId).toList());
-        return rows.stream()
-                .map(row -> this.toDomain(row, profiles.get(row.getId())))
-                .toList();
+        return this.userMapper.selectByIds(ids).stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -404,27 +312,19 @@ public class MybatisUserRepository implements UserRepository {
         try {
             return List.copyOf(this.objectMapper.readValue(json, MybatisUserRepository.LONG_LIST));
         } catch (final JsonProcessingException ex) {
-            throw new IllegalStateException("sys_user_backend.favorite_menus 不是合法的 ID 数组，userId=" + userId, ex);
+            throw new IllegalStateException("sys_user.favorite_menus 不是合法的 ID 数组，userId=" + userId, ex);
         }
     }
 
     private User toDomain(final SysUserDO row) {
-        return this.toDomain(row, this.backendMapper.selectById(row.getId()));
-    }
-
-    private User toDomain(final SysUserDO row, final @Nullable SysUserBackendDO backend) {
-        if (backend == null) {
-            throw new IllegalStateException("后台用户缺少 sys_user_backend 资料，userId=" + row.getId());
-        }
         return User.builder()
                 .id(row.getId())
                 .username(row.getUsername())
                 .nickname(row.getNickname())
                 .passwordHash(row.getPassword())
-                .email(row.getEmail())
                 .phone(row.getPhone())
-                .avatar(backend.getAvatar())
-                .gender(Gender.of(backend.getGender()))
+                .avatar(this.parseAvatar(row.getAvatar()))
+                .gender(Gender.of(row.getGender()))
                 .status(EnableStatus.of(row.getStatus()))
                 .tokenVersion(row.getTokenVersion() == null ? 0 : row.getTokenVersion())
                 .lastLoginAt(row.getLastLoginAt())
@@ -436,15 +336,15 @@ public class MybatisUserRepository implements UserRepository {
                 .build();
     }
 
-    private static SysUserDO toDataObject(final User user) {
+    private SysUserDO toDataObject(final User user) {
         final SysUserDO row = new SysUserDO();
         row.setId(user.getId());
         row.setUsername(user.getUsername());
         row.setNickname(user.getNickname());
         row.setPassword(user.getPasswordHash());
-        row.setEmail(user.getEmail());
         row.setPhone(user.getPhone());
-        row.setType(MybatisUserRepository.BACKEND);
+        row.setAvatar(this.avatarJson(user.getAvatar()));
+        row.setGender(user.getGender().value());
         row.setStatus(user.getStatus().value());
         row.setTokenVersion(user.getTokenVersion());
         row.setLastLoginAt(user.getLastLoginAt());
@@ -454,11 +354,25 @@ public class MybatisUserRepository implements UserRepository {
         return row;
     }
 
-    private Map<Long, SysUserBackendDO> findBackendProfiles(final Collection<Long> ids) {
-        if (ids.isEmpty()) {
-            return Map.of();
+    private @Nullable UserAvatar parseAvatar(final @Nullable String json) {
+        if (json == null) {
+            return null;
         }
-        return this.backendMapper.selectByIds(ids).stream()
-                .collect(Collectors.toMap(SysUserBackendDO::getUserId, profile -> profile));
+        try {
+            return this.objectMapper.readValue(json, UserAvatar.class);
+        } catch (final JsonProcessingException ex) {
+            throw new IllegalStateException("sys_user.avatar 不是合法的文字头像 JSON", ex);
+        }
+    }
+
+    private @Nullable String avatarJson(final @Nullable UserAvatar avatar) {
+        if (avatar == null) {
+            return null;
+        }
+        try {
+            return this.objectMapper.writeValueAsString(avatar);
+        } catch (final JsonProcessingException ex) {
+            throw new IllegalStateException("文字头像序列化失败", ex);
+        }
     }
 }

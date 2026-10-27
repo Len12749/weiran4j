@@ -19,7 +19,6 @@ const me: CurrentUserView = {
     id: 1,
     username: 'admin',
     nickname: '超级管理员',
-    email: null,
     phone: null,
     avatar: null,
     gender: 'male',

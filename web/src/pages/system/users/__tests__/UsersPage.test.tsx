@@ -8,7 +8,6 @@ const admin: UserView = {
     id: 1,
     username: 'admin',
     nickname: '超级管理员',
-    email: null,
     phone: '13800000000',
     avatar: null,
     gender: 'male',
@@ -216,7 +215,7 @@ describe('UsersPage', () => {
             fireEvent.click(await screen.findByRole('option', { name: option }));
         };
 
-        it('高级筛选默认收起；展开后按设计稿顺序放出 9 个单字段条件，状态与工具栏共用草稿（FR-006）', async () => {
+        it('高级筛选默认收起；展开后放出 8 个单字段条件，状态与工具栏共用草稿（FR-006）', async () => {
             mockFetch(routes());
             renderWithProviders(<UsersPage />);
             await screen.findByText('alice');
@@ -231,7 +230,6 @@ describe('UsersPage', () => {
                 '用户名',
                 '用户 ID',
                 '手机号',
-                '邮箱',
                 '角色',
                 '状态',
                 '性别',
@@ -270,19 +268,18 @@ describe('UsersPage', () => {
             const panel = screen.getByRole('region', { name: '高级筛选' });
 
             fireEvent.change(within(field(panel, '用户名')).getByPlaceholderText('请输入用户名'), { target: { value: ' alice ' } });
-            fireEvent.change(within(field(panel, '邮箱')).getByPlaceholderText('请输入邮箱地址'), { target: { value: 'a@x.com' } });
             await pick(panel, '角色', /编辑/);
             await pick(panel, '性别', /女/);
             fireEvent.click(within(panel).getByRole('button', { name: '搜索' }));
 
             await waitFor(() =>
-                expect(lastListSearch(calls)).toBe('?page=1&pageSize=20&username=alice&email=a%40x.com&roleId=2&gender=female'),
+                expect(lastListSearch(calls)).toBe('?page=1&pageSize=20&username=alice&roleId=2&gender=female'),
             );
-            expect(conditionTexts()).toEqual(['用户名：alice', '邮箱：a@x.com', '角色：编辑', '性别：女']);
+            expect(conditionTexts()).toEqual(['用户名：alice', '角色：编辑', '性别：女']);
 
             fireEvent.click(screen.getByRole('button', { name: '移除条件 角色：编辑' }));
-            await waitFor(() => expect(lastListSearch(calls)).toBe('?page=1&pageSize=20&username=alice&email=a%40x.com&gender=female'));
-            expect(conditionTexts()).toEqual(['用户名：alice', '邮箱：a@x.com', '性别：女']);
+            await waitFor(() => expect(lastListSearch(calls)).toBe('?page=1&pageSize=20&username=alice&gender=female'));
+            expect(conditionTexts()).toEqual(['用户名：alice', '性别：女']);
             expect(within(field(panel, '角色')).queryByText('编辑')).toBeNull();
         });
 

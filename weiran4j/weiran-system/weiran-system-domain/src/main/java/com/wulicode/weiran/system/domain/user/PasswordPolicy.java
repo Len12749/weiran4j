@@ -27,6 +27,35 @@ public final class PasswordPolicy {
         }
     }
 
+    /** 按管理后台配置的规则校验。 */
+    public static void validate(final String field, final String rawPassword, final SecuritySettings settings) {
+        if (!PasswordPolicy.isAcceptable(rawPassword, settings)) {
+            throw BizException.badRequest(field + ": 密码不符合当前安全策略");
+        }
+    }
+
+    public static boolean isAcceptable(final String rawPassword, final SecuritySettings settings) {
+        if (rawPassword.length() < settings.passwordMinLength()
+                || rawPassword.length() > settings.passwordMaxLength()) {
+            return false;
+        }
+        boolean lower = false;
+        boolean upper = false;
+        boolean digit = false;
+        boolean symbol = false;
+        for (int i = 0; i < rawPassword.length(); i++) {
+            final char ch = rawPassword.charAt(i);
+            lower |= ch >= 'a' && ch <= 'z';
+            upper |= ch >= 'A' && ch <= 'Z';
+            digit |= ch >= '0' && ch <= '9';
+            symbol |= !(ch >= 'a' && ch <= 'z') && !(ch >= 'A' && ch <= 'Z') && !(ch >= '0' && ch <= '9');
+        }
+        return (!settings.requireLower() || lower)
+                && (!settings.requireUpper() || upper)
+                && (!settings.requireDigit() || digit)
+                && (!settings.requireSymbol() || symbol);
+    }
+
     /** 明文密码是否满足策略。 */
     public static boolean isAcceptable(final String rawPassword) {
         final int length = rawPassword.length();

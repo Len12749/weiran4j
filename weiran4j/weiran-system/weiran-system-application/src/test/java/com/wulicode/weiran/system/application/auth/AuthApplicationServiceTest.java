@@ -83,11 +83,15 @@ class AuthApplicationServiceTest {
         this.providers = mock(ExternalIdentityProviders.class);
         when(this.providers.passwordLoginEnabled()).thenReturn(true);
         when(this.providers.publicBaseUrl()).thenReturn("https://admin.example.com");
+        final com.wulicode.weiran.system.domain.user.SecuritySettingsRepository securitySettings =
+                mock(com.wulicode.weiran.system.domain.user.SecuritySettingsRepository.class);
+        when(securitySettings.load()).thenReturn(com.wulicode.weiran.system.domain.user.SecuritySettings.defaults());
         this.service = new AuthApplicationService(
                 this.users,
                 mock(MenuRepository.class),
                 this.loginLogs,
                 this.hasher,
+                securitySettings,
                 this.tokenCodec,
                 this.authorizationResolver,
                 new AuthSnapshotCache(),

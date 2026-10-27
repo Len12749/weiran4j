@@ -50,18 +50,19 @@ export interface PhoneLoginRequest {
  */
 export interface LoginResult {
     accessToken?: string | null;
-    tokenType: string;
+    tokenType?: string | null;
     expiresIn: number;
     userId: number;
+    mfaRequired?: boolean;
+    maskedPhone?: string | null;
 }
 
 export interface CurrentUserView {
     id: number;
     username: string;
     nickname: string;
-    email: string | null;
     phone: string | null;
-    avatar: string | null;
+    avatar: UserAvatar | null;
     gender: Gender | null;
     roles: string[];
     permissions: string[];
@@ -71,15 +72,49 @@ export interface CurrentUserView {
 
 export interface ProfileUpdateRequest {
     nickname: string;
-    email?: string | null;
-    phone?: string | null;
-    avatar?: string | null;
+    avatar?: UserAvatar | null;
     gender?: Gender | null;
+}
+
+export interface UpdateOwnUsernameRequest {
+    username: string;
+}
+
+export interface UserAvatar {
+    text: string;
+    background: string;
+}
+
+export interface BindPhoneRequest {
+    phone: string;
+    code: string;
 }
 
 export interface PasswordChangeRequest {
     oldPassword: string;
     newPassword: string;
+}
+
+export interface SecuritySettingsView {
+    passwordMinLength: number;
+    passwordMaxLength: number;
+    requireLower: boolean;
+    requireUpper: boolean;
+    requireDigit: boolean;
+    requireSymbol: boolean;
+    mfaEnabled: boolean;
+    mfaRememberDays: number;
+    revision: number;
+}
+
+export type PasswordRulesUpdateRequest = Pick<SecuritySettingsView, 'requireLower' | 'requireUpper' | 'requireDigit' | 'requireSymbol'> & {
+    minLength: number;
+    maxLength: number;
+};
+
+export interface MfaSettingsUpdateRequest {
+    enabled: boolean;
+    rememberDays: number;
 }
 
 /** PUT /api-backend/system/auth/updateFavoriteMenus：全量覆盖；重复 id 静默去重保序，去重后 ≤ 50 */
@@ -173,9 +208,8 @@ export interface UserView {
     id: number;
     username: string;
     nickname: string;
-    email: string | null;
     phone: string | null;
-    avatar: string | null;
+    avatar: UserAvatar | null;
     gender: Gender | null;
     status: Status;
     isBuiltin: boolean;
@@ -196,8 +230,6 @@ export interface UserQuery extends PageQuery {
     userId?: number;
     /** 手机号，精确匹配 */
     phone?: string;
-    /** 邮箱，精确匹配 */
-    email?: string;
     /** 拥有该角色 */
     roleId?: number;
     gender?: Gender;
@@ -213,17 +245,16 @@ export interface UserCreateRequest {
     username: string;
     nickname: string;
     password: string;
-    email?: string | null;
     phone?: string | null;
     gender?: Gender | null;
     status?: Status;
     roleIds: number[];
 }
 
-export type UserUpdateRequest = Omit<UserCreateRequest, 'username' | 'password'>;
+export type UserUpdateRequest = Omit<UserCreateRequest, 'username' | 'password' | 'phone'>;
 
 /** PUT /api-backend/system/user/updateAccountField/{id}：管理员单字段设置账号标识 */
-export type UserAccountField = 'username' | 'phone' | 'email';
+export type UserAccountField = 'username' | 'phone';
 
 export interface UserAccountFieldUpdateRequest {
     field: UserAccountField;

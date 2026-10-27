@@ -12,7 +12,6 @@ interface UserForm {
     username: string;
     nickname: string;
     password: string;
-    email?: string;
     phone?: string;
     gender?: Gender;
     status: Status;
@@ -27,8 +26,6 @@ function toInitValues(r: UserView | null): UserForm {
         password: '',
         status: r.status,
         roleIds: r.roleIds ?? [],
-        ...(r.email ? { email: r.email } : {}),
-        ...(r.phone ? { phone: r.phone } : {}),
         ...(r.gender ? { gender: r.gender } : {}),
     };
 }
@@ -51,8 +48,6 @@ export function UserFormModal({ record, onClose }: Props) {
         if (!v) return;
         const common = {
             nickname: v.nickname,
-            email: v.email || null,
-            phone: v.phone || null,
             gender: v.gender ?? null,
             status: v.status,
             roleIds: v.roleIds ?? [],
@@ -60,7 +55,7 @@ export function UserFormModal({ record, onClose }: Props) {
         await save.mutateAsync(
             isEdit
                 ? { id: record.id, body: common }
-                : { body: { ...common, username: v.username.trim(), password: v.password } },
+                : { body: { ...common, username: v.username.trim(), password: v.password, phone: v.phone || null } },
         );
         Toast.success(isEdit ? '已保存' : '已创建');
         onClose();
@@ -89,7 +84,11 @@ export function UserFormModal({ record, onClose }: Props) {
                     label="用户名"
                     disabled={isEdit}
                     maxLength={32}
-                    rules={[{ required: true, message: '请输入用户名' }]}
+                    rules={[
+                        { required: true, message: '请输入用户名' },
+                        { min: 2, max: 32, message: '用户名长度需为 2–32 位' },
+                        { pattern: /^[a-z0-9_]+$/, message: '用户名只能包含小写英文字母、数字和下划线' },
+                    ]}
                 />
                 <Form.Input field="nickname" label="昵称" maxLength={32} rules={[{ required: true, message: '请输入昵称' }]} />
                 {!isEdit && (
@@ -112,8 +111,7 @@ export function UserFormModal({ record, onClose }: Props) {
                     optionList={(roles ?? []).map((r) => ({ label: r.name, value: r.id }))}
                 />
                 <Form.Select field="gender" label="性别" optionList={genderOptions} style={{ width: '100%' }} showClear />
-                <Form.Input field="email" label="邮箱" maxLength={128} rules={[{ type: 'email', message: '邮箱格式不正确' }]} />
-                <Form.Input field="phone" label="手机" maxLength={20} />
+                {!isEdit && <Form.Input field="phone" label="手机" maxLength={20} />}
                 <Form.RadioGroup field="status" label="状态" options={STATUS_OPTIONS} disabled={record?.isBuiltin ?? false} />
             </Form>
         </Modal>

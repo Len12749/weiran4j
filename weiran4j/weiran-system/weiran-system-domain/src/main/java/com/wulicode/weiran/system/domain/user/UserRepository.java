@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
-/** 后台用户仓储端口（通用账号、后台扩展及用户-角色关联）。 */
+/** 用户仓储端口（账号、资料及用户-角色关联）。 */
 public interface UserRepository {
 
     /** 按 ID 查找。 */
@@ -23,20 +23,11 @@ public interface UserRepository {
     /** 按手机号查找。 */
     Optional<User> findByPhone(String phone);
 
-    /** 按资源 URL 批量查找使用该资源作为头像的用户 ID。 */
-    Map<String, List<Long>> findAvatarReferences(Collection<String> urls);
-
     /** 后台账号中用户名是否已存在。 */
     boolean existsByUsername(String username);
 
-    /** 后台账号中邮箱是否被除指定用户外的用户占用。 */
-    boolean existsByEmail(String email, long excludedUserId);
-
     /** 后台账号中手机号是否被除指定用户外的用户占用。 */
     boolean existsByPhone(String phone, long excludedUserId);
-
-    /** 后台账号中邮箱是否已被占用。 */
-    boolean existsByEmail(String email);
 
     /** 后台账号中手机号是否已被占用。 */
     boolean existsByPhone(String phone);
@@ -53,10 +44,13 @@ public interface UserRepository {
      * 或用户改资料把管理员刚设置的禁用状态写回启用）。
      */
 
-    /** 定向更新：本人修改资料（昵称、邮箱、手机号、头像、性别）。 */
+    /** 定向更新：本人修改昵称、文字头像和性别。 */
     void updateProfile(User user);
 
-    /** 定向更新：管理员修改用户（昵称、邮箱、手机号、性别、状态）。 */
+    /** 定向更新：验证码通过后本人绑定手机号。 */
+    void updateVerifiedPhone(long id, String phone);
+
+    /** 定向更新：管理员修改用户（昵称、性别、状态）。 */
     void updateAccount(User user);
 
     /** 定向更新：记录一次成功登录。 */
@@ -68,7 +62,7 @@ public interface UserRepository {
     /** 定向更新：令牌版本原子加一（禁用账号时吊销已签发令牌）。 */
     void revokeTokens(long id);
 
-    /** 只读账号类型、令牌版本与状态：每个请求都会调用，实现必须只按主键查询必要列。 */
+    /** 只读令牌版本与状态：每个请求都会调用，实现必须只按主键查询必要列。 */
     Optional<AuthState> findAuthState(long id);
 
     /** 界面偏好的原始 JSON 对象文本；从未保存过（或用户不存在）时为空。 */

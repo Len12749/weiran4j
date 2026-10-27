@@ -10,9 +10,8 @@ import org.jspecify.annotations.Nullable;
  * @param id ID
  * @param username 用户名
  * @param nickname 昵称
- * @param email 邮箱
  * @param phone 手机号
- * @param avatar 头像
+ * @param avatar 文字头像与背景色
  * @param gender 性别
  * @param status 状态
  * @param isBuiltin 是否内置
@@ -27,9 +26,8 @@ public record UserView(
         long id,
         String username,
         String nickname,
-        @Nullable String email,
         @Nullable String phone,
-        @Nullable String avatar,
+        @Nullable UserAvatarView avatar,
         String gender,
         String status,
         boolean isBuiltin,

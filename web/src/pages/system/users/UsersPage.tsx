@@ -30,7 +30,6 @@ export interface Filters {
     username: string;
     userId: number | undefined;
     phone: string;
-    email: string;
     roleId: number | undefined;
     gender: Gender | undefined;
     /** 按天选择；发请求时补成当天 00:00:00 / 23:59:59 */
@@ -44,7 +43,6 @@ export const EMPTY_FILTERS: Filters = {
     username: '',
     userId: undefined,
     phone: '',
-    email: '',
     roleId: undefined,
     gender: undefined,
     createdRange: undefined,
@@ -52,7 +50,7 @@ export const EMPTY_FILTERS: Filters = {
 };
 
 export function toQuery(f: Filters, page: number, pageSize: number): UserQuery {
-    const text = (key: 'keyword' | 'username' | 'phone' | 'email') => (f[key].trim() ? { [key]: f[key].trim() } : {});
+    const text = (key: 'keyword' | 'username' | 'phone') => (f[key].trim() ? { [key]: f[key].trim() } : {});
     const created = toDayRange(f.createdRange);
     const lastLogin = toDayRange(f.lastLoginRange);
     return {
@@ -63,7 +61,6 @@ export function toQuery(f: Filters, page: number, pageSize: number): UserQuery {
         ...text('username'),
         ...(f.userId !== undefined ? { userId: f.userId } : {}),
         ...text('phone'),
-        ...text('email'),
         ...(f.roleId !== undefined ? { roleId: f.roleId } : {}),
         ...(f.gender ? { gender: f.gender } : {}),
         ...(created.start ? { createdStartTime: created.start } : {}),
@@ -173,14 +170,6 @@ export default function UsersPage() {
                 label: '手机号',
                 value: phone,
                 onRemove: remove('phone'),
-            });
-        const email = filters.email.trim();
-        if (email)
-            list.push({
-                key: 'email',
-                label: '邮箱',
-                value: email,
-                onRemove: remove('email'),
             });
         if (filters.roleId !== undefined) {
             const name = roleOptions?.find((r) => r.id === filters.roleId)?.name ?? `#${filters.roleId}`;
@@ -377,15 +366,6 @@ export default function UsersPage() {
                                 placeholder="请输入手机号"
                                 value={draft.phone}
                                 onChange={(phone) => setDraft((d) => ({ ...d, phone }))}
-                                onEnterPress={search}
-                                showClear
-                            />
-                        </SearchField>
-                        <SearchField label="邮箱">
-                            <Input
-                                placeholder="请输入邮箱地址"
-                                value={draft.email}
-                                onChange={(email) => setDraft((d) => ({ ...d, email }))}
                                 onEnterPress={search}
                                 showClear
                             />

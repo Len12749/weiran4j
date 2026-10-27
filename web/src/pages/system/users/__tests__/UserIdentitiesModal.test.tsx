@@ -9,7 +9,6 @@ const alice: UserView = {
     id: 2,
     username: 'alice',
     nickname: '爱丽丝',
-    email: null,
     phone: null,
     avatar: null,
     gender: null,

@@ -6,7 +6,9 @@ import com.wulicode.weiran.system.adapter.web.LoginLogController;
 import com.wulicode.weiran.system.adapter.web.MediaController;
 import com.wulicode.weiran.system.adapter.web.MenuController;
 import com.wulicode.weiran.system.adapter.web.PhoneAuthController;
+import com.wulicode.weiran.system.adapter.web.PhoneBindingController;
 import com.wulicode.weiran.system.adapter.web.RoleController;
+import com.wulicode.weiran.system.adapter.web.SecuritySettingsController;
 import com.wulicode.weiran.system.adapter.web.SsoController;
 import com.wulicode.weiran.system.adapter.web.UserAccountFieldController;
 import com.wulicode.weiran.system.adapter.web.UserController;
@@ -22,9 +24,11 @@ import org.springframework.context.annotation.Import;
     BatchJobController.class,
     SsoController.class,
     PhoneAuthController.class,
+    PhoneBindingController.class,
     UserController.class,
     UserAccountFieldController.class,
     RoleController.class,
+    SecuritySettingsController.class,
     MenuController.class,
     LoginLogController.class,
     MediaController.class,

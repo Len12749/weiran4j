@@ -17,17 +17,24 @@ import org.jspecify.annotations.Nullable;
  */
 public record LoginResponse(
         @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable String accessToken,
-        String tokenType,
+        @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable String tokenType,
         long expiresIn,
-        long userId) {
+        long userId,
+        boolean mfaRequired,
+        @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable String maskedPhone) {
 
     /** 令牌模式：原样带上令牌。 */
     public static LoginResponse withToken(final LoginResult result) {
-        return new LoginResponse(result.accessToken(), result.tokenType(), result.expiresIn(), result.userId());
+        return new LoginResponse(
+                result.accessToken(), result.tokenType(), result.expiresIn(), result.userId(), false, null);
     }
 
     /** Cookie 模式：令牌已写进 Cookie，响应体不再出现。 */
     public static LoginResponse withoutToken(final LoginResult result) {
-        return new LoginResponse(null, result.tokenType(), result.expiresIn(), result.userId());
+        return new LoginResponse(null, result.tokenType(), result.expiresIn(), result.userId(), false, null);
+    }
+
+    public static LoginResponse pending(final String maskedPhone) {
+        return new LoginResponse(null, null, 0, 0, true, maskedPhone);
     }
 }

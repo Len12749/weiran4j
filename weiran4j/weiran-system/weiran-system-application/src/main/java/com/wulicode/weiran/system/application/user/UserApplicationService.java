@@ -11,6 +11,7 @@ import com.wulicode.weiran.framework.text.Texts;
 import com.wulicode.weiran.system.api.user.CreateUserCommand;
 import com.wulicode.weiran.system.api.user.UpdateUserAccountFieldCommand;
 import com.wulicode.weiran.system.api.user.UpdateUserCommand;
+import com.wulicode.weiran.system.api.user.UserAvatarView;
 import com.wulicode.weiran.system.api.user.UserOption;
 import com.wulicode.weiran.system.api.user.UserQuery;
 import com.wulicode.weiran.system.api.user.UserService;
@@ -23,10 +24,12 @@ import com.wulicode.weiran.system.domain.role.RoleRepository;
 import com.wulicode.weiran.system.domain.user.Gender;
 import com.wulicode.weiran.system.domain.user.PasswordHasher;
 import com.wulicode.weiran.system.domain.user.PasswordPolicy;
+import com.wulicode.weiran.system.domain.user.SecuritySettingsRepository;
 import com.wulicode.weiran.system.domain.user.User;
 import com.wulicode.weiran.system.domain.user.UserAccountField;
 import com.wulicode.weiran.system.domain.user.UserCriteria;
 import com.wulicode.weiran.system.domain.user.UserRepository;
+import com.wulicode.weiran.system.domain.user.UsernamePolicy;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -51,6 +54,8 @@ public class UserApplicationService implements UserService {
 
     private final PasswordHasher passwordHasher;
 
+    private final SecuritySettingsRepository securitySettings;
+
     private final AuthSnapshotCache cache;
 
     private final Clock clock;
@@ -62,12 +67,14 @@ public class UserApplicationService implements UserService {
             final UserRepository userRepository,
             final RoleRepository roleRepository,
             final PasswordHasher passwordHasher,
+            final SecuritySettingsRepository securitySettings,
             final AuthSnapshotCache cache,
             final Clock clock,
             final UserIdentityRepository identityRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordHasher = passwordHasher;
+        this.securitySettings = securitySettings;
         this.cache = cache;
         this.clock = clock;
         this.identityRepository = identityRepository;
@@ -82,7 +89,6 @@ public class UserApplicationService implements UserService {
                 Texts.trimToNull(query.username()),
                 query.userId(),
                 Texts.trimToNull(query.phone()),
-                Texts.trimToNull(query.email()),
                 query.roleId(),
                 Gender.filterOf(query.gender()),
                 query.createdStartTime(),
@@ -104,21 +110,21 @@ public class UserApplicationService implements UserService {
     @Transactional
     public long create(final CreateUserCommand command) {
         final String username = command.username().strip();
+        if (!UsernamePolicy.isValid(username)) {
+            throw BizException.badRequest("username: 用户名需为 2–32 位，只能包含小写英文字母、数字和下划线");
+        }
         if (this.userRepository.existsByUsername(username)) {
             throw BizException.duplicate("用户名已存在");
         }
-        final String email = Texts.trimToNull(command.email());
         final String phone = Texts.trimToNull(command.phone());
-        this.ensureEmailAvailable(email, null);
         this.ensurePhoneAvailable(phone, null);
-        PasswordPolicy.validate("password", command.password());
+        PasswordPolicy.validate("password", command.password(), this.securitySettings.load());
         this.ensureRolesGrantable(command.roleIds(), Set.of());
         final LocalDateTime now = LocalDateTime.now(this.clock);
         final User user = User.builder()
                 .username(username)
                 .nickname(command.nickname().strip())
                 .passwordHash(this.passwordHasher.hash(command.password()))
-                .email(email)
                 .phone(phone)
                 .gender(Gender.of(command.gender()))
                 .status(EnableStatus.ofNullable(command.status(), EnableStatus.ENABLED))
@@ -140,10 +146,6 @@ public class UserApplicationService implements UserService {
     @Transactional
     public void update(final long id, final UpdateUserCommand command) {
         final User user = this.requireUser(id);
-        final String email = Texts.trimToNull(command.email());
-        final String phone = Texts.trimToNull(command.phone());
-        this.ensureEmailAvailable(email, id);
-        this.ensurePhoneAvailable(phone, id);
         final Set<Long> currentRoleIds = this.userRepository.findRoleIds(id);
         final List<Role> roles = this.ensureRolesGrantable(command.roleIds(), currentRoleIds);
         if (user.isBuiltin() && roles.stream().noneMatch(UserApplicationService::isSuperAdmin)) {
@@ -152,15 +154,13 @@ public class UserApplicationService implements UserService {
         // PUT 中省略的可选枚举字段保持原值，避免「没传 status」把已禁用的用户悄悄启用。
         final User updated = user.withProfile(
                         command.nickname().strip(),
-                        email,
-                        phone,
                         user.getAvatar(),
                         command.gender() == null ? user.getGender() : Gender.of(command.gender()))
                 .withAssignment(EnableStatus.ofNullable(command.status(), user.getStatus()));
         try {
             this.userRepository.updateAccount(updated);
         } catch (final DuplicateKeyException ex) {
-            throw UserDuplicateErrors.from(ex, "邮箱或手机号已存在");
+            throw UserDuplicateErrors.from(ex, "用户账号信息已存在");
         }
         if (updated.getTokenVersion() != user.getTokenVersion()) {
             // 领域规则判定本次禁用需要吊销令牌；持久化用原子加一，不依赖读到的旧值。
@@ -180,8 +180,8 @@ public class UserApplicationService implements UserService {
         switch (field) {
             case "username" -> {
                 accountField = UserAccountField.USERNAME;
-                if (value.length() < 2 || value.length() > 32 || !value.matches("^[A-Za-z][A-Za-z0-9_.-]*$")) {
-                    throw BizException.badRequest("value: 用户名需为 2–32 位且以字母开头，只能包含字母、数字、下划线、点或横线");
+                if (!UsernamePolicy.isValid(value)) {
+                    throw BizException.badRequest("value: 用户名需为 2–32 位，只能包含小写英文字母、数字和下划线");
                 }
                 if (this.userRepository.existsByUsername(value)) {
                     final User current = this.requireUser(id);
@@ -197,14 +197,7 @@ public class UserApplicationService implements UserService {
                 }
                 this.ensurePhoneAvailable(Texts.trimToNull(value), id);
             }
-            case "email" -> {
-                accountField = UserAccountField.EMAIL;
-                if (value.length() > 128 || (!value.isEmpty() && !value.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"))) {
-                    throw BizException.badRequest("value: 邮箱格式不正确或长度超过 128 位");
-                }
-                this.ensureEmailAvailable(Texts.trimToNull(value), id);
-            }
-            default -> throw BizException.badRequest("field: 仅支持 username、phone 或 email");
+            default -> throw BizException.badRequest("field: 仅支持 username 或 phone");
         }
         try {
             this.userRepository.updateAccountField(id, accountField, Texts.trimToNull(value));
@@ -212,15 +205,6 @@ public class UserApplicationService implements UserService {
             throw UserDuplicateErrors.from(ex, "账号信息已存在");
         }
         this.cache.evict(id);
-    }
-
-    private void ensureEmailAvailable(final @Nullable String email, final @Nullable Long userId) {
-        if (email != null
-                && (userId == null
-                        ? this.userRepository.existsByEmail(email)
-                        : this.userRepository.existsByEmail(email, userId))) {
-            throw BizException.duplicate("邮箱已存在");
-        }
     }
 
     private void ensurePhoneAvailable(final @Nullable String phone, final @Nullable Long userId) {
@@ -246,7 +230,7 @@ public class UserApplicationService implements UserService {
     @Transactional
     public void resetPassword(final long id, final String password) {
         this.requireUser(id);
-        PasswordPolicy.validate("password", password);
+        PasswordPolicy.validate("password", password, this.securitySettings.load());
         this.userRepository.changePassword(id, this.passwordHasher.hash(password), LocalDateTime.now(this.clock));
         this.cache.evict(id);
     }
@@ -309,9 +293,12 @@ public class UserApplicationService implements UserService {
                             user.requireId(),
                             user.getUsername(),
                             user.getNickname(),
-                            user.getEmail(),
                             user.getPhone(),
-                            user.getAvatar(),
+                            user.getAvatar() == null
+                                    ? null
+                                    : new UserAvatarView(
+                                            user.getAvatar().text(),
+                                            user.getAvatar().background()),
                             user.getGender().value(),
                             user.getStatus().value(),
                             user.isBuiltin(),

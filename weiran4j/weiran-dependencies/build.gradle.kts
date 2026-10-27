@@ -17,7 +17,7 @@ javaPlatform {
  * 2. 上游 BOM 都不管的依赖（jjwt、springdoc、forbiddenapis 注解）在 constraints 里钉版本。
  */
 dependencies {
-    api(platform("org.springframework.boot:spring-boot-dependencies:3.5.15"))
+    api(platform("org.springframework.boot:spring-boot-dependencies:3.5.16"))
     // 3.5.9 起分页插件拆到 mybatis-plus-jsqlparser；3.5.17 的 boot3 starter 与 Spring Boot 3.5 兼容。
     api(platform("com.baomidou:mybatis-plus-bom:3.5.17"))
 

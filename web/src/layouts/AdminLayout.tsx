@@ -1,10 +1,11 @@
-import { Avatar, BackTop, Breadcrumb, Button, Dropdown, Nav, SideSheet, Spin, Tooltip } from '@douyinfe/semi-ui';
+import { BackTop, Breadcrumb, Button, Dropdown, Nav, SideSheet, Spin, Tooltip } from '@douyinfe/semi-ui';
 import type { NavItemPropsWithItems, OnSelectedData, SubNavProps } from '@douyinfe/semi-ui/lib/es/navigation';
 import { ChevronDown, Expand, Lock, LogOut, Menu as MenuIcon, PanelLeftClose, PanelLeftOpen, Settings, Shrink, UserRound } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { matchPath, useLocation, useNavigate } from 'react-router-dom';
 import { AppLogo } from '@/components/AppLogo';
 import { LockScreen } from '@/components/LockScreen';
+import { TextAvatar } from '@/components/TextAvatar';
 import { HOME_PATH, config } from '@/config';
 import { PageTabsContext } from '@/hooks/usePageTabs';
 import { useAuth } from '@/hooks/useAuth';
@@ -200,16 +201,20 @@ export function AdminLayout({ menus, routes }: AdminLayoutProps) {
     // 导航布局：窄屏一律走移动端抽屉
     const navLayout = isMobile ? 'vertical' : prefs.navLayout;
     // mixed / double 的当前一级菜单：默认跟随当前页所在一级，点击顶部 / 图标轨可临时切换
-    const autoTopKey = useMemo(() => {
+    const menuTopKey = useMemo(() => {
         const top = trail[0];
         if (top) return top.type === 'directory' ? dirKey(top) : normalizePath(top.path ?? '');
-        return navItems[0] ? String(navItems[0].itemKey) : '';
-    }, [trail, navItems]);
-    const [topKey, setTopKey] = useState(autoTopKey);
-    const [topKeyFor, setTopKeyFor] = useState(autoTopKey);
-    if (topKeyFor !== autoTopKey) {
-        setTopKeyFor(autoTopKey);
-        setTopKey(autoTopKey);
+        return null;
+    }, [trail]);
+    const fallbackTopKey = String((navItems.find((item) => childItems(item).length > 0) ?? navItems[0])?.itemKey ?? '');
+    const [topKey, setTopKey] = useState(menuTopKey ?? fallbackTopKey);
+    const [topKeyFor, setTopKeyFor] = useState(menuTopKey);
+    if (menuTopKey !== null && topKeyFor !== menuTopKey) {
+        setTopKeyFor(menuTopKey);
+        setTopKey(menuTopKey);
+    } else if (menuTopKey === null && !navItems.some((item) => String(item.itemKey) === topKey) && topKey !== fallbackTopKey) {
+        // 个人中心等固定页面不在菜单树里：沿用离开菜单页前的分组；直接打开时选第一个有子菜单的分组。
+        setTopKey(fallbackTopKey);
     }
     const topItem = navItems.find((i) => String(i.itemKey) === topKey);
     const subItems = useMemo(() => childItems(topItem), [topItem]);
@@ -420,9 +425,7 @@ export function AdminLayout({ menus, routes }: AdminLayoutProps) {
                 }
             >
                 <span className="admin-header__user">
-                    <Avatar size="extra-small" color="blue" {...(user?.avatar ? { src: user.avatar } : {})}>
-                        {(displayName || '?').slice(0, 1)}
-                    </Avatar>
+                    <TextAvatar size="extra-small" avatar={user?.avatar} fallback={displayName || '?'} />
                     <span className="admin-header__username">{displayName}</span>
                     <ChevronDown size={14} className="admin-header__caret" />
                 </span>

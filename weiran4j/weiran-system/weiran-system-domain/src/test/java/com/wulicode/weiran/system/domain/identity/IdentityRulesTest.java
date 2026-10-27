@@ -24,11 +24,15 @@ class IdentityRulesTest {
     @DisplayName("自动开通的用户名：合法的外部用户名原样用；不合法时用 provider + 外部标识短哈希，且稳定")
     void derivesUsername() {
         assertThat(ProvisionedUsername.of("kc", "sub-1", "zhangsan")).isEqualTo("zhangsan");
+        assertThat(ProvisionedUsername.of("kc", "sub-1", "1_user")).isEqualTo("1_user");
         final String fallback = ProvisionedUsername.of("my-idp", "sub-1", "张三");
         assertThat(fallback).matches("my_idp_[0-9a-f]{10}");
         assertThat(ProvisionedUsername.of("my-idp", "sub-1", null)).isEqualTo(fallback);
         assertThat(ProvisionedUsername.of("my-idp", "sub-2", null)).isNotEqualTo(fallback);
-        assertThat(ProvisionedUsername.of("kc", "x", "1abc")).startsWith("kc_");
+        assertThat(ProvisionedUsername.of("kc", "x", "Alice.Name")).startsWith("kc_");
+        assertThat(ProvisionedUsername.of("kc", "x", "user-name")).startsWith("kc_");
+        assertThat(ProvisionedUsername.of("provider-with-a-long-identifier", "x", null))
+                .matches("[a-z0-9_]{2,32}");
     }
 
     @Test

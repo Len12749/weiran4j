@@ -27,7 +27,7 @@ public class UserAccountFieldController {
         this.userService = userService;
     }
 
-    /** 单独设置用户名、手机号或邮箱。 */
+    /** 单独设置用户名或手机号。 */
     @RequiresPermission("system:user:update")
     @OperationLog(module = UserAccountFieldController.MODULE, description = "设置用户账号信息")
     @PutMapping("/updateAccountField/{id}")

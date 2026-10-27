@@ -19,7 +19,7 @@ public interface UserService {
     /** 修改。 */
     void update(long id, UpdateUserCommand command);
 
-    /** 管理员单字段修改用户名、手机号或邮箱。 */
+    /** 单字段修改用户名或手机号；调用方负责校验管理员权限或限定为本人。 */
     void updateAccountField(long id, UpdateUserAccountFieldCommand command);
 
     /** 删除；内置用户与操作人自己不能删（100004）。 */

@@ -1,7 +1,8 @@
-import { Avatar, Descriptions, Tag } from '@douyinfe/semi-ui';
+import { Descriptions, Tag } from '@douyinfe/semi-ui';
 import dayjs from 'dayjs';
 import { DictTag } from '@/components/DictTag';
 import { PageContainer } from '@/components/PageContainer';
+import { TextAvatar } from '@/components/TextAvatar';
 import { config } from '@/config';
 import { useAuth } from '@/hooks/useAuth';
 import './DashboardPage.css';
@@ -29,9 +30,7 @@ export default function DashboardPage() {
     return (
         <>
             <section className="dashboard-hero">
-                <Avatar size="large" className="dashboard-hero__avatar" {...(user.avatar ? { src: user.avatar } : {})}>
-                    {name.slice(0, 1)}
-                </Avatar>
+                <TextAvatar size="large" className="dashboard-hero__avatar" avatar={user.avatar} fallback={name} />
                 <div>
                     <div className="dashboard-hero__title">
                         {greeting()}，{name}
@@ -54,7 +53,6 @@ export default function DashboardPage() {
                         { key: '用户名', value: user.username },
                         { key: '昵称', value: user.nickname || '—' },
                         { key: '性别', value: <DictTag dictCode="sys_user_gender" value={user.gender} /> },
-                        { key: '邮箱', value: user.email || '—' },
                         { key: '手机', value: user.phone || '—' },
                         {
                             key: '角色',

@@ -14,6 +14,7 @@ import com.wulicode.weiran.framework.web.ClientIpResolver;
 import com.wulicode.weiran.system.adapter.web.request.ChangePasswordRequest;
 import com.wulicode.weiran.system.adapter.web.request.LoginRequest;
 import com.wulicode.weiran.system.adapter.web.request.SaveFavoriteMenusRequest;
+import com.wulicode.weiran.system.adapter.web.request.UpdateOwnUsernameRequest;
 import com.wulicode.weiran.system.adapter.web.request.UpdateProfileRequest;
 import com.wulicode.weiran.system.adapter.web.request.VerifyPasswordRequest;
 import com.wulicode.weiran.system.adapter.web.response.LoginResponse;
@@ -29,6 +30,9 @@ import com.wulicode.weiran.system.api.auth.ProvidersView;
 import com.wulicode.weiran.system.api.auth.UpdateProfileCommand;
 import com.wulicode.weiran.system.api.auth.UserIdentityView;
 import com.wulicode.weiran.system.api.menu.MenuNode;
+import com.wulicode.weiran.system.api.user.UpdateUserAccountFieldCommand;
+import com.wulicode.weiran.system.api.user.UserService;
+import com.wulicode.weiran.system.application.auth.MfaLoginApplicationService;
 import com.wulicode.weiran.system.application.auth.PhoneLoginSettings;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -59,6 +63,8 @@ public class AuthController {
 
     private final AuthService authService;
 
+    private final UserService userService;
+
     private final ObjectMapper objectMapper;
 
     private final AuthCookies authCookies;
@@ -67,18 +73,24 @@ public class AuthController {
 
     private final PhoneLoginSettings phoneLoginSettings;
 
+    private final MfaLoginApplicationService mfaLoginService;
+
     /** 构造控制器。 */
     public AuthController(
             final AuthService authService,
+            final UserService userService,
             final ObjectMapper objectMapper,
             final AuthCookies authCookies,
             final ExternalLoginService externalLoginService,
-            final PhoneLoginSettings phoneLoginSettings) {
+            final PhoneLoginSettings phoneLoginSettings,
+            final MfaLoginApplicationService mfaLoginService) {
         this.authService = authService;
+        this.userService = userService;
         this.objectMapper = objectMapper;
         this.authCookies = authCookies;
         this.externalLoginService = externalLoginService;
         this.phoneLoginSettings = phoneLoginSettings;
+        this.mfaLoginService = mfaLoginService;
     }
 
     /** 登录。 */
@@ -88,8 +100,17 @@ public class AuthController {
             @Valid @RequestBody final LoginRequest request,
             final HttpServletRequest http,
             final HttpServletResponse response) {
-        final LoginResult result = this.authService.login(
-                new LoginCommand(request.username(), request.password()), AuthController.clientOf(http));
+        final MfaLoginApplicationService.BeginResult started = this.mfaLoginService.beginPassword(
+                new LoginCommand(request.username(), request.password()),
+                AuthController.clientOf(http),
+                AuthController.cookie(http, AuthCookies.MFA_TRUSTED_COOKIE));
+        if (started.pendingToken() != null) {
+            response.addHeader(
+                    HttpHeaders.SET_COOKIE,
+                    this.authCookies.mfaPending(started.pendingToken()).toString());
+            return LoginResponse.pending(java.util.Objects.requireNonNull(started.maskedPhone()));
+        }
+        final LoginResult result = java.util.Objects.requireNonNull(started.login());
         if (AuthController.wantsToken(http)) {
             return LoginResponse.withToken(result);
         }
@@ -98,6 +119,38 @@ public class AuthController {
                 this.authCookies.issue(result.accessToken(), Duration.ofSeconds(result.expiresIn()), result.userId()));
         return LoginResponse.withoutToken(result);
     }
+
+    /** 完成手机二次验证，验证前不发放访问令牌。 */
+    @PublicApi
+    @PostMapping("/api-backend/n/system/auth/verifyMfa")
+    public LoginResponse verifyMfa(
+            @Valid @RequestBody final VerifyMfaRequest request,
+            final HttpServletRequest http,
+            final HttpServletResponse response) {
+        final MfaLoginApplicationService.VerifiedResult verified = this.mfaLoginService.verify(
+                AuthController.cookie(http, AuthCookies.MFA_PENDING_COOKIE), request.code());
+        response.addHeader(
+                HttpHeaders.SET_COOKIE, this.authCookies.clearMfaPending().toString());
+        if (verified.trustedToken() != null) {
+            response.addHeader(
+                    HttpHeaders.SET_COOKIE,
+                    this.authCookies
+                            .mfaTrusted(verified.trustedToken(), verified.rememberDays())
+                            .toString());
+        }
+        final LoginResult login = verified.login();
+        if (AuthController.wantsToken(http)) {
+            return LoginResponse.withToken(login);
+        }
+        AuthController.addCookies(
+                response,
+                this.authCookies.issue(login.accessToken(), Duration.ofSeconds(login.expiresIn()), login.userId()));
+        return LoginResponse.withoutToken(login);
+    }
+
+    public record VerifyMfaRequest(
+            @jakarta.validation.constraints.Pattern(regexp = "\\d{6}")
+            String code) {}
 
     /** 登出。 */
     @PostMapping("/api-backend/system/auth/logout")
@@ -149,8 +202,16 @@ public class AuthController {
     public ApiResponse<Void> updateProfile(@Valid @RequestBody final UpdateProfileRequest request) {
         this.authService.updateProfile(
                 CurrentUser.require().id(),
-                new UpdateProfileCommand(
-                        request.nickname(), request.email(), request.phone(), request.avatar(), request.gender()));
+                new UpdateProfileCommand(request.nickname(), request.avatar(), request.gender()));
+        return ApiResponse.ok();
+    }
+
+    /** 修改本人的用户名。 */
+    @OperationLog(module = "个人中心", description = "修改用户名")
+    @PutMapping("/api-backend/system/auth/updateUsername")
+    public ApiResponse<Void> updateUsername(@Valid @RequestBody final UpdateOwnUsernameRequest request) {
+        this.userService.updateAccountField(
+                CurrentUser.require().id(), new UpdateUserAccountFieldCommand("username", request.username()));
         return ApiResponse.ok();
     }
 
@@ -173,7 +234,7 @@ public class AuthController {
         try {
             return ApiResponse.ok(this.objectMapper.readTree(json));
         } catch (final JsonProcessingException ex) {
-            throw new IllegalStateException("sys_user_backend.preferences 不是合法的 JSON", ex);
+            throw new IllegalStateException("sys_user.preferences 不是合法的 JSON", ex);
         }
     }
 
@@ -220,6 +281,19 @@ public class AuthController {
     private static boolean wantsToken(final HttpServletRequest http) {
         final String mode = http.getHeader(AuthCookies.AUTH_MODE_HEADER);
         return mode != null && AuthCookies.AUTH_MODE_TOKEN.equals(mode.strip().toLowerCase(Locale.ROOT));
+    }
+
+    static @org.jspecify.annotations.Nullable String cookie(final HttpServletRequest http, final String name) {
+        final jakarta.servlet.http.Cookie[] cookies = http.getCookies();
+        if (cookies == null) {
+            return null;
+        }
+        for (final jakarta.servlet.http.Cookie cookie : cookies) {
+            if (name.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
     private static void addCookies(final HttpServletResponse response, final List<ResponseCookie> cookies) {

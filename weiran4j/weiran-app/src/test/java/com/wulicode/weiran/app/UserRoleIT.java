@@ -30,7 +30,6 @@ class UserRoleIT extends IntegrationTestSupport {
         body.put("username", username);
         body.put("nickname", "测试" + username);
         body.put("password", UserRoleIT.PASSWORD);
-        body.put("email", username + "@example.com");
         body.put("phone", "138" + String.format("%08d", UserRoleIT.PHONE_SEQUENCE.getAndIncrement()));
         body.put("gender", "male");
         body.put("roleIds", roleIds);
@@ -121,14 +120,13 @@ class UserRoleIT extends IntegrationTestSupport {
 
         final Map<String, Object> update = new HashMap<>();
         update.put("nickname", "改名");
-        update.put("email", null);
         update.put("gender", "female");
         update.put("status", "enabled");
         update.put("roleIds", List.of());
         IntegrationTestSupport.assertOk(this.put("/api-backend/system/user/update/" + id, admin, update));
         final JsonNode updated = IntegrationTestSupport.data(this.get("/api-backend/system/user/get/" + id, admin));
         assertThat(updated.path("nickname").asText()).isEqualTo("改名");
-        assertThat(updated.path("email").isNull()).isTrue();
+        assertThat(updated.has("email")).isFalse();
         assertThat(updated.path("roleIds").isEmpty()).isTrue();
 
         final JsonNode options = IntegrationTestSupport.data(this.get("/api-backend/system/user/listOptions", admin));
@@ -155,7 +153,7 @@ class UserRoleIT extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("高级筛选：用户名 / ID / 手机 / 邮箱精确匹配，角色去重，性别，时间闭区间与从未登录，多条件交集，非法值 100001")
+    @DisplayName("高级筛选：用户名 / ID / 手机精确匹配，角色去重，性别，时间闭区间与从未登录，多条件交集，非法值 100001")
     void advancedFilters() {
         final String admin = this.adminToken();
         final long role1 = this.createRole(admin, IntegrationTestSupport.unique("adv"), List.of());
@@ -181,7 +179,6 @@ class UserRoleIT extends IntegrationTestSupport {
         assertThat(IntegrationTestSupport.data(missing).path("total").asLong()).isZero();
         assertThat(this.userIds(admin, "phone=" + phoneA)).containsExactly(idA);
         assertThat(this.userIds(admin, "phone=" + phoneA.substring(0, 7))).doesNotContain(idA);
-        assertThat(this.userIds(admin, "email=" + nameA + "@example.com")).containsExactly(idA);
 
         // 角色：一人多角色也只出现一次，total 与去重后条数一致
         final ResponseEntity<JsonNode> byRole =
@@ -278,6 +275,43 @@ class UserRoleIT extends IntegrationTestSupport {
         missingRoles.remove("roleIds");
         IntegrationTestSupport.assertError(
                 this.post("/api-backend/system/user/create", admin, missingRoles), HttpStatus.BAD_REQUEST, 100001);
+    }
+
+    @Test
+    @DisplayName("用户名创建和管理员修改仅接受 2–32 位小写字母、数字和下划线")
+    void usernameCharacterRules() {
+        final String admin = this.adminToken();
+        final String username = "9_" + IntegrationTestSupport.unique("user");
+        final long userId =
+                this.create("/api-backend/system/user/create", admin, UserRoleIT.newUser(username, List.of()));
+        assertThat(IntegrationTestSupport.data(this.get("/api-backend/system/user/get/" + userId, admin))
+                        .path("username")
+                        .asText())
+                .isEqualTo(username);
+
+        for (final String invalid : List.of("Alice", "alice.name", "alice-name")) {
+            IntegrationTestSupport.assertError(
+                    this.post("/api-backend/system/user/create", admin, UserRoleIT.newUser(invalid, List.of())),
+                    HttpStatus.BAD_REQUEST,
+                    100001);
+            IntegrationTestSupport.assertError(
+                    this.put(
+                            "/api-backend/system/user/updateAccountField/" + userId,
+                            admin,
+                            Map.of("field", "username", "value", invalid)),
+                    HttpStatus.BAD_REQUEST,
+                    100001);
+        }
+
+        final String next = "_" + IntegrationTestSupport.unique("next");
+        IntegrationTestSupport.assertOk(this.put(
+                "/api-backend/system/user/updateAccountField/" + userId,
+                admin,
+                Map.of("field", "username", "value", next)));
+        assertThat(IntegrationTestSupport.data(this.get("/api-backend/system/user/get/" + userId, admin))
+                        .path("username")
+                        .asText())
+                .isEqualTo(next);
     }
 
     @Test

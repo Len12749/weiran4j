@@ -25,11 +25,10 @@ public final class User {
 
     private final String passwordHash;
 
-    private final @Nullable String email;
-
     private final @Nullable String phone;
 
-    private final @Nullable String avatar;
+    /** 文字与背景色组成的头像，不保存图片地址。 */
+    private final @Nullable UserAvatar avatar;
 
     private final Gender gender;
 
@@ -69,19 +68,13 @@ public final class User {
     }
 
     /** 修改个人资料。 */
-    public User withProfile(
-            final String nickname,
-            final @Nullable String email,
-            final @Nullable String phone,
-            final @Nullable String avatar,
-            final Gender gender) {
-        return this.toBuilder()
-                .nickname(nickname)
-                .email(email)
-                .phone(phone)
-                .avatar(avatar)
-                .gender(gender)
-                .build();
+    public User withProfile(final String nickname, final @Nullable UserAvatar avatar, final Gender gender) {
+        return this.toBuilder().nickname(nickname).avatar(avatar).gender(gender).build();
+    }
+
+    /** 验证码通过后绑定手机号。 */
+    public User withPhone(final String phone) {
+        return this.toBuilder().phone(phone).build();
     }
 
     /**

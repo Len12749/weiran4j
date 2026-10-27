@@ -12,13 +12,11 @@ interface Props {
 const FIELD_OPTIONS: { value: UserAccountField; label: string }[] = [
     { value: 'username', label: '用户名' },
     { value: 'phone', label: '手机号' },
-    { value: 'email', label: '邮箱' },
 ];
 
 const CURRENT_VALUE: Record<UserAccountField, (user: UserView) => string> = {
     username: (user) => user.username,
     phone: (user) => user.phone ?? '',
-    email: (user) => user.email ?? '',
 };
 
 /** 管理员每次只设置一个账号标识；唯一性由后端校验并由数据库约束兜底。 */
@@ -40,13 +38,8 @@ export function SetUserAccountFieldModal({ user, onClose }: Props) {
             ? [
                   { required: true, message: '请输入用户名' },
                   { min: 2, max: 32, message: '用户名长度需为 2–32 位' },
-                  { pattern: /^[A-Za-z][A-Za-z0-9_.-]*$/, message: '用户名需以字母开头，只能包含字母、数字、下划线、点或横线' },
+                  { pattern: /^[a-z0-9_]+$/, message: '用户名只能包含小写英文字母、数字和下划线' },
               ]
-              : field === 'email'
-              ? [
-                    { type: 'email' as const, message: '邮箱格式不正确' },
-                    { max: 128, message: '邮箱长度不能超过 128 位' },
-                ]
               : [
                     { max: 20, message: '手机号长度不能超过 20 位' },
                 ];
@@ -71,15 +64,16 @@ export function SetUserAccountFieldModal({ user, onClose }: Props) {
                     field="field"
                     label="设置类型"
                     options={FIELD_OPTIONS}
-                    onChange={(value: unknown) => {
-                        if (value === 'username' || value === 'phone' || value === 'email') setField(value);
+                    onChange={(event) => {
+                        const value: unknown = event.target.value;
+                        if (value === 'username' || value === 'phone') setField(value);
                     }}
                 />
                 <Form.Input
                     field="value"
                     label={FIELD_OPTIONS.find((option) => option.value === field)?.label}
                     placeholder={`请输入${FIELD_OPTIONS.find((option) => option.value === field)?.label}`}
-                    maxLength={field === 'username' ? 32 : field === 'email' ? 128 : 20}
+                    maxLength={field === 'username' ? 32 : 20}
                     extraText={field === 'username' ? undefined : '留空可清除当前值'}
                     rules={rules}
                 />

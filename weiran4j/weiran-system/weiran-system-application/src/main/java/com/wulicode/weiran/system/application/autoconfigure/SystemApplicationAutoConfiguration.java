@@ -8,12 +8,14 @@ import com.wulicode.weiran.system.application.auth.ExternalLoginApplicationServi
 import com.wulicode.weiran.system.application.auth.IdentityProvisioner;
 import com.wulicode.weiran.system.application.auth.LocalIdentityResolver;
 import com.wulicode.weiran.system.application.auth.LocalRbacPermissionSource;
+import com.wulicode.weiran.system.application.auth.MfaLoginApplicationService;
+import com.wulicode.weiran.system.application.auth.PhoneBindingApplicationService;
 import com.wulicode.weiran.system.application.auth.PhoneLoginApplicationService;
 import com.wulicode.weiran.system.application.auth.PhoneLoginSettings;
+import com.wulicode.weiran.system.application.auth.SecuritySettingsApplicationService;
 import com.wulicode.weiran.system.application.batch.BatchJobApplicationService;
 import com.wulicode.weiran.system.application.batch.BatchJobWorker;
 import com.wulicode.weiran.system.application.loginlog.LoginLogApplicationService;
-import com.wulicode.weiran.system.application.media.AvatarMediaReferenceChecker;
 import com.wulicode.weiran.system.application.media.ConfigMediaReferenceChecker;
 import com.wulicode.weiran.system.application.media.MediaApplicationService;
 import com.wulicode.weiran.system.application.media.MediaAssetDeletionService;
@@ -45,9 +47,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
     LocalRbacPermissionSource.class,
     DispatchingTokenAuthenticator.class,
     AuthApplicationService.class,
+    MfaLoginApplicationService.class,
     PhoneLoginSettings.class,
+    SecuritySettingsApplicationService.class,
     SystemSmsSettings.class,
     PhoneLoginApplicationService.class,
+    PhoneBindingApplicationService.class,
     IdentityProvisioner.class,
     ExternalLoginApplicationService.class,
     UserApplicationService.class,
@@ -58,7 +63,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
     MediaApplicationService.class,
     MediaReferenceApplicationService.class,
     ConfigMediaReferenceChecker.class,
-    AvatarMediaReferenceChecker.class,
     MediaAssetDeletionService.class,
     SmsApplicationService.class
 })

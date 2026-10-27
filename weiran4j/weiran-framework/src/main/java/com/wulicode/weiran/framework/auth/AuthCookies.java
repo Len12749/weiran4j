@@ -34,6 +34,12 @@ public class AuthCookies {
     /** 外部登录流程状态 Cookie（签名后的 state / nonce / PKCE verifier / redirect，D-015）。 */
     public static final String SSO_COOKIE = "weiran_sso";
 
+    /** 手机二次验证中尚未完成登录的短期流程 Cookie。 */
+    public static final String MFA_PENDING_COOKIE = "weiran_mfa_pending";
+
+    /** 同一浏览器的手机验证免验凭据。 */
+    public static final String MFA_TRUSTED_COOKIE = "weiran_mfa_trusted";
+
     /** 流程 Cookie 只在 authorize 与 callback 之间用。 */
     public static final String SSO_PATH = "/api-backend/n/system/auth/callbackSso";
 
@@ -114,6 +120,24 @@ public class AuthCookies {
                 .secure(this.secure)
                 .sameSite("Lax")
                 .maxAge(Duration.ZERO)
+                .build();
+    }
+
+    public ResponseCookie mfaPending(final String value) {
+        return this.cookie(MFA_PENDING_COOKIE, value, "/api-backend/n/system/auth", true, Duration.ofMinutes(5));
+    }
+
+    public ResponseCookie clearMfaPending() {
+        return this.cookie(MFA_PENDING_COOKIE, "", "/api-backend/n/system/auth", true, Duration.ZERO);
+    }
+
+    public ResponseCookie mfaTrusted(final String value, final int rememberDays) {
+        return ResponseCookie.from(MFA_TRUSTED_COOKIE, value)
+                .path("/api-backend/n/system/auth")
+                .httpOnly(true)
+                .secure(this.secure)
+                .sameSite("Lax")
+                .maxAge(Duration.ofDays(rememberDays))
                 .build();
     }
 

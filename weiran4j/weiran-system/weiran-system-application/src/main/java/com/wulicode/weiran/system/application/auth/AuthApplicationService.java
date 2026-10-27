@@ -16,8 +16,8 @@ import com.wulicode.weiran.system.api.auth.LogoutResult;
 import com.wulicode.weiran.system.api.auth.SystemAuthErrors;
 import com.wulicode.weiran.system.api.auth.UpdateProfileCommand;
 import com.wulicode.weiran.system.api.menu.MenuNode;
+import com.wulicode.weiran.system.api.user.UserAvatarView;
 import com.wulicode.weiran.system.application.menu.MenuAssembler;
-import com.wulicode.weiran.system.application.user.UserDuplicateErrors;
 import com.wulicode.weiran.system.domain.auth.Authorization;
 import com.wulicode.weiran.system.domain.auth.TokenClaims;
 import com.wulicode.weiran.system.domain.auth.TokenCodec;
@@ -30,7 +30,9 @@ import com.wulicode.weiran.system.domain.user.FavoriteMenus;
 import com.wulicode.weiran.system.domain.user.Gender;
 import com.wulicode.weiran.system.domain.user.PasswordHasher;
 import com.wulicode.weiran.system.domain.user.PasswordPolicy;
+import com.wulicode.weiran.system.domain.user.SecuritySettingsRepository;
 import com.wulicode.weiran.system.domain.user.User;
+import com.wulicode.weiran.system.domain.user.UserAvatar;
 import com.wulicode.weiran.system.domain.user.UserPreferences;
 import com.wulicode.weiran.system.domain.user.UserRepository;
 import java.time.Clock;
@@ -40,7 +42,6 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -75,6 +76,8 @@ public class AuthApplicationService implements AuthService {
 
     private final PasswordHasher passwordHasher;
 
+    private final SecuritySettingsRepository securitySettings;
+
     private final TokenCodec tokenCodec;
 
     private final AuthorizationResolver authorizationResolver;
@@ -91,6 +94,7 @@ public class AuthApplicationService implements AuthService {
             final MenuRepository menuRepository,
             final LoginLogRepository loginLogRepository,
             final PasswordHasher passwordHasher,
+            final SecuritySettingsRepository securitySettings,
             final TokenCodec tokenCodec,
             final AuthorizationResolver authorizationResolver,
             final AuthSnapshotCache cache,
@@ -100,6 +104,7 @@ public class AuthApplicationService implements AuthService {
         this.menuRepository = menuRepository;
         this.loginLogRepository = loginLogRepository;
         this.passwordHasher = passwordHasher;
+        this.securitySettings = securitySettings;
         this.tokenCodec = tokenCodec;
         this.authorizationResolver = authorizationResolver;
         this.cache = cache;
@@ -109,11 +114,16 @@ public class AuthApplicationService implements AuthService {
 
     @Override
     public LoginResult login(final LoginCommand command, final ClientContext client) {
+        final AuthenticatedUser authenticated = this.authenticatePasswordLogin(command, client);
+        return this.completeLogin(this.requireUser(authenticated.id()), client, null, "登录成功");
+    }
+
+    /** 密码登录入口共用的开关与凭据检查，成功时仍不签发令牌。 */
+    AuthenticatedUser authenticatePasswordLogin(final LoginCommand command, final ClientContext client) {
         if (!this.providers.passwordLoginEnabled()) {
             this.ensurePasswordLoginAllowed(command.username().strip(), client);
         }
-        final AuthenticatedUser authenticated = this.authenticate(command.username(), command.password(), client);
-        return this.completeLogin(this.requireUser(authenticated.id()), client, null, "登录成功");
+        return this.authenticate(command.username(), command.password(), client);
     }
 
     /**
@@ -238,9 +248,11 @@ public class AuthApplicationService implements AuthService {
                 userId,
                 user.getUsername(),
                 user.getNickname(),
-                user.getEmail(),
                 user.getPhone(),
-                user.getAvatar(),
+                user.getAvatar() == null
+                        ? null
+                        : new UserAvatarView(
+                                user.getAvatar().text(), user.getAvatar().background()),
                 user.getGender().value(),
                 List.copyOf(authorization.roleCodes()),
                 List.copyOf(authorization.displayPermissions(this.menuRepository.findAll())),
@@ -260,24 +272,13 @@ public class AuthApplicationService implements AuthService {
     @Transactional
     public void updateProfile(final long userId, final UpdateProfileCommand command) {
         final User user = this.requireUser(userId);
-        final String email = Texts.trimToNull(command.email());
-        final String phone = Texts.trimToNull(command.phone());
-        if (email != null && this.userRepository.existsByEmail(email, userId)) {
-            throw BizException.duplicate("邮箱已存在");
-        }
-        if (phone != null && this.userRepository.existsByPhone(phone, userId)) {
-            throw BizException.duplicate("手机号已存在");
-        }
-        try {
-            this.userRepository.updateProfile(user.withProfile(
-                    command.nickname().strip(),
-                    email,
-                    phone,
-                    Texts.trimToNull(command.avatar()),
-                    command.gender() == null ? user.getGender() : Gender.of(command.gender())));
-        } catch (final DuplicateKeyException ex) {
-            throw UserDuplicateErrors.from(ex, "邮箱或手机号已存在");
-        }
+        final UserAvatar avatar = command.avatar() == null
+                ? null
+                : new UserAvatar(command.avatar().text(), command.avatar().background());
+        this.userRepository.updateProfile(user.withProfile(
+                command.nickname().strip(),
+                avatar,
+                command.gender() == null ? user.getGender() : Gender.of(command.gender())));
         this.cache.evict(userId);
     }
 
@@ -291,7 +292,7 @@ public class AuthApplicationService implements AuthService {
         if (!this.passwordHasher.matches(command.oldPassword(), user.getPasswordHash())) {
             throw BizException.badRequest("oldPassword: 原密码不正确");
         }
-        PasswordPolicy.validate("newPassword", command.newPassword());
+        PasswordPolicy.validate("newPassword", command.newPassword(), this.securitySettings.load());
         this.userRepository.changePassword(
                 userId, this.passwordHasher.hash(command.newPassword()), LocalDateTime.now(this.clock));
         this.cache.evict(userId);
