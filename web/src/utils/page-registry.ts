@@ -15,6 +15,7 @@ type PageModuleLoader = () => Promise<PageModule>;
 // 必须排除 __tests__：glob 结果就是打包图，测试文件会被编译成独立 chunk 发到线上，
 // 连带把 vitest / @testing-library 拖进浏览器产物。
 const pageModules = import.meta.glob<PageModule>(['../pages/**/*.tsx', '!../pages/**/__tests__/**']);
+// 隐藏菜单页也由这张注册表解析，visible=false 只控制导航显示。
 
 /** 归一化组件路径：去除前导斜杠与 .tsx 后缀 */
 export function normalizeComponentPath(component: string): string {

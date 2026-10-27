@@ -62,16 +62,21 @@ function stubMobileViewport() {
     }));
 }
 
-function renderAuthed(route = '/dashboard', prefs: Partial<UserPreferences> = {}) {
+function renderAuthed(route = '/dashboard', prefs: Partial<UserPreferences> = {}, menuNodes = menus) {
     // 本地偏好属于当前登录用户（id 1），服务端为 null 时按「自己的缓存」迁移而不是回落默认值
     signIn(1);
     savePreferences({ ...defaultPreferences, ...prefs }, 1);
     const fetch = mockFetch({
         'GET /api-backend/system/auth/getCurrentUser': me,
-        'GET /api-backend/system/auth/listCurrentMenus': menus,
+        'GET /api-backend/system/auth/listCurrentMenus': menuNodes,
         'GET /api-backend/system/auth/getPreferences': null,
         'PUT /api-backend/system/auth/updatePreferences': null,
         'GET /api-backend/system/dict/listItemsByCode/sys_user_gender': [],
+        'GET /api-backend/system/security/get': {
+            passwordMinLength: 8, passwordMaxLength: 64,
+            requireLower: true, requireUpper: false, requireDigit: true, requireSymbol: false,
+            mfaEnabled: false, mfaRememberDays: 7, revision: 1,
+        },
     });
     return { ...renderWithProviders(<App />, { route }), fetch };
 }
@@ -123,6 +128,27 @@ describe('AdminLayout', () => {
         await screen.findByText('基本设置', { selector: '.page-container__title' });
         expect(document.querySelector('.admin-sidebar__nav')).not.toBeNull();
         expect(document.querySelector('.admin-sidebar__nav')?.textContent).toContain('用户管理');
+    });
+
+    it('安全设置在用户菜单的个人中心与偏好设置之间，隐藏菜单仍可打开页面', async () => {
+        const hiddenSecurity: MenuNode = {
+            ...base, id: 23, parentId: 0, title: '安全设置', type: 'menu',
+            path: '/system/security', component: 'system/security/SecuritySettingsPage',
+            icon: 'ShieldCheck', permission: 'system:security:list', visible: false,
+        };
+        renderAuthed('/dashboard', {}, [...menus, hiddenSecurity]);
+        await screen.findByRole('button', { name: '切换主题（当前：浅色）' });
+        expect(document.querySelector('.admin-sidebar__nav')?.textContent).not.toContain('安全设置');
+
+        fireEvent.mouseEnter(document.querySelector('.admin-header__user') as HTMLElement);
+        const profile = await screen.findByRole('menuitem', { name: '个人中心' });
+        const security = screen.getByRole('menuitem', { name: '安全设置' });
+        const preferences = screen.getByRole('menuitem', { name: '偏好设置' });
+        expect(profile.compareDocumentPosition(security) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(security.compareDocumentPosition(preferences) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+        fireEvent.click(security);
+        expect(await screen.findByText('安全设置', { selector: '.page-container__title' })).toBeInTheDocument();
     });
 
     it('直接打开个人中心时混合导航选择一个有侧边栏的分组', async () => {

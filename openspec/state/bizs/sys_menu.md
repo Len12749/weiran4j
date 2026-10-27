@@ -33,7 +33,7 @@
 | 后端模块 | `weiran-system`；`MenuController` → `MenuApplicationService` → `MybatisMenuRepository` |
 | 接口前缀 | `/api/menus`（管理）；`/api/auth/menus`（当前用户可见菜单树，`AuthController`） |
 | 权限码 | `system:menu:list` · `system:menu:create` · `system:menu:update` · `system:menu:delete` |
-| 种子 | 通用菜单 id 1–13 固定；可选 local/test 演示 id 14–20；按钮 id 100–128；前端与测试按 ID 引用 |
+| 种子 | 通用菜单 id 1–13 固定；可选 local/test 演示 id 14–20；安全设置 id 23 为隐藏路由；按钮 id 100–129；前端与测试按 ID 引用 |
 
 ## 1. 列表
 
@@ -121,6 +121,9 @@
 ## 7. changelog
 
 新条目插在本节最上方（按日期倒序，新在上）。
+
+**2026-10-27**
+- 安全设置菜单 id 23 移为顶级隐藏路由，侧边栏不再显示；入口改在顶栏用户菜单，权限按钮 id 129 保留。
 
 **2026-10-24**
 - 批处理权限按钮 id 126–128 挂在资源库下；可选演示菜单 id 20 指向 `/demo/batch`。

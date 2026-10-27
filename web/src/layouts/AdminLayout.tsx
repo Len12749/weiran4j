@@ -1,6 +1,6 @@
 import { BackTop, Breadcrumb, Button, Dropdown, Nav, SideSheet, Spin, Tooltip } from '@douyinfe/semi-ui';
 import type { NavItemPropsWithItems, OnSelectedData, SubNavProps } from '@douyinfe/semi-ui/lib/es/navigation';
-import { ChevronDown, Expand, Lock, LogOut, Menu as MenuIcon, PanelLeftClose, PanelLeftOpen, Settings, Shrink, UserRound } from 'lucide-react';
+import { ChevronDown, Expand, Lock, LogOut, Menu as MenuIcon, PanelLeftClose, PanelLeftOpen, Settings, ShieldCheck, Shrink, UserRound } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { matchPath, useLocation, useNavigate } from 'react-router-dom';
 import { AppLogo } from '@/components/AppLogo';
@@ -11,6 +11,7 @@ import { PageTabsContext } from '@/hooks/usePageTabs';
 import { useAuth } from '@/hooks/useAuth';
 import { lockScreen, unlockScreen, useIsLocked } from '@/hooks/useLockScreen';
 import { useIsMobile } from '@/hooks/useMediaQuery';
+import { usePermission } from '@/hooks/usePermission';
 import { usePreferences } from '@/hooks/usePreferences';
 import { getThemeColorVars } from '@/lib/theme-color';
 import { useThemeController } from '@/providers/theme-context';
@@ -164,6 +165,7 @@ export function AdminLayout({ menus, routes }: AdminLayoutProps) {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const { hasPermission } = usePermission();
     const { preferences: prefs } = usePreferences();
     const { isDark, color } = useThemeController();
     const isMobile = useIsMobile();
@@ -414,6 +416,11 @@ export function AdminLayout({ menus, routes }: AdminLayoutProps) {
                         <Dropdown.Item icon={<UserRound size={14} />} onClick={() => void navigate('/profile')}>
                             个人中心
                         </Dropdown.Item>
+                        {hasPermission('system:security:list') && (
+                            <Dropdown.Item icon={<ShieldCheck size={14} />} onClick={() => void navigate('/system/security')}>
+                                安全设置
+                            </Dropdown.Item>
+                        )}
                         <Dropdown.Item icon={<Settings size={14} />} onClick={() => setPrefsVisible(true)}>
                             偏好设置
                         </Dropdown.Item>

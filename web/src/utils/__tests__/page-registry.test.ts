@@ -13,6 +13,7 @@ const SEED_COMPONENTS = [
     'logs/LoginLogsPage',
     'logs/OperationLogsPage',
     'system/media-library',
+    'system/security/SecuritySettingsPage',
 ];
 
 describe('page-registry', () => {
