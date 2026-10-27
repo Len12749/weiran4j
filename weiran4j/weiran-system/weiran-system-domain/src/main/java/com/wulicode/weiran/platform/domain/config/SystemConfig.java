@@ -14,6 +14,9 @@ public final class SystemConfig {
     /** 允许匿名读取的配置键。 */
     public static final String PUBLIC_KEY = "system.general.title";
 
+    /** 配置值对外约定的最大长度。 */
+    public static final int MAX_VALUE_LENGTH = 65535;
+
     private final @Nullable Long id;
 
     private final String configKey;
@@ -64,10 +67,28 @@ public final class SystemConfig {
 
     /** 按类型校验当前值。 */
     public SystemConfig validated(final JsonSyntax jsonSyntax) {
-        this.configType.validate(this.configValue, jsonSyntax);
+        this.validatedValue(jsonSyntax);
         if (!this.configKey.startsWith("system.") && !this.configKey.startsWith("sms.")) {
             throw BizException.badRequest("configKey: 必须使用 system. 或 sms. 前缀");
         }
+        return this;
+    }
+
+    /** 只修改已有配置的值，保留键、分组与字段定义，并复用完整值校验。 */
+    public SystemConfig withValue(final String value, final JsonSyntax jsonSyntax) {
+        return this.toBuilder().configValue(value).build().validatedValue(jsonSyntax);
+    }
+
+    /** 业务配置创建时只校验通用的值与字段定义；命名空间由应用服务校验。 */
+    public SystemConfig validatedBusiness(final JsonSyntax jsonSyntax) {
+        return this.validatedValue(jsonSyntax);
+    }
+
+    private SystemConfig validatedValue(final JsonSyntax jsonSyntax) {
+        if (this.configValue.length() > SystemConfig.MAX_VALUE_LENGTH) {
+            throw BizException.badRequest("configValue: 最多 65535 个字符");
+        }
+        this.configType.validate(this.configValue, jsonSyntax);
         if (this.required && this.configValue.isBlank()) {
             throw BizException.badRequest("该配置项不能为空");
         }

@@ -41,6 +41,14 @@ public class MybatisConfigRepository implements ConfigRepository {
     }
 
     @Override
+    public Optional<SystemConfig> findByKeyForUpdate(final String configKey) {
+        return Optional.ofNullable(this.configMapper.selectOne(Wrappers.lambdaQuery(SysConfigDO.class)
+                        .eq(SysConfigDO::getConfigKey, configKey)
+                        .last("FOR UPDATE")))
+                .map(MybatisConfigRepository::toDomain);
+    }
+
+    @Override
     public boolean existsByKey(final String configKey) {
         return this.configMapper.exists(
                 Wrappers.lambdaQuery(SysConfigDO.class).eq(SysConfigDO::getConfigKey, configKey));
@@ -71,13 +79,26 @@ public class MybatisConfigRepository implements ConfigRepository {
         } else {
             this.configMapper.updateById(row);
         }
-        this.mediaReferences.replace(
-                "system_config",
-                String.valueOf(row.getId()),
-                "config_value",
-                "系统配置：" + row.getConfigKey(),
-                this.mediaReferences.findUrlsInText(row.getConfigValue() == null ? "" : row.getConfigValue()));
+        this.replaceValueReferences(row.getId(), row.getConfigKey(), row.getConfigValue());
         return row.getId();
+    }
+
+    @Override
+    public boolean updateValue(final long id, final String configKey, final String configValue) {
+        final int changed = this.configMapper.update(
+                null,
+                Wrappers.<SysConfigDO>lambdaUpdate()
+                        .eq(SysConfigDO::getId, id)
+                        .eq(SysConfigDO::getConfigKey, configKey)
+                        .set(SysConfigDO::getConfigValue, configValue));
+        if (changed != 1
+                && !this.configMapper.exists(Wrappers.lambdaQuery(SysConfigDO.class)
+                        .eq(SysConfigDO::getId, id)
+                        .eq(SysConfigDO::getConfigKey, configKey))) {
+            return false;
+        }
+        this.replaceValueReferences(id, configKey, configValue);
+        return true;
     }
 
     @Override
@@ -110,6 +131,15 @@ public class MybatisConfigRepository implements ConfigRepository {
                 .stream()
                 .map(MybatisConfigRepository::toDomain)
                 .toList();
+    }
+
+    private void replaceValueReferences(final long id, final String configKey, final String configValue) {
+        this.mediaReferences.replace(
+                "system_config",
+                String.valueOf(id),
+                "config_value",
+                "系统配置：" + configKey,
+                this.mediaReferences.findUrlsInText(configValue));
     }
 
     private static SystemConfig toDomain(final SysConfigDO row) {

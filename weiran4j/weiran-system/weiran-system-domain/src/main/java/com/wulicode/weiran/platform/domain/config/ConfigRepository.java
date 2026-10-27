@@ -15,6 +15,9 @@ public interface ConfigRepository {
     /** 按键查找。 */
     Optional<SystemConfig> findByKey(String configKey);
 
+    /** 在事务中按键锁定已有配置，供值更新校验。 */
+    Optional<SystemConfig> findByKeyForUpdate(String configKey);
+
     /** 键是否已存在。 */
     boolean existsByKey(String configKey);
 
@@ -23,6 +26,9 @@ public interface ConfigRepository {
 
     /** 新增或更新，返回 ID。 */
     long save(SystemConfig config);
+
+    /** 只更新已有配置的值并同步媒体引用；未找到对应 ID 与键时返回 false。 */
+    boolean updateValue(long id, String configKey, String configValue);
 
     /** 删除。 */
     void deleteById(long id);

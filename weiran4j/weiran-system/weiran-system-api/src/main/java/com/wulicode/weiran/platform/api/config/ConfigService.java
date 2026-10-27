@@ -32,8 +32,14 @@ public interface ConfigService {
     /** 新增，返回 ID。 */
     long create(SaveConfigCommand command);
 
+    /** 在业务命名空间创建配置；业务分组须已登记，键和字段定义在创建后由业务持有。 */
+    long createBusiness(String namespace, SaveConfigCommand command);
+
     /** 修改；内置项键不可改。 */
     void update(long id, SaveConfigCommand command);
+
+    /** 只修改已存在的业务命名空间配置值；不创建配置或更改键及字段定义。 */
+    void updateBusinessValue(String namespace, String configKey, @Nullable String configValue);
 
     /** 删除；内置不可删。 */
     void delete(long id);

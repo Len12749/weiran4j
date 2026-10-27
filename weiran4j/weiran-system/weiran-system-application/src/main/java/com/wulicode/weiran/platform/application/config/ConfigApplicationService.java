@@ -161,6 +161,38 @@ public class ConfigApplicationService implements ConfigService {
 
     @Override
     @Transactional
+    public long createBusiness(final String namespace, final SaveConfigCommand command) {
+        final String key = command.configKey();
+        ConfigApplicationService.requireBusinessKey(namespace, key);
+        if (command.configValue() == null) {
+            throw BizException.badRequest("configValue: 不能为空");
+        }
+        final String groupKey = command.groupKey();
+        if (this.configGroupRepository
+                .findEnabledByKey("config_system", groupKey)
+                .isEmpty()) {
+            throw BizException.badRequest("配置分组不存在或未启用");
+        }
+        if (this.configRepository.existsByKey(key)) {
+            throw BizException.duplicate("配置键已存在");
+        }
+        final SystemConfig config = SystemConfig.builder()
+                .configKey(key)
+                .configValue(command.configValue())
+                .configType(ConfigType.of(command.configType()))
+                .groupKey(groupKey)
+                .fieldType(command.fieldType())
+                .fieldOptions(Texts.trimToNull(command.fieldOptions()))
+                .required(command.required())
+                .description(Texts.trimToNull(command.description()))
+                .builtin(false)
+                .build()
+                .validatedBusiness(this.jsonSyntax);
+        return this.configRepository.save(config);
+    }
+
+    @Override
+    @Transactional
     public void update(final long id, final SaveConfigCommand command) {
         final SystemConfig config = this.requireConfig(id);
         final String key = command.configKey().strip();
@@ -183,6 +215,25 @@ public class ConfigApplicationService implements ConfigService {
             throw BizException.duplicate("配置键已存在");
         }
         this.configRepository.save(updated);
+    }
+
+    @Override
+    @Transactional
+    public void updateBusinessValue(
+            final String namespace, final String configKey, final @Nullable String configValue) {
+        ConfigApplicationService.requireBusinessKey(namespace, configKey);
+        if (configValue == null) {
+            throw BizException.badRequest("configValue: 不能为空");
+        }
+        // MySQL 的默认排序规则不区分大小写；锁定后仍须核对真实键。
+        final SystemConfig config = this.configRepository
+                .findByKeyForUpdate(configKey)
+                .filter(found -> found.getConfigKey().equals(configKey))
+                .orElseThrow(() -> BizException.notFound("配置不存在"));
+        final SystemConfig updated = config.withValue(configValue, this.jsonSyntax);
+        if (!this.configRepository.updateValue(updated.requireId(), configKey, updated.getConfigValue())) {
+            throw BizException.notFound("配置不存在");
+        }
     }
 
     @Override
@@ -222,6 +273,18 @@ public class ConfigApplicationService implements ConfigService {
             throw BizException.badRequest("配置域无效");
         }
         return groupKey;
+    }
+
+    private static void requireBusinessKey(final String namespace, final String configKey) {
+        if (namespace == null
+                || !namespace.matches("[a-z][a-z0-9_-]*")
+                || "system".equals(namespace)
+                || "sms".equals(namespace)
+                || configKey == null
+                || !configKey.matches(namespace + "\\.[a-z][a-z0-9_-]*\\.[a-z][a-z0-9_-]*")
+                || configKey.length() > 128) {
+            throw BizException.badRequest("配置键须为业务命名空间下的三级小写键，最多 128 字符");
+        }
     }
 
     private static ConfigView toView(final SystemConfig config) {
