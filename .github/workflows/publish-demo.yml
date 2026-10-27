@@ -140,5 +140,14 @@ jobs:
             echo
             echo "下载 compose.yml 和 demo.env.example，改名为 .env，填写两个密钥，然后运行 docker compose --env-file .env -f compose.yml up -d。"
           } > demo-release-notes.md
+          previous_tag="$(git describe --tags --match 'demo-v*' --abbrev=0 HEAD^ 2>/dev/null || true)"
+          release_options=(
+            --title "Demo $DEMO_VERSION"
+            --verify-tag
+            --notes "$(cat demo-release-notes.md)"
+          )
+          if [[ -n "$previous_tag" ]]; then
+            release_options+=(--generate-notes --notes-start-tag "$previous_tag")
+          fi
           gh release create "$GITHUB_REF_NAME" compose.yml demo.env.example \
-            --title "Demo $DEMO_VERSION" --notes-file demo-release-notes.md
+            "${release_options[@]}"

@@ -11,7 +11,7 @@
 
 ## 发布组件包
 
-在准备发布的提交通过 CI 后创建并推送 `lib-v<主>.<次>.<修订>` tag，例如 `lib-v0.1.2`。[`publish-libraries.yml`](../.github/workflows/publish-libraries.yml) 使用 JDK 21 跑后端 `check`，然后以 tag 中的版本发布 BOM、framework、system 和 region 的五层及 `weiran-system`、`weiran-region` 入口包。`weiran-app` 和 `weiran-demo` 不发布。BOM 与它登记的本仓模块必须同批发布，不能留下引用不到的坐标。`lib-v0.1.1` 没有 `weiran-system` 入口包；从 `0.1.2` 起使用该坐标。
+在准备发布的提交通过 CI 后创建并推送 `lib-v<主>.<次>.<修订>` tag，例如 `lib-v0.1.2`。[`publish-libraries.yml`](../.github/workflows/publish-libraries.yml) 使用 JDK 21 跑后端 `check`，然后以 tag 中的版本发布 BOM、framework、system 和 region 的五层及 `weiran-system`、`weiran-region` 入口包。发布成功后，工作流创建 GitHub Release，并从上一枚 `lib-v*` tag 自动生成变更说明；首次发布仅写入组件包坐标。`weiran-app` 和 `weiran-demo` 不发布。BOM 与它登记的本仓模块必须同批发布，不能留下引用不到的坐标。`lib-v0.1.1` 没有 `weiran-system` 入口包；从 `0.1.2` 起使用该坐标。
 
 ```bash
 git tag lib-v0.1.2
@@ -47,7 +47,7 @@ dependencies {
 
 ## 发布完整 Demo 镜像
 
-在准备发布的提交通过 CI 后推送 `demo-v<主>.<次>.<修订>` tag。[`publish-demo.yml`](../.github/workflows/publish-demo.yml) 运行后端与前端门禁，验证 Demo bootJar 包含演示模块及迁移，先用两张本地镜像启动 Compose 并检查健康接口和演示菜单，再发布两张同版本镜像并创建 GitHub Release：
+在准备发布的提交通过 CI 后推送 `demo-v<主>.<次>.<修订>` tag。[`publish-demo.yml`](../.github/workflows/publish-demo.yml) 运行后端与前端门禁，验证 Demo bootJar 包含演示模块及迁移，先用两张本地镜像启动 Compose 并检查健康接口和演示菜单，再发布两张同版本镜像并创建 GitHub Release。Release 保留源码提交、组件包 tag、镜像摘要和部署命令，并从上一枚 `demo-v*` tag 自动生成变更说明；首次发布仅写入部署信息：
 
 ```text
 ghcr.io/weiran-tech/weiran4j-demo-backend:0.3.0
