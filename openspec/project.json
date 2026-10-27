@@ -2,9 +2,9 @@
   "$schema-note": "openspec 流程中【必须被程序读取】的项目事实。其余项目事实以自由文本写在 templates/ 的 openspec:slot 槽里。改本文件后跑 `node openspec/check.mjs` 验证。",
   "commands-note": "L7 硬闸门的命令清单，**这是唯一事实源**：`L7/evidence-missing` 按这里的键名要求 `exec/evidence/<键>.log` 逐个存在且非空。命令从仓库根执行：后端在 `weiran4j/` 下走 Gradle wrapper（必须 JDK 21，否则 palantir-java-format 失败），前端走仓库根的 pnpm 工作区。后端 `check` 已包含 test、Checkstyle、SpotBugs、Spotless、Forbidden APIs、Error Prone/NullAway 与 Testcontainers 集成测试（需要 Docker）。用 `--no-daemon`：复用的 daemon 曾让 palantir 在所有文件上报 NoClassDefFoundError（见 rules/advisory/toolchain.md）。",
   "commands": {
-    "build": "(cd weiran4j && JAVA_HOME=${JAVA_HOME_21:-$(/usr/libexec/java_home -v 21)} ./gradlew assemble --no-daemon) && pnpm --filter @weiran/web build",
-    "test": "(cd weiran4j && JAVA_HOME=${JAVA_HOME_21:-$(/usr/libexec/java_home -v 21)} ./gradlew test --no-daemon) && pnpm --filter @weiran/web test",
-    "lint": "(cd weiran4j && JAVA_HOME=${JAVA_HOME_21:-$(/usr/libexec/java_home -v 21)} ./gradlew check --no-daemon) && pnpm --filter @weiran/web lint"
+    "build": "(cd weiran4j && JAVA_HOME=${JAVA_HOME_21:-$(/usr/libexec/java_home -v 21)} ./gradlew assemble --no-daemon) && pnpm --filter @weiran/backend build",
+    "test": "(cd weiran4j && JAVA_HOME=${JAVA_HOME_21:-$(/usr/libexec/java_home -v 21)} ./gradlew test --no-daemon) && pnpm --filter @weiran/backend test",
+    "lint": "(cd weiran4j && JAVA_HOME=${JAVA_HOME_21:-$(/usr/libexec/java_home -v 21)} ./gradlew check --no-daemon) && pnpm --filter @weiran/backend lint"
   },
   "sourcePaths": [
     "weiran4j/weiran-*",

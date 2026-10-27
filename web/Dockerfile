@@ -9,9 +9,9 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY web/package.json web/package.json
 COPY weiran4j/package.json weiran4j/package.json
-RUN pnpm install --frozen-lockfile --filter @weiran/web...
+RUN pnpm install --frozen-lockfile --filter @weiran/backend...
 COPY web web
-RUN pnpm --filter @weiran/web build
+RUN pnpm --filter @weiran/backend build
 
 # ---- 运行 ----
 FROM nginx:1.27-alpine
