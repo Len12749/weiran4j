@@ -1,22 +1,22 @@
 # sys_config 系统配置
 
 > 属于 `openspec/state/`，**只描述事实，不是规范**：过期不会被 `check.mjs` 拦截，**以代码为准**，发现不符回来改这里。
-> 契约文档 `weiran4j/docs/01-架构与接口契约.md` 只作索引；它与代码不一致的地方以代码为准写在下文，并在 §6 登记。
+> 契约文档 `server/docs/01-架构与接口契约.md` 只作索引；它与代码不一致的地方以代码为准写在下文，并在 §6 登记。
 >
 > 事实源：
-> [`ConfigController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/platform/adapter/web/ConfigController.java)、
-> [`SaveConfigRequest.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/platform/adapter/web/request/SaveConfigRequest.java)、
-> [`ConfigApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/platform/application/config/ConfigApplicationService.java)、
-> [`SystemConfig.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/platform/domain/config/SystemConfig.java) /
-> [`ConfigType.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/platform/domain/config/ConfigType.java)、
-> [`JacksonJsonSyntax.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/platform/infrastructure/json/JacksonJsonSyntax.java)、
-> [`MybatisConfigRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/platform/infrastructure/persistence/MybatisConfigRepository.java)、
-> [`V202609260101__platform_init_schema.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/platform/V202609260101__platform_init_schema.sql) /
-> [`V202609260102__platform_seed_data.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/platform/V202609260102__platform_seed_data.sql)、
-> [`ConfigsPage.tsx`](../../../web/src/pages/system/configs/ConfigsPage.tsx)（系统配置页面）、
-> [`SmsConfigsPage.tsx`](../../../web/src/pages/system/sms/SmsConfigsPage.tsx)（独立短信配置页面）、
-> [`SystemConfigGroupForm.tsx`](../../../web/src/components/SystemConfigGroupForm.tsx)（共享动态配置表单）、
-> [`hooks/queries/configs.ts`](../../../web/src/hooks/queries/configs.ts)。
+> [`ConfigController.java`](../../../server/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/platform/adapter/backend/ConfigController.java)、
+> [`SaveConfigRequest.java`](../../../server/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/platform/adapter/backend/request/SaveConfigRequest.java)、
+> [`ConfigApplicationService.java`](../../../server/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/platform/application/config/ConfigApplicationService.java)、
+> [`SystemConfig.java`](../../../server/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/platform/domain/config/SystemConfig.java) /
+> [`ConfigType.java`](../../../server/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/platform/domain/config/ConfigType.java)、
+> [`JacksonJsonSyntax.java`](../../../server/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/platform/infrastructure/json/JacksonJsonSyntax.java)、
+> [`MybatisConfigRepository.java`](../../../server/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/platform/infrastructure/persistence/MybatisConfigRepository.java)、
+> [`V202609260101__platform_init_schema.sql`](../../../server/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/platform/V202609260101__platform_init_schema.sql) /
+> [`V202609260102__platform_seed_data.sql`](../../../server/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/platform/V202609260102__platform_seed_data.sql)、
+> [`ConfigsPage.tsx`](../../../backend/src/pages/system/configs/ConfigsPage.tsx)（系统配置页面）、
+> [`SmsConfigsPage.tsx`](../../../backend/src/pages/system/sms/SmsConfigsPage.tsx)（独立短信配置页面）、
+> [`SystemConfigGroupForm.tsx`](../../../backend/src/components/SystemConfigGroupForm.tsx)（共享动态配置表单）、
+> [`hooks/queries/configs.ts`](../../../backend/src/hooks/queries/configs.ts)。
 >
 > 盘点基线：`e23c511`（2026-09-26，D-008 框架重写后的首次盘点）。
 
@@ -93,7 +93,7 @@
 - 系统配置页面按 `sys_group(type=config,group_key=config_system)` 分组；短信页面按 `group_key=config_sms` 分组。配置键遵循 `{range}.{group}.{value}`，其中 `range=system/sms`、`group=sys_config.group_key=sys_group.code`；新建或变更键、分组时校验。已有不合规的自定义键允许原位改值。`field_type`、`field_options`、`required` 控制表单渲染和校验。匿名读取仅允许 `system.general.title`。
 - 短信配置由 `/system/sms` 菜单进入共用的 `ConfigsPage`，传入 `config_sms` 后只呈现短信域分组及 `sms.*` 配置项：`sms.general.sign_name` 位于 `general` 组，`sms.system_tpl.captcha_local` 与 `sms.system_tpl.captcha_aliyun` 位于 `system_tpl` 组。分组与配置项管理共用同一页面流程，分组写接口按配置域定位。
 - 登录页通过公开 `/api-backend/n/system/auth/listProviders` 获取手机号登录状态；后端只有在 `system.user.enable_phone_login=true`、短信发送模式可用且当前模式的验证码模板有效时才返回 `phoneLoginEnabled=true`。`local` 模式的 `sms.system_tpl.captcha_local` 是短信正文，必须包含 `${code}`；发码时替换并写入应用日志。`aliyun` 模式的 `sms.system_tpl.captcha_aliyun` 是已审核模板 CODE。
-- 站点标题仍取自构建期环境变量 `VITE_APP_TITLE`（见 #02）；`web/src` 不直接调用公开配置接口。
+- 站点标题仍取自构建期环境变量 `VITE_APP_TITLE`（见 #02）；`backend/src` 不直接调用公开配置接口。
 - 内置配置只保护「键不可改、不可删」，值与表单配置都可以改。
 - [系统配置说明](../../../docs/configuration.md)记录了分组和表单字段的使用方式。
 

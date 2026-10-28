@@ -13,7 +13,7 @@ AI 协作规范这些清单类资源如何由下游独占的旁路文件追加,�
 
 ### Requirement: [FR-001] 业务模块自动发现
 
-Gradle 构建 **MUST** 把 `weiran4j/` 下名为 `weiran-<mod>`、且含 `weiran-<mod>-{api,domain,application,infrastructure,adapter}` 五个子目录的目录识别为业务模块,
+Gradle 构建 **MUST** 把 `server/` 下名为 `weiran-<mod>`、且含 `weiran-<mod>-{api,domain,application,infrastructure,adapter}` 五个子目录的目录识别为业务模块,
 无需修改任何构建脚本即完成五层 include、BOM 坐标登记、`weiran-app` 对其 `adapter` / `infrastructure` 的依赖,以及
 `application` / `infrastructure` / `adapter` 三层的覆盖率聚合。`weiran-system` **MUST** 排在清单第一位,其余按名称字母序。
 发现结果 **MUST** 以 `gradle.extra["weiran.businessModules"]`(`List<String>`)对其他构建脚本公开。
@@ -24,7 +24,7 @@ Gradle 构建 **MUST** 把 `weiran4j/` 下名为 `weiran-<mod>`、且含 `weiran
 - **判据**:`projects` 输出中以 `weiran-` 开头、以五层后缀结尾的项目集合与改动前逐行一致
 
 #### Scenario: 新增五层齐全的目录即被收录
-- **WHEN** 新建 `weiran4j/weiran-example/weiran-example-{api,domain,application,infrastructure,adapter}/` 五个目录,不改任何 `.kts`
+- **WHEN** 新建 `server/weiran-example/weiran-example-{api,domain,application,infrastructure,adapter}/` 五个目录,不改任何 `.kts`
 - **THEN** 构建包含 `:weiran-example-*` 五个项目,且 `weiran-app` 依赖 `:weiran-example-adapter` 与 `:weiran-example-infrastructure`
 - **判据**:`./gradlew projects` 列出五个项目;`./gradlew :weiran-app:dependencies --configuration runtimeClasspath` 含两条 `project :weiran-example-*`
 
@@ -34,7 +34,7 @@ Gradle 构建 **MUST** 把 `weiran4j/` 下名为 `weiran-<mod>`、且含 `weiran
 构建 **MUST NOT** 静默跳过这样的目录。
 
 #### Scenario: 只有三层的目录
-- **WHEN** 存在 `weiran4j/weiran-half/weiran-half-{api,domain,application}/` 而无另外两层
+- **WHEN** 存在 `server/weiran-half/weiran-half-{api,domain,application}/` 而无另外两层
 - **THEN** 任一 Gradle 命令在配置阶段失败
 - **判据**:退出码非 0,输出同时包含 `weiran-half`、`infrastructure`、`adapter`
 
@@ -81,18 +81,18 @@ Flyway **MUST** 以 `out-of-order: true` 运行:版本号早于已执行最大�
 
 ### Requirement: [FR-006] 业务模块号段登记处
 
-业务模块的错误码序号段、菜单 id 段、权限码前缀、Flyway 目录与表前缀 **MUST** 登记在 `weiran4j/docs/business-modules.md`。
+业务模块的错误码序号段、菜单 id 段、权限码前缀、Flyway 目录与表前缀 **MUST** 登记在 `server/docs/business-modules.md`。
 上游在该文件中 **MUST** 只维护表头与「框架 + 基座」一行,且该行不含随基座增长而变化的数值;
 契约文档、宪法与 `AGENTS.md` 中凡指向号段登记的引用 **MUST** 指向该文件。
 
 #### Scenario: 引用全部指向新文件
-- **WHEN** 在 `AGENTS.md`、`openspec/rules/`、`weiran4j/docs/` 中搜索号段登记的引用
+- **WHEN** 在 `AGENTS.md`、`openspec/rules/`、`server/docs/` 中搜索号段登记的引用
 - **THEN** 都指向 `business-modules.md`
-- **判据**:`grep -rn "§2.1 登记\|「业务模块登记」" AGENTS.md openspec/rules weiran4j/docs` 无匹配;`business-modules.md` 的表体只有一行
+- **判据**:`grep -rn "§2.1 登记\|「业务模块登记」" AGENTS.md openspec/rules server/docs` 无匹配;`business-modules.md` 的表体只有一行
 
 ### Requirement: [FR-007] 下游菜单图标合并
 
-前端 **MUST** 把 `web/src/biz/icons*.ts` 中具名导出 `icons`(`Record<string, LucideIcon>`)的条目合并进菜单图标表,
+前端 **MUST** 把 `backend/src/biz/icons*.ts` 中具名导出 `icons`(`Record<string, LucideIcon>`)的条目合并进菜单图标表,
 使其可在 `IconPicker` 中选择、可被 `renderIcon` / `renderNavIcon` 渲染。与基座同名时 **MUST** 以基座为准。
 不存在此类文件时,图标表 **MUST** 与基座白名单完全相同。
 
@@ -117,11 +117,11 @@ openspec 流水线 **MUST** 接受下游独占的旁路文件,而无需下游修
 `openspec/rules/advisory/components.biz.md` 中提到的组件名 **MUST** 视为已登记;
 `openspec/state/bizs/README.biz.md` 作为下游表文档的索引;
 `AGENTS.md` **MUST** 声明仓库根存在 `AGENTS.biz.md` 时必读;
-`openspec/project.json` 的 `sourcePaths` **MUST** 以通配覆盖 `weiran4j/weiran-*` 全部后端模块。
+`openspec/project.json` 的 `sourcePaths` **MUST** 以通配覆盖 `server/weiran-*` 全部后端模块。
 上游 **MUST NOT** 创建这些旁路文件。
 
 #### Scenario: 旁路清单登记的组件不报错
-- **WHEN** `web/src/components/` 下有未写进 `components.md` 的组件 `Foo`,而 `components.biz.md` 提到了 `Foo`
+- **WHEN** `backend/src/components/` 下有未写进 `components.md` 的组件 `Foo`,而 `components.biz.md` 提到了 `Foo`
 - **THEN** `pnpm openspec:check` 不报 `REPO/components-unregistered`
 - **判据**:临时构造上述文件后跑 check,输出不含该组件路径;删除 `components.biz.md` 后再跑则报错
 
@@ -132,12 +132,12 @@ openspec 流水线 **MUST** 接受下游独占的旁路文件,而无需下游修
 
 #### Scenario: sourcePaths 覆盖新业务模块
 - **WHEN** 读取 `openspec/project.json`
-- **THEN** `sourcePaths` 含 `weiran4j/weiran-*`,不再逐个列后端模块
-- **判据**:`git log -1 -- 'weiran4j/weiran-*'` 的结果与改动前四条路径的结果一致
+- **THEN** `sourcePaths` 含 `server/weiran-*`,不再逐个列后端模块
+- **判据**:`git log -1 -- 'server/weiran-*'` 的结果与改动前四条路径的结果一致
 
 ### Requirement: [FR-009] 下游依赖版本清单
 
-`weiran-dependencies` **MUST** 在 `weiran4j/weiran-dependencies/biz-dependencies.gradle.kts` 存在时 apply 它,使其中登记的版本约束与 import 的第三方 BOM
+`weiran-dependencies` **MUST** 在 `server/weiran-dependencies/biz-dependencies.gradle.kts` 存在时 apply 它,使其中登记的版本约束与 import 的第三方 BOM
 成为统一依赖平台的一部分;业务模块 **MUST** 照常以不带版本的坐标声明这些依赖。该文件不存在时,依赖解析结果 **MUST** 与没有这一机制时相同。
 上游 **MUST NOT** 创建该文件。
 

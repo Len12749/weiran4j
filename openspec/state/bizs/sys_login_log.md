@@ -1,20 +1,20 @@
 # sys_login_log 登录日志
 
 > 属于 `openspec/state/`，**只描述事实，不是规范**：过期不会被 `check.mjs` 拦截，**以代码为准**，发现不符回来改这里。
-> 契约文档 `weiran4j/docs/01-架构与接口契约.md` 只作索引；它与代码不一致的地方以代码为准写在下文，并在 §6 登记。
+> 契约文档 `server/docs/01-架构与接口契约.md` 只作索引；它与代码不一致的地方以代码为准写在下文，并在 §6 登记。
 >
 > 事实源：
-> [`LoginLogController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/LoginLogController.java)、
-> [`AuthController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/AuthController.java)（写入入口）、
-> [`AuthApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/system/application/auth/AuthApplicationService.java)（`login` / `logout` / `appendLog`）、
-> [`LoginLogApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/system/application/loginlog/LoginLogApplicationService.java)、
-> [`LoginLog.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/loginlog/LoginLog.java)、
-> [`MybatisLoginLogRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/system/infrastructure/persistence/MybatisLoginLogRepository.java)、
-> [`ClientIpResolver.java`](../../../weiran4j/weiran-framework/src/main/java/com/wulicode/weiran/framework/web/ClientIpResolver.java) /
-> [`UserAgentParser.java`](../../../weiran4j/weiran-framework/src/main/java/com/wulicode/weiran/framework/web/UserAgentParser.java)、
-> [`V202609260001__system_init_schema.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/system/V202609260001__system_init_schema.sql)、
-> [`LoginLogsPage.tsx`](../../../web/src/pages/logs/LoginLogsPage.tsx)、[`hooks/queries/logs.ts`](../../../web/src/hooks/queries/logs.ts)、
-> [`utils/date.ts`](../../../web/src/utils/date.ts)。
+> [`LoginLogController.java`](../../../server/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/backend/LoginLogController.java)、
+> [`AuthController.java`](../../../server/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/backend/AuthController.java)（写入入口）、
+> [`AuthApplicationService.java`](../../../server/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/system/application/auth/AuthApplicationService.java)（`login` / `logout` / `appendLog`）、
+> [`LoginLogApplicationService.java`](../../../server/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/system/application/loginlog/LoginLogApplicationService.java)、
+> [`LoginLog.java`](../../../server/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/loginlog/LoginLog.java)、
+> [`MybatisLoginLogRepository.java`](../../../server/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/system/infrastructure/persistence/MybatisLoginLogRepository.java)、
+> [`ClientIpResolver.java`](../../../server/weiran-framework/src/main/java/com/wulicode/weiran/framework/backend/ClientIpResolver.java) /
+> [`UserAgentParser.java`](../../../server/weiran-framework/src/main/java/com/wulicode/weiran/framework/backend/UserAgentParser.java)、
+> [`V202609260001__system_init_schema.sql`](../../../server/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/system/V202609260001__system_init_schema.sql)、
+> [`LoginLogsPage.tsx`](../../../backend/src/pages/logs/LoginLogsPage.tsx)、[`hooks/queries/logs.ts`](../../../backend/src/hooks/queries/logs.ts)、
+> [`utils/date.ts`](../../../backend/src/utils/date.ts)。
 >
 > 盘点基线：`e23c511`（2026-09-26，D-008 框架重写后的首次盘点）。
 

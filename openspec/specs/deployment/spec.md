@@ -12,7 +12,7 @@ status: "active"
 
 ### Requirement: [FR-001] 环境变量清单一致
 
-`weiran4j/.env.example` **MUST** 列出 `weiran-app` 的 `application.yml` 中出现的全部 `${WEIRAN_*}` 占位符,每一项都附说明;除此之外只允许出现 Compose 专用变量(目前只有 `WEIRAN_WEB_PORT`,在一致性测试里显式登记)。**MUST NOT** 包含任何真实密钥。
+`server/.env.example` **MUST** 列出 `weiran-app` 的 `application.yml` 中出现的全部 `${WEIRAN_*}` 占位符,每一项都附说明;除此之外只允许出现 Compose 专用变量(目前只有 `WEIRAN_WEB_PORT`,在一致性测试里显式登记)。**MUST NOT** 包含任何真实密钥。
 
 #### Scenario: 清单与配置一致
 - **WHEN** 运行一致性测试
@@ -24,10 +24,10 @@ status: "active"
 仓库 **MUST** 提供可直接使用的容器化部署产物:
 - 后端镜像:以非 root 用户运行 JRE 21;
 - 前端镜像:Nginx 提供静态文件,并把 `/api-backend/` 同源反代到后端,透传 `Cookie`、`Set-Cookie`、`X-CSRF-Token`、`X-Request-Id`、`X-Forwarded-*`;
-- `docker-compose.yml`:编排 MySQL 8、后端、前端,密钥一律来自 `weiran4j/.env`,不写死。
+- `docker-compose.yml`:编排 MySQL 8、后端、前端,密钥一律来自 `server/.env`,不写死。
 
 #### Scenario: Compose 起一套可登录的环境
-- **WHEN** 准备好 `weiran4j/.env` 后执行 `docker compose --env-file weiran4j/.env up -d --build`
+- **WHEN** 准备好 `server/.env` 后执行 `docker compose --env-file server/.env up -d --build`
 - **THEN** 经前端端口用浏览器 Cookie 模式登录 `admin/admin123` 成功,随后 `GET /api-backend/auth/me` 返回 `code 0`
 - **判据**:用 `curl` 加 cookie jar 经前端端口走「登录 → `/me`」,断言 `code` 为 0,并记录在 verify
 
@@ -38,7 +38,7 @@ status: "active"
 
 ### Requirement: [FR-003] 部署文档
 
-`weiran4j/docs/02-部署.md` **MUST** 覆盖以下内容:
+`server/docs/02-部署.md` **MUST** 覆盖以下内容:
 - 前置条件;
 - 环境变量(引用 `.env.example`);
 - Compose 启动、升级、停止步骤;
@@ -55,4 +55,4 @@ status: "active"
 #### Scenario: 文档覆盖必需章节
 - **WHEN** 检查 `02-部署.md`
 - **THEN** 上述每一项都有对应小节或段落
-- **判据**:verify 中逐项列出所在章节标题;`grep -n "02-部署.md" AGENTS.md weiran4j/docs/01-架构与接口契约.md` 都有匹配
+- **判据**:verify 中逐项列出所在章节标题;`grep -n "02-部署.md" AGENTS.md server/docs/01-架构与接口契约.md` 都有匹配

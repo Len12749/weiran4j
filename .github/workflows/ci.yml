@@ -29,7 +29,7 @@ jobs:
           cache: gradle
       # 托管 runner 自带 Docker，集成测试的 MySQL 由 Testcontainers 拉起；JWT 密钥用测试 profile 里的假值，不需要 secrets。
       - name: ./gradlew check
-        working-directory: weiran4j
+        working-directory: server
         run: ./gradlew check --no-daemon
 
   web:

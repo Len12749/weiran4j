@@ -7,7 +7,7 @@
 | ---- | --------------------------------------------------------------------------------- |
 | 后端 | JDK 21 · Gradle 9 · Spring Boot 3.5 · MyBatis-Plus · Flyway · MySQL 8 · JWT(jjwt)  |
 | 分层 | DDD 五层（api / domain / application / infrastructure / adapter）                  |
-| 前端 | pnpm · Vite · React 19 · Semi UI · TanStack Query · React Router 7（位于仓库根 `web/`） |
+| 前端 | pnpm · Vite · React 19 · Semi UI · TanStack Query · React Router 7（位于仓库根 `backend/`） |
 | 流程 | openspec（L0–L10 闸门）                                                           |
 
 ## 快速开始
@@ -25,7 +25,7 @@ cp config/application-local.yml.example config/application-local.yml   # 填库�
 
 # 3. 一条命令起前后端（仓库根目录，turbo 编排）
 cd .. && pnpm install && pnpm dev      # 后端(5200) + 前端(5202) + 文档站(5209)，/api 代理到后端
-                                       # 只起后端：pnpm dev:server，或在 weiran4j/ 下 ./gradlew :weiran-app:bootRun
+                                       # 只起后端：pnpm dev:server，或在 server/ 下 ./gradlew :weiran-app:bootRun
 ```
 
 打开 http://localhost:5202 ，用 **`admin` / `admin123`** 登录。⚠️ 上线前必须修改该密码。

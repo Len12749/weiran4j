@@ -79,7 +79,7 @@ status: "active"
 
 #### Scenario: 种子菜单的组件全部存在
 - **WHEN** 读取种子迁移中全部 `type=menu` 菜单的 `component`
-- **THEN** 每一个都能在 `web/src/pages` 下解析到页面文件
+- **THEN** 每一个都能在 `backend/src/pages` 下解析到页面文件
 - **判据**:`web` 的 page-registry 单测对全部种子 component 断言可解析
 
 ### Requirement: [FR-006] 树结构防环
@@ -156,9 +156,9 @@ status: "active"
 - **判据**:集成测试断言两个 Cookie 的 `Max-Age=0`
 
 #### Scenario: 前端不再持有令牌
-- **WHEN** 检索 `web/src` 下的非测试源码
+- **WHEN** 检索 `backend/src` 下的非测试源码
 - **THEN** 没有用 `localStorage` 读写令牌,也没有设置 `Authorization` 请求头
-- **判据**:`grep -rnE "Authorization|weiran_token|TOKEN_KEY" web/src --include='*.ts' --include='*.tsx' --exclude-dir=__tests__` 无匹配
+- **判据**:`grep -rnE "Authorization|weiran_token|TOKEN_KEY" backend/src --include='*.ts' --include='*.tsx' --exclude-dir=__tests__` 无匹配
 
 ### Requirement: [FR-011] CSRF 双提交校验
 
@@ -184,7 +184,7 @@ status: "active"
 #### Scenario: 前端写请求自动带 CSRF 头
 - **WHEN** 已登录状态下前端通过 `http.put` 发出请求
 - **THEN** 请求头 `X-CSRF-Token` 等于 `weiran_csrf` Cookie 的值;`http.get` 不带该头
-- **判据**:`web/src/utils/__tests__/request.test.ts` 断言 fetch 调用的 headers
+- **判据**:`backend/src/utils/__tests__/request.test.ts` 断言 fetch 调用的 headers
 
 ### Requirement: [FR-012] 只校验凭据的认证入口
 

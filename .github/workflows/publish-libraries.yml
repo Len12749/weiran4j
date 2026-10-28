@@ -30,7 +30,7 @@ jobs:
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'tag 必须形如 lib-v1.2.3'; exit 1; }
           echo "value=$version" >> "$GITHUB_OUTPUT"
       - name: 后端门禁
-        working-directory: weiran4j
+        working-directory: server
         run: ./gradlew check --no-daemon -PlibVersion=${{ steps.version.outputs.value }}
       - uses: actions/setup-node@v7
         with:
@@ -38,7 +38,7 @@ jobs:
       - name: OpenSpec 结构检查
         run: node openspec/check.mjs
       - name: 发布 BOM 与库模块到 GitHub Packages
-        working-directory: weiran4j
+        working-directory: server
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

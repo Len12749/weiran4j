@@ -1,10 +1,10 @@
 # components.md —— 前端公共组件清单(先查再造)
 
-> **写 `web/` 的页面或组件前先查这里**:查到就复用,查不到才造。
+> **写 `backend/` 的页面或组件前先查这里**:查到就复用,查不到才造。
 > 漏登记的直接后果是下一个人查不到它、把它重造一遍。
 >
 > **新增未登记会被拦**:`openspec/guards/components-registry.mjs`(`REPO/components-unregistered`)
-> 扫描 `web/src/components/` 与 `web/src/layouts/`,文件名没在本文件正文里出现就报错。
+> 扫描 `backend/src/components/` 与 `backend/src/layouts/`,文件名没在本文件正文里出现就报错。
 > 它只查「名字在不在」,**不查描述对不对** —— 删除组件或改了对外协议后,回来改对应条目是写的人的事。
 >
 > 确实不该进清单的文件(纯内部实现),加进 `openspec/project.json` 的 `componentsRegistry.exempt` 并写理由。
@@ -64,7 +64,7 @@
 | **RichTextEditor** | `components/RichTextEditor.tsx` + `RichTextEditor.css` | 通用富文本，保存 HTML，支持粘贴图片、多图上传、引用、撤销和重做 | 图片默认由 system 媒体接口上传，业务可通过 `onUploadImage` 注入上传动作；保存表单应在上传期间禁用提交 |
 | **SystemConfigGroupForm** | `components/SystemConfigGroupForm.tsx` | 系统配置分组的动态字段编辑器，按字段类型渲染控件、校验并保存分组配置；组件演示页也直接复用 | 调用方传 `ConfigView[]`、编辑权限与字段设置回调；默认用系统配置 Query hooks 保存，`onSave` / `onUploadFile` / `onUploadImage` 可注入业务动作 |
 
-## 布局(`web/src/layouts/`)
+## 布局(`backend/src/layouts/`)
 
 | 组件 | 位置 | 是什么 | 坑 |
 | --- | --- | --- | --- |
@@ -109,4 +109,4 @@
 2. 在消费处读 `usePreferences().preferences.<field>` 接通行为(布局类放 `AdminLayout`,表格类放 `useTableDefaults`)。
 3. **行为接通后**才在 `layouts/PreferencesDrawer.tsx` 对应分组加控件(布尔用 `<SwitchRow field=… />`)。
 4. 至少一条测试证明它真的生效(布局类见 `layouts/__tests__/AdminLayout.test.tsx` 的 `renderAuthed(route, prefs)`)。
-5. 契约 `weiran4j/docs/01-架构与接口契约.md` §6.1 的字段数若有写死,一并改。后端不需要改。
+5. 契约 `server/docs/01-架构与接口契约.md` §6.1 的字段数若有写死,一并改。后端不需要改。

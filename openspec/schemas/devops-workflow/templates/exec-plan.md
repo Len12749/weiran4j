@@ -164,8 +164,8 @@ flowchart TD
 
 | 执行单元 | 拥有(可写) | 只读 | 禁止触碰 |
 |---|---|---|---|
-| `E3` | `weiran-system-application/src/...`<br>`weiran-system-adapter/src/...` | `weiran-framework/**` | `web/**` |
-| `E4` | `web/src/pages/...` | `weiran-framework/**` | `weiran-system-*/**` |
+| `E3` | `weiran-system-application/src/...`<br>`weiran-system-adapter/src/...` | `weiran-framework/**` | `backend/**` |
+| `E4` | `backend/src/pages/...` | `weiran-framework/**` | `weiran-system-*/**` |
 
 ## 6. 测试归属
 

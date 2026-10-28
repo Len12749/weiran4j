@@ -1,4 +1,4 @@
-# 前端镜像的构建上下文是仓库根；只需要 pnpm 工作区清单与 web/
+# 前端镜像的构建上下文是仓库根；只需要 pnpm 工作区清单与 backend/
 **/node_modules
 **/dist
 **/build
@@ -7,7 +7,7 @@
 .turbo
 .omc
 openspec
-weiran4j
-!weiran4j/package.json
+server
+!server/package.json
 **/.env
 **/.env.*

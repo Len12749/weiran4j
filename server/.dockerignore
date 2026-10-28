@@ -1,4 +1,4 @@
-# 后端镜像的构建上下文是 weiran4j/
+# 后端镜像的构建上下文是 server/
 **/build
 .gradle
 build-logic/.gradle

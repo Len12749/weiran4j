@@ -6,7 +6,7 @@
  */
 import { readFileSync, readdirSync } from 'node:fs'
 
-const SOURCE_ROOT = 'weiran4j'
+const SOURCE_ROOT = 'server'
 const MAPPING = /^@(RequestMapping|GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\b\s*(?:\(([^)]*)\))?/
 const CLASS_DECL = /\bclass\s+[A-Za-z_$][\w$]*/
 const METHOD_NAMES = {
@@ -177,10 +177,15 @@ export default {
     const files = walk(join(ROOT, SOURCE_ROOT))
     const baseline = new Set()
     const current = new Map()
+    // 目录改名尚未提交时，HEAD 里的源码仍位于旧目录；存量路由基线必须继续可读。
+    const currentHeadFiles = git(['ls-tree', '-r', '--name-only', 'HEAD', '--', SOURCE_ROOT])
+    const baselineRoot = currentHeadFiles ? SOURCE_ROOT : 'weiran4j'
+    const baselineFiles = new Set(git(['ls-tree', '-r', '--name-only', 'HEAD', '--', baselineRoot]).split('\n'))
 
     for (const file of files) {
       const relative = rel(file)
-      const baseSource = git(['show', `HEAD:${relative}`])
+      const baselineRelative = relative.replace(`${SOURCE_ROOT}/`, `${baselineRoot}/`)
+      const baseSource = baselineFiles.has(baselineRelative) ? git(['show', `HEAD:${baselineRelative}`]) : ''
       for (const route of scanRoutes(baseSource)) baseline.add(route)
       for (const route of scanRoutes(readFileSync(file, 'utf8'))) {
         if (!current.has(route)) current.set(route, relative)

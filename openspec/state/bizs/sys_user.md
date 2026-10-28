@@ -1,29 +1,29 @@
 # sys_user 用户管理
 
 > 属于 `openspec/state/`，**只描述事实，不是规范**：过期不会被 `check.mjs` 拦截，**以代码为准**，发现不符回来改这里。
-> 契约文档 `weiran4j/docs/01-架构与接口契约.md` 只作索引；它与代码不一致的地方以代码为准写在下文，并在 §6 登记。
+> 契约文档 `server/docs/01-架构与接口契约.md` 只作索引；它与代码不一致的地方以代码为准写在下文，并在 §6 登记。
 >
 > 事实源：
-> [`UserController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/UserController.java)、
-> [`CreateUserRequest.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/request/CreateUserRequest.java) /
-> [`UpdateUserRequest.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/request/UpdateUserRequest.java) /
-> [`ResetPasswordRequest.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/request/ResetPasswordRequest.java)、
-> [`UserApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/system/application/user/UserApplicationService.java)、
-> [`User.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/user/User.java) /
-> [`PasswordPolicy.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/user/PasswordPolicy.java) /
-> [`Gender.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/user/Gender.java)、
-> [`MybatisUserRepository.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/system/infrastructure/persistence/MybatisUserRepository.java) /
-> [`SysUserDO.java`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/system/infrastructure/persistence/entity/SysUserDO.java)、
-> [`V202609260001__system_init_schema.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/system/V202609260001__system_init_schema.sql) /
-> [`V202609270001__system_user_preferences.sql`](../../../weiran4j/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/system/V202609270001__system_user_preferences.sql)、
-> 个人偏好 / 收藏 / 锁屏：[`AuthController.java`](../../../weiran4j/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/web/AuthController.java) →
-> [`AuthApplicationService.java`](../../../weiran4j/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/system/application/auth/AuthApplicationService.java)，
-> 领域规则 [`UserPreferences.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/user/UserPreferences.java) /
-> [`FavoriteMenus.java`](../../../weiran4j/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/user/FavoriteMenus.java)、
-> [`UsersPage.tsx`](../../../web/src/pages/system/users/UsersPage.tsx) /
-> [`UserFormModal.tsx`](../../../web/src/pages/system/users/UserFormModal.tsx) /
-> [`ResetPasswordModal.tsx`](../../../web/src/pages/system/users/ResetPasswordModal.tsx)、
-> [`hooks/queries/users.ts`](../../../web/src/hooks/queries/users.ts)、[`utils/password.ts`](../../../web/src/utils/password.ts)。
+> [`UserController.java`](../../../server/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/backend/UserController.java)、
+> [`CreateUserRequest.java`](../../../server/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/backend/request/CreateUserRequest.java) /
+> [`UpdateUserRequest.java`](../../../server/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/backend/request/UpdateUserRequest.java) /
+> [`ResetPasswordRequest.java`](../../../server/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/backend/request/ResetPasswordRequest.java)、
+> [`UserApplicationService.java`](../../../server/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/system/application/user/UserApplicationService.java)、
+> [`User.java`](../../../server/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/user/User.java) /
+> [`PasswordPolicy.java`](../../../server/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/user/PasswordPolicy.java) /
+> [`Gender.java`](../../../server/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/user/Gender.java)、
+> [`MybatisUserRepository.java`](../../../server/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/system/infrastructure/persistence/MybatisUserRepository.java) /
+> [`SysUserDO.java`](../../../server/weiran-system/weiran-system-infrastructure/src/main/java/com/wulicode/weiran/system/infrastructure/persistence/entity/SysUserDO.java)、
+> [`V202609260001__system_init_schema.sql`](../../../server/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/system/V202609260001__system_init_schema.sql) /
+> [`V202609270001__system_user_preferences.sql`](../../../server/weiran-system/weiran-system-infrastructure/src/main/resources/db/migration/system/V202609270001__system_user_preferences.sql)、
+> 个人偏好 / 收藏 / 锁屏：[`AuthController.java`](../../../server/weiran-system/weiran-system-adapter/src/main/java/com/wulicode/weiran/system/adapter/backend/AuthController.java) →
+> [`AuthApplicationService.java`](../../../server/weiran-system/weiran-system-application/src/main/java/com/wulicode/weiran/system/application/auth/AuthApplicationService.java)，
+> 领域规则 [`UserPreferences.java`](../../../server/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/user/UserPreferences.java) /
+> [`FavoriteMenus.java`](../../../server/weiran-system/weiran-system-domain/src/main/java/com/wulicode/weiran/system/domain/user/FavoriteMenus.java)、
+> [`UsersPage.tsx`](../../../backend/src/pages/system/users/UsersPage.tsx) /
+> [`UserFormModal.tsx`](../../../backend/src/pages/system/users/UserFormModal.tsx) /
+> [`ResetPasswordModal.tsx`](../../../backend/src/pages/system/users/ResetPasswordModal.tsx)、
+> [`hooks/queries/users.ts`](../../../backend/src/hooks/queries/users.ts)、[`utils/password.ts`](../../../backend/src/utils/password.ts)。
 >
 > 盘点基线：`e23c511`（2026-09-26，D-008 框架重写后的首次盘点）。
 

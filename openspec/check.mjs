@@ -1986,7 +1986,9 @@ function checkSlots() {
         }
         continue
       }
-      if (open && !/^\s*(<!--|-->)/.test(lines[i])) open.body.push(lines[i])
+      // 这里只识别 OpenSpec 模板的注释标记，不负责过滤或净化 HTML。
+      const trimmed = lines[i].trimStart()
+      if (open && !trimmed.startsWith('<!--') && !trimmed.startsWith('-->')) open.body.push(lines[i])
     }
     if (open) {
       err('TEMPLATE/slot-malformed', rel(f), `槽 ${open.id} 没有结束标记`, open.line)
