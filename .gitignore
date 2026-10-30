@@ -12,6 +12,8 @@ coverage/
 *.tsbuildinfo
 .turbo/
 docs/.vitepress/cache/
+# 开发机工具链与便携数据库（JDK/Node/MySQL/Gradle 缓存），只在本机存在
+.tools/
 
 # Env
 *.local

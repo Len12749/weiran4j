@@ -22,7 +22,7 @@ JAVA_HOME=<JDK 21 根目录> GRADLE_USER_HOME=<Gradle 缓存目录> ./gradlew :w
 PATH=<Node bin>:<pnpm bin>:$PATH pnpm dev:web
 ```
 
-本机把 JDK、Node、MySQL 放在仓库上级的 `.tools/` 下，MySQL 数据也在那里；具体路径与启动命令见该目录的 README。`server/config/application-local.yml` 只在开发机使用，已被 gitignore，不会进镜像。
+本机把 JDK、Node、MySQL 放在仓库内的 `.tools/` 下（已 gitignore），MySQL 数据也在那里；具体路径与启动命令见该目录的 README。`server/config/application-local.yml` 只在开发机使用，已被 gitignore，不会进镜像。
 
 ## 服务器：Docker Compose
 
