@@ -27,6 +27,7 @@ pnpm dev
 ## 文档
 
 - [使用指南](docs/usage.md)：本地启动、常用命令和部署入口
+- [开发与部署环境](docs/development-environment.md)：开发机原生进程与服务器 Compose 的分工
 - [架构说明](docs/architecture.md)：模块关系、后端分层和请求流程
 - [文档站首页](docs/index.md)：VitePress 文档入口
 - [架构、数据库与业务约束](server/docs/01-架构与接口契约.md)

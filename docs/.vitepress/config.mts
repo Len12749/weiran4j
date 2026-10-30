@@ -20,6 +20,7 @@ export default defineConfig({
         items: [
           { text: '首页', link: '/' },
           { text: '使用指南', link: '/usage' },
+          { text: '开发与部署环境', link: '/development-environment' },
           { text: '架构说明', link: '/architecture' },
           { text: '系统配置', link: '/configuration' },
           { text: 'OpenAPI 与 Swagger UI', link: '/openapi' },
