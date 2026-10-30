@@ -114,7 +114,7 @@ describe('LoginPage', () => {
             const { calls } = mockFetch({ 'GET /api-backend/n/system/auth/listProviders': { passwordLoginEnabled: true, providers: [] } });
             renderLogin();
             await waitFor(() => expect(calls.some((c) => c.path === '/api-backend/n/system/auth/listProviders')).toBe(true));
-            expect(screen.getByText('使用账号密码进入管理后台')).toBeInTheDocument();
+            expect(screen.getByText('使用账号密码进入工作台')).toBeInTheDocument();
             expect(screen.queryByRole('button', { name: /使用 .+ 登录/ })).not.toBeInTheDocument();
             expect(screen.queryByText('管理员应急登录')).not.toBeInTheDocument();
             expect(screen.getByPlaceholderText('请输入用户名')).toBeInTheDocument();

@@ -21,7 +21,7 @@ interface LoginForm {
 
 type LoginMethod = 'password' | 'phone';
 
-const FEATURES = ['JWT 认证', '菜单驱动路由', '按钮级权限', '用户与角色', '字典与系统配置', '登录与操作日志'];
+const FEATURES = ['立项与任务', '每日汇报', '协作申请', '工单闭环', '账号授权', '知识问答'];
 
 /** 左侧品牌栏：主色底 + 光晕 / 同心环装饰，窄屏不渲染 */
 function BrandPanel() {
@@ -35,13 +35,17 @@ function BrandPanel() {
                     <AppLogo size={40} variant="glass" />
                     <span className="login-brand-name">{config.appTitle}</span>
                 </div>
-                <div className="login-eyebrow">Admin Framework</div>
+                <div className="login-eyebrow">研发聚合平台</div>
                 <h2 className="login-headline">
-                    开箱即用的
+                    从立项到交付
                     <br />
-                    <span className="login-headline-highlight">后台管理底座</span>
+                    <span className="login-headline-highlight">都在这里</span>
                 </h2>
-                <p className="login-desc">登录鉴权、用户与权限、字典与配置、审计日志都已就绪，业务模块从这里长出来。</p>
+                <p className="login-desc">
+                    审批、项目、协作、工单、账号与知识库，都在一个地方。
+                    <br />
+                    进度、风险和凭据，全程留痕。
+                </p>
                 <div className="login-divider" />
                 <div className="login-feature-tags">
                     {FEATURES.map((f) => (
@@ -169,7 +173,7 @@ export default function LoginPage() {
                             欢迎登录
                         </Typography.Title>
                         <Typography.Text type="tertiary" className="login-form-subtitle">
-                            {providers.length || phoneLoginEnabled ? '选择登录方式进入管理后台' : '使用账号密码进入管理后台'}
+                            {providers.length || phoneLoginEnabled ? '选择登录方式进入工作台' : '使用账号密码进入工作台'}
                         </Typography.Text>
                     </div>
                     {error && <Banner type="danger" description={error} closeIcon={null} className="login-error" />}

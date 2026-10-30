@@ -169,6 +169,8 @@
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    /* 限宽让 6 个标签排成 3 + 3，避免 4 + 2 的阶梯感 */
+    max-width: 340px;
 }
 
 .login-feature-tag {
