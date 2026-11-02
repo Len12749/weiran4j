@@ -1,6 +1,7 @@
 import { Banner, Button, Divider, Form, Typography } from '@douyinfe/semi-ui';
+import type { FormApi } from '@douyinfe/semi-ui/lib/es/form';
 import { KeyRound, LogIn, Phone, UserRound } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppLogo } from '@/components/AppLogo';
 import { MascotPeek } from '@/components/MascotPeek';
@@ -86,6 +87,8 @@ export default function LoginPage() {
     const phoneLoginEnabled = providersView?.phoneLoginEnabled ?? false;
     /** 密码登录关闭时，密码表单收在「管理员应急登录」后面（内置超管仍可用密码登录） */
     const [emergencyOpen, setEmergencyOpen] = useState(false);
+    /** 密码表单的 formApi：只用来在用户改字段时消掉上一次提交留下的错误 */
+    const passwordForm = useRef<FormApi<LoginForm> | null>(null);
     const showPasswordForm = passwordLoginEnabled || emergencyOpen;
     const activeMethod = phoneLoginEnabled && !passwordLoginEnabled ? 'phone' : method;
     const redirectTo = safeRedirect(searchParams.get('redirect'));
@@ -103,6 +106,13 @@ export default function LoginPage() {
         next.delete('ssoError');
         setSearchParams(next, { replace: true });
     }, [searchParams, setSearchParams]);
+
+    /** 报过错的字段被修改时只做「消错」：校验通过就收起红字，仍不合格也不额外弹新的 */
+    const clearFieldError = (field: keyof LoginForm) => {
+        const formApi = passwordForm.current;
+        if (!formApi?.getError(field)) return;
+        void formApi.validate([field]).catch(() => undefined);
+    };
 
     const handleSubmit = async (values: LoginForm) => {
         setSubmitting(true);
@@ -252,13 +262,15 @@ export default function LoginPage() {
                                 </Button>
                             </Form>
                         ) : (
-                            <Form<LoginForm> onSubmit={(v) => void handleSubmit(v)}>
+                            <Form<LoginForm> onSubmit={(v) => void handleSubmit(v)} getFormApi={(api) => { passwordForm.current = api; }}>
                                 <Form.Input
                                     field="username"
                                     noLabel
                                     prefix={<UserRound size={16} />}
                                     placeholder="请输入用户名"
                                     rules={[{ required: true, message: '请输入用户名' }]}
+                                    trigger="custom"
+                                    onChange={() => clearFieldError('username')}
                                     autoComplete="username"
                                     size="large"
                                 />
@@ -269,6 +281,8 @@ export default function LoginPage() {
                                     prefix={<KeyRound size={16} />}
                                     placeholder="请输入密码"
                                     rules={[{ required: true, message: '请输入密码' }]}
+                                    trigger="custom"
+                                    onChange={() => clearFieldError('password')}
                                     autoComplete="current-password"
                                     size="large"
                                 />

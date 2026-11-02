@@ -44,6 +44,28 @@ describe('LoginPage', () => {
         expect(screen.getByRole('button', { name: '登录' })).toBeInTheDocument();
     });
 
+    it('校验提示只在点「登录」后出现，改字段时收起、再清空也不再弹', async () => {
+        mockFetch({});
+        renderLogin();
+        const username = screen.getByPlaceholderText('请输入用户名');
+
+        // 没提交过，失焦不报错
+        fireEvent.blur(username);
+        expect(screen.queryByText('请输入用户名')).not.toBeInTheDocument();
+
+        // 提交后才报
+        fireEvent.click(screen.getByRole('button', { name: '登录' }));
+        expect(await screen.findByText('请输入用户名')).toBeInTheDocument();
+
+        // 改字段即收起
+        fireEvent.change(username, { target: { value: 'admin' } });
+        await waitFor(() => expect(screen.queryByText('请输入用户名')).not.toBeInTheDocument());
+
+        // 再次清空也不主动报红，等下一次提交
+        fireEvent.change(username, { target: { value: '' } });
+        await waitFor(() => expect(screen.queryByText('请输入用户名')).not.toBeInTheDocument());
+    });
+
     it('登录成功建立会话并跳到 redirect', async () => {
         const { calls } = mockFetch({
             'POST /api-backend/n/system/auth/login': () => {
