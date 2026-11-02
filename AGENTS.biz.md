@@ -11,6 +11,11 @@
 - 后台接口由 `/api-backend/region/area` 提供；公开启用地区树由 `/api-backend/n/region/area/getEnabledTree` 提供。接口契约以 Springdoc OpenAPI 和 `openspec/specs/administrative-regions/spec.md` 为准。
 - 地区状态文档为 `openspec/state/bizs/region.md`，下游索引为 `openspec/state/bizs/README.biz.md`。
 
+## 品牌资源
+
+- 应用标志是 `backend/src/assets/app-logo.png`（透明底 512×512），由 `components/AppLogo.tsx` 直接引用；标签页图标是 `backend/public/favicon.png`（128×128），在 `backend/index.html` 里以 `%BASE_URL%favicon.png` 引用。
+- 上游 `openspec/rules/advisory/components.md` 里 AppLogo 条目写的「仓库没有图片素材、不引用 img」在本仓已不成立，替换品牌只改上面两个文件，不改上游那份清单。
+
 ## 上游同步
 
 框架和基座改动优先回上游处理；下游扩展入口见 `server/docs/01-架构与接口契约.md` §2.2。同步上游使用 `git fetch upstream` 和 `git merge upstream/main`。
