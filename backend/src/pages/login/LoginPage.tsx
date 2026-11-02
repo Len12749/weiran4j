@@ -3,6 +3,7 @@ import { KeyRound, LogIn, Phone, UserRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppLogo } from '@/components/AppLogo';
+import { MascotPeek } from '@/components/MascotPeek';
 import { config } from '@/config';
 import { ssoAuthorizeUrl, ssoErrorMessage, useProviders } from '@/hooks/queries/identities';
 import { usePhoneLogin, useSendPhoneLoginCode } from '@/hooks/queries/auth';
@@ -161,120 +162,123 @@ export default function LoginPage() {
         <div className="login-page">
             {!isMobile && <BrandPanel />}
             <main className="login-right">
-                <div className="login-form-wrapper">
-                    {isMobile && (
-                        <div className="login-mobile-brand">
-                            <AppLogo size={40} />
-                            <span className="login-brand-name">{config.appTitle}</span>
+                <div className="login-stack">
+                    <MascotPeek />
+                    <div className="login-form-wrapper">
+                        {isMobile && (
+                            <div className="login-mobile-brand">
+                                <AppLogo size={40} />
+                                <span className="login-brand-name">{config.appTitle}</span>
+                            </div>
+                        )}
+                        <div className="login-form-header">
+                            <Typography.Title heading={3} className="login-form-title">
+                                欢迎登录
+                            </Typography.Title>
+                            <Typography.Text type="tertiary" className="login-form-subtitle">
+                                {providers.length || phoneLoginEnabled ? '选择登录方式进入工作台' : '使用账号密码进入工作台'}
+                            </Typography.Text>
                         </div>
-                    )}
-                    <div className="login-form-header">
-                        <Typography.Title heading={3} className="login-form-title">
-                            欢迎登录
-                        </Typography.Title>
-                        <Typography.Text type="tertiary" className="login-form-subtitle">
-                            {providers.length || phoneLoginEnabled ? '选择登录方式进入工作台' : '使用账号密码进入工作台'}
-                        </Typography.Text>
-                    </div>
-                    {error && <Banner type="danger" description={error} closeIcon={null} className="login-error" />}
-                    {notice && <Banner type="success" description={notice} closeIcon={null} className="login-error" />}
-                    {mfaPending ? (
-                        <Form<{ code: string }> onSubmit={(values) => void handleMfaSubmit(values)}>
-                            <p>请输入发送到{mfaPhone ? ` ${mfaPhone}` : '安全手机号'}的 6 位验证码。</p>
-                            <Form.Input field="code" noLabel placeholder="手机验证码" autoComplete="one-time-code" size="large" rules={[{ required: true, message: '请输入验证码' }, { pattern: /^\d{6}$/, message: '请输入 6 位验证码' }]} />
-                            <Button htmlType="submit" type="primary" theme="solid" block size="large" loading={submitting}>验证并登录</Button>
-                            <Button theme="borderless" block onClick={() => { setMfaPending(false); setMfaPhone(null); }}>重新登录</Button>
-                        </Form>
-                    ) : <>
-                    {providers.length > 0 && (
-                        <div className="login-sso">
-                            {providers.map((p) => (
-                                <Button
-                                    key={p.id}
-                                    block
-                                    size="large"
-                                    icon={<LogIn size={16} />}
-                                    className="login-sso-button"
-                                    onClick={() => window.location.assign(ssoAuthorizeUrl(p.id, { redirect: redirectTo, mode: 'login' }))}
-                                >
-                                    使用 {p.name} 登录
+                        {error && <Banner type="danger" description={error} closeIcon={null} className="login-error" />}
+                        {notice && <Banner type="success" description={notice} closeIcon={null} className="login-error" />}
+                        {mfaPending ? (
+                            <Form<{ code: string }> onSubmit={(values) => void handleMfaSubmit(values)}>
+                                <p>请输入发送到{mfaPhone ? ` ${mfaPhone}` : '安全手机号'}的 6 位验证码。</p>
+                                <Form.Input field="code" noLabel placeholder="手机验证码" autoComplete="one-time-code" size="large" rules={[{ required: true, message: '请输入验证码' }, { pattern: /^\d{6}$/, message: '请输入 6 位验证码' }]} />
+                                <Button htmlType="submit" type="primary" theme="solid" block size="large" loading={submitting}>验证并登录</Button>
+                                <Button theme="borderless" block onClick={() => { setMfaPending(false); setMfaPhone(null); }}>重新登录</Button>
+                            </Form>
+                        ) : <>
+                        {providers.length > 0 && (
+                            <div className="login-sso">
+                                {providers.map((p) => (
+                                    <Button
+                                        key={p.id}
+                                        block
+                                        size="large"
+                                        icon={<LogIn size={16} />}
+                                        className="login-sso-button"
+                                        onClick={() => window.location.assign(ssoAuthorizeUrl(p.id, { redirect: redirectTo, mode: 'login' }))}
+                                    >
+                                        使用 {p.name} 登录
+                                    </Button>
+                                ))}
+                            </div>
+                        )}
+                        {phoneLoginEnabled && passwordLoginEnabled && (
+                            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                                <Button block theme={activeMethod === 'password' ? 'solid' : 'light'} type={activeMethod === 'password' ? 'primary' : 'tertiary'} onClick={() => setMethod('password')}>
+                                    账号密码登录
                                 </Button>
-                            ))}
-                        </div>
-                    )}
-                    {phoneLoginEnabled && passwordLoginEnabled && (
-                        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-                            <Button block theme={activeMethod === 'password' ? 'solid' : 'light'} type={activeMethod === 'password' ? 'primary' : 'tertiary'} onClick={() => setMethod('password')}>
-                                账号密码登录
-                            </Button>
-                            <Button block theme={activeMethod === 'phone' ? 'solid' : 'light'} type={activeMethod === 'phone' ? 'primary' : 'tertiary'} onClick={() => setMethod('phone')}>
-                                手机验证码登录
-                            </Button>
-                        </div>
-                    )}
-                    {providers.length > 0 && (showPasswordForm || (activeMethod === 'phone' && phoneLoginEnabled)) && (activeMethod === 'phone' && phoneLoginEnabled ? <Divider className="login-sso-divider">或使用手机号验证码</Divider> : <Divider className="login-sso-divider">或使用账号密码</Divider>)}
-                    {!showPasswordForm && (
-                        <Button theme="borderless" type="tertiary" block className="login-emergency" onClick={() => { setEmergencyOpen(true); setMethod('password'); }}>
-                            管理员应急登录
-                        </Button>
-                    )}
-                    {(showPasswordForm || (activeMethod === 'phone' && phoneLoginEnabled)) && (activeMethod === 'phone' && phoneLoginEnabled ? (
-                        <Form<LoginForm> initValues={{ username: '', password: '', phone, code: '' }} onSubmit={(v) => void handleSubmit(v)}>
-                            <Form.Input
-                                field="phone"
-                                noLabel
-                                prefix={<Phone size={16} />}
-                                placeholder="请输入手机号"
-                                rules={[{ required: true, message: '请输入手机号' }, { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' }]}
-                                autoComplete="tel"
-                                size="large"
-                                onChange={(value) => setPhone(String(value ?? ''))}
-                            />
-                            <div style={{ display: 'flex', gap: 8 }}>
-                                <Form.Input
-                                    field="code"
-                                    noLabel
-                                    placeholder="请输入短信验证码"
-                                    rules={[{ required: true, message: '请输入短信验证码' }, { pattern: /^[0-9]{6}$/, message: '请输入 6 位短信验证码' }]}
-                                    autoComplete="one-time-code"
-                                    size="large"
-                                    style={{ flex: 1 }}
-                                />
-                                <Button htmlType="button" style={{ minWidth: 128, height: 40 }} disabled={countdown > 0 || sendCode.isPending} loading={sendCode.isPending} onClick={() => void handleSendCode()}>
-                                    {countdown > 0 ? `${countdown} 秒后重发` : '发送验证码'}
+                                <Button block theme={activeMethod === 'phone' ? 'solid' : 'light'} type={activeMethod === 'phone' ? 'primary' : 'tertiary'} onClick={() => setMethod('phone')}>
+                                    手机验证码登录
                                 </Button>
                             </div>
-                            <Button htmlType="submit" type="primary" theme="solid" block size="large" loading={submitting} className="login-submit">
-                                登录
+                        )}
+                        {providers.length > 0 && (showPasswordForm || (activeMethod === 'phone' && phoneLoginEnabled)) && (activeMethod === 'phone' && phoneLoginEnabled ? <Divider className="login-sso-divider">或使用手机号验证码</Divider> : <Divider className="login-sso-divider">或使用账号密码</Divider>)}
+                        {!showPasswordForm && (
+                            <Button theme="borderless" type="tertiary" block className="login-emergency" onClick={() => { setEmergencyOpen(true); setMethod('password'); }}>
+                                管理员应急登录
                             </Button>
-                        </Form>
-                    ) : (
-                        <Form<LoginForm> onSubmit={(v) => void handleSubmit(v)}>
-                            <Form.Input
-                                field="username"
-                                noLabel
-                                prefix={<UserRound size={16} />}
-                                placeholder="请输入用户名"
-                                rules={[{ required: true, message: '请输入用户名' }]}
-                                autoComplete="username"
-                                size="large"
-                            />
-                            <Form.Input
-                                field="password"
-                                noLabel
-                                mode="password"
-                                prefix={<KeyRound size={16} />}
-                                placeholder="请输入密码"
-                                rules={[{ required: true, message: '请输入密码' }]}
-                                autoComplete="current-password"
-                                size="large"
-                            />
-                            <Button htmlType="submit" type="primary" theme="solid" block size="large" loading={submitting} className="login-submit">
-                                登录
-                            </Button>
-                        </Form>
-                    ))}
-                    </>}
+                        )}
+                        {(showPasswordForm || (activeMethod === 'phone' && phoneLoginEnabled)) && (activeMethod === 'phone' && phoneLoginEnabled ? (
+                            <Form<LoginForm> initValues={{ username: '', password: '', phone, code: '' }} onSubmit={(v) => void handleSubmit(v)}>
+                                <Form.Input
+                                    field="phone"
+                                    noLabel
+                                    prefix={<Phone size={16} />}
+                                    placeholder="请输入手机号"
+                                    rules={[{ required: true, message: '请输入手机号' }, { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' }]}
+                                    autoComplete="tel"
+                                    size="large"
+                                    onChange={(value) => setPhone(String(value ?? ''))}
+                                />
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <Form.Input
+                                        field="code"
+                                        noLabel
+                                        placeholder="请输入短信验证码"
+                                        rules={[{ required: true, message: '请输入短信验证码' }, { pattern: /^[0-9]{6}$/, message: '请输入 6 位短信验证码' }]}
+                                        autoComplete="one-time-code"
+                                        size="large"
+                                        style={{ flex: 1 }}
+                                    />
+                                    <Button htmlType="button" style={{ minWidth: 128, height: 40 }} disabled={countdown > 0 || sendCode.isPending} loading={sendCode.isPending} onClick={() => void handleSendCode()}>
+                                        {countdown > 0 ? `${countdown} 秒后重发` : '发送验证码'}
+                                    </Button>
+                                </div>
+                                <Button htmlType="submit" type="primary" theme="solid" block size="large" loading={submitting} className="login-submit">
+                                    登录
+                                </Button>
+                            </Form>
+                        ) : (
+                            <Form<LoginForm> onSubmit={(v) => void handleSubmit(v)}>
+                                <Form.Input
+                                    field="username"
+                                    noLabel
+                                    prefix={<UserRound size={16} />}
+                                    placeholder="请输入用户名"
+                                    rules={[{ required: true, message: '请输入用户名' }]}
+                                    autoComplete="username"
+                                    size="large"
+                                />
+                                <Form.Input
+                                    field="password"
+                                    noLabel
+                                    mode="password"
+                                    prefix={<KeyRound size={16} />}
+                                    placeholder="请输入密码"
+                                    rules={[{ required: true, message: '请输入密码' }]}
+                                    autoComplete="current-password"
+                                    size="large"
+                                />
+                                <Button htmlType="submit" type="primary" theme="solid" block size="large" loading={submitting} className="login-submit">
+                                    登录
+                                </Button>
+                            </Form>
+                        ))}
+                        </>}
+                    </div>
                 </div>
                 <footer className="login-footer">
                     <span>

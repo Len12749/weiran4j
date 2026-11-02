@@ -202,7 +202,9 @@
     align-items: center;
     min-width: 0;
     position: relative;
-    padding: 40px 32px 0;
+    /* 上下内边距必须对称：卡片连同上方的氪金兽靠 margin: auto 居中，
+       上下给不同的值会让这一整块整体偏移 */
+    padding: 24px 32px;
     overflow-x: hidden;
     overflow-y: auto;
     /* 两角品牌色光晕 + 浅底：右侧不再是整块纯白 */
@@ -241,7 +243,21 @@ body[theme-mode='dark'] .login-right::before {
     opacity: 0.5;
 }
 
-/* 表单卡片：margin: auto 让卡片在页脚之上垂直居中，内容超高时也不会顶掉顶部 */
+/*
+ * 居中用的整块：里面的氪金兽在文档流里（靠负 margin 压到卡片正面），
+ * 所以「兽头到卡片底边」的高度就是这一块的高度，margin: auto 居中的是整块而不是卡片。
+ */
+.login-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: none;
+    width: 440px;
+    max-width: 100%;
+    margin: auto;
+}
+
+/* 表单卡片：由 .login-stack 居中，这里只管自身尺寸 */
 .login-form-wrapper {
     width: 440px;
     max-width: 100%;
@@ -396,7 +412,11 @@ body[theme-mode='dark'] .login-form-wrapper .semi-input-wrapper.semi-input-wrapp
 
 @media (--md-down) {
     .login-right {
-        padding: 20px 16px 0;
+        padding: 20px 16px;
+    }
+
+    .login-stack {
+        width: 100%;
     }
 
     .login-form-wrapper {

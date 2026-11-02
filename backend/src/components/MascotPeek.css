@@ -1,0 +1,55 @@
+/*
+ * 氪金兽：卡片上方的一整块，靠负 margin 让爪子压到卡片正面。
+ * 宽度定死，爪子压下的高度按原图比例算（92/1222），改 --mascot-width 即可整体缩放。
+ * 不脱离文档流——这样「兽头到卡片底边」这一整块才能被父容器居中。
+ */
+.mascot-peek {
+    --mascot-width: 240px;
+    --mascot-hands: calc(var(--mascot-width) * 0.0753);
+    position: relative;
+    z-index: 2;
+    flex: none;
+    width: var(--mascot-width);
+    margin-bottom: calc(-1 * var(--mascot-hands));
+    pointer-events: none;
+    user-select: none;
+}
+
+.mascot-peek__body {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* 手搓的瞳孔：位置与大小按图片百分比，跟随位移由脚本写 transform */
+.mascot-peek__pupil {
+    position: absolute;
+    left: 56.46%;
+    top: 45.43%;
+    width: 18.86%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #241f1d;
+    transform: translate(-50%, -50%);
+    backface-visibility: hidden;
+    will-change: transform;
+}
+
+/* 瞳孔高光 */
+.mascot-peek__pupil::after {
+    content: '';
+    position: absolute;
+    left: 24%;
+    top: 20%;
+    width: 27%;
+    height: 27%;
+    border-radius: 50%;
+    background: #fff;
+    opacity: 0.9;
+}
+
+@media (--md-down) {
+    .mascot-peek {
+        --mascot-width: 186px;
+    }
+}
