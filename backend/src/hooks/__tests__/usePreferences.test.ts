@@ -5,12 +5,12 @@ describe('偏好字段定义', () => {
     it('44 个字段（mono4ts 的 43 个 + zenith 的 doubleRailStyle），本项目调整过的默认值', () => {
         expect(Object.keys(defaultPreferences)).toHaveLength(44);
         expect(defaultPreferences).toMatchObject({
-            navLayout: 'vertical',
+            navLayout: 'horizontal',
             doubleRailStyle: 'icon',
-            enableTabs: true,
+            enableTabs: false,
             tablePageSize: 20,
             themeColor: '#0064FA',
-            colorMode: 'light',
+            colorMode: 'system',
         });
     });
 

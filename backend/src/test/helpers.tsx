@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
@@ -67,17 +67,6 @@ export function renderWithProviders(ui: ReactElement, { route = '/', permissions
 
 export function page<T>(list: T[], total = list.length) {
     return { list, total, page: 1, pageSize: 20 };
-}
-
-/** 打开偏好设置抽屉：悬停顶栏用户名弹出下拉菜单，点「偏好设置」 */
-export async function openPreferences() {
-    const trigger = await waitFor(() => {
-        const el = document.querySelector('.admin-header__user');
-        if (!el) throw new Error('用户下拉菜单未渲染');
-        return el;
-    });
-    fireEvent.mouseEnter(trigger);
-    fireEvent.click(await screen.findByRole('menuitem', { name: /偏好设置/ }));
 }
 
 /**

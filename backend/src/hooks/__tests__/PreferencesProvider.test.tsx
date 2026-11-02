@@ -45,7 +45,7 @@ describe('PreferencesProvider', () => {
         const { calls } = mockFetch({});
         renderProvider();
         act(() => screen.getByText('size50').click());
-        expect(state()).toBe('light|50|logo');
+        expect(state()).toBe('system|50|logo');
         expect(stored()?.tablePageSize).toBe(50);
         await new Promise((r) => setTimeout(r, 600));
         expect(calls).toHaveLength(0);
@@ -56,7 +56,7 @@ describe('PreferencesProvider', () => {
         signIn();
         mockFetch({ [`GET ${API}`]: { colorMode: 'dark', showLogo: false, tableSize: 'huge' } });
         renderProvider();
-        expect(state()).toBe('light|50|logo');
+        expect(state()).toBe('system|50|logo');
         await waitFor(() => expect(state()).toBe('dark|20|nologo'));
         expect(stored()).toMatchObject({ colorMode: 'dark', tablePageSize: 20, showLogo: false, tableSize: 'small' });
     });
@@ -82,7 +82,7 @@ describe('PreferencesProvider', () => {
         expect(localStorage.getItem(PREFERENCES_OWNER_KEY)).toBe('1');
 
         act(() => signOut());
-        expect(state()).toBe('light|20|logo');
+        expect(state()).toBe('system|20|logo');
         expect(stored()).toBeNull();
         expect(localStorage.getItem(PREFERENCES_OWNER_KEY)).toBeNull();
 
@@ -91,7 +91,7 @@ describe('PreferencesProvider', () => {
         });
         await waitFor(() => expect(calls.filter((c) => c.method === 'GET')).toHaveLength(2));
         await new Promise((r) => setTimeout(r, 600));
-        expect(state()).toBe('light|20|logo');
+        expect(state()).toBe('system|20|logo');
         expect(calls.filter((c) => c.method === 'PUT')).toHaveLength(0);
     });
 
@@ -100,7 +100,7 @@ describe('PreferencesProvider', () => {
         signIn(2);
         const { calls } = mockFetch({ [`GET ${API}`]: null, [`PUT ${API}`]: null });
         renderProvider();
-        await waitFor(() => expect(state()).toBe('light|20|logo'));
+        await waitFor(() => expect(state()).toBe('system|20|logo'));
         await new Promise((r) => setTimeout(r, 600));
         expect(calls.filter((c) => c.method === 'PUT')).toHaveLength(0);
         expect(localStorage.getItem(PREFERENCES_OWNER_KEY)).toBe('2');
@@ -112,7 +112,7 @@ describe('PreferencesProvider', () => {
         const { calls } = mockFetch({ [`GET ${API}`]: null, [`PUT ${API}`]: null });
         renderProvider();
         expect(state()).toBe('dark|20|logo');
-        await waitFor(() => expect(state()).toBe('light|20|logo'));
+        await waitFor(() => expect(state()).toBe('system|20|logo'));
         await new Promise((r) => setTimeout(r, 600));
         expect(calls.filter((c) => c.method === 'PUT')).toHaveLength(0);
     });
@@ -124,7 +124,7 @@ describe('PreferencesProvider', () => {
         renderProvider();
         expect(state()).toBe('dark|20|logo');
         expect(localStorage.getItem(LEGACY_THEME_STORAGE_KEY)).toBeNull();
-        await waitFor(() => expect(state()).toBe('light|20|logo'));
+        await waitFor(() => expect(state()).toBe('system|20|logo'));
         await new Promise((r) => setTimeout(r, 600));
         expect(calls.filter((c) => c.method === 'PUT')).toHaveLength(0);
     });
@@ -143,7 +143,7 @@ describe('PreferencesProvider', () => {
             await request('/api-backend/system/user/list', { silent: true }).catch(() => undefined);
         });
         expect(getSession()).toBeNull();
-        expect(state()).toBe('light|20|logo');
+        expect(state()).toBe('system|20|logo');
         expect(stored()).toBeNull();
         expect(localStorage.getItem(PREFERENCES_OWNER_KEY)).toBeNull();
     });
@@ -184,7 +184,7 @@ describe('PreferencesProvider', () => {
         await waitFor(() => expect(state()).toBe('dark|20|logo'));
         act(() => screen.getByText('size50').click());
         act(() => screen.getByText('reset').click());
-        expect(state()).toBe('light|20|logo');
+        expect(state()).toBe('system|20|logo');
         expect(localStorage.getItem(PREFERENCES_STORAGE_KEY)).toBeNull();
         await waitFor(() => expect(calls.filter((c) => c.method === 'PUT')).toHaveLength(1));
         expect(calls.find((c) => c.method === 'PUT')?.body).toEqual(defaultPreferences);

@@ -59,10 +59,10 @@ describe('偏好本地缓存', () => {
             JSON.stringify({ colorMode: 'purple', themeColor: 'green', tabsMaxCount: 999, enableTabs: 'yes', showLogo: false }),
         );
         const prefs = loadPreferences();
-        expect(prefs.colorMode).toBe('light');
+        expect(prefs.colorMode).toBe('system');
         expect(prefs.themeColor).toBe('green');
         expect(prefs.tabsMaxCount).toBe(defaultPreferences.tabsMaxCount);
-        expect(prefs.enableTabs).toBe(true);
+        expect(prefs.enableTabs).toBe(false);
         expect(prefs.showLogo).toBe(false);
         expect(prefs.sidebarWidth).toBe(defaultPreferences.sidebarWidth);
     });
@@ -92,7 +92,7 @@ describe('偏好本地缓存', () => {
 
     it('旧版主题的非法字段不迁移', () => {
         localStorage.setItem(LEGACY_THEME_STORAGE_KEY, JSON.stringify({ mode: 'weird', color: 'green' }));
-        expect(loadPreferences()).toMatchObject({ colorMode: 'light', themeColor: 'green' });
+        expect(loadPreferences()).toMatchObject({ colorMode: 'system', themeColor: 'green' });
     });
 
     it('已有偏好时忽略旧版主题（但删除它）', () => {
@@ -110,11 +110,11 @@ describe('偏好本地缓存', () => {
         expect(document.body.style.getPropertyValue('--semi-color-primary')).toBe('#618bff');
     });
 
-    it('bootstrapTheme：没有存储时是浅色 + #0064FA', () => {
+    it('bootstrapTheme：没有存储时跟随系统（系统深色 → 深色 + 深色主色）', () => {
         stubPrefersDark(true);
         bootstrapTheme();
-        expect(document.body.hasAttribute('theme-mode')).toBe(false);
-        expect(document.body.style.getPropertyValue('--semi-color-primary')).toBe('#0064FA');
+        expect(document.body.getAttribute('theme-mode')).toBe('dark');
+        expect(document.body.style.getPropertyValue('--semi-color-primary')).toBe('#4791ff');
     });
 
     it('bootstrapTheme：旧用户只有 weiran_theme 也不闪白', () => {

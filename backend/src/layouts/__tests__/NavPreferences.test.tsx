@@ -5,7 +5,7 @@ import { App } from '@/App';
 import { LOCK_STORAGE_KEY } from '@/hooks/useLockScreen';
 import { defaultPreferences, type UserPreferences } from '@/hooks/usePreferences';
 import { savePreferences } from '@/lib/preferences-storage';
-import { mockFetch, openPreferences, renderWithProviders, type MockHandler } from '@/test/helpers';
+import { mockFetch, renderWithProviders, type MockHandler } from '@/test/helpers';
 import type { CurrentUserView, MenuNode } from '@/types/api';
 import { signIn } from '@/test/session';
 import { getSession } from '@/utils/session';
@@ -70,10 +70,16 @@ const menus: MenuNode[] = [
     },
 ];
 
+/**
+ * 测试基线：这些用例针对「左侧菜单 + 多页签」布局，
+ * 业务默认值已改为顶部导航、关闭多页签（真实默认值由 hooks/__tests__/usePreferences.test.ts 锁定）。
+ */
+const BASE_PREFS: Partial<UserPreferences> = { navLayout: 'vertical', enableTabs: true, routeAnimation: 'none' };
+
 function renderAuthed(route: string, prefs: Partial<UserPreferences> = {}, extra: Record<string, MockHandler> = {}) {
     // 本地偏好属于当前登录用户（id 1），服务端为 null 时按「自己的缓存」迁移而不是回落默认值
     signIn(1);
-    savePreferences({ ...defaultPreferences, ...prefs }, 1);
+    savePreferences({ ...defaultPreferences, ...BASE_PREFS, ...prefs }, 1);
     const fetch = mockFetch({
         'GET /api-backend/system/auth/getCurrentUser': me,
         'GET /api-backend/system/auth/listCurrentMenus': menus,
@@ -527,23 +533,29 @@ describe('enableLockScreen', () => {
 
     it('锁定时已打开的浮层（portal 到 body）也被 inert；解锁后恢复', async () => {
         renderAuthed('/dashboard', { enableLockScreen: true }, verifyRoute(true));
-        await openPreferences();
-        const drawer = await waitFor(() => {
-            const el = document.querySelector('.prefs-drawer');
-            if (!el) throw new Error('偏好抽屉未打开');
+        const trigger = await waitFor(() => {
+            const el = document.querySelector('.admin-header__user');
+            if (!el) throw new Error('用户菜单未渲染');
             return el;
+        });
+        fireEvent.mouseEnter(trigger);
+        // 用户下拉菜单是 Semi 的 portal 浮层，挂在 body 下
+        const popup = await waitFor(() => {
+            const el = document.querySelector('.semi-dropdown');
+            if (!el) throw new Error('用户菜单浮层未打开');
+            return el as HTMLElement;
         });
         const bodyChild = (el: Element) => [...document.body.children].find((c) => c.contains(el)) as HTMLElement;
         fireEvent.keyDown(document.body, { altKey: true, code: 'KeyL', key: '¬' });
         const lock = await screen.findByRole('dialog', { name: '屏幕已锁定' });
-        expect(bodyChild(drawer)).toHaveAttribute('inert');
+        expect(bodyChild(popup)).toHaveAttribute('inert');
         expect(bodyChild(lock)).not.toHaveAttribute('inert');
         expect(document.activeElement && lock.contains(document.activeElement)).toBe(true);
 
         fireEvent.change(within(lock).getByLabelText('登录密码'), { target: { value: 'admin123' } });
         fireEvent.click(within(lock).getByRole('button', { name: '解锁' }));
         await waitFor(() => expect(screen.queryByRole('dialog', { name: '屏幕已锁定' })).toBeNull());
-        expect(bodyChild(drawer)).not.toHaveAttribute('inert');
+        expect(bodyChild(popup)).not.toHaveAttribute('inert');
     });
 
     it('Alt+L 锁定；刷新（重新挂载）后仍是锁定状态', async () => {

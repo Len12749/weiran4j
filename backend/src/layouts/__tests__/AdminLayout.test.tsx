@@ -1,9 +1,9 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '@/App';
 import { defaultPreferences, type UserPreferences } from '@/hooks/usePreferences';
 import { PREFERENCES_STORAGE_KEY, savePreferences } from '@/lib/preferences-storage';
-import { mockFetch, openPreferences, renderWithProviders } from '@/test/helpers';
+import { mockFetch, renderWithProviders } from '@/test/helpers';
 import type { CurrentUserView, MenuNode } from '@/types/api';
 import { signIn } from '@/test/session';
 import { collectDirAncestors, nextOpenKeys } from '../AdminLayout';
@@ -62,10 +62,16 @@ function stubMobileViewport() {
     }));
 }
 
+/**
+ * 测试基线：这些用例针对「左侧菜单 + 多页签」布局，
+ * 业务默认值已改为顶部导航、关闭多页签（真实默认值由 hooks/__tests__/usePreferences.test.ts 锁定）。
+ */
+const BASE_PREFS: Partial<UserPreferences> = { navLayout: 'vertical', enableTabs: true, routeAnimation: 'none' };
+
 function renderAuthed(route = '/dashboard', prefs: Partial<UserPreferences> = {}, menuNodes = menus) {
     // 本地偏好属于当前登录用户（id 1），服务端为 null 时按「自己的缓存」迁移而不是回落默认值
     signIn(1);
-    savePreferences({ ...defaultPreferences, ...prefs }, 1);
+    savePreferences({ ...defaultPreferences, ...BASE_PREFS, ...prefs }, 1);
     const fetch = mockFetch({
         'GET /api-backend/system/auth/getCurrentUser': me,
         'GET /api-backend/system/auth/listCurrentMenus': menuNodes,
@@ -95,7 +101,8 @@ describe('AdminLayout', () => {
     });
 
     it('桌面端：侧边栏品牌 + 顶栏主题按钮点击循环明暗模式，写入偏好', async () => {
-        renderAuthed();
+        // 业务默认已改为「跟随系统」，这里显式用浅色，才能按 浅色 → 深色 → 跟随系统 断言
+        renderAuthed('/dashboard', { colorMode: 'light' });
         const modeBtn = await screen.findByRole('button', { name: '切换主题（当前：浅色）' });
         expect(document.querySelector('.admin-sidebar')).not.toBeNull();
         expect(screen.queryByRole('button', { name: '打开导航菜单' })).toBeNull();
@@ -136,16 +143,16 @@ describe('AdminLayout', () => {
             path: '/system/security', component: 'system/security/SecuritySettingsPage',
             icon: 'ShieldCheck', permission: 'system:security:list', visible: false,
         };
-        renderAuthed('/dashboard', {}, [...menus, hiddenSecurity]);
+        renderAuthed('/dashboard', { colorMode: 'light' }, [...menus, hiddenSecurity]);
         await screen.findByRole('button', { name: '切换主题（当前：浅色）' });
         expect(document.querySelector('.admin-sidebar__nav')?.textContent).not.toContain('安全设置');
 
         fireEvent.mouseEnter(document.querySelector('.admin-header__user') as HTMLElement);
         const profile = await screen.findByRole('menuitem', { name: '个人中心' });
         const security = screen.getByRole('menuitem', { name: '安全设置' });
-        const preferences = screen.getByRole('menuitem', { name: '偏好设置' });
         expect(profile.compareDocumentPosition(security) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect(security.compareDocumentPosition(preferences) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        // 偏好设置入口按业务要求关闭，用户菜单里不再出现
+        expect(screen.queryByRole('menuitem', { name: '偏好设置' })).toBeNull();
 
         fireEvent.click(security);
         expect(await screen.findByText('安全设置', { selector: '.page-container__title' })).toBeInTheDocument();
@@ -157,7 +164,7 @@ describe('AdminLayout', () => {
         expect(document.querySelector('.admin-sidebar__nav')?.textContent).toContain('用户管理');
     });
 
-    it('默认偏好：页签栏、从首页开始的面包屑、动态标题、Logo、全屏按钮、侧边栏宽度 240', async () => {
+    it('布局基线（左侧菜单 + 多页签）：页签栏、从首页开始的面包屑、动态标题、Logo、全屏按钮、侧边栏宽度 240', async () => {
         renderAuthed('/system/a');
         await screen.findByText('页面不存在');
         expect(document.querySelector('.admin-tabs-bar')).not.toBeNull();
@@ -309,53 +316,6 @@ describe('AdminLayout', () => {
         expect(document.querySelector('.admin-back-top')).toBeNull();
     });
 
-    it('偏好设置抽屉：改开关即时生效并写入偏好；恢复默认', async () => {
-        renderAuthed('/system/a');
-        await openPreferences();
-        const drawer = await screen.findByRole('dialog');
-        for (const title of ['外观', '布局与导航', '页签', '面包屑', '表格', '其它']) {
-            expect(within(drawer).getByLabelText(title)).toBeInTheDocument();
-        }
-        // C 组字段已接通行为，出现在对应分组；filesViewMode 没有消费方，不出现
-        const layoutPicker = within(within(drawer).getByLabelText('布局与导航')).getByRole('radiogroup', { name: /导航布局/ });
-        expect(within(layoutPicker).getAllByRole('radio').map((r) => r.textContent)).toEqual(['左侧菜单', '顶部菜单', '混合菜单', '双列菜单']);
-        expect(within(layoutPicker).getByRole('radio', { name: '左侧菜单' })).toHaveAttribute('aria-checked', 'true');
-        // 双列首列形式只在双列布局下出现
-        expect(within(drawer).queryByText('双列首列形式')).toBeNull();
-        fireEvent.click(within(layoutPicker).getByRole('radio', { name: '双列菜单' }));
-        await waitFor(() => expect(document.querySelector('.admin-sidebar--double-icon')).not.toBeNull());
-        expect(storedPrefs()?.navLayout).toBe('double');
-        fireEvent.click(within(drawer).getByText('图标 + 文字'));
-        await waitFor(() => expect(document.querySelector('.admin-sidebar--double-icon-text')).not.toBeNull());
-        expect(storedPrefs()?.doubleRailStyle).toBe('icon-text');
-        fireEvent.click(within(layoutPicker).getByRole('radio', { name: '左侧菜单' }));
-        await waitFor(() => expect(document.querySelector('.admin-sidebar--double')).toBeNull());
-        expect(within(drawer).getByRole('switch', { name: '锁屏' })).toBeInTheDocument();
-        expect(within(drawer).getByRole('switch', { name: '收藏菜单' })).toBeInTheDocument();
-        expect(within(drawer).queryByText(/文件/)).toBeNull();
-
-        fireEvent.click(within(drawer).getByRole('switch', { name: '显示面包屑' }));
-        await waitFor(() => expect(document.querySelector('.admin-header .semi-breadcrumb-wrapper')).toBeNull());
-        expect(storedPrefs()?.showBreadcrumb).toBe(false);
-
-        fireEvent.click(within(drawer).getByRole('switch', { name: '灰色模式' }));
-        expect(layout()).toHaveClass('admin-layout--grayscale');
-        fireEvent.click(within(drawer).getByRole('switch', { name: '色弱模式' }));
-        expect(layout()).toHaveClass('admin-layout--color-blind');
-        expect(layout()).not.toHaveClass('admin-layout--grayscale');
-
-        // 抽屉底部按钮 → 二次确认弹窗里的同名按钮
-        fireEvent.click(screen.getByRole('button', { name: '恢复默认' }));
-        const confirm = await waitFor(() => {
-            const el = document.querySelector<HTMLElement>('.semi-modal-confirm');
-            if (!el) throw new Error('确认框未出现');
-            return el;
-        });
-        act(() => within(confirm).getByRole('button', { name: 'confirm' }).click());
-        await waitFor(() => expect(document.querySelector('.admin-header .semi-breadcrumb-wrapper')).not.toBeNull());
-        expect(layout()).not.toHaveClass('admin-layout--color-blind');
-        expect(localStorage.getItem(PREFERENCES_STORAGE_KEY)).toBeNull();
-    });
 });
 
 describe('侧边栏手风琴', () => {

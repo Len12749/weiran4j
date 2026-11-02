@@ -1,6 +1,6 @@
 import { BackTop, Breadcrumb, Button, Dropdown, Nav, SideSheet, Spin, Tooltip } from '@douyinfe/semi-ui';
 import type { NavItemPropsWithItems, OnSelectedData, SubNavProps } from '@douyinfe/semi-ui/lib/es/navigation';
-import { ChevronDown, Expand, Lock, LogOut, Menu as MenuIcon, PanelLeftClose, PanelLeftOpen, Settings, ShieldCheck, Shrink, UserRound } from 'lucide-react';
+import { ChevronDown, Expand, Lock, LogOut, Menu as MenuIcon, PanelLeftClose, PanelLeftOpen, ShieldCheck, Shrink, UserRound } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { matchPath, useLocation, useNavigate } from 'react-router-dom';
 import { AppLogo } from '@/components/AppLogo';
@@ -22,7 +22,6 @@ import { BreadcrumbMenuPopover, visibleMenuChildren } from './BreadcrumbMenuPopo
 import { FavoritesButton, FavoriteToggle, useFavorites } from './FavoriteMenus';
 import { GlobalSearch } from './GlobalSearch';
 import { KeepAliveOutlet } from './KeepAliveOutlet';
-import { PreferencesDrawer } from './PreferencesDrawer';
 import { TabsBar } from './TabsBar';
 import { ThemeColorButton, ThemeModeButton } from './ThemeSwitcher';
 import { TopNav } from './TopNav';
@@ -158,7 +157,8 @@ function isLockShortcut(e: KeyboardEvent) {
  * - mixed：顶部一级菜单 + 左侧当前一级下的子菜单（一级是页面时不显示侧边栏），无面包屑；
  * - double：左侧首列（一级菜单，仅图标 / 图标 + 文字见偏好 doubleRailStyle，同 zenith-admin）+ 子菜单栏 + 顶栏面包屑。
  * 小于 md（768px）时一律回落到移动端顶栏 + 左侧抽屉导航。
- * 外观与行为大多由偏好（hooks/usePreferences）控制，用户下拉菜单里的「偏好设置」打开偏好设置抽屉；
+ * 外观与行为大多由偏好（hooks/usePreferences）控制，取值以 defaultPreferences 为准；
+ * 偏好设置抽屉（layouts/PreferencesDrawer）按业务要求关闭，不再提供入口，组件保留以便随时恢复。
  * 顶栏「全局搜索」（Ctrl/⌘+K）搜索菜单（同 zenith-admin）。
  */
 export function AdminLayout({ menus, routes }: AdminLayoutProps) {
@@ -173,7 +173,6 @@ export function AdminLayout({ menus, routes }: AdminLayoutProps) {
     const [collapsed, setCollapsed] = useState(readCollapsed);
     const [sidebarHovered, setSidebarHovered] = useState(false);
     const [mobileNavVisible, setMobileNavVisible] = useState(false);
-    const [prefsVisible, setPrefsVisible] = useState(false);
     const [refreshSeq, setRefreshSeq] = useState<Record<string, number>>({});
     const locked = useIsLocked();
 
@@ -421,9 +420,6 @@ export function AdminLayout({ menus, routes }: AdminLayoutProps) {
                                 安全设置
                             </Dropdown.Item>
                         )}
-                        <Dropdown.Item icon={<Settings size={14} />} onClick={() => setPrefsVisible(true)}>
-                            偏好设置
-                        </Dropdown.Item>
                         <Dropdown.Divider />
                         <Dropdown.Item icon={<LogOut size={14} />} onClick={() => void logout()}>
                             退出登录
@@ -693,7 +689,6 @@ export function AdminLayout({ menus, routes }: AdminLayoutProps) {
                         </main>
                     </div>
                 </div>
-                <PreferencesDrawer visible={prefsVisible} onClose={() => setPrefsVisible(false)} />
             </div>
             {locked && <LockScreen user={user} onUnlocked={unlockScreen} onReLogin={() => void logout()} />}
         </>

@@ -70,20 +70,23 @@ describe('ThemeProvider', () => {
         document.documentElement.removeAttribute('style');
     });
 
-    it('默认 light，应用 #0064FA', () => {
-        mockSystemScheme(true);
+    it('默认跟随系统，应用 #0064FA', () => {
+        mockSystemScheme(false);
         render(
             <Providers>
                 <Probe />
             </Providers>,
         );
-        expect(state()).toBe('light|#0064FA|light');
+        // 业务默认 colorMode=system，跟随系统（这里是浅色）
+        expect(state()).toBe('system|#0064FA|light');
         expect(isBodyDark()).toBe(false);
         expect(document.body.style.getPropertyValue('--semi-color-primary')).toBe('#0064FA');
     });
 
     it('light → dark → system 循环，并持久化', () => {
         const system = mockSystemScheme(false);
+        // 业务默认已改成 system，这里从浅色起步以便按 浅色 → 深色 → 跟随系统 断言
+        savePrefs({ colorMode: 'light' });
         render(
             <Providers>
                 <Probe />
