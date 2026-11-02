@@ -11,8 +11,8 @@
 /* ===== 左侧品牌栏 ===== */
 .login-left {
     position: relative;
-    flex: 0 0 46%;
-    max-width: 640px;
+    flex: 0 0 48%;
+    max-width: 720px;
     display: flex;
     align-items: center;
     overflow: hidden;
@@ -53,31 +53,35 @@
 .login-brand {
     position: relative;
     z-index: 1;
-    padding: 0 64px;
-    max-width: 560px;
+    padding: 0 72px;
+    max-width: 720px;
     width: 100%;
 }
 
 .login-logo-wrap {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 22px;
+    gap: 20px;
+    margin-bottom: 30px;
 }
 
 .login-brand .login-brand-name {
-    font-size: 30px;
+    /* 跟着视口缩放，避免窄屏折行 */
+    font-size: clamp(28px, 3.4vw, 48px);
     font-weight: 600;
     color: #ffffff;
-    letter-spacing: 0.01em;
+    letter-spacing: -0.005em;
+    white-space: nowrap;
 }
 
 .login-desc {
     margin: 0;
-    max-width: 460px;
-    font-size: 14.5px;
-    line-height: 1.85;
-    color: rgba(255, 255, 255, 0.62);
+    max-width: 540px;
+    font-size: 16px;
+    line-height: 1.9;
+    color: rgba(255, 255, 255, 0.66);
+    /* 窄屏折两行时别让最后一行只剩一两个字 */
+    text-wrap: pretty;
 }
 
 /* ===== 右侧表单区 ===== */

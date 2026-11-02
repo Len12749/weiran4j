@@ -31,7 +31,7 @@ function BrandPanel() {
             <div className="login-glow-bottom" />
             <div className="login-brand">
                 <div className="login-logo-wrap">
-                    <AppLogo size={68} variant="glass" />
+                    <AppLogo size={96} variant="glass" />
                     <span className="login-brand-name">{config.appTitle}</span>
                 </div>
                 <p className="login-desc">审批、项目、协作、工单与知识库收在一处，进度和凭据全程留痕。</p>
