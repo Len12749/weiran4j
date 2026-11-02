@@ -262,15 +262,16 @@ body[theme-mode='dark'] .login-right::before {
     width: 440px;
     max-width: 100%;
     margin: auto;
-    padding: 44px 40px 40px;
+    padding: 40px 40px 36px;
     position: relative;
     z-index: 1;
     background: var(--semi-color-bg-0);
-    border: 1px solid var(--semi-color-border);
-    border-radius: 20px;
+    border: 1px solid color-mix(in srgb, var(--semi-color-border) 60%, transparent);
+    border-radius: 24px;
     box-shadow:
-        0 24px 60px -34px color-mix(in srgb, #0b1a33 30%, transparent),
-        0 2px 6px color-mix(in srgb, #0b1a33 4%, transparent);
+        0 1px 2px color-mix(in srgb, #0b1a33 5%, transparent),
+        0 12px 28px -14px color-mix(in srgb, #0b1a33 16%, transparent),
+        0 40px 80px -48px color-mix(in srgb, #0b1a33 34%, transparent);
 }
 
 /* 卡片顶部的主色高光线：让卡片有落点，不是一张浮在白纸上的白框 */
@@ -325,17 +326,20 @@ body[theme-mode='dark'] .login-form-wrapper {
 }
 
 .login-form-header {
-    margin-bottom: 24px;
+    margin-bottom: 28px;
 }
 
 .login-form-header .login-form-title {
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    font-size: 26px;
     font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
 .login-form-subtitle {
     display: block;
-    font-size: 14px;
+    font-size: 13.5px;
+    letter-spacing: 0.01em;
 }
 
 .login-error {
@@ -365,15 +369,59 @@ body[theme-mode='dark'] .login-form-wrapper {
 
 .login-form-wrapper .semi-form-field {
     padding-top: 0;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
+    /* Semi 给纵向表单的字段加了 overflow: hidden，会把输入框的聚焦光环从上方切掉 */
+    overflow: visible;
+}
+
+/* 输入框：去掉描边改用浅填充，聚焦时再浮出主色描边与光环 */
+.login-form-wrapper .semi-input-wrapper {
+    height: 46px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background-color: var(--semi-color-fill-0);
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.login-form-wrapper .semi-input-wrapper:hover {
+    background: var(--semi-color-fill-1);
+}
+
+.login-form-wrapper .semi-input-wrapper.semi-input-wrapper-focus {
+    background-color: var(--semi-color-bg-0);
+    border-color: color-mix(in srgb, var(--semi-color-primary) 65%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--semi-color-primary) 12%, transparent);
+}
+
+.login-form-wrapper .semi-input-wrapper.semi-input-wrapper-error {
+    border-color: color-mix(in srgb, var(--semi-color-danger) 55%, transparent);
+    background-color: color-mix(in srgb, var(--semi-color-danger) 4%, var(--semi-color-fill-0));
+}
+
+.login-form-wrapper .semi-input {
+    font-size: 15px;
+}
+
+.login-form-wrapper .semi-input-prefix {
+    color: var(--semi-color-text-2);
+}
+
+.login-form-wrapper .semi-form-field-error-message {
+    margin-top: 6px;
+    font-size: 12.5px;
 }
 
 .login-form-wrapper .login-submit.semi-button {
-    margin-top: 8px;
-    height: 44px;
+    margin-top: 12px;
+    height: 46px;
+    border-radius: 12px;
     font-size: 15px;
-    font-weight: 500;
-    box-shadow: 0 4px 16px color-mix(in srgb, var(--semi-color-primary) 28%, transparent);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--semi-color-primary) 55%, transparent);
     transition:
         box-shadow 0.2s,
         transform 0.15s;
@@ -386,17 +434,18 @@ body[theme-mode='dark'] .login-form-wrapper {
 
 /* 暗色输入框 */
 body[theme-mode='dark'] .login-form-wrapper .semi-input-wrapper {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(100, 140, 220, 0.2);
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.06);
 }
 
 body[theme-mode='dark'] .login-form-wrapper .semi-input-wrapper:hover {
-    border-color: rgba(100, 160, 255, 0.4);
+    background: rgba(255, 255, 255, 0.13);
 }
 
 body[theme-mode='dark'] .login-form-wrapper .semi-input-wrapper.semi-input-wrapper-focus {
+    background-color: rgba(255, 255, 255, 0.14);
     border-color: color-mix(in srgb, var(--semi-color-primary) 70%, transparent);
-    background: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--semi-color-primary) 24%, transparent);
 }
 
 /* ===== 响应式 ===== */
