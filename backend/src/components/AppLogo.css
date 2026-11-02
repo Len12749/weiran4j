@@ -15,7 +15,13 @@
     object-fit: contain;
 }
 
-/* 放在主色底（登录页品牌栏）时补一层柔光，避免深色描边糊进背景 */
+/*
+ * 放在主色底（登录页品牌栏）时：沿轮廓描一圈很淡的白光把图标从蓝色背景里托出来，
+ * 再加一层柔和外投影给它一点落点。发光刻意压低，避免看起来在发光。
+ */
 .app-logo--glass .app-logo__image {
-    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.25));
+    filter:
+        drop-shadow(0 0 1px rgba(255, 255, 255, 0.8))
+        drop-shadow(0 0 2px rgba(255, 255, 255, 0.35))
+        drop-shadow(0 2px 6px rgba(3, 12, 35, 0.3));
 }
