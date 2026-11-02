@@ -40,6 +40,13 @@
     color: #fff;
 }
 
+/* 默认头像图是透明底，直接落在主色块上：补一圈很淡的白光分出轮廓，不改变其它位置的头像 */
+.dashboard-hero__avatar.semi-avatar img {
+    filter:
+        drop-shadow(0 0 1px rgba(255, 255, 255, 0.85))
+        drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
+}
+
 .dashboard-hero__title {
     font-size: 20px;
     font-weight: 600;
