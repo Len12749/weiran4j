@@ -276,6 +276,12 @@ export default function LoginPage() {
                     ))}
                     </>}
                 </div>
+                <footer className="login-footer">
+                    <span>
+                        © {new Date().getFullYear()} {config.appTitle}
+                    </span>
+                    <span>内部系统，仅限授权人员访问</span>
+                </footer>
             </main>
         </div>
     );
