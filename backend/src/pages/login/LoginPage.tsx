@@ -23,39 +23,18 @@ interface LoginForm {
 
 type LoginMethod = 'password' | 'phone';
 
-const FEATURES = ['立项与任务', '每日汇报', '协作申请', '工单闭环', '账号授权', '知识问答'];
-
-/** 左侧品牌栏：主色底 + 光晕 / 同心环装饰，窄屏不渲染 */
+/** 左侧品牌栏：只留品牌和一句平台说明，窄屏不渲染 */
 function BrandPanel() {
     return (
         <aside className="login-left">
             <div className="login-glow-top" />
             <div className="login-glow-bottom" />
-            <div className="login-ring" />
             <div className="login-brand">
                 <div className="login-logo-wrap">
-                    <AppLogo size={40} variant="glass" />
+                    <AppLogo size={68} variant="glass" />
                     <span className="login-brand-name">{config.appTitle}</span>
                 </div>
-                <div className="login-eyebrow">研发聚合平台</div>
-                <h2 className="login-headline">
-                    从立项到交付
-                    <br />
-                    <span className="login-headline-highlight">都在这里</span>
-                </h2>
-                <p className="login-desc">
-                    审批、项目、协作、工单、账号与知识库，都在一个地方。
-                    <br />
-                    进度、风险和凭据，全程留痕。
-                </p>
-                <div className="login-divider" />
-                <div className="login-feature-tags">
-                    {FEATURES.map((f) => (
-                        <span key={f} className="login-feature-tag">
-                            {f}
-                        </span>
-                    ))}
-                </div>
+                <p className="login-desc">审批、项目、协作、工单与知识库收在一处，进度和凭据全程留痕。</p>
             </div>
         </aside>
     );

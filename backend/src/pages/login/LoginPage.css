@@ -50,35 +50,6 @@
     pointer-events: none;
 }
 
-/* 装饰同心环 - 右下角 */
-.login-ring {
-    position: absolute;
-    width: 480px;
-    height: 480px;
-    bottom: -168px;
-    right: -136px;
-    border-radius: 50%;
-    border: 1.5px solid rgba(255, 255, 255, 0.14);
-    z-index: 0;
-    pointer-events: none;
-}
-
-.login-ring::before {
-    content: '';
-    position: absolute;
-    inset: 52px;
-    border-radius: 50%;
-    border: 1.5px solid rgba(255, 255, 255, 0.1);
-}
-
-.login-ring::after {
-    content: '';
-    position: absolute;
-    inset: 108px;
-    border-radius: 50%;
-    border: 1.5px solid rgba(255, 255, 255, 0.07);
-}
-
 .login-brand {
     position: relative;
     z-index: 1;
@@ -90,108 +61,23 @@
 .login-logo-wrap {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 56px;
+    gap: 16px;
+    margin-bottom: 22px;
 }
 
 .login-brand .login-brand-name {
-    font-size: 17px;
+    font-size: 30px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
-    letter-spacing: 0.02em;
-}
-
-/* Eyebrow 徽标 */
-.login-eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 5px 12px 5px 10px;
-    border-radius: 100px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    font-size: 12px;
-    color: #ffffff;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    margin-bottom: 20px;
-}
-
-.login-eyebrow::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--semi-color-primary) 40%, white);
-    flex-shrink: 0;
-    box-shadow: 0 0 6px color-mix(in srgb, var(--semi-color-primary) 60%, white);
-}
-
-.login-headline {
-    font-size: 48px;
-    font-weight: 800;
-    line-height: 1.18;
-    letter-spacing: -0.03em;
-    color: #ffffff;
-    margin: 0 0 18px;
-}
-
-.login-headline-highlight {
-    display: inline-block;
-    background: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--semi-color-primary) 35%, white) 0%,
-        color-mix(in srgb, var(--semi-color-primary) 15%, white) 100%
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.login-desc {
-    font-size: 14.5px;
-    color: rgba(255, 255, 255, 0.6);
-    line-height: 1.85;
-    margin: 0 0 36px;
-    max-width: 380px;
-}
-
-.login-divider {
-    width: 32px;
-    height: 2px;
-    background: rgba(255, 255, 255, 0.18);
-    border-radius: 2px;
-    margin-bottom: 28px;
-}
-
-.login-feature-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    /* 限宽让 6 个标签排成 3 + 3，避免 4 + 2 的阶梯感 */
-    max-width: 340px;
-}
-
-.login-feature-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 7px 14px;
-    border-radius: 100px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    font-size: 13px;
     color: #ffffff;
     letter-spacing: 0.01em;
 }
 
-.login-feature-tag::before {
-    content: '';
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--semi-color-primary) 40%, white);
-    flex-shrink: 0;
+.login-desc {
+    margin: 0;
+    max-width: 460px;
+    font-size: 14.5px;
+    line-height: 1.85;
+    color: rgba(255, 255, 255, 0.62);
 }
 
 /* ===== 右侧表单区 ===== */
@@ -452,10 +338,6 @@ body[theme-mode='dark'] .login-form-wrapper .semi-input-wrapper.semi-input-wrapp
 @media (--xl-down) {
     .login-brand {
         padding: 0 48px;
-    }
-
-    .login-headline {
-        font-size: 40px;
     }
 }
 
