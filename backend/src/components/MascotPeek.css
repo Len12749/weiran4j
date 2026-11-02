@@ -6,11 +6,13 @@
 .mascot-peek {
     --mascot-width: 240px;
     --mascot-hands: calc(var(--mascot-width) * 0.0753);
+    /* 贴图底部那条黑线还要再压过卡片顶边 2px 的主色高光，否则会漏出一条蓝边 */
+    --mascot-cover: 2.3px;
     position: relative;
     z-index: 2;
     flex: none;
     width: var(--mascot-width);
-    margin-bottom: calc(-1 * var(--mascot-hands));
+    margin-bottom: calc(-1 * var(--mascot-hands) - var(--mascot-cover));
     pointer-events: none;
     user-select: none;
 }
