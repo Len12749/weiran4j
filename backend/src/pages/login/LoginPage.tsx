@@ -165,7 +165,7 @@ export default function LoginPage() {
                                 欢迎登录
                             </Typography.Title>
                             <Typography.Text type="tertiary" className="login-form-subtitle">
-                                {providers.length || phoneLoginEnabled ? '选择登录方式进入工作台' : '使用账号密码进入工作台'}
+                                账号请联系管理员申请
                             </Typography.Text>
                         </div>
                         {error && <Banner type="danger" description={error} closeIcon={null} className="login-error" />}
@@ -273,12 +273,6 @@ export default function LoginPage() {
                         </>}
                     </div>
                 </div>
-                <footer className="login-footer">
-                    <span>
-                        © {new Date().getFullYear()} {config.appTitle}
-                    </span>
-                    <span>内部系统，仅限授权人员访问</span>
-                </footer>
             </main>
         </div>
     );
