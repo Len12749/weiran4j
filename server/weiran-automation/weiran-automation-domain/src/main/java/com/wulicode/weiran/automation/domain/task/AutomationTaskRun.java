@@ -27,7 +27,7 @@ public record AutomationTaskRun(
                 taskId,
                 triggerType,
                 outputMode,
-                AutomationRunStatus.FAILED,
+                AutomationRunStatus.RUNNING,
                 startedAt,
                 null,
                 null,

@@ -4,6 +4,8 @@ import java.util.Optional;
 
 /** 任务执行终态。 */
 public enum AutomationRunStatus {
+    /** 正在执行，记录已创建但尚未收尾。 */
+    RUNNING("running"),
     /** 全部合并请求处理成功，或本轮没有待处理项。 */
     SUCCESS("success"),
     /** 部分合并请求失败，其余成功。 */

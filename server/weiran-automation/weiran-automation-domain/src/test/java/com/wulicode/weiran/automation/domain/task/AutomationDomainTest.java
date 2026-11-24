@@ -21,12 +21,13 @@ class AutomationDomainTest {
     }
 
     @Test
-    @DisplayName("执行状态：只接受三个已知取值")
+    @DisplayName("执行状态：只接受已知取值")
     void runStatusParsesKnownValues() {
         assertThat(AutomationRunStatus.of("success")).contains(AutomationRunStatus.SUCCESS);
         assertThat(AutomationRunStatus.of("partial")).contains(AutomationRunStatus.PARTIAL);
         assertThat(AutomationRunStatus.of("failed")).contains(AutomationRunStatus.FAILED);
-        assertThat(AutomationRunStatus.of("running")).isEmpty();
+        assertThat(AutomationRunStatus.of("running")).contains(AutomationRunStatus.RUNNING);
+        assertThat(AutomationRunStatus.of("unknown")).isEmpty();
         assertThat(AutomationRunStatus.SUCCESS.value()).isEqualTo("success");
     }
 

@@ -30,6 +30,7 @@ import './AutomationTasksPage.css';
 type TagColor = 'green' | 'orange' | 'red' | 'grey' | 'blue';
 
 const RUN_STATUS: Record<string, { label: string; color: TagColor }> = {
+    running: { label: '执行中', color: 'blue' },
     success: { label: '成功', color: 'green' },
     partial: { label: '部分成功', color: 'orange' },
     failed: { label: '失败', color: 'red' },
@@ -133,7 +134,9 @@ function ReviewCard({ review }: { review: AutomationReviewView }) {
     );
 }
 
-function RunDetailSheet({ task, onClose }: { task: AutomationTaskView; onClose: () => void }) {
+function RunDetailSheet({ task: openedTask, onClose }: { task: AutomationTaskView; onClose: () => void }) {
+    const tasks = useAutomationTasks();
+    const task = tasks.data?.find((item) => item.id === openedTask.id) ?? openedTask;
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [runId, setRunId] = useState<number | null>(null);
@@ -185,7 +188,18 @@ function RunDetailSheet({ task, onClose }: { task: AutomationTaskView; onClose: 
                             onConfirm={() =>
                                 removeRun.mutate(
                                     { taskId: task.id, runId: record.id },
-                                    { onSuccess: () => Toast.success('已删除') },
+                                    {
+                                        onSuccess: () => {
+                                            // 删的正是当前查看的那次：关掉评论区，避免刷新时又去查已删除的记录
+                                            if (runId === record.id) {
+                                                setRunId(null);
+                                            }
+                                            if ((runs.data?.list.length ?? 0) <= 1 && page > 1) {
+                                                setPage(page - 1);
+                                            }
+                                            Toast.success('已删除');
+                                        },
+                                    },
                                 )
                             }
                         >

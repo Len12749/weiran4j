@@ -38,6 +38,8 @@ export function useAutomationRuns(taskId: number | null, page: number, pageSize:
             ),
         enabled: taskId !== null,
         placeholderData: (previous) => previous,
+        // 抽屉打开期间自动同步：执行中的状态变化、新产生的记录不用手动刷新
+        refetchInterval: 5000,
     });
 }
 
@@ -48,8 +50,11 @@ export function useAutomationRunDetail(taskId: number | null, runId: number | nu
         queryFn: () =>
             http.get<AutomationRunDetailView>(
                 `/api-backend/automation/task/getRun/${runId}?taskId=${taskId}`,
+                // 记录被删除后刷新会查不到：详情是次要信息，静默处理，不弹错误提示
+                { silent: true },
             ),
         enabled: taskId !== null && runId !== null,
+        refetchInterval: (query) => (query.state.data?.run.status === 'running' ? 3000 : false),
     });
 }
 

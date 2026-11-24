@@ -61,7 +61,7 @@ public class MybatisAutomationRunRepository implements AutomationRunRepository {
         row.setOutputMode(run.outputMode().value());
         row.setStatus(run.status().value());
         row.setStartedAt(run.startedAt());
-        row.setSummary(run.summary() == null || run.summary().isBlank() ? "执行未完成" : run.summary());
+        row.setSummary(run.summary() == null || run.summary().isBlank() ? "执行中" : run.summary());
         row.setMergeRequestCount(0);
         row.setReviewedCount(0);
         row.setCommentCount(0);
