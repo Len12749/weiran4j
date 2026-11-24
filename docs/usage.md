@@ -27,6 +27,8 @@ pnpm dev
 
 首次启动时 Flyway 会在空库中建表并写入种子数据。请勿将本地配置指向已有业务库。
 
+工具链不在系统里（JDK 21、Node、MySQL 都放在仓库内 `.tools/`）时，按 [开发与部署环境](/development-environment) 的「本机启动顺序」逐步起进程：MySQL → 知识库 MCP → `pnpm dev`。
+
 ## 常用命令
 
 | 命令 | 用途 |
