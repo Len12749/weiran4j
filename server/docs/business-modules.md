@@ -7,3 +7,4 @@
 | `weiran-framework` | 服务 `10`；资源 `00` 通用、`01` 认证与请求安全 | — | — | — |
 | `weiran-system` | 服务 `11`；资源 `01` 认证 | `1`–`999` | `system:` | `system/`、`platform/` · `sys_` |
 | `weiran-region` | 服务 `12`；资源 `01` 行政区划 | `2000`–`2099` | `region:` | `region/` · `region` |
+| `weiran-automation` | 服务 `13`；资源 `01` 自动化任务 | `2100`–`2199` | `automation:` | `automation/`、`automation_` |

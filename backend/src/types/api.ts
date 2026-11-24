@@ -552,3 +552,82 @@ export interface BatchTaskDetailView {
     resultId: string | null;
     createdAt: string;
 }
+
+/* ---------- 自动化任务 ---------- */
+
+export type AutomationOutputMode = 'local' | 'local_and_cloud';
+
+export interface AutomationTaskView {
+    id: number;
+    code: string;
+    name: string;
+    description: string;
+    triggerDescription: string;
+    scheduleDescription: string;
+    scheduleKind: string;
+    intervalSeconds: number;
+    outputMode: AutomationOutputMode;
+    enabled: boolean;
+    lastRunAt: string | null;
+    lastRunStatus: string | null;
+    lastRunSummary: string | null;
+    lastRunId: number | null;
+    running: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface AutomationRunView {
+    id: number;
+    taskId: number;
+    triggerType: string;
+    outputMode: AutomationOutputMode;
+    status: string;
+    startedAt: string;
+    finishedAt: string | null;
+    durationMs: number | null;
+    summary: string;
+    errorMessage: string | null;
+    mergeRequestCount: number;
+    reviewedCount: number;
+    commentCount: number;
+}
+
+export interface AutomationReviewFileView {
+    id: number;
+    path: string;
+    addLines: number;
+    delLines: number;
+    level: string;
+    commentText: string | null;
+    skipReason: string | null;
+}
+
+export interface AutomationReviewView {
+    id: number;
+    runId: number;
+    projectId: string;
+    mergeRequestId: number;
+    mergeRequestTitle: string;
+    webUrl: string | null;
+    authorName: string | null;
+    sourceBranch: string | null;
+    targetBranch: string | null;
+    status: string;
+    commentText: string | null;
+    model: string | null;
+    fileCount: number;
+    addLines: number;
+    delLines: number;
+    errorMessage: string | null;
+    files: AutomationReviewFileView[];
+}
+
+export interface AutomationRunDetailView {
+    run: AutomationRunView;
+    reviews: AutomationReviewView[];
+}
+
+export interface ToggleAutomationTaskRequest {
+    enabled: boolean;
+}
