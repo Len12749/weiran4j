@@ -10,6 +10,13 @@ import type {
 
 const automationRootKeys = ['automation'] as const;
 
+/**
+ * 任务卡片、执行记录、评论详情共用一个节拍。
+ * 三层各自判断是否轮询时，会出现「记录已经在跑、卡片还显示已启用」这类时间差，
+ * 统一成同一个间隔后三个层次同一拍刷新。
+ */
+const POLL_INTERVAL = 5000;
+
 export const automationKeys = {
     all: automationRootKeys,
     tasks: () => [...automationRootKeys, 'tasks'] as const,
@@ -18,13 +25,12 @@ export const automationKeys = {
     runDetail: (taskId: number, runId: number) => [...automationRootKeys, 'run', taskId, runId] as const,
 };
 
-/** 全部自动化任务；有任务在跑时缩短轮询间隔，便于看到最新结果。 */
+/** 全部自动化任务。 */
 export function useAutomationTasks() {
     return useQuery({
         queryKey: automationKeys.tasks(),
         queryFn: () => http.get<AutomationTaskView[]>('/api-backend/automation/task/list'),
-        refetchInterval: (query) =>
-            (query.state.data ?? []).some((task) => task.running) ? 5000 : 60000,
+        refetchInterval: POLL_INTERVAL,
     });
 }
 
@@ -39,7 +45,7 @@ export function useAutomationRuns(taskId: number | null, page: number, pageSize:
         enabled: taskId !== null,
         placeholderData: (previous) => previous,
         // 抽屉打开期间自动同步：执行中的状态变化、新产生的记录不用手动刷新
-        refetchInterval: 5000,
+        refetchInterval: POLL_INTERVAL,
     });
 }
 
@@ -54,7 +60,7 @@ export function useAutomationRunDetail(taskId: number | null, runId: number | nu
                 { silent: true },
             ),
         enabled: taskId !== null && runId !== null,
-        refetchInterval: (query) => (query.state.data?.run.status === 'running' ? 3000 : false),
+        refetchInterval: POLL_INTERVAL,
     });
 }
 
