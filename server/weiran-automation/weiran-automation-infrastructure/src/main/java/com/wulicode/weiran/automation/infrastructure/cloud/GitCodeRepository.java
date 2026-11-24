@@ -37,26 +37,45 @@ public class GitCodeRepository implements CodeRepositoryPort {
     }
 
     @Override
-    public Path synchronize(final String projectId, final @Nullable String repositoryPath) {
+    public Path synchronize(
+            final String projectId,
+            final @Nullable String repositoryPath,
+            final @Nullable String sourceBranch,
+            final long mergeRequestId) {
         if (repositoryPath == null || repositoryPath.isBlank()) {
             throw new RepositorySyncException("云效没有返回合并请求所属代码库的路径");
         }
+        if (sourceBranch == null || sourceBranch.isBlank()) {
+            throw new RepositorySyncException("云效没有返回合并请求的源分支");
+        }
         final String url = this.toHttpsUrl(repositoryPath);
         final Path root = Path.of(this.properties.root()).toAbsolutePath().normalize();
-        final Path target =
+        final Path main =
                 root.resolve(GitCodeRepository.directoryName(projectId)).normalize();
+        final Path worktree = root.resolve(GitCodeRepository.directoryName(projectId) + ".pr")
+                .resolve(String.valueOf(mergeRequestId))
+                .normalize();
         final ReentrantLock lock = this.locks.computeIfAbsent(projectId, key -> new ReentrantLock());
         lock.lock();
         try {
             Files.createDirectories(root);
-            if (Files.isDirectory(target.resolve(".git"))) {
-                this.run(target, "fetch", "--all", "--prune", "--quiet");
-                LOGGER.info("Repository {} updated at {}", projectId, target);
+            if (Files.isDirectory(main.resolve(".git"))) {
+                this.run(main, "fetch", "--all", "--prune", "--quiet");
+                LOGGER.info("Repository {} updated at {}", projectId, main);
             } else {
-                this.run(root, "clone", "--quiet", url, target.toString());
-                LOGGER.info("Repository {} cloned to {}", projectId, target);
+                this.run(root, "clone", "--quiet", url, main.toString());
+                LOGGER.info("Repository {} cloned to {}", projectId, main);
             }
-            return target;
+            // 每个 PR 一个 worktree：并发分析同一仓库的不同分支时不会互相踩工作区。
+            final String ref = "origin/" + sourceBranch.strip();
+            Files.createDirectories(worktree.getParent());
+            if (Files.isRegularFile(worktree.resolve(".git"))) {
+                this.run(worktree, "checkout", "-f", "--detach", ref);
+            } else {
+                this.run(main, "worktree", "add", "--force", "--detach", worktree.toString(), ref);
+            }
+            LOGGER.info("Repository {} worktree for MR {} at {} ({})", projectId, mergeRequestId, worktree, ref);
+            return worktree;
         } catch (final IOException ex) {
             throw new RepositorySyncException("创建代码仓库目录失败：" + ex.getMessage(), ex);
         } finally {

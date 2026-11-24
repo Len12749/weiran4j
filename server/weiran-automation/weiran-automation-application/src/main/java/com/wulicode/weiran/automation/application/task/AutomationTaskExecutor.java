@@ -202,7 +202,8 @@ public class AutomationTaskExecutor {
         }
         final long reviewId = claimed.get();
         try {
-            final Path repository = this.repositories.synchronize(request.projectId(), request.repositoryPath());
+            final Path repository = this.repositories.synchronize(
+                    request.projectId(), request.repositoryPath(), request.sourceBranch(), request.localId());
             final List<ChangedFile> files = this.source.loadChangedFiles(request);
             final List<ChangedFile> analyzable =
                     files.stream().filter(AutomationTaskExecutor::isAnalyzable).toList();

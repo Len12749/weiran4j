@@ -41,6 +41,7 @@ public class KnowledgeReviewAgent implements ReviewAgent {
               异常未处理、数据会被截断或丢失、鉴权/签名缺失、越权、并发下会出错、明显违反团队硬性规范。
             - 不报告观点型问题：注释与实现不符、建议加重试、建议脱敏、日志级别或格式、命名、代码结构、
               可读性、重构建议、补充测试建议，一律不要输出。
+            - 只报由本次变更引入或修改的代码引发的问题；既有代码的历史遗留问题不要报。
             - 说不清"会导致什么错误行为"的问题，不要报。
             - 问题数量不设上限，但每一条都必须能指出后果；没有值得改的就明说。
             - level 一律用 issue。
@@ -54,8 +55,8 @@ public class KnowledgeReviewAgent implements ReviewAgent {
 
     private static final int MAX_ROUNDS = 6;
 
-    /** 评论里最多列出的问题数：只做极端保护，不主动限制模型发现的问题。 */
-    private static final int MAX_ISSUES = 8;
+    /** 评论里最多列出的问题数：只做极端保护，不限制模型发现问题。 */
+    private static final int MAX_ISSUES = 50;
 
     private static final int MAX_COMMENT_CHARS = 3000;
 
