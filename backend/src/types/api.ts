@@ -607,6 +607,8 @@ export interface AutomationReviewView {
     id: number;
     runId: number;
     projectId: string;
+    /** 代码库路径，形如 qyd/lianmeng/kr/web；历史记录可能为空 */
+    repositoryPath: string;
     mergeRequestId: number;
     mergeRequestTitle: string;
     webUrl: string | null;

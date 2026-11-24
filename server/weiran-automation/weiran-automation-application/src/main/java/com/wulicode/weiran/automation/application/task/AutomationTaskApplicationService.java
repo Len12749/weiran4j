@@ -178,6 +178,7 @@ public class AutomationTaskApplicationService implements AutomationTaskService {
                 review.id(),
                 review.runId(),
                 review.projectId(),
+                review.repositoryPath(),
                 review.mergeRequestId(),
                 review.mergeRequestTitle(),
                 review.webUrl(),

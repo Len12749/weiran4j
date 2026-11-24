@@ -40,7 +40,7 @@
 | `enabled` | 启停状态，管理员可改 |
 | `next_run_at` / `locked_until` | 调度租约字段，不对外展示 |
 
-`automation_review` 按 `(task_id, project_id, merge_request_id)` 唯一，状态取值 `processing / reviewed / failed / skipped`；`processing` 超过 5 分钟视为进程中断，允许重新抢占。
+`automation_review` 除数字 `project_id` 外还记 `repository_path`（形如 `qyd/lianmeng/kr/web`），界面按它显示仓库名；按 `(task_id, project_id, merge_request_id)` 唯一，状态取值 `processing / reviewed / failed / skipped`；`processing` 超过 5 分钟视为进程中断，允许重新抢占。
 
 ## 3. 动作
 
@@ -76,3 +76,5 @@
 
 - 新建模块：任务卡片页、执行记录与评论明细、管理员启停、每分钟轮询云效待评审合并请求并生成评论。
 - 首次真实执行：3 个待评审合并请求（`qyd/lianmeng/kr/web`）118 秒生成 3 条评论；下一轮检查识别为「均已生成过评论，未重复执行」。
+- 评审结果补记 `repository_path`，界面不再显示数字 `project_id`；历史记录按 `web_url` 反解回填。
+- 界面改版：卡片改为状态圆点 + 三列指标，抽屉换成信息条与细线分隔的评论条目。

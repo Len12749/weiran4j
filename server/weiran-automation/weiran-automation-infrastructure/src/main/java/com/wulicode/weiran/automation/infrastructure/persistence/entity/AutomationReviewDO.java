@@ -19,6 +19,8 @@ public class AutomationReviewDO extends AuditableDO {
 
     private String projectId;
 
+    private String repositoryPath;
+
     private Long mergeRequestId;
 
     private String mergeRequestTitle;

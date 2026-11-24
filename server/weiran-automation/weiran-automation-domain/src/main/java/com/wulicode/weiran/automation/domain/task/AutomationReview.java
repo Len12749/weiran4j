@@ -9,6 +9,7 @@ public record AutomationReview(
         long runId,
         long taskId,
         String projectId,
+        String repositoryPath,
         long mergeRequestId,
         String mergeRequestTitle,
         @Nullable String webUrl,

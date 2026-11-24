@@ -257,6 +257,7 @@ public class MybatisAutomationRunRepository implements AutomationRunRepository {
         row.setTaskId(taskId);
         row.setRunId(runId);
         row.setProjectId(request.projectId());
+        row.setRepositoryPath(MybatisAutomationRunRepository.clip(request.repositoryPath(), 128));
         row.setMergeRequestId(request.localId());
         row.setMergeRequestTitle(MybatisAutomationRunRepository.clip(request.title(), 250));
         row.setWebUrl(MybatisAutomationRunRepository.clip(request.webUrl(), 512));
@@ -306,6 +307,7 @@ public class MybatisAutomationRunRepository implements AutomationRunRepository {
                 row.getRunId() == null ? 0L : row.getRunId(),
                 row.getTaskId() == null ? 0L : row.getTaskId(),
                 row.getProjectId() == null ? "" : row.getProjectId(),
+                row.getRepositoryPath() == null ? "" : row.getRepositoryPath(),
                 row.getMergeRequestId() == null ? 0L : row.getMergeRequestId(),
                 row.getMergeRequestTitle() == null ? "" : row.getMergeRequestTitle(),
                 row.getWebUrl(),

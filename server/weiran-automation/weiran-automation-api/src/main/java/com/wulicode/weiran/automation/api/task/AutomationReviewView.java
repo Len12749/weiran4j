@@ -8,6 +8,7 @@ public record AutomationReviewView(
         long id,
         long runId,
         String projectId,
+        String repositoryPath,
         long mergeRequestId,
         String mergeRequestTitle,
         @Nullable String webUrl,
