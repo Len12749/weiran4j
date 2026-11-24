@@ -38,6 +38,16 @@ public class AutomationApplicationAutoConfiguration {
         });
     }
 
+    /** 评审工具线程池：同一轮里模型可能一次要求多个工具，最多 8 个并行。 */
+    @Bean(name = "automationToolExecutor", destroyMethod = "shutdownNow")
+    public ExecutorService automationToolExecutor() {
+        return Executors.newFixedThreadPool(8, runnable -> {
+            final Thread thread = new Thread(runnable, "automation-tool");
+            thread.setDaemon(true);
+            return thread;
+        });
+    }
+
     /** 任务执行入口线程池：调度与手动触发共用，避免阻塞调度线程与 HTTP 请求。 */
     @Bean(name = "automationLaunchExecutor", destroyMethod = "shutdownNow")
     public ExecutorService automationLaunchExecutor() {
@@ -84,7 +94,8 @@ public class AutomationApplicationAutoConfiguration {
     public AutomationTaskScheduler automationTaskScheduler(
             final AutomationTaskRepository tasks,
             final AutomationTaskLauncher launcher,
+            final AutomationRunRepository runs,
             final Environment environment) {
-        return new AutomationTaskScheduler(tasks, launcher, environment);
+        return new AutomationTaskScheduler(tasks, launcher, runs, environment);
     }
 }

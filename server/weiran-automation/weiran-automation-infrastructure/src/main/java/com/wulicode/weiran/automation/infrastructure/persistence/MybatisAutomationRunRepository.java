@@ -32,7 +32,7 @@ public class MybatisAutomationRunRepository implements AutomationRunRepository {
     private static final String REVIEWED = AutomationReviewStatus.REVIEWED.value();
 
     /** 处理中的评审超过这个时长视为进程中断，允许重新抢占。 */
-    private static final long STALE_MINUTES = 15L;
+    private static final long STALE_MINUTES = 5L;
 
     /** 业务时区：与数据库 datetime 列的写入口径保持一致。 */
     private static final ZoneId ZONE = ZoneId.of("Asia/Shanghai");
@@ -217,6 +217,18 @@ public class MybatisAutomationRunRepository implements AutomationRunRepository {
             fileRow.setSkipReason(MybatisAutomationRunRepository.clip(file.skipReason(), 250));
             this.fileMapper.insert(fileRow);
         }
+    }
+
+    @Override
+    public int failStaleRuns(final LocalDateTime cutoff) {
+        return this.runMapper.update(
+                null,
+                Wrappers.<AutomationTaskRunDO>lambdaUpdate()
+                        .set(AutomationTaskRunDO::getStatus, AutomationRunStatus.FAILED.value())
+                        .set(AutomationTaskRunDO::getSummary, "执行中断（进程重启）")
+                        .set(AutomationTaskRunDO::getFinishedAt, LocalDateTime.now(MybatisAutomationRunRepository.ZONE))
+                        .eq(AutomationTaskRunDO::getStatus, AutomationRunStatus.RUNNING.value())
+                        .lt(AutomationTaskRunDO::getStartedAt, cutoff));
     }
 
     @Override

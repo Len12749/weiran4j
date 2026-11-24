@@ -11,7 +11,9 @@ import com.wulicode.weiran.automation.infrastructure.persistence.MybatisAutomati
 import com.wulicode.weiran.automation.infrastructure.persistence.MybatisAutomationTaskRepository;
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.concurrent.ExecutorService;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -64,14 +66,16 @@ public class AutomationInfrastructureAutoConfiguration {
         return new OpenAiCompatibleClient(properties, automationHttpClient, objectMapper);
     }
 
-    /** 评审 Agent。 */
+    /** 评审 Agent：工具并发 8 线。 */
     @Bean
     public KnowledgeReviewAgent automationReviewAgent(
             final McpKnowledgeClient mcpKnowledgeClient,
             final OpenAiCompatibleClient openAiCompatibleClient,
             final AutomationProperties properties,
-            final ObjectMapper objectMapper) {
-        return new KnowledgeReviewAgent(mcpKnowledgeClient, openAiCompatibleClient, properties, objectMapper);
+            final ObjectMapper objectMapper,
+            @Qualifier("automationToolExecutor") final ExecutorService toolExecutor) {
+        return new KnowledgeReviewAgent(
+                mcpKnowledgeClient, openAiCompatibleClient, properties, objectMapper, toolExecutor);
     }
 
     /** 本地代码仓库同步。 */

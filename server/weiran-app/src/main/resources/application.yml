@@ -71,12 +71,16 @@ weiran:
       # OpenAI 兼容的模型接口。
       llm-base-url: ${WEIRAN_AUTOMATION_LLM_BASE_URL:https://api.deepseek.com}
       llm-api-key: ${WEIRAN_AUTOMATION_LLM_API_KEY:}
-      llm-model: ${WEIRAN_AUTOMATION_LLM_MODEL:deepseek-chat}
+      llm-model: ${WEIRAN_AUTOMATION_LLM_MODEL:deepseek-flash}
       # 单个文件送入模型的 diff 字符上限与知识库检索条数。
       max-file-chars: 6000
       retrieve-limit: 6
-      # 允许评审的代码库路径白名单（sshUrl 中的 org/group/repo），逗号分隔；留空表示不过滤。
+      # 允许评审的代码库路径白名单（形如 qyd/lianmeng/kr/web），逗号分隔；留空表示不过滤。
       allow-paths: ${WEIRAN_AUTOMATION_ALLOW_PATHS:}
+      # 评审 Agent 的系统提示词；留空使用内置默认。可在本地 profile 里直接覆盖。
+      system-prompt: ${WEIRAN_AUTOMATION_SYSTEM_PROMPT:}
+      # 思考强度：low / medium / high；留空不传。
+      reasoning-effort: ${WEIRAN_AUTOMATION_REASONING_EFFORT:low}
     repository:
       # 本地代码仓库目录：与知识库那套分开管理，每个代码库一个子目录。
       root: ${WEIRAN_AUTOMATION_REPO_ROOT:./data/automation-repos}

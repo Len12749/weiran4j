@@ -40,16 +40,16 @@
 | `enabled` | 启停状态，管理员可改 |
 | `next_run_at` / `locked_until` | 调度租约字段，不对外展示 |
 
-`automation_review` 按 `(task_id, project_id, merge_request_id)` 唯一，状态取值 `processing / reviewed / failed / skipped`；`processing` 超过 15 分钟视为进程中断，允许重新抢占。
+`automation_review` 按 `(task_id, project_id, merge_request_id)` 唯一，状态取值 `processing / reviewed / failed / skipped`；`processing` 超过 5 分钟视为进程中断，允许重新抢占。
 
 ## 3. 动作
 
 - **启停**：`PUT /toggle/{id}`，需要 `automation:task:toggle`；普通用户只读。
 - **立即检查**：`POST /run/{id}`，需要 `automation:task:run`；异步执行、不受自动基线限制，触发时把 `next_run_at` 重置为「当前时间 + 间隔」，因此这次手动执行的时间就是下一次自动检查的基线；任务正在执行时返回冲突。
 - **删除执行记录**：`DELETE /run/{runId}?taskId=`，需要 `automation:task:run:delete`；连同本次评审结果与逐文件意见一起删除，若删的是最新一条，任务的 `last_run_*` 回退到剩余最新记录。删除已评审的记录会让对应合并请求在下一轮重新进入评审。
-- **调度**：应用内每 15 秒检查一次到期任务，`next_run_at` 未到或租约未释放时跳过；执行期间持有 30 分钟租约，多实例不会重复进入。
+- **调度**：应用内每 15 秒检查一次到期任务，`next_run_at` 未到或租约未释放时跳过；执行期间持有 30 分钟租约，多实例不会重复进入。进程启动时把 10 分钟前仍是 `running` 的执行记录标记为「执行中断（进程重启）」，避免界面一直转圈。
 - **执行**：配置就绪检查 → 拉取云效待评审合并请求（`totalCommentCount = 0`）→ 过滤本地已评审 → 单轮最多 3 个，并行分析 → 每个合并请求先抢占评审权 → 同步本地代码仓库 → 取变更文件 → 交给 ReAct 评审 Agent → 落库。
-- **评审 Agent**：把「MR 信息 + 变更 diff」作为初始上下文，模型可以自己调用只读工具核实上下文：`read_file`、`grep`（git grep）、`list_files`、`git_log`、`git_show`（都限制在本次同步下来的仓库目录内）以及 `search_knowledge`（WeKnora MCP）。最多 6 轮工具调用，用尽后强制收尾；最终输出 JSON（一句话结论 + 问题列表），Markdown 由后端组装。
+- **评审 Agent**：把「MR 信息 + 变更 diff」作为初始上下文，提示词只交代工作顺序（了解代码库技术栈 → 检索对应开发规范 → 找事实性错误），工具为 `read_file`、`grep`（git grep）、`list_files`、`git_log`、`git_show`（都限制在本次同步下来的仓库分支工作区内）与 `search_knowledge`（WeKnora MCP）。轮数不设上限（200 轮仅作死循环保护），同一轮的多个工具调用并发执行（8 线程）；收尾时强制 `response_format: json_object`，模型只输出 `{"findings":[{"path","comment"}]}`；评论标题由后端固定生成。
 - **失败处理**：配置缺失或输出方式为 `local_and_cloud` 时记录失败并**自动停用任务**，避免每分钟重复失败。
 
 ## 4. 用到的公共组件
@@ -61,7 +61,7 @@
 - 云效 OpenAPI 令牌（`x-yunxiao-token`）与 Git 的 HTTPS 密码是两套凭据：前者调 OpenAPI，后者由系统 git credential helper 在 clone/fetch 时使用。
 - `ListChangeRequests` 不返回克隆地址，只返回展示名 `nameWithNamespace`（形如 `qyd / lianmeng / kr / web`）与 `detailUrl`；仓库路径由展示名还原（去掉空格），再按 `weiran.automation.repository.base-url` 拼 HTTPS 地址。
 - 本地代码仓库目录独立于知识库的仓库目录，由 `weiran.automation.repository.root` 指定。
-- 评论形态与云效 PR 评论一致：一句话结论 + 问题列表，条目为「`路径`：意见」的轻量 Markdown；**只报事实型问题**（参数不匹配、变量/方法不存在、空集合取键、数据截断、鉴权缺失等能指出明确错误后果的问题），观点型问题（注释与实现不符、建议加重试/脱敏、命名与结构）由后端按 level 过滤，不进评论。正文上限 3000 字符，最多 8 条（保护性上限）。
+- 评论形态与云效 PR 评论一致：一句话结论 + 问题列表，条目为「`路径`：意见」的轻量 Markdown；**只报事实型问题**（参数不匹配、变量/方法不存在、空集合取键、数据截断、鉴权缺失等能指出明确错误后果的问题），观点型问题由提示词约束在模型侧，不进评论。标题由后端固定（`发现 N 处问题，建议修复后再合并。` / `未发现需要修改的问题。`），正文不截断（保护上限 20000 字符），最多 10 条。
 - 回写云效未实现；评论只落在 `automation_review.comment_text`，供平台内审查。
 
 ## 6. 已知问题汇总

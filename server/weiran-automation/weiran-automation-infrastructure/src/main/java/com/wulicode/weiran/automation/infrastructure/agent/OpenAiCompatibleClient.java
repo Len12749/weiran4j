@@ -24,6 +24,9 @@ public class OpenAiCompatibleClient {
 
     private static final double TEMPERATURE = 0.2;
 
+    /** 结论可能一次列出几十条问题，默认 4K 会把 JSON 截断，这里放到模型上限。 */
+    private static final int MAX_OUTPUT_TOKENS = 8000;
+
     private final AutomationProperties.Review properties;
 
     private final HttpClient client;
@@ -51,20 +54,35 @@ public class OpenAiCompatibleClient {
     }
 
     /**
-     * 带工具的对话补全。
+     * 带工具的对话补全（不强制 JSON）。
      *
      * @param messages OpenAI 消息数组（system / user / assistant / tool）
      * @param tools 工具定义；为空表示不再提供工具
      */
     public ChatResult chatWithTools(final List<Map<String, Object>> messages, final List<Map<String, Object>> tools) {
+        return this.chatWithTools(messages, tools, false);
+    }
+
+    /**
+     * 带工具的对话补全。
+     *
+     * @param forceJson 最后一轮出结论时强制 JSON 对象，避免模型夹带解释文字
+     */
+    public ChatResult chatWithTools(
+            final List<Map<String, Object>> messages, final List<Map<String, Object>> tools, final boolean forceJson) {
         final Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("model", this.properties.llmModel().strip());
         payload.put("temperature", OpenAiCompatibleClient.TEMPERATURE);
         payload.put("stream", false);
+        payload.put("max_tokens", OpenAiCompatibleClient.MAX_OUTPUT_TOKENS);
+        this.applyReasoningEffort(payload);
         payload.put("messages", messages);
         if (!tools.isEmpty()) {
             payload.put("tools", tools);
             payload.put("tool_choice", "auto");
+        }
+        if (forceJson) {
+            payload.put("response_format", Map.of("type", "json_object"));
         }
         final JsonNode root = this.post(payload);
         final JsonNode message = root.path("choices").path(0).path("message");
@@ -89,6 +107,7 @@ public class OpenAiCompatibleClient {
         payload.put("model", this.properties.llmModel().strip());
         payload.put("temperature", OpenAiCompatibleClient.TEMPERATURE);
         payload.put("stream", false);
+        this.applyReasoningEffort(payload);
         payload.put(
                 "messages",
                 List.of(
@@ -133,6 +152,14 @@ public class OpenAiCompatibleClient {
             return Optional.of("模型名称未配置");
         }
         return Optional.empty();
+    }
+
+    /** 思考强度：配置为空时不传，交给服务端默认。 */
+    private void applyReasoningEffort(final Map<String, Object> payload) {
+        final String effort = this.properties.reasoningEffort();
+        if (effort != null && !effort.isBlank()) {
+            payload.put("reasoning_effort", effort.strip());
+        }
     }
 
     private JsonNode post(final Map<String, Object> payload) {

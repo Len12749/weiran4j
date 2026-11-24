@@ -38,6 +38,8 @@ public record AutomationProperties(boolean enabled, Cloud cloud, Review review, 
      * @param maxFileChars 单个文件送入模型的 diff 字符上限
      * @param retrieveLimit 知识库检索条数
      * @param allowPaths 允许评审的代码库路径白名单（形如 qyd/lianmeng/kr/web），逗号分隔；留空表示不过滤
+     * @param systemPrompt 评审 Agent 的系统提示词；留空使用内置默认
+     * @param reasoningEffort 思考强度（low / medium / high）；留空表示不传
      */
     public record Review(
             String mcpUrl,
@@ -48,7 +50,9 @@ public record AutomationProperties(boolean enabled, Cloud cloud, Review review, 
             String llmModel,
             int maxFileChars,
             int retrieveLimit,
-            String allowPaths) {}
+            String allowPaths,
+            String systemPrompt,
+            String reasoningEffort) {}
 
     /**
      * 本地代码仓库。

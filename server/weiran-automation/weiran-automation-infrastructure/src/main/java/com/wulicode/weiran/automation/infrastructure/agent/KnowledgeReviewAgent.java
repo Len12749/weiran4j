@@ -17,6 +17,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,32 +38,29 @@ public class KnowledgeReviewAgent implements ReviewAgent {
     private static final String SYSTEM_PROMPT = """
             你是研发团队的代码评审助手，可以调用工具查看当前代码仓库、git 历史与团队知识库。
 
-            任务：审查这次合并请求的变更，找出「有修复价值」的问题，写一条简短评论。
+            工作顺序：
+            1. 先了解这个代码库的技术栈与分层，必要时看 git 历史确认改动背景。
+            2. 去知识库检索这个技术栈的开发规范。
+            3. 看本次变更的 diff，只挑下面几类问题：
+               - 会导致报错或运行失败：参数不匹配、方法/类/属性不存在、空集合取键、异常未处理、非法状态码；
+               - 会导致数据错误或丢失：事务边界、时区、截断、并发写；
+               - 会导致安全问题：越权、签名或密钥缺失、注入；
+               - 明显违反团队硬性规范。
+               不要报：命名、注释、格式、重构建议、边界情况、"建议确认"、你已经排除掉的怀疑。
+            4. 最多列 10 条，按严重程度排序；每条一句话，说清"问题 + 会导致什么"。
+               输出 JSON：{"findings":[{"path":"文件路径","comment":"..."}]}
+               没有就输出 {"findings":[]}；只输出 JSON，不要写分析过程和客套话。
 
-            判断标准（只报事实型，不报观点型）：
-            - 只报告能指出明确错误后果的问题：参数个数或类型不匹配、变量/方法/属性不存在、空集合取键、
-              异常未处理、数据会被截断或丢失、鉴权/签名缺失、越权、并发下会出错、明显违反团队硬性规范。
-            - 不报告观点型问题：注释与实现不符、建议加重试、建议脱敏、日志级别或格式、命名、代码结构、
-              可读性、重构建议、补充测试建议，一律不要输出。
-            - 只报由本次变更引入或修改的代码引发的问题：判断依据是 diff 里的「+」行。对「+」行引用的外部方法/类
-              可以用工具核实，但不要审查文件里未改动的历史代码，不要报历史遗留问题。
-            - 说不清"会导致什么错误行为"的问题，不要报。
-            - 问题数量不设上限，但每一条都必须能指出后果；没有值得改的就明说。
-            - level 一律用 issue。
-
-            工作方式：
-            1. 先看 diff；对不确定的地方调用工具核实（read_file 看完整文件、grep 搜调用链、git_log 看历史、search_knowledge 查团队规范）。
-            2. 结论必须基于证据，不要臆测；工具查不到就直说。
-            3. 每条 comment 控制在一句话内（不超过 80 字），以句号结尾；最后一步不要再调用工具，直接输出 JSON：
-            {"summary":"一句话结论","files":[{"path":"文件路径","level":"issue|suggest","comment":"一句话说明问题与改法"}]}
+            工具：read_file 读文件、grep 搜代码、list_files 看目录、git_log / git_show 看历史、search_knowledge 查规范。
             """;
 
-    private static final int MAX_ROUNDS = 6;
+    /** 轮数不设限，这里只是防止模型无限循环的极端保护。 */
+    private static final int MAX_ROUNDS = 200;
 
-    /** 评论里最多列出的问题数：只做极端保护，不限制模型发现问题。 */
-    private static final int MAX_ISSUES = 50;
+    /** 评论里最多列出的问题数。 */
+    private static final int MAX_ISSUES = 10;
 
-    private static final int MAX_COMMENT_CHARS = 3000;
+    private static final int MAX_COMMENT_CHARS = 20_000;
 
     private static final int MAX_DIFF_CHARS_PER_FILE = 6000;
 
@@ -71,16 +72,20 @@ public class KnowledgeReviewAgent implements ReviewAgent {
 
     private final ObjectMapper mapper;
 
+    private final ExecutorService toolExecutor;
+
     /** 构造评审 Agent。 */
     public KnowledgeReviewAgent(
             final McpKnowledgeClient knowledge,
             final OpenAiCompatibleClient llm,
             final AutomationProperties properties,
-            final ObjectMapper mapper) {
+            final ObjectMapper mapper,
+            final ExecutorService toolExecutor) {
         this.knowledge = knowledge;
         this.llm = llm;
         this.properties = properties;
         this.mapper = mapper;
+        this.toolExecutor = toolExecutor;
     }
 
     @Override
@@ -88,17 +93,32 @@ public class KnowledgeReviewAgent implements ReviewAgent {
             final ChangeRequestSummary summary, final List<ChangedFile> files, final Path repositoryPath) {
         final RepositoryToolbox toolbox = new RepositoryToolbox(repositoryPath);
         final List<Map<String, Object>> messages = new ArrayList<>();
-        messages.add(Map.of("role", "system", "content", KnowledgeReviewAgent.SYSTEM_PROMPT));
+        messages.add(Map.of("role", "system", "content", this.systemPrompt()));
         messages.add(Map.of("role", "user", "content", this.buildInitialPrompt(summary, files)));
         final List<Map<String, Object>> tools = KnowledgeReviewAgent.toolDefinitions();
-        for (int round = 1; round <= KnowledgeReviewAgent.MAX_ROUNDS; round++) {
+        int round = 0;
+        while (true) {
+            round++;
             final ChatResult result = this.llm.chatWithTools(messages, tools);
             if (result.toolCalls().isEmpty()) {
-                return this.parse(result.content(), files);
+                return this.parse(result.content());
+            }
+            if (round > KnowledgeReviewAgent.MAX_ROUNDS) {
+                LOGGER.warn("Review agent exceeded {} rounds, forcing conclusion", KnowledgeReviewAgent.MAX_ROUNDS);
+                messages.add(Map.of("role", "user", "content", "请直接输出最终 JSON 结论，不要再调用工具。"));
+                final ChatResult last = this.llm.chatWithTools(messages, List.of(), true);
+                return this.parse(last.content());
             }
             messages.add(KnowledgeReviewAgent.assistantMessage(result));
-            for (final ToolCall call : result.toolCalls()) {
-                final String output = this.executeTool(call, toolbox);
+            // 同一轮的多个工具并发执行，结果按原顺序回填
+            final List<ToolCall> calls = result.toolCalls();
+            final List<CompletableFuture<String>> futures = new ArrayList<>();
+            for (final ToolCall call : calls) {
+                futures.add(CompletableFuture.supplyAsync(() -> this.executeTool(call, toolbox), this.toolExecutor));
+            }
+            for (int index = 0; index < calls.size(); index++) {
+                final ToolCall call = calls.get(index);
+                final String output = futures.get(index).join();
                 LOGGER.debug(
                         "Review agent tool {} args={} returned {} chars",
                         call.name(),
@@ -107,10 +127,12 @@ public class KnowledgeReviewAgent implements ReviewAgent {
                 messages.add(Map.of("role", "tool", "tool_call_id", call.id(), "content", output));
             }
         }
-        LOGGER.warn("Review agent used all {} tool rounds, forcing conclusion", KnowledgeReviewAgent.MAX_ROUNDS);
-        messages.add(Map.of("role", "user", "content", "工具调用轮数已用完，请直接输出最终 JSON 结论，不要再调用工具。"));
-        final ChatResult last = this.llm.chatWithTools(messages, List.of());
-        return this.parse(last.content(), files);
+    }
+
+    /** 系统提示词：优先用配置（便于不改代码调整），留空回落到内置默认。 */
+    private String systemPrompt() {
+        final String configured = this.properties.review().systemPrompt();
+        return configured == null || configured.isBlank() ? KnowledgeReviewAgent.SYSTEM_PROMPT : configured;
     }
 
     private String buildInitialPrompt(final ChangeRequestSummary summary, final List<ChangedFile> files) {
@@ -185,81 +207,75 @@ public class KnowledgeReviewAgent implements ReviewAgent {
         return message;
     }
 
-    private ReviewDraft parse(final @Nullable String answer, final List<ChangedFile> files) {
+    private ReviewDraft parse(final @Nullable String answer) {
+        LOGGER.debug("Review agent final answer: {}", KnowledgeReviewAgent.clip(answer, 800));
         final String json = KnowledgeReviewAgent.extractJson(answer);
         try {
             final JsonNode root = this.mapper.readTree(json);
-            final String summary = root.path("summary").asText("").strip();
             final List<ReviewFileDraft> drafts = new ArrayList<>();
-            for (final JsonNode item : root.path("files")) {
+            for (final JsonNode item : root.path("findings")) {
                 final String path = item.path("path").asText("").strip();
                 if (path.isEmpty()) {
                     continue;
                 }
                 drafts.add(new ReviewFileDraft(
-                        path,
-                        ReviewFileLevel.of(item.path("level").asText("suggest")),
-                        KnowledgeReviewAgent.textOrNull(item.path("comment")),
-                        null));
+                        path, ReviewFileLevel.ISSUE, KnowledgeReviewAgent.textOrNull(item.path("comment")), null));
             }
-            // 只报事实型问题：非 issue 级别（观点型、建议型）一律不进评论。
-            final List<ReviewFileDraft> issues = drafts.stream()
-                    .filter(draft -> draft.level() == ReviewFileLevel.ISSUE)
-                    .limit(KnowledgeReviewAgent.MAX_ISSUES)
-                    .toList();
-            final String conclusion = summary.isBlank() ? "未发现需要修改的问题" : summary;
+            final List<ReviewFileDraft> issues =
+                    drafts.stream().limit(KnowledgeReviewAgent.MAX_ISSUES).toList();
             return new ReviewDraft(
-                    KnowledgeReviewAgent.buildComment(conclusion, issues),
+                    KnowledgeReviewAgent.buildComment(issues),
                     this.properties.review().llmModel(),
                     issues);
         } catch (final IOException ex) {
-            LOGGER.warn("Model answer is not valid JSON, falling back to raw text: {}", ex.getMessage());
+            LOGGER.warn("Model answer is not valid JSON, salvaging findings: {}", ex.getMessage());
+            final List<ReviewFileDraft> salvaged = KnowledgeReviewAgent.salvage(answer);
+            if (salvaged.isEmpty()) {
+                return new ReviewDraft(
+                        KnowledgeReviewAgent.clip(answer == null ? "" : answer, 500),
+                        this.properties.review().llmModel(),
+                        List.of());
+            }
             return new ReviewDraft(
-                    KnowledgeReviewAgent.clip(answer == null ? "" : answer, 500),
+                    KnowledgeReviewAgent.buildComment(salvaged),
                     this.properties.review().llmModel(),
-                    List.of());
+                    salvaged);
         }
     }
 
-    /** 组给云效看的评论：一句话结论 + 值得修的问题列表，轻量 Markdown。 */
-    private static String buildComment(final String summary, final List<ReviewFileDraft> issues) {
-        final String trimmed = summary.strip();
-        final String headline;
+    /** JSON 被截断时，尽量把已经完整的 path/comment 对捞出来，避免把原始 JSON 当评论。 */
+    private static List<ReviewFileDraft> salvage(final @Nullable String answer) {
+        final List<ReviewFileDraft> found = new ArrayList<>();
+        if (answer == null || answer.isBlank()) {
+            return found;
+        }
+        final Pattern pattern =
+                Pattern.compile("\\{\\s*\"path\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"comment\"\\s*:\\s*\"([^\"]*)\"");
+        final Matcher matcher = pattern.matcher(answer);
+        while (matcher.find() && found.size() < MAX_ISSUES) {
+            found.add(new ReviewFileDraft(matcher.group(1), ReviewFileLevel.ISSUE, matcher.group(2), null));
+        }
+        return found;
+    }
+
+    /** 组给云效看的评论：标题由平台固定，下面只列问题，轻量 Markdown。 */
+    private static String buildComment(final List<ReviewFileDraft> issues) {
         if (issues.isEmpty()) {
-            headline = "未发现需要修改的问题。";
-        } else if (trimmed.isEmpty() || trimmed.length() > 40 || trimmed.contains("：")) {
-            headline = "发现 " + issues.size() + " 处值得修复的问题。";
-        } else {
-            headline = trimmed;
+            return "未发现需要修改的问题。";
         }
-        final StringBuilder comment = new StringBuilder(headline);
-        if (!issues.isEmpty()) {
-            comment.append("\n\n");
-            for (final ReviewFileDraft draft : issues) {
-                comment.append("- `").append(draft.path()).append('`');
-                if (draft.commentText() != null && !draft.commentText().isBlank()) {
-                    comment.append("：")
-                            .append(KnowledgeReviewAgent.cleanSentence(KnowledgeReviewAgent.clipSentence(
-                                    draft.commentText().strip(), 150)));
-                }
-                comment.append('\n');
+        final StringBuilder comment =
+                new StringBuilder("发现 ").append(issues.size()).append(" 处问题，建议修复后再合并。");
+        comment.append("\n\n");
+        for (final ReviewFileDraft draft : issues) {
+            comment.append("- `").append(draft.path()).append('`');
+            if (draft.commentText() != null && !draft.commentText().isBlank()) {
+                comment.append("：")
+                        .append(KnowledgeReviewAgent.cleanSentence(
+                                draft.commentText().strip()));
             }
+            comment.append('\n');
         }
-        return KnowledgeReviewAgent.clip(comment.toString().strip(), MAX_COMMENT_CHARS);
-    }
-
-    /** 按句读截断，尽量不在句子中间切断。 */
-    private static String clipSentence(final String value, final int max) {
-        if (value.length() <= max) {
-            return value;
-        }
-        for (final char ending : new char[] {'。', '；', '，'}) {
-            final int cut = value.lastIndexOf(ending, max);
-            if (cut > 20) {
-                return value.substring(0, cut + 1);
-            }
-        }
-        return value.substring(0, max - 1) + "。";
+        return KnowledgeReviewAgent.clip(comment.toString().strip(), KnowledgeReviewAgent.MAX_COMMENT_CHARS);
     }
 
     /** 统一收尾：去掉省略号与悬空的分号、逗号，保证每条意见以句号结束。 */

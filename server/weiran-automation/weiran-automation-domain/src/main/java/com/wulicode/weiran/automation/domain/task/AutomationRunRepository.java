@@ -51,6 +51,9 @@ public interface AutomationRunRepository {
     /** 完成一次评审：写入终态、评论正文与逐文件意见（覆盖旧明细）。 */
     void completeReview(long reviewId, AutomationReview review);
 
+    /** 把启动前没有收尾的执行记录标记为中断；返回受影响行数。 */
+    int failStaleRuns(LocalDateTime cutoff);
+
     /** 删除一次执行产生的全部评审结果（含逐文件意见）。 */
     void deleteReviewsByRun(long runId);
 
